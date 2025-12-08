@@ -1,6 +1,0 @@
-@emc.camus.main.api_HostAddress = http://localhost:5068
-
-GET {{emc.camus.main.api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
