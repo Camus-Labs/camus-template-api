@@ -1,0 +1,48 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "dotnet build ${workspaceFolder}/src/CamusApp.sln /p:GeneratePullPaths=true",
+      "group": "build",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "dotnet test ${workspaceFolder}/src/CamusApp.sln /p:GeneratePullPaths=true",
+      "group": "test",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "run-api",
+      "type": "shell",
+      "command": "dotnet run --project ${workspaceFolder}/src/Api/emc.main.api/emc.camus.main.api.csproj /p:GeneratePullPaths=true",
+      "group": "none",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "watch-api",
+      "type": "shell",
+      "command": "dotnet watch --project ${workspaceFolder}/src/Api/emc.main.api/emc.camus.main.api.csproj run -- /p:GeneratePullPaths=true",
+      "isBackground": true,
+      "problemMatcher": "$msCompile",
+      "group": "none"
+    },
+    {
+      "label": "publish-api",
+      "type": "shell",
+      "command": "dotnet publish ${workspaceFolder}/src/Api/emc.main.api/emc.camus.main.api.csproj -c Release /p:GeneratePullPaths=true",
+      "group": "none",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "run-dapr-sidecar",
+      "type": "shell",
+      "command": "dapr run --app-id camus-app --dapr-http-port 3500 --dapr-grpc-port 50001 --resources-path ${workspaceFolder}/src/Adapters/emc.adapterdapr.components",
+      "group": "none",
+      "problemMatcher": []
+    }
+  ]
+}
