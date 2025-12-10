@@ -1,33 +1,36 @@
 using emc.camus.main.api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
+using Swashbuckle.AspNetCore.Annotations;
     
 namespace emc.camus.main.api.Controllers
 {
 
     /// <summary>
-    /// This is the Authentication controller, normally here you define the get token operation 
-    /// and it will take care of the authentication, remember authentication is different from authorization
+    /// AuthController
     /// </summary>
+    /// <remarks>
+    /// Purpose: Handles authentication endpoints, including token generation and API info per version.
+    /// Usage: Call endpoints to retrieve API info or request JWT tokens.
+    /// Output: JSON responses with API info or JWT tokens.
+    /// Dependencies: IConfiguration, ILogger&lt;AuthController&gt;
+    /// </remarks>
     [ApiController]
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
     [Route("api/[controller]")]
+    [Produces("application/json")]
     public class AuthController : ControllerBase
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
 
-        /// <summary>
-        ///  AuthController constructor initializes the controller with configuration, activity source, and logger.
-        /// It is used to access application settings, logging, and tracing capabilities.
-        /// </summary>
-        /// <param name="configuration"></param>
-        /// <param name="logger"></param>
-        /// <param name="activitySource"></param>
-        /// <param name="signingCredentials"></param>
-        /// <param name="secretProvider"></param>
+    /// <summary>
+    /// Initializes the AuthController with configuration and logger.
+    /// </summary>
+    /// <param name="configuration">Application configuration provider.</param>
+    /// <param name="logger">Logger for AuthController.</param>
         public AuthController(IConfiguration configuration, ILogger<AuthController> logger)
         {
             _logger = logger;
@@ -35,11 +38,17 @@ namespace emc.camus.main.api.Controllers
         }
 
         /// <summary>
-        /// This is the info method, it provides information about the API and its standards
+        /// Returns API information for version 1.0.
         /// </summary>
-        /// <returns></returns> 
+        /// <returns>API info for v1.0.</returns>
         [HttpGet("info")]
         [MapToApiVersion("1.0")]
+        [SwaggerOperation(
+            Summary = "Get API info for v1.0",
+            Description = "Returns basic information about the API for version 1.0."
+        )]
+        [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult GetInfoV1()
         {
             _logger.LogInformation("API info v1.0 requested.");
@@ -55,11 +64,17 @@ namespace emc.camus.main.api.Controllers
         }
 
         /// <summary>
-        /// This is the info method, it provides information about the API and its standards
+        /// Returns API information for version 2.0.
         /// </summary>
-        /// <returns></returns> 
+        /// <returns>API info for v2.0.</returns>
         [HttpGet("info")]
         [MapToApiVersion("2.0")]
+        [SwaggerOperation(
+            Summary = "Get API info for v2.0",
+            Description = "Returns extended information about the API for version 2.0, including features and timestamp."
+        )]
+        [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult GetInfoV2()
         {
             _logger.LogInformation("API info v2.0 requested.");
@@ -76,14 +91,21 @@ namespace emc.camus.main.api.Controllers
             return Ok(info);
         }
 
-        /// <summary>
-        /// This is the get token method, it receives an AccessKey and AccessSecret in order to provide the token
-        /// this token works with an audience and provider, meaning this token only works for this API
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
+    /// <summary>
+    /// Generates a JWT token for valid credentials in API version 2.0.
+    /// </summary>
+    /// <param name="request">The JWT token request containing AccessKey and AccessSecret.</param>
+    /// <returns>JWT token response if credentials are valid; otherwise, an error response.</returns>
         [HttpPost("token")]
         [MapToApiVersion("2.0")]
+        [SwaggerOperation(
+            Summary = "Get JWT token",
+            Description = "Generates a JWT token for valid credentials in API version 2.0."
+        )]
+        [ProducesResponseType(typeof(JwtTokenResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult GetToken([FromBody] JwtTokenRequest request)
         {
             _logger.LogInformation("Token request received for AccessKey: {AccessKey}.", request.AccessKey);
