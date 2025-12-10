@@ -9,12 +9,14 @@
     <PackageId>emc.camus.main.api</PackageId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
-  
-  <!-- 📝 LOGGING -->
+
   <ItemGroup>
+    <!-- LOGGING -->
     <PackageReference Include="Serilog" Version="4.3.0" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <!-- API VERSIONING -->
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
   </ItemGroup>
   
   <ItemGroup>
