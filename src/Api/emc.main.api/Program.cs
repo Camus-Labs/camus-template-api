@@ -2,6 +2,7 @@ using Serilog;
 using Asp.Versioning;
 using System.Reflection;
 using Microsoft.OpenApi;
+using emc.camus.main.api.Handlers;
 
 // Step 0: Create logger to capture all logs and start app building
 Log.Logger = new LoggerConfiguration()
@@ -62,7 +63,7 @@ builder.Services.AddSwaggerGen(options =>
 // Step 4: Add the controllers and build the app
 builder.Services.AddControllers();
 
-// Step 4.1: Build App Builder
+// Step 5: Build App Builder
 var app = builder.Build();
 
 //Step 6: Enable Swagger UI in development
@@ -84,9 +85,12 @@ if (app.Environment.IsDevelopment())
             context.Response.Redirect("/swagger/index.html", permanent: false);
             return;
         }
-        await next(); 
+        await next();
     });
 }
+
+// Step 7: Global exception handling middleware
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 app.MapControllers();

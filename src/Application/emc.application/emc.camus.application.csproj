@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Domain\emc.domain\emc.camus.domain.csproj" />
+  </ItemGroup>
+
 </Project>

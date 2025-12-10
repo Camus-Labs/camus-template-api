@@ -54,7 +54,6 @@
 
 ```csharp
 [SwaggerOperation(
-    Summary = "Short summary for Swagger UI",
     Description = "Detailed description for API consumers."
 )]
 [ProducesResponseType(typeof(ReturnType), StatusCodes.Status200OK)]

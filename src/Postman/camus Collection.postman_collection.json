@@ -115,7 +115,7 @@
 														],
 														"body": {
 															"mode": "raw",
-															"raw": "{\n  \"accessKey\": \"GTOACCESSKEY\",\n  \"accessSecret\": \"gtoaccesssecret1\"\n}",
+															"raw": "{\n  \"accessKey\": \"EMCACCESSKEY\",\n  \"accessSecret\": \"emcaccesssecret1\"\n}",
 															"options": {
 																"raw": {
 																	"headerFamily": "json",

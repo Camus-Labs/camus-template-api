@@ -44,7 +44,6 @@ namespace emc.camus.main.api.Controllers
         [HttpGet("info")]
         [MapToApiVersion("1.0")]
         [SwaggerOperation(
-            Summary = "Get API info for v1.0",
             Description = "Returns basic information about the API for version 1.0."
         )]
         [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
@@ -70,7 +69,6 @@ namespace emc.camus.main.api.Controllers
         [HttpGet("info")]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
-            Summary = "Get API info for v2.0",
             Description = "Returns extended information about the API for version 2.0, including features and timestamp."
         )]
         [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
@@ -98,7 +96,6 @@ namespace emc.camus.main.api.Controllers
         [HttpGet("info")]
         [MapToApiVersion("3.0")]
         [SwaggerOperation(
-            Summary = "Get API info for v3.0",
             Description = "Returns extended information about the API for version 3.0, including features and timestamp."
         )]
         [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
@@ -120,7 +117,7 @@ namespace emc.camus.main.api.Controllers
         }
 
         /// <summary>
-        /// Generates a JWT token for valid credentials in API version >=2.0.
+        /// Get JWT token for valid credentials (API version >=2.0).
         /// </summary>
         /// <param name="request">The JWT token request containing AccessKey and AccessSecret.</param>
         /// <returns>JWT token response if credentials are valid; otherwise, an error response.</returns>
@@ -128,7 +125,6 @@ namespace emc.camus.main.api.Controllers
         [MapToApiVersion("2.0")]
         [MapToApiVersion("3.0")]
         [SwaggerOperation(
-            Summary = "Get JWT token",
             Description = "Generates a JWT token for valid credentials in API version >=2.0"
         )]
         [ProducesResponseType(typeof(JwtTokenResponse), StatusCodes.Status200OK)]
@@ -153,6 +149,26 @@ namespace emc.camus.main.api.Controllers
 
             _logger.LogWarning("Invalid credentials provided for AccessKey: {AccessKey}.", request.AccessKey);
             return Unauthorized("Invalid credentials.");
+        }
+
+        /// <summary>
+        /// Get an error handled by main error handler.
+        /// </summary>
+        /// <returns>Error message.</returns>
+        [HttpPost("unexpected-error")]
+        [MapToApiVersion("3.0")]
+        [SwaggerOperation(
+            Description = "Handles unexpected errors in API version 3.0"
+        )]
+        [ProducesResponseType(typeof(JwtTokenResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult GetUnexpectedError([FromBody] JwtTokenRequest request)
+        {
+            _logger.LogInformation("Error request received for AccessKey: {AccessKey}.", request.AccessKey);
+            
+            throw new Exception("This is a test exception for error handling.", new Exception("Inner exception for testing purposes."));
         }
     }
 }

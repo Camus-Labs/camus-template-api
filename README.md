@@ -58,7 +58,7 @@ src/
 ├── projectName.sln
 ├── Dockerfile
 ├── Api/
-│   └── gto.myapp.api/                # API layer (Controllers, Program.cs)
+│   └── emc.main.api/                # API layer (Controllers, Program.cs)
 │       ├── Controllers/
 │       │   └── AuthController.cs
 │       ├── Handlers/
@@ -66,15 +66,15 @@ src/
 │       │   └── ExceptionHandlingMiddleware.cs
 │       └── Program.cs
 ├── Application/
-│   └── gto.application/              # Application services/use cases
+│   └── emc.application/              # Application services/use cases
 ├── Domain/
-│   └── gto.domain/                   # Domain models/business logic
+│   └── emc.domain/                   # Domain models/business logic
 │       ├── Auth/
 │       ├── Generic/
 │       ├── Logging/s
 │       └── SwaggerExamples/
 ├── Adapters/
-│   └── gto.datapersistance.postgresql/
+│   └── emc.datapersistance.postgresql/
 │       ├── Repository/
 │       │   └── PostgreSqlRepo.cs
 │       ├── DTOs/
@@ -218,7 +218,7 @@ src/
 dotnet build
 
 # Run the API
-dotnet run --project src/Api/gto.myapp.api/gto.dbinventorycentraletl.myapp.api.csproj
+dotnet run --project src/Api/emc.main.api/emc.camus.main.api.csproj
 
 # Run tests
 dotnet test

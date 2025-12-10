@@ -65,22 +65,22 @@ graph TB
 
 ```text
 src/
-├── iaasdatabasepatching.sln                    # Solution file
+├── CamusApp.sln                    # Solution file
 ├── Dockerfile                             # Container configuration
 │
 ├── Api/                                   # 🌐 External Interface Layer
-│   └── gto.myapp.api/
+│   └── emc.main.api/
 │       ├── Controllers/                   # REST API endpoints
 │       ├── Handlers/                      # Middleware & DI setup
 │       └── Program.cs                     # Application entry point
 │
 ├── Application/                           # 🔧 Use Cases & Application Services
-│   └── gto.application/
+│   └── emc.application/
 │       ├── Data/                          # Port interfaces (contracts)
 │       └── Mappers/                       # Data transformation logic
 │
 ├── Domain/                                # 💼 Business Logic Core
-│   └── gto.domain/
+│   └── emc.domain/
 │       ├── Auth/                          # Authentication models
 │       ├── Entities/                      # Domain models
 │       ├── Generic/                       # Shared base classes
@@ -88,12 +88,12 @@ src/
 │       └── SwaggerExamples/               # API documentation examples
 │
 ├── Adapters/                              # 🔌 External System Integrations
-│   ├── gto.datapersistance.postgresql/
+│   ├── emc.datapersistance.postgresql/
 │   │   ├── Adapter/                       # PostgreSQL implementation
 │   │   ├── DTOs/                          # Database transfer objects
 │   │   ├── Mappers/                       # Entity-DTO mapping
 │   │   └── Repository/                    # Data access patterns
-│   └── gto.secretstorage.dapr/
+│   └── emc.secretstorage.dapr/
 │       └── DaprSecretProvider.cs          # Dapr secrets management adapter
 │
 └── Test/                                  # 🧪 Testing Projects
@@ -175,7 +175,7 @@ public class DaprSecretProvider : ISecretProvider
 
 #### 🔐 Secrets Configuration Instructions
 **Important**: All application secrets must be configured in the Dapr secrets file:
-- **Location**: `src/Adapters/gto.adapterdapr.components/secrets.json`
+- **Location**: `src/Adapters/emc.adapterdapr.components/secrets.json`
 - **Required Secrets**: `AccessKey`, `AccessSecret`, `XApiKey`
 - **⚠️ Security Warning**: This file contains placeholder values for development only
 - **DO NOT** commit real secrets to GitHub - secrets are injected via Dapr in production
@@ -256,9 +256,9 @@ public class DaprSecretProvider : ISecretProvider
 - **Additional Adapters**: External service integrations beyond PostgreSQL and Dapr
 
 ### 🎯 **Where to Start Building**
-1. **Add Business Controllers** in `src/Api/gto.myapp.api/Controllers/`
-2. **Implement Use Cases** in `src/Application/gto.application/`
-3. **Extend Domain Models** in `src/Domain/gto.domain/Entities/`
+1. **Add Business Controllers** in `src/Api/emc.main.api/Controllers/`
+2. **Implement Use Cases** in `src/Application/emc.application/`
+3. **Extend Domain Models** in `src/Domain/emc.domain/Entities/`
 4. **Create Additional Adapters** in `src/Adapters/` as needed
 
 ---
@@ -274,19 +274,19 @@ public class DaprSecretProvider : ISecretProvider
 1. **Clone and Setup**:
    ```bash
    git clone <your-repo>
-   cd pg-gto-portsadapters-template
+   cd emc-portsadapters-template
    ```
 
 2. **Configure Settings**:
    - Update `appsettings.json` with OpenTelemetry exporters and other non-sensitive configuration
-   - **Configure secrets in Dapr**: Update `src/Adapters/gto.adapterdapr.components/secrets.json` with your development credentials:
+   - **Configure secrets in Dapr**: Update `src/Adapters/emc.adapterdapr.components/secrets.json` with your development credentials:
      - `AccessKey`: Your access key for JWT authentication
      - `AccessSecret`: Your access secret for JWT authentication  
      - `XApiKey`: Your API key for X-Api-Key header authentication
 
 3. **Run the Application**:
    ```bash
-   dotnet run --project src/Api/gto.myapp.api/gto.iaasdatabasepatching.myapp.api.csproj
+   dotnet run --project src/Api/emc.main.api/emc.camus.main.api.csproj
    ```
    Or using Docker:
    ```bash
