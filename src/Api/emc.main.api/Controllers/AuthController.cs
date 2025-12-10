@@ -12,30 +12,38 @@ namespace emc.camus.main.api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IConfiguration _configuration;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IConfiguration configuration)
+        public AuthController(IConfiguration configuration, ILogger<AuthController> logger)
         {
+            _logger = logger;
             _configuration = configuration;
         }
 
         [HttpGet("info")]
         public IActionResult GetInfo()
         {
-            var apiInfo = new ApiInfo
+            _logger.LogInformation("API info requested.");
+
+            var info = new ApiInfo
             {
                 Name = "My Basic API",
                 Version = "1.0.0",
                 Status = "Running"
             };
 
-            return Ok(apiInfo);
+            _logger.LogInformation("API info returned successfully.");
+            return Ok(info);
         }
 
         [HttpPost("token")]
         public IActionResult GetToken([FromBody] JwtTokenRequest request)
         {
+            _logger.LogInformation("Token request received for AccessKey: {AccessKey}", request.AccessKey);
+
             if (request.AccessKey == "demo-key" && request.AccessSecret == "demo-secret")
             {
+                _logger.LogInformation("Valid credentials provided");
                 var response = new JwtTokenResponse
                 {
                     Token = "generated-jwt-token",
@@ -45,6 +53,7 @@ namespace emc.camus.main.api.Controllers
                 return Ok(response);
             }
 
+            _logger.LogWarning("Invalid credentials provided for AccessKey: {AccessKey}", request.AccessKey);
             return Unauthorized("Invalid credentials");
         }
     }
