@@ -18,6 +18,7 @@ namespace emc.camus.main.api.Controllers
     [ApiController]
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
+    [ApiVersion("3.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
     [Route("api/[controller]")]
     [Produces("application/json")]
@@ -26,11 +27,11 @@ namespace emc.camus.main.api.Controllers
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
 
-    /// <summary>
-    /// Initializes the AuthController with configuration and logger.
-    /// </summary>
-    /// <param name="configuration">Application configuration provider.</param>
-    /// <param name="logger">Logger for AuthController.</param>
+        /// <summary>
+        /// Initializes the AuthController with configuration and logger.
+        /// </summary>
+        /// <param name="configuration">Application configuration provider.</param>
+        /// <param name="logger">Logger for AuthController.</param>
         public AuthController(IConfiguration configuration, ILogger<AuthController> logger)
         {
             _logger = logger;
@@ -40,7 +41,7 @@ namespace emc.camus.main.api.Controllers
         /// <summary>
         /// Returns API information for version 1.0.
         /// </summary>
-        /// <returns>API info for v1.0.</returns>
+        /// <returns>API info for v1.0</returns>
         [HttpGet("info")]
         [MapToApiVersion("1.0")]
         [SwaggerOperation(
@@ -49,7 +50,7 @@ namespace emc.camus.main.api.Controllers
         )]
         [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult GetInfoV1()
+        public IActionResult GetInfoV10()
         {
             _logger.LogInformation("API info v1.0 requested.");
 
@@ -66,7 +67,7 @@ namespace emc.camus.main.api.Controllers
         /// <summary>
         /// Returns API information for version 2.0.
         /// </summary>
-        /// <returns>API info for v2.0.</returns>
+        /// <returns>API info for v2.0</returns>
         [HttpGet("info")]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
@@ -75,7 +76,7 @@ namespace emc.camus.main.api.Controllers
         )]
         [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult GetInfoV2()
+        public IActionResult GetInfoV20()
         {
             _logger.LogInformation("API info v2.0 requested.");
 
@@ -91,16 +92,45 @@ namespace emc.camus.main.api.Controllers
             return Ok(info);
         }
 
-    /// <summary>
-    /// Generates a JWT token for valid credentials in API version 2.0.
-    /// </summary>
-    /// <param name="request">The JWT token request containing AccessKey and AccessSecret.</param>
-    /// <returns>JWT token response if credentials are valid; otherwise, an error response.</returns>
+        /// <summary>
+        /// Returns API information for version 3.0.
+        /// </summary>
+        /// <returns>API info for v3.0</returns>
+        [HttpGet("info")]
+        [MapToApiVersion("3.0")]
+        [SwaggerOperation(
+            Summary = "Get API info for v3.0",
+            Description = "Returns extended information about the API for version 3.0, including features and timestamp."
+        )]
+        [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult GetInfoV3()
+        {
+            _logger.LogInformation("API info v3.0 requested.");
+
+            var info = new ApiInfo
+            {
+                Name = "My Basic API",
+                Version = "3.0.0",
+                Status = "Running with API Versioning v3",
+                Features = new List<string> { "Logging", "Versioning" },
+                Timestamp = DateTime.UtcNow
+            };
+
+            return Ok(info);
+        }
+
+        /// <summary>
+        /// Generates a JWT token for valid credentials in API version >=2.0.
+        /// </summary>
+        /// <param name="request">The JWT token request containing AccessKey and AccessSecret.</param>
+        /// <returns>JWT token response if credentials are valid; otherwise, an error response.</returns>
         [HttpPost("token")]
         [MapToApiVersion("2.0")]
+        [MapToApiVersion("3.0")]
         [SwaggerOperation(
             Summary = "Get JWT token",
-            Description = "Generates a JWT token for valid credentials in API version 2.0."
+            Description = "Generates a JWT token for valid credentials in API version >=2.0"
         )]
         [ProducesResponseType(typeof(JwtTokenResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]

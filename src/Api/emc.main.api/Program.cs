@@ -31,23 +31,23 @@ builder.Services.AddApiVersioning(options =>
 // Step 2: Configure Swagger with versioning support
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1.0", new OpenApiInfo
+    options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Camus Basic API demo",
+        Title = "Camus API v1.0 Basic Demo",
         Version = "v1.0",
         Description = "A sample API demonstrating basic features"
     });
-    options.SwaggerDoc("v2.0", new OpenApiInfo
+    options.SwaggerDoc("v2", new OpenApiInfo
     {
-        Title = "Camus Multi-version API configuration",
+        Title = "Camus API v2.0 Multi-version API configuration",
         Version = "v2.0",
         Description = "A sample API demonstrating multi-versioning"
     });
-     options.SwaggerDoc("v3.0", new OpenApiInfo
+    options.SwaggerDoc("v3", new OpenApiInfo
     {
-        Title = "Camus Documented API configuration",
+        Title = "Camus API v3.0 Documented API configuration",
         Version = "v3.0",
-        Description = "A sample API demonstrating documentation"
+        Description = "Camus API v3.0 demonstrating swagger documentation enhancements"
     });
 
     // Include XML comments if available
@@ -71,9 +71,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1.0/swagger.json", "Camus Basic API demo v1.0");
-        options.SwaggerEndpoint("/swagger/v2.0/swagger.json", "Camus Multi-version API configuration v2.0");
-        options.SwaggerEndpoint("/swagger/v3.0/swagger.json", "Camus Documented API configuration v3.0");
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
+        options.SwaggerEndpoint("/swagger/v2/swagger.json", "API v2");
+        options.SwaggerEndpoint("/swagger/v3/swagger.json", "API v3");
     });
 
     //Redirect to Swagger UI if no path is specified
