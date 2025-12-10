@@ -149,7 +149,7 @@ namespace emc.camus.main.api.Controllers
             }
 
             _logger.LogWarning("Invalid credentials provided for AccessKey: {AccessKey}.", request.AccessKey);
-            return Unauthorized("Invalid credentials.");
+            throw new UnauthorizedAccessException("Invalid credentials.");
         }
 
         /// <summary>
