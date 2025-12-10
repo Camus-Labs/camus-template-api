@@ -66,7 +66,15 @@ builder.Services.AddControllers();
 // Step 5: Build App Builder
 var app = builder.Build();
 
-//Step 6: Enable Swagger UI in development
+// Step 6: Global exception handling middleware
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+// Global error handler for malformed JSON and other early pipeline errors
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(GlobalExceptionHandler.HandleAsync);
+});
+
+//Step 8: Enable Swagger UI in development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -88,9 +96,6 @@ if (app.Environment.IsDevelopment())
         await next();
     });
 }
-
-// Step 7: Global exception handling middleware
-app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 app.MapControllers();

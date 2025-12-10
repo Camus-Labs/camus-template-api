@@ -2,7 +2,8 @@ using emc.camus.main.api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using Swashbuckle.AspNetCore.Annotations;
-    
+using emc.camus.domain.Generic;
+
 namespace emc.camus.main.api.Controllers
 {
 
@@ -47,7 +48,7 @@ namespace emc.camus.main.api.Controllers
             Description = "Returns basic information about the API for version 1.0."
         )]
         [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
         public IActionResult GetInfoV10()
         {
             _logger.LogInformation("API info v1.0 requested.");
@@ -72,7 +73,7 @@ namespace emc.camus.main.api.Controllers
             Description = "Returns extended information about the API for version 2.0, including features and timestamp."
         )]
         [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
         public IActionResult GetInfoV20()
         {
             _logger.LogInformation("API info v2.0 requested.");
@@ -99,7 +100,7 @@ namespace emc.camus.main.api.Controllers
             Description = "Returns extended information about the API for version 3.0, including features and timestamp."
         )]
         [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
         public IActionResult GetInfoV3()
         {
             _logger.LogInformation("API info v3.0 requested.");
@@ -128,9 +129,9 @@ namespace emc.camus.main.api.Controllers
             Description = "Generates a JWT token for valid credentials in API version >=2.0"
         )]
         [ProducesResponseType(typeof(JwtTokenResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
         public IActionResult GetToken([FromBody] JwtTokenRequest request)
         {
             _logger.LogInformation("Token request received for AccessKey: {AccessKey}.", request.AccessKey);
@@ -161,9 +162,9 @@ namespace emc.camus.main.api.Controllers
             Description = "Handles unexpected errors in API version 3.0"
         )]
         [ProducesResponseType(typeof(JwtTokenResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
         public IActionResult GetUnexpectedError([FromBody] JwtTokenRequest request)
         {
             _logger.LogInformation("Error request received for AccessKey: {AccessKey}.", request.AccessKey);

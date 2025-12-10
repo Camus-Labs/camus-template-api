@@ -58,11 +58,11 @@
 )]
 [ProducesResponseType(typeof(ReturnType), StatusCodes.Status200OK)]
 // Only include the following if the endpoint can actually return these status codes:
-[ProducesResponseType(StatusCodes.Status400BadRequest)] // If input can be invalid
-[ProducesResponseType(StatusCodes.Status401Unauthorized)] // If endpoint requires authentication
-[ProducesResponseType(StatusCodes.Status403Forbidden)] // If endpoint can be forbidden
-[ProducesResponseType(StatusCodes.Status404NotFound)] // If resource may not be found
-[ProducesResponseType(StatusCodes.Status500InternalServerError)] // For unhandled errors
+[ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)] // If input can be invalid
+[ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)] // If endpoint requires authentication
+[ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)] // If endpoint can be forbidden
+[ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)] // If resource may not be found
+[ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)] // For unhandled errors
 ```
 
 > Only include `[ProducesResponseType]` for status codes that are realistically possible for the given endpoint. For example, only add `StatusCodes.Status400BadRequest` if the action accepts input that could be invalid (e.g., query, route, or body parameters).
