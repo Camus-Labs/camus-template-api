@@ -4,16 +4,16 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>emc.camus.main.api</RootNamespace>
+    <AssemblyName>emc.camus.main.api</AssemblyName>
+    <PackageId>emc.camus.main.api</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
-
+  
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
+    <ProjectReference Include="../../Adapters/emc.datapersistance.postgresql/emc.camus.datapersistance.postgresql.csproj" />
+    <ProjectReference Include="../../Adapters/emc.secretstorage.dapr/emc.camus.secretstorage.dapr.csproj" />
+    <ProjectReference Include="../../Application/emc.application/emc.camus.application.csproj" />
   </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="../../Adapters/emc.datapersistance.postgresql/emc.camus.datapersistance.postgresql.csproj" />
-      <ProjectReference Include="../../Adapters/emc.secretstorage.dapr/emc.camus.secretstorage.dapr.csproj" />
-      <ProjectReference Include="../../Application/emc.application/emc.camus.application.csproj" />
-    </ItemGroup>
 
 </Project>
