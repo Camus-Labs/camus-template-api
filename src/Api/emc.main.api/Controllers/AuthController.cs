@@ -20,7 +20,6 @@ namespace emc.camus.main.api.Controllers
     [ApiVersion("2.0")]
     [ApiVersion("3.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
-    [Route("api/[controller]")]
     [Produces("application/json")]
     public class AuthController : ControllerBase
     {
