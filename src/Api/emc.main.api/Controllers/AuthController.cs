@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using Swashbuckle.AspNetCore.Annotations;
 using emc.camus.domain.Generic;
+using emc.camus.domain.Logging;
 
 namespace emc.camus.main.api.Controllers
 {
@@ -26,16 +27,19 @@ namespace emc.camus.main.api.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
+        private readonly IActivitySourceWrapper _activitySource;
 
         /// <summary>
         /// Initializes the AuthController with configuration and logger.
         /// </summary>
         /// <param name="configuration">Application configuration provider.</param>
         /// <param name="logger">Logger for AuthController.</param>
-        public AuthController(IConfiguration configuration, ILogger<AuthController> logger)
+        /// <param name="activitySource">Activity source for OpenTelemetry tracing.</param>
+        public AuthController(IConfiguration configuration, ILogger<AuthController> logger, IActivitySourceWrapper activitySource)
         {
             _logger = logger;
             _configuration = configuration;
+            _activitySource = activitySource;
         }
 
         /// <summary>
@@ -49,7 +53,7 @@ namespace emc.camus.main.api.Controllers
         )]
         [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
-        public IActionResult GetInfoV10()
+        public IActionResult GetInfoV1()
         {
             _logger.LogInformation("API info v1.0 requested.");
 
@@ -74,7 +78,7 @@ namespace emc.camus.main.api.Controllers
         )]
         [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
-        public IActionResult GetInfoV20()
+        public IActionResult GetInfoV2()
         {
             _logger.LogInformation("API info v2.0 requested.");
 
@@ -101,20 +105,31 @@ namespace emc.camus.main.api.Controllers
         )]
         [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
-        public IActionResult GetInfoV3()
+        public async Task<IActionResult> GetInfoV3()
         {
-            _logger.LogInformation("API info v3.0 requested.");
-
-            var info = new ApiInfo
+            return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfoV3", OperationType.Read, activity =>
             {
-                Name = "My Basic API",
-                Version = "3.0.0",
-                Status = "Running with API Versioning v3",
-                Features = new List<string> { "Logging", "Versioning" },
-                Timestamp = DateTime.UtcNow
-            };
+                _logger.LogInformation("API info v3.0 requested.");
 
-            return Ok(info);
+                var response = new ApiInfo
+                {
+                    Name = "My Basic API",
+                    Version = "3.0.0",
+                    Status = "Running with API Versioning v3",
+                    Features = new List<string> { "Logging", "Versioning" },
+                    Timestamp = DateTime.UtcNow
+                };
+
+                var ts = response.Timestamp is DateTime dt ? dt.ToString("o") : response.Timestamp?.ToString() ?? string.Empty;
+                _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
+                {
+                    { "features", string.Join(",", response.Features) },
+                    { "timestamp", ts },
+                    { "status", response.Status }
+                });
+
+                return Task.FromResult<IActionResult>(Ok(response));
+            });
         }
 
         /// <summary>
@@ -132,12 +147,23 @@ namespace emc.camus.main.api.Controllers
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
-        public IActionResult GetToken([FromBody] JwtTokenRequest request)
+        public async Task<IActionResult> GenerateToken([FromBody] JwtTokenRequest request)
         {
-            _logger.LogInformation("Token request received for AccessKey: {AccessKey}.", request.AccessKey);
-
-            if (request.AccessKey == "demo-key" && request.AccessSecret == "demo-secret")
+            return await _activitySource.StartActivityAndRunAsync<IActionResult>("GenerateToken", OperationType.Auth, activity =>
             {
+                _activitySource.SetRequestTags(activity, new Dictionary<string, object?>
+                {
+                    { "accessKey", request.AccessKey }
+                });
+
+                _logger.LogInformation("Token request received for AccessKey: {AccessKey}.", request.AccessKey);
+
+                if (request.AccessKey != "demo-key" || request.AccessSecret != "demo-secret")
+                {
+                    _logger.LogWarning("Invalid credentials provided for AccessKey: {AccessKey}.", request.AccessKey);
+                    throw new UnauthorizedAccessException("Invalid credentials.");
+                }
+
                 _logger.LogInformation("Valid credentials provided.");
                 var response = new JwtTokenResponse
                 {
@@ -145,11 +171,13 @@ namespace emc.camus.main.api.Controllers
                     ExpiresOn = DateTime.UtcNow.AddMinutes(30)
                 };
 
-                return Ok(response);
-            }
+                _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
+                {
+                    { "expiresOn", response.ExpiresOn.ToString("o") }
+                });
 
-            _logger.LogWarning("Invalid credentials provided for AccessKey: {AccessKey}.", request.AccessKey);
-            throw new UnauthorizedAccessException("Invalid credentials.");
+                return Task.FromResult<IActionResult>(Ok(response));
+            });
         }
 
         /// <summary>
@@ -165,11 +193,18 @@ namespace emc.camus.main.api.Controllers
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
-        public IActionResult GetUnexpectedError([FromBody] JwtTokenRequest request)
+        public async Task<IActionResult> GetUnexpectedError([FromBody] JwtTokenRequest request)
         {
-            _logger.LogInformation("Error request received for AccessKey: {AccessKey}.", request.AccessKey);
-            
-            throw new Exception("This is a test exception for error handling.", new Exception("Inner exception for testing purposes."));
+            return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetUnexpectedError", OperationType.Test, activity =>
+            {
+                _activitySource.SetRequestTags(activity, new Dictionary<string, object?>
+                {
+                    { "accessKey", request.AccessKey }
+                });
+
+                _logger.LogWarning("Invalid credentials provided for AccessKey: {AccessKey}.", request.AccessKey);
+                throw new Exception("This is a test exception for error handling.", new Exception("Inner exception for testing purposes."));
+            });
         }
     }
 }

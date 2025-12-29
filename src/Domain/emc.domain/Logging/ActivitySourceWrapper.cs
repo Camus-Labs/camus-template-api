@@ -1,0 +1,131 @@
+using System.Diagnostics;
+using System.Threading.Tasks;
+
+namespace emc.camus.domain.Logging
+{
+    public class ActivitySourceWrapper : IActivitySourceWrapper
+    {
+
+        private readonly ActivitySource _activitySource;
+
+        public ActivitySourceWrapper(ActivitySource activitySource)
+        {
+            _activitySource = activitySource ?? throw new ArgumentNullException(nameof(activitySource));
+        }
+
+        /// <summary>
+        /// Starts an activity with required standard tags: operation.type and operation.success=false.
+        /// </summary>
+        /// <param name="name">The activity name.</param>
+        /// <param name="operationType">The operation type (required).</param>
+        /// <returns>The started activity with standard tags set.</returns>
+        public Activity? StartActivity(string name, OperationType operationType)
+        {
+            var activity = _activitySource.StartActivity(name);
+            if (activity != null)
+            {
+                activity.SetTag("operation.type", operationType.ToString().ToLowerInvariant());
+                // Use standard OpenTelemetry status codes: start as UNSET
+                activity.SetTag("otel.status_code", "UNSET");
+            }
+            return activity;
+        }
+
+        /// <summary>
+        /// Sets a tag on the given activity if not null.
+        /// </summary>
+        public void SetTag(Activity? activity, string key, object? value)
+        {
+            activity?.SetTag(key, value);
+        }
+
+        /// <summary>
+        /// Sets multiple tags on the given activity from a dictionary.
+        /// </summary>
+        public void SetTags(Activity? activity, IDictionary<string, object?> tags)
+        {
+            if (activity != null && tags != null)
+            {
+                foreach (var tag in tags)
+                {
+                    activity.SetTag(tag.Key, tag.Value);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets tags on the activity, prefixing each key with 'request.'
+        /// </summary>
+        public void SetRequestTags(Activity? activity, IDictionary<string, object?> tags)
+        {
+            if (activity != null && tags != null)
+            {
+                foreach (var tag in tags)
+                {
+                    activity.SetTag($"request.{tag.Key}", tag.Value);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets tags on the activity, prefixing each key with 'response.'
+        /// </summary>
+        public void SetResponseTags(Activity? activity, IDictionary<string, object?> tags)
+        {
+            if (activity != null && tags != null)
+            {
+                foreach (var tag in tags)
+                {
+                    activity.SetTag($"response.{tag.Key}", tag.Value);
+                }
+            }
+        }
+        /// <summary>
+        /// Marks the activity as succeeded, sets operation.success = true, and adds a Succeeded event.
+        /// </summary>
+        public void ActivitySucceeded(Activity? activity)
+        {
+            if (activity == null) return;
+            // Set OpenTelemetry span status via standard tag
+            activity.SetTag("otel.status_code", "OK");
+        }
+
+        /// <summary>
+        /// Marks the activity as failed, sets status to ERROR with description, and adds a Failed event.
+        /// </summary>
+        public void ActivityFailed(Activity? activity, Exception ex)
+        {
+            if (activity == null) return;
+            activity.SetTag("otel.status_code", "ERROR");
+            activity.SetTag("otel.status_description", ex?.Message);
+            // Add an 'exception' event with attributes for better trace correlation
+            var exceptionTags = new ActivityTagsCollection
+            {
+                { "exception.type", ex?.GetType().FullName },
+                { "exception.message", ex?.Message },
+                { "exception.stacktrace", ex?.StackTrace ?? string.Empty }
+            };
+            activity.AddEvent(new ActivityEvent("exception", DateTimeOffset.UtcNow, exceptionTags));
+        }
+
+
+        /// <summary>
+        /// Starts an activity and executes the provided async function returning a value, marking success or failure automatically.
+        /// </summary>
+        public async Task<T> StartActivityAndRunAsync<T>(string name, OperationType operationType, Func<Activity?, Task<T>> func)
+        {
+            using var activity = StartActivity(name, operationType);
+            try
+            {
+                var result = await func(activity).ConfigureAwait(false);
+                ActivitySucceeded(activity);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                ActivityFailed(activity, ex);
+                throw;
+            }
+        }
+    }
+}
