@@ -16,7 +16,12 @@ string SERVICE_VERSION = Assembly.GetExecutingAssembly().GetName().Version?.ToSt
 
 // Step 0: Create logger to capture all logs and start app building
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
+    .Enrich.FromLogContext()
+    // Correlate logs with traces/spans when Activity is present
+    .Enrich.With(new emc.camus.main.api.Logging.TraceSpanEnricher())
+    // Show correlation IDs in console for easier local debugging
+    .WriteTo.Console(outputTemplate:
+        "[{Timestamp:HH:mm:ss} {Level:u3}] (trace_id={trace_id} span_id={span_id}) {Message:lj}{NewLine}{Exception}")
     .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
@@ -109,13 +114,38 @@ builder.Services.AddOpenTelemetry()
                 };
                 options.EnrichWithHttpResponse = (activity, response) =>
                 {
-                    activity.SetTag("http.route.controller", response.HttpContext.GetRouteData()?.Values["controller"]?.ToString());
-                    activity.SetTag("http.route.version", response.HttpContext.GetRouteData()?.Values["version"]?.ToString());
+                    var routeData = response.HttpContext.GetRouteData();
+                    var controller = routeData?.Values["controller"]?.ToString();
+                    if (!string.IsNullOrWhiteSpace(controller))
+                    {
+                        activity.SetTag("http.route.controller", controller);
+                    }
+
+                    var version = routeData?.Values["version"]?.ToString();
+                    if (!string.IsNullOrWhiteSpace(version))
+                    {
+                        activity.SetTag("http.route.version", version);
+                    }
                 };
             })
             .AddHttpClientInstrumentation()
             .AddConsoleExporter();
     });
+
+// Step 3: Add CORS setup with configurable policy
+builder.Services.AddCors(options =>
+{
+    var corsConfig = builder.Configuration.GetSection("CorsSettings");
+    options.AddPolicy("ClientCors", cors =>
+    {
+        cors.WithOrigins(corsConfig.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>())
+            .WithMethods(corsConfig.GetSection("AllowedMethods").Get<string[]>() ?? Array.Empty<string>())
+            .WithHeaders(corsConfig.GetSection("AllowedHeaders").Get<string[]>() ?? Array.Empty<string>())
+            .WithExposedHeaders(corsConfig.GetSection("ExposedHeaders").Get<string[]>() ?? Array.Empty<string>())
+            .AllowCredentials()
+            .SetPreflightMaxAge(TimeSpan.FromMinutes(corsConfig.GetValue<int>("PreflightMaxAgeMinutes", 60)));
+    });
+});
 
 // Step 4: Add the controllers and build the app
 builder.Services.AddControllers();
@@ -150,6 +180,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+// Apply CORS before endpoints so all responses include the proper CORS headers
+app.UseCors("ClientCors");
+// Add X-Trace-Id for all responses (success and error). Error middleware also sets it explicitly.
+app.UseMiddleware<ResponseTraceIdMiddleware>();
 app.MapControllers();
 
 // Step 9: Run the app

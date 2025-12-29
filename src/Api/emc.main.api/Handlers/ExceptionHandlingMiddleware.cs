@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
-using emc.camus.domain.Generic;
+using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
 
 namespace emc.camus.main.api.Handlers
 {
@@ -13,6 +14,7 @@ namespace emc.camus.main.api.Handlers
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+        private readonly IHostEnvironment _environment;
 
         /// <summary>
         /// ExceptionHandlingMiddleware constructor initializes the middleware with a request delegate and a logger.
@@ -20,11 +22,13 @@ namespace emc.camus.main.api.Handlers
         /// It takes a RequestDelegate that represents the next middleware in the pipeline and an ILogger for logging errors.
         /// </summary>
         /// <param name="next"></param>
-        /// <param name="logger"></param>
-        public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+    /// <param name="logger"></param>
+    /// <param name="environment">The hosting environment. Used to decide whether to include detailed error information.</param>
+    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger, IHostEnvironment environment)
         {
             _next = next;
             _logger = logger;
+            _environment = environment;
         }
 
         /// <summary>
@@ -74,18 +78,23 @@ namespace emc.camus.main.api.Handlers
                     break;
             }
 
-            _logger.LogError(exception, "An unhandled exception occurred: {ErrorMessage}", exception.Message);
+            _logger.LogError(exception, "Exception detected: {ErrorMessage}", exception.Message);
 
-            var response = new ErrorResponse
+            var showDetails = _environment?.IsDevelopment() == true;
+
+            var problem = new ProblemDetails
             {
-                StatusCode = statusCode,
-                Message = message
+                Status = statusCode,
+                Title = message,
+                // Only include detailed server message in Development to avoid leaking sensitive info
+                Detail = showDetails ? exception.Message : null,
+                Instance = context.Request?.Path.Value
             };
-
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = response.StatusCode;
-            var jsonResponse = JsonSerializer.Serialize(response);
-            return context.Response.WriteAsync(jsonResponse);
+            
+            context.Response.ContentType = "application/problem+json";
+            context.Response.StatusCode = statusCode;
+            var json = JsonSerializer.Serialize(problem);
+            return context.Response.WriteAsync(json);
         }
 
     }
