@@ -1,6 +1,9 @@
 using Serilog;
 using Serilog.Sinks.Elasticsearch;
 using Serilog.Context;
+using Serilog.Core;
+using Serilog.Events;
+using emc.camus.main.api.Logging;
 using Asp.Versioning;
 using System.Reflection;
 using Microsoft.OpenApi;
@@ -13,6 +16,7 @@ using emc.camus.domain.Logging;
 using Azure.Monitor.OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Instrumentation.Process;
+using OpenTelemetry.Exporter;
 
 // Define service name for telemetry
 string SERVICE_NAME = Assembly.GetExecutingAssembly().GetName().Name ?? "unknown-service";
@@ -22,6 +26,7 @@ string SERVICE_VERSION = Assembly.GetExecutingAssembly().GetName().Version?.ToSt
 // Step 0: Create logger to capture all logs and start app building
 Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
+    .Enrich.With(new ActivityCurrentEnricher())
     // Show correlation IDs in console for easier local debugging
     .WriteTo.Console(outputTemplate:
         "[{Timestamp:HH:mm:ss} {Level:u3}] (trace_id={trace_id} span_id={span_id}) {Message:lj}{NewLine}{Exception}")
@@ -181,7 +186,11 @@ builder.Services.AddControllers();
 // Step 5: Build App Builder
 var app = builder.Build();
 
-// Step 6: Global exception handling middleware
+// Step 6: Register X-Trace-Id header early
+// Place response header BEFORE exception handling so exception logs include correlation IDs
+app.UseMiddleware<ResponseTraceIdMiddleware>();
+
+// Step 7: Global exception handling middleware (wraps everything that follows)
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 //Step 8: Enable Swagger UI in development
@@ -210,10 +219,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 // Apply CORS before endpoints so all responses include the proper CORS headers
 app.UseCors("ClientCors");
-// Enrich Serilog logs with trace/span IDs using class-based middleware
-app.UseMiddleware<SerilogActivityEnrichmentMiddleware>();
-// Add X-Trace-Id for all responses (success and error). Error middleware also sets it explicitly.
-app.UseMiddleware<ResponseTraceIdMiddleware>();
 app.MapControllers();
 
 // Step 9: Run the app
@@ -235,6 +240,8 @@ static void ConfigureTracingExporter(
                 {
                     options.Endpoint = new Uri(endpoint);
                 }
+                // Use OTLP over gRPC (port 4317)
+                options.Protocol = OtlpExportProtocol.Grpc;
             });
             break;
 
@@ -260,6 +267,8 @@ static void ConfigureMetricsExporter(
                 {
                     options.Endpoint = new Uri(endpoint);
                 }
+                // Use OTLP over gRPC (port 4317)
+                options.Protocol = OtlpExportProtocol.Grpc;
             });
             break;
 

@@ -12,6 +12,8 @@ processors:
 exporters:
   debug:
     verbosity: detailed
+  prometheus:
+    endpoint: 0.0.0.0:8889
   # Uncomment and adjust if you run Jaeger locally
   # jaeger:
   #   endpoint: localhost:14250
@@ -33,7 +35,7 @@ service:
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug]
+      exporters: [prometheus, debug]
     logs:
       receivers: [otlp]
       processors: [batch]

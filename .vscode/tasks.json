@@ -61,17 +61,41 @@
             },
             "group": "none",
             "problemMatcher": []
+        },
+        {
+            "label": "create-docker-network",
+            "type": "shell",
+            "command": "docker network create camus-observability || true",
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "none",
+            "problemMatcher": []
+        },
+        {
+            "label": "run-otel-collector-detached",
+            "type": "shell",
+            "command": "docker rm -f camus-otel-collector || true; docker run -d --name camus-otel-collector --network camus-observability -p 4317:4317 -p 4318:4318 -p 8889:8889 -v \"${workspaceFolder}/src/Adapters/emc.observability.otel/otel-collector.yaml:/etc/otelcol/config.yaml\" otel/opentelemetry-collector-contrib:latest --config /etc/otelcol/config.yaml",
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "none",
+            "problemMatcher": []
         }
         ,
         {
-            "label": "run-otel-collector",
+            "label": "run-prometheus-detached",
             "type": "shell",
-            "command": "docker run --name camus-otel-collector --rm -p 4317:4317 -p 4318:4318 -v \"${workspaceFolder}/src/Adapters/emc.observability.otel/otel-collector.yaml:/etc/otelcol/config.yaml\" otel/opentelemetry-collector-contrib:latest --config /etc/otelcol/config.yaml",
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
+            "command": "docker rm -f camus-prometheus || true; docker run -d --name camus-prometheus --network camus-observability -p 9090:9090 -v \"${workspaceFolder}/src/Adapters/emc.observability.otel/prometheus.yml:/etc/prometheus/prometheus.yml:ro\" prom/prometheus:latest --config.file=/etc/prometheus/prometheus.yml",
+            "options": { "cwd": "${workspaceFolder}" },
             "group": "none",
             "problemMatcher": []
+        }
+        ,
+        {
+            "label": "start-observability-stack",
+            "dependsOn": [
+                "create-docker-network",
+                "run-otel-collector-detached",
+                "run-prometheus-detached"
+            ],
+            "dependsOrder": "sequence"
         }
     ]
 }
