@@ -1,0 +1,40 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+exporters:
+  debug:
+    verbosity: detailed
+  # Uncomment and adjust if you run Jaeger locally
+  # jaeger:
+  #   endpoint: localhost:14250
+  #   tls:
+  #     insecure: true
+  # Uncomment and adjust if you run Zipkin locally
+  # zipkin:
+  #   endpoint: http://localhost:9411/api/v2/spans
+  # Example Azure Monitor (requires contrib build and connection string)
+  # azuremonitor:
+  #   connection_string: "InstrumentationKey=00000000-0000-0000-0000-000000000000"
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]

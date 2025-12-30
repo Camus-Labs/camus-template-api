@@ -62,5 +62,16 @@
             "group": "none",
             "problemMatcher": []
         }
+        ,
+        {
+            "label": "run-otel-collector",
+            "type": "shell",
+            "command": "docker run --name camus-otel-collector --rm -p 4317:4317 -p 4318:4318 -v \"${workspaceFolder}/src/Adapters/emc.observability.otel/otel-collector.yaml:/etc/otelcol/config.yaml\" otel/opentelemetry-collector-contrib:latest --config /etc/otelcol/config.yaml",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "none",
+            "problemMatcher": []
+        }
     ]
 }

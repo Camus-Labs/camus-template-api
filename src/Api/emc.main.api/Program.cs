@@ -1,4 +1,6 @@
 using Serilog;
+using Serilog.Sinks.Elasticsearch;
+using Serilog.Context;
 using Asp.Versioning;
 using System.Reflection;
 using Microsoft.OpenApi;
@@ -8,6 +10,9 @@ using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using emc.camus.domain.Logging;
+using Azure.Monitor.OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Instrumentation.Process;
 
 // Define service name for telemetry
 string SERVICE_NAME = Assembly.GetExecutingAssembly().GetName().Name ?? "unknown-service";
@@ -17,8 +22,6 @@ string SERVICE_VERSION = Assembly.GetExecutingAssembly().GetName().Version?.ToSt
 // Step 0: Create logger to capture all logs and start app building
 Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
-    // Correlate logs with traces/spans when Activity is present
-    .Enrich.With(new emc.camus.main.api.Logging.TraceSpanEnricher())
     // Show correlation IDs in console for easier local debugging
     .WriteTo.Console(outputTemplate:
         "[{Timestamp:HH:mm:ss} {Level:u3}] (trace_id={trace_id} span_id={span_id}) {Message:lj}{NewLine}{Exception}")
@@ -76,7 +79,11 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // Step 2.1: Add observability with OpenTelemetry
-var activitySource = new ActivitySource(SERVICE_NAME);
+var openTelemetryConfig = builder.Configuration.GetSection("OpenTelemetry");
+var selectedTracingExporter = openTelemetryConfig["Tracing:TracingExporter"] ?? "console";
+var selectedMetricsExporter = openTelemetryConfig["Metrics:MetricsExporter"] ?? "none";
+
+var activitySource = new ActivitySource(SERVICE_NAME, SERVICE_VERSION);
 builder.Services.AddSingleton(activitySource);
 builder.Services.AddSingleton<IActivitySourceWrapper, ActivitySourceWrapper>();
 
@@ -128,8 +135,29 @@ builder.Services.AddOpenTelemetry()
                     }
                 };
             })
+            .AddHttpClientInstrumentation();
+        ConfigureTracingExporter(tracerProviderBuilder, selectedTracingExporter, openTelemetryConfig);
+    })
+    .WithMetrics(meterProviderBuilder =>
+    {
+        meterProviderBuilder
+            .SetResourceBuilder(
+                ResourceBuilder.CreateDefault()
+                    .AddService(
+                        serviceName: SERVICE_NAME,
+                        serviceVersion: SERVICE_VERSION
+                    )
+                    .AddAttributes(
+                        [
+                            new KeyValuePair<string, object>("deployment.environment", builder.Environment.EnvironmentName ?? "unknown")
+                        ]
+                    )
+            )
+            .AddAspNetCoreInstrumentation()
             .AddHttpClientInstrumentation()
-            .AddConsoleExporter();
+            .AddRuntimeInstrumentation()
+            .AddProcessInstrumentation();
+        ConfigureMetricsExporter(meterProviderBuilder, selectedMetricsExporter, openTelemetryConfig);
     });
 
 // Step 3: Add CORS setup with configurable policy
@@ -182,9 +210,65 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 // Apply CORS before endpoints so all responses include the proper CORS headers
 app.UseCors("ClientCors");
+// Enrich Serilog logs with trace/span IDs using class-based middleware
+app.UseMiddleware<SerilogActivityEnrichmentMiddleware>();
 // Add X-Trace-Id for all responses (success and error). Error middleware also sets it explicitly.
 app.UseMiddleware<ResponseTraceIdMiddleware>();
 app.MapControllers();
 
 // Step 9: Run the app
 await app.RunAsync();
+
+// Helper methods to reduce cognitive complexity while maintaining exact functionality
+static void ConfigureTracingExporter(
+    TracerProviderBuilder tracerProviderBuilder,
+    string selectedExporter,
+    IConfiguration openTelemetryConfig)
+{
+    switch (selectedExporter.ToLowerInvariant())
+    {
+        case "otlp":
+            tracerProviderBuilder.AddOtlpExporter(options =>
+            {
+                var endpoint = openTelemetryConfig["Tracing:OtlpEndpoint"];
+                if (!string.IsNullOrWhiteSpace(endpoint))
+                {
+                    options.Endpoint = new Uri(endpoint);
+                }
+            });
+            break;
+
+        default:
+            tracerProviderBuilder.AddConsoleExporter();
+            break;
+    }
+}
+
+
+static void ConfigureMetricsExporter(
+    MeterProviderBuilder meterProviderBuilder,
+    string selectedExporter,
+    IConfiguration openTelemetryConfig)
+{
+    switch (selectedExporter.ToLowerInvariant())
+    {
+        case "otlp":
+            meterProviderBuilder.AddOtlpExporter(options =>
+            {
+                var endpoint = openTelemetryConfig["Metrics:OtlpEndpoint"];
+                if (!string.IsNullOrWhiteSpace(endpoint))
+                {
+                    options.Endpoint = new Uri(endpoint);
+                }
+            });
+            break;
+
+        case "console":
+            meterProviderBuilder.AddConsoleExporter();
+            break;
+
+        default:
+            // No provider
+            break;
+    }
+}
