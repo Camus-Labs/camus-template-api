@@ -1,21 +1,13 @@
-using Serilog;
-using Serilog.Sinks.Elasticsearch;
-using Serilog.Context;
-using Serilog.Core;
-using Serilog.Events;
-using emc.camus.main.api.Logging;
+using emc.camus.observability.otel.Logging;
 using Asp.Versioning;
 using System.Reflection;
 using Microsoft.OpenApi;
 using emc.camus.main.api.Handlers;
 using System.Diagnostics;
-using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using emc.camus.domain.Logging;
-using Azure.Monitor.OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
-using OpenTelemetry.Instrumentation.Process;
 using OpenTelemetry.Exporter;
 
 // Define service name for telemetry
@@ -23,18 +15,16 @@ string SERVICE_NAME = Assembly.GetExecutingAssembly().GetName().Name ?? "unknown
 // Get the service version from the assembly (matches <Version> in csproj)
 string SERVICE_VERSION = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown-version";
 
-// Step 0: Create logger to capture all logs and start app building
-Log.Logger = new LoggerConfiguration()
-    .Enrich.FromLogContext()
-    .Enrich.With(new ActivityCurrentEnricher())
-    // Show correlation IDs in console for easier local debugging
-    .WriteTo.Console(outputTemplate:
-        "[{Timestamp:HH:mm:ss} {Level:u3}] (trace_id={trace_id} span_id={span_id}) {Message:lj}{NewLine}{Exception}")
-    .CreateLogger();
-
+// Step 0: Bootstrap logger (console only) to capture early logs
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.UseSerilog();
+builder.Host.UseEmcSerilog(
+    builder.Configuration,
+    builder.Environment,
+    SERVICE_NAME,
+    SERVICE_VERSION
+);
+
 
 // Step 1: Add API versioning
 builder.Services.AddApiVersioning(options =>
@@ -85,8 +75,8 @@ builder.Services.AddSwaggerGen(options =>
 
 // Step 2.1: Add observability with OpenTelemetry
 var openTelemetryConfig = builder.Configuration.GetSection("OpenTelemetry");
-var selectedTracingExporter = openTelemetryConfig["Tracing:TracingExporter"] ?? "console";
-var selectedMetricsExporter = openTelemetryConfig["Metrics:MetricsExporter"] ?? "none";
+var selectedTracingExporter = openTelemetryConfig["Tracing:Exporter"] ?? "none";
+var selectedMetricsExporter = openTelemetryConfig["Metrics:Exporter"] ?? "none";
 
 var activitySource = new ActivitySource(SERVICE_NAME, SERVICE_VERSION);
 builder.Services.AddSingleton(activitySource);
@@ -245,8 +235,12 @@ static void ConfigureTracingExporter(
             });
             break;
 
-        default:
+        case "console":
             tracerProviderBuilder.AddConsoleExporter();
+            break;
+
+        default:
+            // No provider
             break;
     }
 }

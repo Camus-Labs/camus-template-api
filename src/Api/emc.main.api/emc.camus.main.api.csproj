@@ -12,11 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- LOGGING -->
-    <PackageReference Include="Serilog" Version="4.3.0" />
-    <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
-    <PackageReference Include="Serilog.Sinks.Elasticsearch" Version="10.0.0" />
     <!-- API VERSIONING -->
     <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
     <!-- SWAGGER/DOCUMENTATION -->
@@ -42,6 +37,7 @@
     <ProjectReference Include="../../Adapters/emc.datapersistance.postgresql/emc.camus.datapersistance.postgresql.csproj" />
     <ProjectReference Include="../../Adapters/emc.secretstorage.dapr/emc.camus.secretstorage.dapr.csproj" />
     <ProjectReference Include="../../Application/emc.application/emc.camus.application.csproj" />
+    <ProjectReference Include="../../Adapters/emc.observability.otel/emc.camus.observability.otel.csproj" />
   </ItemGroup>
 
 </Project>

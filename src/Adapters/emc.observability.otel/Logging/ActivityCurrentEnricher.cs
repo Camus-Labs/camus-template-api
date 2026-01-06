@@ -2,7 +2,7 @@ using System.Diagnostics;
 using Serilog.Core;
 using Serilog.Events;
 
-namespace emc.camus.main.api.Logging
+namespace emc.camus.observability.otel.Logging
 {
     /// <summary>
     /// Per-log enricher that reads Activity.Current at log event time and adds
