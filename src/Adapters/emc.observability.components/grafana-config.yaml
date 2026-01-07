@@ -16,3 +16,11 @@ datasources:
     access: proxy
     url: http://camus-jaeger:16686
     jsonData: {}
+
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://camus-loki:3100
+    jsonData:
+      maxLines: 1000

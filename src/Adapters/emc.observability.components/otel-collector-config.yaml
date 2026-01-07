@@ -40,6 +40,12 @@ exporters:
     endpoint: camus-jaeger:4317
     tls:
       insecure: true
+  otlphttp/loki:
+    # Loki ingests OTLP logs at /otlp/v1/logs
+    logs_endpoint: http://camus-loki:3100/otlp/v1/logs
+    compression: gzip
+    tls:
+      insecure: true
       
 service:
   pipelines:
@@ -54,4 +60,4 @@ service:
     logs:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [debug]
+      exporters: [otlphttp/loki, debug]
