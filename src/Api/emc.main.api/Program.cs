@@ -1,32 +1,32 @@
-using emc.camus.observability.otel.Logging;
+using emc.camus.observability.otel;
 using Asp.Versioning;
 using System.Reflection;
 using Microsoft.OpenApi;
 using emc.camus.main.api.Handlers;
 using System.Diagnostics;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 using emc.camus.domain.Logging;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Exporter;
 
-// Define service name for telemetry
-string SERVICE_NAME = Assembly.GetExecutingAssembly().GetName().Name ?? "unknown-service";
-// Get the service version from the assembly (matches <Version> in csproj)
-string SERVICE_VERSION = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown-version";
-
-// Step 0: Bootstrap logger (console only) to capture early logs
+// Step 0: Define WebApplicationBuilder and settings
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.UseEmcSerilog(
-    builder.Configuration,
-    builder.Environment,
-    SERVICE_NAME,
-    SERVICE_VERSION
-);
+// Define service name for telemetry
+string SERVICE_NAME = Assembly.GetExecutingAssembly().GetName().Name ?? "unknown-service-name";
+// Get the service version from the assembly (matches <Version> in csproj)
+string SERVICE_VERSION = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown-service-version";
+// Define a consistent instance id once and pass it to the adapter
+string INSTANCE_ID = $"{Environment.MachineName}-{Environment.ProcessId}";
+// Define environment name once for consistent resource attributes
+string ENV_NAME = builder.Environment.EnvironmentName ?? "unknown-environment";
 
+// Step 1: Configure logging + OpenTelemetry via adapter (with instance id and env name)
+builder.ConfigureCamusObservability(SERVICE_NAME, SERVICE_VERSION, INSTANCE_ID, ENV_NAME);
 
-// Step 1: Add API versioning
+// Step 2: Add ActivitySource for manual tracing
+var activitySource = new ActivitySource(SERVICE_NAME, SERVICE_VERSION);
+builder.Services.AddSingleton(activitySource);
+builder.Services.AddSingleton<IActivitySourceWrapper, ActivitySourceWrapper>();
+
+// Step 3: Add API versioning
 builder.Services.AddApiVersioning(options =>
 {
     options.DefaultApiVersion = new ApiVersion(1, 0);
@@ -42,7 +42,7 @@ builder.Services.AddApiVersioning(options =>
     options.SubstituteApiVersionInUrl = true;
 });
 
-// Step 2: Configure Swagger with versioning support
+// Step 4: Configure Swagger with versioning support
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
@@ -73,89 +73,7 @@ builder.Services.AddSwaggerGen(options =>
     options.EnableAnnotations();
 });
 
-// Step 2.1: Add observability with OpenTelemetry
-var openTelemetryConfig = builder.Configuration.GetSection("OpenTelemetry");
-var selectedTracingExporter = openTelemetryConfig["Tracing:Exporter"] ?? "none";
-var selectedMetricsExporter = openTelemetryConfig["Metrics:Exporter"] ?? "none";
-
-var activitySource = new ActivitySource(SERVICE_NAME, SERVICE_VERSION);
-builder.Services.AddSingleton(activitySource);
-builder.Services.AddSingleton<IActivitySourceWrapper, ActivitySourceWrapper>();
-
-builder.Services.AddOpenTelemetry()
-    .WithTracing(tracerProviderBuilder =>
-    {
-        tracerProviderBuilder
-            .SetResourceBuilder(
-                ResourceBuilder.CreateDefault()
-                    .AddService(
-                        serviceName: SERVICE_NAME,
-                        serviceVersion: SERVICE_VERSION
-                    )
-                    .AddAttributes(
-                        [
-                            new KeyValuePair<string, object>("deployment.environment", builder.Environment.EnvironmentName ?? "unknown")
-                        ]
-                    )
-            )
-            .AddAspNetCoreInstrumentation(options =>
-            {
-                options.RecordException = true;
-                options.EnrichWithHttpRequest = (activity, request) =>
-                {
-                    // Always record authentication status as a boolean (true/false)
-                    var isAuthenticated = request.HttpContext.User?.Identity?.IsAuthenticated ?? false;
-                    activity.SetTag("enduser.authenticated", isAuthenticated);
-
-                    // Add end-user identity only if available (avoid empty/whitespace)
-                    var endUser = request.HttpContext.User?.Identity?.Name;
-                    if (!string.IsNullOrWhiteSpace(endUser))
-                    {
-                        activity.SetTag("enduser.id", endUser);
-                    }
-                };
-                options.EnrichWithHttpResponse = (activity, response) =>
-                {
-                    var routeData = response.HttpContext.GetRouteData();
-                    var controller = routeData?.Values["controller"]?.ToString();
-                    if (!string.IsNullOrWhiteSpace(controller))
-                    {
-                        activity.SetTag("http.route.controller", controller);
-                    }
-
-                    var version = routeData?.Values["version"]?.ToString();
-                    if (!string.IsNullOrWhiteSpace(version))
-                    {
-                        activity.SetTag("http.route.version", version);
-                    }
-                };
-            })
-            .AddHttpClientInstrumentation();
-        ConfigureTracingExporter(tracerProviderBuilder, selectedTracingExporter, openTelemetryConfig);
-    })
-    .WithMetrics(meterProviderBuilder =>
-    {
-        meterProviderBuilder
-            .SetResourceBuilder(
-                ResourceBuilder.CreateDefault()
-                    .AddService(
-                        serviceName: SERVICE_NAME,
-                        serviceVersion: SERVICE_VERSION
-                    )
-                    .AddAttributes(
-                        [
-                            new KeyValuePair<string, object>("deployment.environment", builder.Environment.EnvironmentName ?? "unknown")
-                        ]
-                    )
-            )
-            .AddAspNetCoreInstrumentation()
-            .AddHttpClientInstrumentation()
-            .AddRuntimeInstrumentation()
-            .AddProcessInstrumentation();
-        ConfigureMetricsExporter(meterProviderBuilder, selectedMetricsExporter, openTelemetryConfig);
-    });
-
-// Step 3: Add CORS setup with configurable policy
+// Step 5: Add CORS setup with configurable policy
 builder.Services.AddCors(options =>
 {
     var corsConfig = builder.Configuration.GetSection("CorsSettings");
@@ -170,20 +88,20 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Step 4: Add the controllers and build the app
+// Step 6: Add the controllers and build the app
 builder.Services.AddControllers();
 
-// Step 5: Build App Builder
+// Step 7: Build App Builder
 var app = builder.Build();
 
-// Step 6: Register X-Trace-Id header early
+// Step 8: Register X-Trace-Id header early
 // Place response header BEFORE exception handling so exception logs include correlation IDs
 app.UseMiddleware<ResponseTraceIdMiddleware>();
 
-// Step 7: Global exception handling middleware (wraps everything that follows)
+// Step 9: Global exception handling middleware (wraps everything that follows)
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-//Step 8: Enable Swagger UI in development
+//Step 10: Enable Swagger UI in development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -211,67 +129,5 @@ app.UseHttpsRedirection();
 app.UseCors("ClientCors");
 app.MapControllers();
 
-// Step 9: Run the app
+// Step 11: Run the app
 await app.RunAsync();
-
-// Helper methods to reduce cognitive complexity while maintaining exact functionality
-static void ConfigureTracingExporter(
-    TracerProviderBuilder tracerProviderBuilder,
-    string selectedExporter,
-    IConfiguration openTelemetryConfig)
-{
-    switch (selectedExporter.ToLowerInvariant())
-    {
-        case "otlp":
-            tracerProviderBuilder.AddOtlpExporter(options =>
-            {
-                var endpoint = openTelemetryConfig["Tracing:OtlpEndpoint"];
-                if (!string.IsNullOrWhiteSpace(endpoint))
-                {
-                    options.Endpoint = new Uri(endpoint);
-                }
-                // Use OTLP over gRPC (port 4317)
-                options.Protocol = OtlpExportProtocol.Grpc;
-            });
-            break;
-
-        case "console":
-            tracerProviderBuilder.AddConsoleExporter();
-            break;
-
-        default:
-            // No provider
-            break;
-    }
-}
-
-
-static void ConfigureMetricsExporter(
-    MeterProviderBuilder meterProviderBuilder,
-    string selectedExporter,
-    IConfiguration openTelemetryConfig)
-{
-    switch (selectedExporter.ToLowerInvariant())
-    {
-        case "otlp":
-            meterProviderBuilder.AddOtlpExporter(options =>
-            {
-                var endpoint = openTelemetryConfig["Metrics:OtlpEndpoint"];
-                if (!string.IsNullOrWhiteSpace(endpoint))
-                {
-                    options.Endpoint = new Uri(endpoint);
-                }
-                // Use OTLP over gRPC (port 4317)
-                options.Protocol = OtlpExportProtocol.Grpc;
-            });
-            break;
-
-        case "console":
-            meterProviderBuilder.AddConsoleExporter();
-            break;
-
-        default:
-            // No provider
-            break;
-    }
-}
