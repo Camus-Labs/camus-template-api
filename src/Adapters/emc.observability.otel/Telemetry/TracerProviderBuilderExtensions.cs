@@ -74,6 +74,13 @@ namespace emc.camus.observability.otel.Telemetry
             });
         }
         
+        /// <summary>
+        /// Configures the tracing exporter for OpenTelemetry using Camus conventions.
+        /// Supported exporters: OTLP (default), Console.
+        /// </summary>
+        /// <param name="builder">The tracing provider builder.</param>
+        /// <param name="configuration">Application configuration (expects OpenTelemetry:Tracing section).</param>
+        /// <returns>The configured tracing provider builder.</returns>
         public static TracerProviderBuilder ConfigureTracingExporter(
             this TracerProviderBuilder builder, 
             IConfiguration configuration)
