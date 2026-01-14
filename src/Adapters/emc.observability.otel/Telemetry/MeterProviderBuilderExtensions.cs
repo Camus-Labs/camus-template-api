@@ -8,9 +8,21 @@ using Microsoft.Extensions.Hosting;
 
 namespace emc.camus.observability.otel.Telemetry
 {
+    /// <summary>
+    /// Extension methods for configuring OpenTelemetry metrics provider using Camus conventions.
+    /// </summary>
     public static class MeterProviderBuilderExtensions
     {
-         public static MeterProviderBuilder UseCamusResource(
+        /// <summary>
+        /// Sets resource attributes for the metrics provider using Camus conventions.
+        /// </summary>
+        /// <param name="builder">The metrics provider builder.</param>
+        /// <param name="serviceName">Logical service name for resource attributes.</param>
+        /// <param name="serviceVersion">Service version for resource attributes.</param>
+        /// <param name="instanceId">Instance identifier for resource attributes.</param>
+        /// <param name="environmentName">Environment name (e.g., Development, Production).</param>
+        /// <returns>The configured metrics provider builder.</returns>
+        public static MeterProviderBuilder UseCamusResource(
             this MeterProviderBuilder builder, 
             string serviceName, 
             string serviceVersion,  
@@ -21,6 +33,13 @@ namespace emc.camus.observability.otel.Telemetry
             return builder;
         }
 
+        /// <summary>
+        /// Configures the metrics exporter for OpenTelemetry using Camus conventions.
+        /// Supported exporters: OTLP (default), Console.
+        /// </summary>
+        /// <param name="builder">The metrics provider builder.</param>
+        /// <param name="configuration">Application configuration (expects OpenTelemetry:Metrics section).</param>
+        /// <returns>The configured metrics provider builder.</returns>
         public static MeterProviderBuilder ConfigureCamusMetricsExporter(
             this MeterProviderBuilder builder, 
             IConfiguration configuration)

@@ -8,8 +8,17 @@ using Serilog.Sinks.OpenTelemetry;
 
 namespace emc.camus.observability.otel.Logging
 {
+    /// <summary>
+    /// Extension methods for configuring Serilog loggers with Camus observability conventions.
+    /// Includes enrichers, console logging, and OpenTelemetry log export.
+    /// </summary>
     public static class LoggerConfigurationExtensions
     {
+        /// <summary>
+        /// Adds default enrichers to the Serilog logger configuration, including log context and activity enrichment.
+        /// </summary>
+        /// <param name="loggerConfiguration">The Serilog logger configuration.</param>
+        /// <returns>The updated logger configuration.</returns>
         public static LoggerConfiguration ApplyDefaultEnrichers(
             this LoggerConfiguration loggerConfiguration)
         {
@@ -18,6 +27,12 @@ namespace emc.camus.observability.otel.Logging
                 .Enrich.With(new ActivityCurrentEnricher());
         }
         
+        /// <summary>
+        /// Configures Serilog to write logs to the console. Intended for development and debugging.
+        /// </summary>
+        /// <param name="loggerConfiguration">The Serilog logger configuration.</param>
+        /// <param name="configuration">Application configuration (expects Logging:Console section).</param>
+        /// <returns>The updated logger configuration.</returns>
         public static LoggerConfiguration WriteConsoleLogging(
             this LoggerConfiguration loggerConfiguration,
             IConfiguration configuration)
@@ -38,6 +53,17 @@ namespace emc.camus.observability.otel.Logging
             return configured;
         }
 
+        /// <summary>
+        /// Configures Serilog to export logs to OpenTelemetry using the OTLP protocol.
+        /// The collector can route logs to Loki or other supported backends.
+        /// </summary>
+        /// <param name="loggerConfiguration">The Serilog logger configuration.</param>
+        /// <param name="configuration">Application configuration (expects OpenTelemetry:Logs section).</param>
+        /// <param name="serviceName">Logical service name for resource attributes.</param>
+        /// <param name="serviceVersion">Service version for resource attributes.</param>
+        /// <param name="instanceId">Instance identifier for resource attributes.</param>
+        /// <param name="environmentName">Environment name (e.g., Development, Production).</param>
+        /// <returns>The updated logger configuration.</returns>
         public static LoggerConfiguration WriteLogsToOpenTelemetry(
             this LoggerConfiguration loggerConfiguration,
             IConfiguration configuration,

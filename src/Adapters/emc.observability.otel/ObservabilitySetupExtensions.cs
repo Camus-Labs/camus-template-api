@@ -6,6 +6,9 @@ using emc.camus.observability.otel.Telemetry;
 
 namespace emc.camus.observability.otel
 {
+    /// <summary>
+    /// Extension methods for configuring Camus observability (logging, tracing, metrics) in a .NET application.
+    /// </summary>
     public static class ObservabilitySetupExtensions
     {
         private const string DefaultServiceName = "unknown-service-name";
@@ -13,6 +16,16 @@ namespace emc.camus.observability.otel
         private const string DefaultEnvironmentName = "unknown-environment";
         private const string DefaultInstanceId = "unknown-instance-id";
 
+        /// <summary>
+        /// Configures Camus observability for the application, including logging (Serilog), tracing, and metrics (OpenTelemetry).
+        /// Sets up resource attributes, exporters, and ensures logs are flushed on shutdown.
+        /// </summary>
+        /// <param name="builder">The WebApplicationBuilder to configure.</param>
+        /// <param name="serviceName">Logical service name for resource attributes.</param>
+        /// <param name="serviceVersion">Service version for resource attributes.</param>
+        /// <param name="instanceId">Instance identifier for resource attributes.</param>
+        /// <param name="environmentName">Environment name (e.g., Development, Production).</param>
+        /// <returns>The configured WebApplicationBuilder.</returns>
         public static WebApplicationBuilder ConfigureCamusObservability(
             this WebApplicationBuilder builder,
             string serviceName,
@@ -20,7 +33,6 @@ namespace emc.camus.observability.otel
             string instanceId,
             string environmentName)
         {
-
             var configuration = builder.Configuration;
             var normalizedServiceName = string.IsNullOrWhiteSpace(serviceName) ? DefaultServiceName : serviceName.Trim();
             var normalizedServiceVersion = string.IsNullOrWhiteSpace(serviceVersion) ? DefaultServiceVersion : serviceVersion.Trim();

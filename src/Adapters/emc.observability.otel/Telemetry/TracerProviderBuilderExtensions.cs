@@ -9,8 +9,20 @@ using OpenTelemetry.Trace;
 
 namespace emc.camus.observability.otel.Telemetry
 {
+    /// <summary>
+    /// Extension methods for configuring OpenTelemetry tracing provider using Camus conventions.
+    /// </summary>
     public static class TracerProviderBuilderExtensions
     {
+        /// <summary>
+        /// Sets resource attributes for the tracing provider using Camus conventions.
+        /// </summary>
+        /// <param name="builder">The tracing provider builder.</param>
+        /// <param name="serviceName">Logical service name for resource attributes.</param>
+        /// <param name="serviceVersion">Service version for resource attributes.</param>
+        /// <param name="instanceId">Instance identifier for resource attributes.</param>
+        /// <param name="environmentName">Environment name (e.g., Development, Production).</param>
+        /// <returns>The configured tracing provider builder.</returns>
         public static TracerProviderBuilder UseCamusResource(
             this TracerProviderBuilder builder, 
             string serviceName, 
@@ -22,6 +34,11 @@ namespace emc.camus.observability.otel.Telemetry
             return builder;
         }
         
+        /// <summary>
+        /// Adds ASP.NET Core instrumentation to the tracing provider, including enrichment for authentication and routing.
+        /// </summary>
+        /// <param name="builder">The tracing provider builder.</param>
+        /// <returns>The configured tracing provider builder.</returns>
         public static TracerProviderBuilder AddCamusAspNetCoreInstrumentation(
             this TracerProviderBuilder builder)
         {
