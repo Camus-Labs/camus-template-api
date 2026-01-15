@@ -1,0 +1,35 @@
+# Development Dockerfile - optimized for hot reload and debugging
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS dev
+
+# Install debugger
+RUN apt-get update && apt-get install -y unzip && \
+    curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
+
+WORKDIR /src
+
+# Copy solution and project files for restore
+COPY src/CamusApp.sln ./
+COPY src/Api/emc.main.api/*.csproj ./Api/emc.main.api/
+COPY src/Domain/emc.domain/*.csproj ./Domain/emc.domain/
+COPY src/Application/emc.application/*.csproj ./Application/emc.application/
+COPY src/Adapters/emc.datapersistance.postgresql/*.csproj ./Adapters/emc.datapersistance.postgresql/
+COPY src/Adapters/emc.observability.otel/*.csproj ./Adapters/emc.observability.otel/
+COPY src/Adapters/emc.secretstorage.dapr/*.csproj ./Adapters/emc.secretstorage.dapr/
+
+# Restore dependencies
+RUN dotnet restore ./Api/emc.main.api/emc.camus.main.api.csproj
+
+# Source code will be mounted as volume for hot reload
+# No need to COPY source here
+
+WORKDIR /src/Api/emc.main.api
+
+# Environment variables for development
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENV ASPNETCORE_URLS=http://+:80
+
+# Expose ports
+EXPOSE 80
+
+# Run with hot reload
+ENTRYPOINT ["dotnet", "watch", "run", "--non-interactive", "--no-launch-profile"]

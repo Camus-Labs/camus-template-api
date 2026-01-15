@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # Main API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: camus-api-prod
+    ports:
+      - "80:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      # OpenTelemetry configuration
+      - OpenTelemetry__Tracing__Exporter=otlp
+      - OpenTelemetry__Tracing__OtlpEndpoint=http://otel-collector:4317
+      - OpenTelemetry__Metrics__Exporter=otlp
+      - OpenTelemetry__Metrics__OtlpEndpoint=http://otel-collector:4317
+      - OpenTelemetry__Logs__Exporter=otlp
+      - OpenTelemetry__Logs__OtlpEndpoint=http://otel-collector:4317
+      # Database connection
+      - ConnectionStrings__DefaultConnection=${DATABASE_CONNECTION_STRING}
+    depends_on:
+      - otel-collector
+    networks:
+      - camus-prod
+    restart: unless-stopped
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # OpenTelemetry Collector (Sidecar pattern)
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: camus-otel-collector-prod
+    command: ["--config=/etc/otelcol/config.yaml"]
+    ports:
+      - "4317:4317"   # OTLP gRPC (keep internal if using reverse proxy)
+    environment:
+      # Azure Monitor connection string from environment or Key Vault
+      - APPLICATIONINSIGHTS_CONNECTION_STRING=${APPLICATIONINSIGHTS_CONNECTION_STRING}
+    volumes:
+      - ./src/Adapters/emc.observability.components/otel-collector-config.prod.yaml:/etc/otelcol/config.yaml:ro
+    networks:
+      - camus-prod
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+networks:
+  camus-prod:
+    driver: bridge
+
+# Note: In real production:
+# - Use Azure Database for PostgreSQL (not container)
+# - Use Azure Monitor (not Loki/Jaeger/Prometheus containers)
+# - Use Azure Managed Grafana (not container)
+# - Deploy to Azure Container Apps, AKS, or App Service
+# - Use Azure Container Registry for images
+# - Configure Azure Front Door or Application Gateway for ingress

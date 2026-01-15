@@ -1,0 +1,66 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    limit_mib: 512
+    spike_limit_mib: 256
+    check_interval: 5s
+  tail_sampling:
+    decision_wait: 5s
+    num_traces: 10000
+    expected_new_traces_per_sec: 200
+    policies:
+      - name: errors
+        type: status_code
+        status_code:
+          status_codes:
+            - ERROR
+      - name: high-latency
+        type: latency
+        latency:
+          threshold_ms: 500
+      - name: baseline
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+
+exporters:
+  # Azure Monitor exporter
+  azuremonitor:
+    # Connection string from environment variable or Azure Key Vault
+    # Format: InstrumentationKey=xxx;IngestionEndpoint=https://xxx.in.applicationinsights.azure.com/
+    connection_string: "${APPLICATIONINSIGHTS_CONNECTION_STRING}"
+    
+  # Debug exporter for troubleshooting
+  debug:
+    verbosity: basic
+    sampling_initial: 10
+    sampling_thereafter: 50
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, tail_sampling, batch]
+      exporters: [azuremonitor, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [azuremonitor, debug]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [azuremonitor, debug]
+
+  telemetry:
+    logs:
+      level: info

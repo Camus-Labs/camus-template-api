@@ -63,69 +63,39 @@
             "problemMatcher": []
         },
         {
-            "label": "create-docker-network",
+            "label": "docker-compose-up-dev",
             "type": "shell",
-            "command": "docker network create camus-observability || true",
-            "options": { "cwd": "${workspaceFolder}" },
+            "command": "docker-compose -f docker-compose.dev.yml up --build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "none",
+            "problemMatcher": [],
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "docker-compose-up-observability",
+            "type": "shell",
+            "command": "docker-compose -f docker-compose.dev.yml up postgres otel-collector jaeger loki prometheus grafana -d",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "group": "none",
             "problemMatcher": []
         },
         {
-            "label": "run-otel-collector-detached",
+            "label": "docker-compose-down",
             "type": "shell",
-            "command": "docker inspect -f '{{.State.Running}}' camus-otel-collector >/dev/null 2>&1 && echo 'camus-otel-collector is running' || ( docker ps -a --format '{{.Names}}' | grep -qx 'camus-otel-collector' && docker start camus-otel-collector || docker run -d --name camus-otel-collector --network camus-observability -p 4317:4317 -p 4318:4318 -p 8889:8889 -v \"${workspaceFolder}/src/Adapters/emc.observability.components/otel-collector-config.yaml:/etc/otelcol/config.yaml\" otel/opentelemetry-collector-contrib:latest --config /etc/otelcol/config.yaml )",
-            "options": { "cwd": "${workspaceFolder}" },
+            "command": "docker-compose -f docker-compose.dev.yml down",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "group": "none",
             "problemMatcher": []
-        }
-        ,
-        {
-            "label": "run-prometheus-detached",
-            "type": "shell",
-            "command": "docker inspect -f '{{.State.Running}}' camus-prometheus >/dev/null 2>&1 && echo 'camus-prometheus is running' || ( docker ps -a --format '{{.Names}}' | grep -qx 'camus-prometheus' && docker start camus-prometheus || docker run -d --name camus-prometheus --network camus-observability -p 9090:9090 -v \"${workspaceFolder}/src/Adapters/emc.observability.components/prometheus-config.yml:/etc/prometheus/prometheus.yml:ro\" prom/prometheus:latest --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.retention.time=1d --storage.tsdb.retention.size=1GB )",
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": "none",
-            "problemMatcher": []
-        }
-        ,
-        {
-            "label": "run-jaeger-detached",
-            "type": "shell",
-            "command": "docker inspect -f '{{.State.Running}}' camus-jaeger >/dev/null 2>&1 && echo 'camus-jaeger is running' || ( docker ps -a --format '{{.Names}}' | grep -qx 'camus-jaeger' && docker start camus-jaeger || docker run -d --name camus-jaeger --network camus-observability -p 16686:16686 -p 14250:14250 -e SPAN_STORAGE_TYPE=memory -e MEMORY_MAX_TRACES=500000 --memory=1g --memory-swap=1g jaegertracing/all-in-one:latest )",
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": "none",
-            "problemMatcher": []
-        }
-        ,
-        {
-            "label": "run-grafana-detached",
-            "type": "shell",
-            "command": "docker inspect -f '{{.State.Running}}' camus-grafana >/dev/null 2>&1 && echo 'camus-grafana is running' || ( docker ps -a --format '{{.Names}}' | grep -qx 'camus-grafana' && docker start camus-grafana || docker run -d --name camus-grafana --network camus-observability -p 3000:3000 -e GF_USERS_DEFAULT_THEME=dark -e GF_AUTH_ANONYMOUS_ENABLED=true -e GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer -v \"${workspaceFolder}/src/Adapters/emc.observability.components/grafana-config.yaml:/etc/grafana/provisioning/datasources/grafana-config.yaml:ro\" grafana/grafana:latest )",
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": "none",
-            "problemMatcher": []
-        }
-        ,
-        {
-            "label": "run-loki-detached",
-            "type": "shell",
-            "command": "docker inspect -f '{{.State.Running}}' camus-loki >/dev/null 2>&1 && echo 'camus-loki is running' || ( docker ps -a --format '{{.Names}}' | grep -qx 'camus-loki' && docker start camus-loki || docker run -d --name camus-loki --network camus-observability -p 3100:3100 -v \"${workspaceFolder}/src/Adapters/emc.observability.components/loki-config.yaml:/etc/loki/config.yml:ro\" grafana/loki:latest -config.file=/etc/loki/config.yml )",
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": "none",
-            "problemMatcher": []
-        }
-        ,
-        {
-            "label": "start-observability-stack",
-            "dependsOn": [
-                "create-docker-network",
-                "run-loki-detached",
-                "run-jaeger-detached",
-                "run-otel-collector-detached",
-                "run-prometheus-detached",
-                "run-grafana-detached"
-            ],
-            "dependsOrder": "sequence"
         }
     ]
 }
