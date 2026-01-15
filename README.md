@@ -229,9 +229,9 @@ dotnet list package --outdated
 
 ### Access Points
 
-- API: [http://localhost:5000](http://localhost:5000)
-- Swagger UI: [http://localhost:5000/swagger](http://localhost:5000/swagger)
-- Metrics: [http://localhost:5000/metrics](http://localhost:5000/metrics) *(if Prometheus enabled)*
+- API: [http://localhost:5001](http://localhost:5001)
+- Swagger UI: [http://localhost:5001/swagger](http://localhost:5001/swagger)
+- Metrics: [http://localhost:5001/metrics](http://localhost:5001/metrics) *(if Prometheus enabled)*
 
 ---
 

@@ -8,8 +8,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: camus-api-dev
     ports:
-      - "5000:80"    # Application port
-      - "5001:5001"  # Debugger port
+      - "5001:80"    # Application port (avoiding conflict with host API on 5001)
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:80

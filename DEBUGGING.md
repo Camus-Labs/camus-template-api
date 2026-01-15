@@ -155,7 +155,7 @@ docker-compose -f docker-compose.dev.yml up --build --force-recreate api
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| **API** | http://localhost:5000 | Camus API with hot reload |
+| **API** | http://localhost:5001 | Camus API with hot reload |
 | **Grafana** | http://localhost:3000 | Dashboards (admin/admin) |
 | **Jaeger** | http://localhost:16686 | Distributed tracing UI |
 | **Prometheus** | http://localhost:9090 | Metrics query UI |

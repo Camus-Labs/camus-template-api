@@ -34,7 +34,7 @@
         {
             "label": "watch-api",
             "type": "shell",
-            "command": "dotnet watch --project src/Api/emc.main.api/emc.camus.main.api.csproj run -- /p:GeneratePullPaths=true",
+            "command": "dotnet watch --project src/Api/emc.main.api/emc.camus.main.api.csproj run /p:GeneratePullPaths=true",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -65,17 +65,12 @@
         {
             "label": "docker-compose-up-dev",
             "type": "shell",
-            "command": "docker-compose -f docker-compose.dev.yml up --build",
+            "command": "docker-compose -f docker-compose.dev.yml up --build -d",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
             "group": "none",
-            "problemMatcher": [],
-            "isBackground": true,
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated"
-            }
+            "problemMatcher": []
         },
         {
             "label": "docker-compose-up-observability",
