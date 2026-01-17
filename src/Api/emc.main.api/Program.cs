@@ -5,6 +5,12 @@ using Microsoft.OpenApi;
 using emc.camus.main.api.Handlers;
 using System.Diagnostics;
 using emc.camus.domain.Logging;
+using emc.camus.main.api.Configurations;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
+using System.Text;
 
 // Step 0: Define WebApplicationBuilder and settings
 var builder = WebApplication.CreateBuilder(args);
@@ -24,7 +30,6 @@ builder.ConfigureCamusObservability(SERVICE_NAME, SERVICE_VERSION, INSTANCE_ID, 
 // Step 2: Add ActivitySource for manual tracing
 var activitySource = new ActivitySource(SERVICE_NAME, SERVICE_VERSION);
 builder.Services.AddSingleton(activitySource);
-builder.Services.AddSingleton<IActivitySourceWrapper, ActivitySourceWrapper>();
 
 // Step 3: Add API versioning
 builder.Services.AddApiVersioning(options =>
@@ -49,19 +54,13 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "Camus API v1.0 Basic Demo",
         Version = "v1.0",
-        Description = "A sample API demonstrating basic features"
+        Description = "Demo public endpoint."
     });
     options.SwaggerDoc("v2", new OpenApiInfo
     {
-        Title = "Camus API v2.0 Multi-version API configuration",
+        Title = "Camus API v2.0 Basic Security Demo",
         Version = "v2.0",
-        Description = "A sample API demonstrating multi-versioning and documentation"
-    });
-    options.SwaggerDoc("v3", new OpenApiInfo
-    {
-        Title = "Camus API v3.0 Documented API configuration",
-        Version = "v3.0",
-        Description = "Camus API v3.0 demonstrating logging and telemetry"
+        Description = "Demo for private endpoints."
     });
 
     // Include XML comments if available
@@ -76,9 +75,9 @@ builder.Services.AddSwaggerGen(options =>
 // Step 5: Add CORS setup with configurable policy
 builder.Services.AddCors(options =>
 {
-    var corsConfig = builder.Configuration.GetSection("CorsSettings");
     options.AddPolicy("ClientCors", cors =>
     {
+        var corsConfig = builder.Configuration.GetSection("CorsSettings");
         cors.WithOrigins(corsConfig.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>())
             .WithMethods(corsConfig.GetSection("AllowedMethods").Get<string[]>() ?? Array.Empty<string>())
             .WithHeaders(corsConfig.GetSection("AllowedHeaders").Get<string[]>() ?? Array.Empty<string>())
@@ -87,6 +86,52 @@ builder.Services.AddCors(options =>
             .SetPreflightMaxAge(TimeSpan.FromMinutes(corsConfig.GetValue<int>("PreflightMaxAgeMinutes", 60)));
     });
 });
+
+builder.Services.AddDependencyInjections(builder.Configuration);
+
+// Step 6.1: Configure JWT Authentication
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+    .AddJwtBearer()
+    .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationHandler.SchemeName, null);
+    
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<IOptions<JwtSettings>, RsaSecurityKey>((options, jwtSettingsOptions, rsaKey) =>
+    {
+        var jwtSettings = jwtSettingsOptions.Value;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = rsaKey,
+            ClockSkew = TimeSpan.Zero
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogWarning("Authentication failed: {Error}", context.Exception.Message);
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogInformation("Token validated for user: {User}", context.Principal?.Identity?.Name);
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 // Step 6: Add the controllers and build the app
 builder.Services.AddControllers();
@@ -127,6 +172,11 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 // Apply CORS before endpoints so all responses include the proper CORS headers
 app.UseCors("ClientCors");
+
+// Step 10.1: Add Authentication and Authorization middleware
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 
 // Step 11: Run the app
