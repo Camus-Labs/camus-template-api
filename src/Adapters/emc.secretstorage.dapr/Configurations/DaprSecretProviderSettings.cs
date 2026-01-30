@@ -29,5 +29,10 @@ namespace emc.camus.secretstorage.dapr.Configurations
         /// Gets or sets the HTTP request timeout in seconds. Defaults to 30 seconds.
         /// </summary>
         public int TimeoutSeconds { get; set; } = 30;
+
+        /// <summary>
+        /// Gets or sets the list of secret names to load at startup.
+        /// </summary>
+        public List<string> SecretNames { get; set; } = new();
     }
 }

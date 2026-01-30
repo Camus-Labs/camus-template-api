@@ -18,7 +18,7 @@ namespace emc.camus.secretstorage.dapr
     {
         private readonly ILogger<DaprSecretProvider> _logger;
         private readonly HttpClient _httpClient;
-        private readonly string _secretStore;
+        private readonly DaprSecretProviderSettings _settings;
         private readonly ConcurrentDictionary<string, string> _secrets = new();
 
 
@@ -33,17 +33,19 @@ namespace emc.camus.secretstorage.dapr
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             
-            var config = settings?.Value ?? throw new ArgumentNullException(nameof(settings));
+            _settings = settings?.Value ?? throw new ArgumentNullException(nameof(settings));
            
-            var protocol = config.UseHttps ? "https" : "http";
-            var baseUrl = $"{protocol}://{config.BaseHost}:{config.HttpPort}";
-            _secretStore = config.SecretStoreName;
+            var protocol = _settings.UseHttps ? "https" : "http";
+            var baseUrl = $"{protocol}://{_settings.BaseHost}:{_settings.HttpPort}";
             
             // Configure HttpClient with adapter-specific settings
-            _httpClient.BaseAddress = new Uri($"{baseUrl}/v1.0/secrets/{_secretStore}/");
-            _httpClient.Timeout = TimeSpan.FromSeconds(config.TimeoutSeconds);
+            _httpClient.BaseAddress = new Uri($"{baseUrl}/v1.0/secrets/{_settings.SecretStoreName}/");
+            _httpClient.Timeout = TimeSpan.FromSeconds(_settings.TimeoutSeconds);
             
-            _logger.LogInformation("DaprSecretProvider initialized with base Host: {BaseHost}, Secret Store: {SecretStore}, Timeout: {Timeout}s", config.BaseHost, _secretStore, config.TimeoutSeconds);
+            _logger.LogInformation("DaprSecretProvider initialized with base Host: {BaseHost}, Secret Store: {SecretStore}, Timeout: {Timeout}s", _settings.BaseHost, _settings.SecretStoreName, _settings.TimeoutSeconds);
+            
+            // Load secrets from settings during construction
+            LoadSecretsAsync(_settings.SecretNames).GetAwaiter().GetResult();
         }
         
         /// <summary>
@@ -90,9 +92,13 @@ namespace emc.camus.secretstorage.dapr
             var successCount = _secrets.Count;
             var failureCount = secretNamesList.Count - successCount;
             _logger.LogInformation("Secret loading completed. Success: {SuccessCount}, Failed: {FailureCount}", successCount, failureCount);
+            
             if (failureCount > 0)
             {
-                _logger.LogWarning("Some secrets failed to load. Application may have reduced functionality");
+                var failedSecrets = secretNamesList.Except(_secrets.Keys).ToList();
+                var errorMessage = $"Failed to load {failureCount} required secret(s): {string.Join(", ", failedSecrets)}";
+                _logger.LogError(errorMessage);
+                throw new InvalidOperationException(errorMessage);
             }
         }
 
@@ -158,7 +164,7 @@ namespace emc.camus.secretstorage.dapr
             // Handle 404 as acceptable - secret doesn't exist
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                _logger.LogInformation("Secret '{SecretName}' not found in store '{SecretStore}' - this is acceptable", secretName, _secretStore);
+                _logger.LogInformation("Secret '{SecretName}' not found in store '{SecretStore}' - this is acceptable", secretName, _settings.SecretStoreName);
                 return;
             }
            
