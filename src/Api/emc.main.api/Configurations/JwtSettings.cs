@@ -8,12 +8,12 @@ public class JwtSettings
     /// <summary>
     /// The issuer of the JWT token (usually your API's URL).
     /// </summary>
-    public string Issuer { get; set; } = string.Empty;
+    public string Issuer { get; set; } = "https://auth.camuslabs.com/";
 
     /// <summary>
     /// The audience for the JWT token (usually your client app's URL).
     /// </summary>
-    public string Audience { get; set; } = string.Empty;
+    public string Audience { get; set; } = "https://app.camuslabs.com/";
 
     /// <summary>
     /// Token expiration time in minutes.

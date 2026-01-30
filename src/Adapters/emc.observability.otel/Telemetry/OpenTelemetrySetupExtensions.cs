@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
 using OpenTelemetry.Extensions.Hosting;
+using emc.camus.observability.otel.Configurations;
 
 namespace emc.camus.observability.otel.Telemetry
 {
@@ -14,7 +14,7 @@ namespace emc.camus.observability.otel.Telemetry
         /// Adds and configures OpenTelemetry tracing and metrics to the service collection using Camus conventions.
         /// </summary>
         /// <param name="services">The service collection to configure.</param>
-        /// <param name="configuration">Application configuration (expects OpenTelemetry:Tracing and OpenTelemetry:Metrics sections).</param>
+        /// <param name="settings">OpenTelemetry settings containing tracing, metrics, and logs exporter configuration.</param>
         /// <param name="serviceName">Logical service name for resource attributes.</param>
         /// <param name="serviceVersion">Service version for resource attributes.</param>
         /// <param name="instanceId">Instance identifier for resource attributes.</param>
@@ -22,7 +22,7 @@ namespace emc.camus.observability.otel.Telemetry
         /// <returns>The configured service collection.</returns>
         public static IServiceCollection AddCamusOpenTelemetry(
             this IServiceCollection services,
-            IConfiguration configuration,
+            OpenTelemetrySettings settings,
             string serviceName,
             string serviceVersion,
             string instanceId,
@@ -30,8 +30,8 @@ namespace emc.camus.observability.otel.Telemetry
         {
             services
                 .AddOpenTelemetry()
-                .WithCamusTracing(configuration, serviceName, serviceVersion, instanceId, environmentName)
-                .WithCamusMetrics(configuration, serviceName, serviceVersion, instanceId, environmentName);
+                .WithCamusTracing(settings, serviceName, serviceVersion, instanceId, environmentName)
+                .WithCamusMetrics(settings, serviceName, serviceVersion, instanceId, environmentName);
 
             return services;
         }

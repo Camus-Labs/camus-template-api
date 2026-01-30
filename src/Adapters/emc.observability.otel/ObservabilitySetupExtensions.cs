@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using emc.camus.observability.otel.Configurations;
 using emc.camus.observability.otel.Logging;
 using emc.camus.observability.otel.Telemetry;
 
@@ -39,8 +41,11 @@ namespace emc.camus.observability.otel
             var normalizedEnvironmentName = string.IsNullOrWhiteSpace(environmentName) ? DefaultEnvironmentName : environmentName.Trim();
             var normalizedInstanceId = string.IsNullOrWhiteSpace(instanceId) ? DefaultInstanceId : instanceId.Trim();
 
-            builder.Host.UseEmcSerilog(configuration, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);
-            builder.Services.AddCamusOpenTelemetry(configuration, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);
+            // Parse OpenTelemetry settings once from configuration
+            var otelSettings = configuration.GetSection("OpenTelemetry").Get<OpenTelemetrySettings>() ?? new OpenTelemetrySettings();
+
+            builder.Host.UseEmcSerilog(otelSettings, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);
+            builder.Services.AddCamusOpenTelemetry(otelSettings, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);
             // Ensure Serilog flushes on shutdown to avoid log loss
             builder.Services.AddHostedService<SerilogFlushHostedService>();
             return builder;

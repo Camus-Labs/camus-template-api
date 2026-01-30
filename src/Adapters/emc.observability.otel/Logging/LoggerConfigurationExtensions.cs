@@ -5,6 +5,7 @@ using System;
 using OpenTelemetry.Exporter;
 using Serilog;
 using Serilog.Sinks.OpenTelemetry;
+using emc.camus.observability.otel.Configurations;
 
 namespace emc.camus.observability.otel.Logging
 {
@@ -31,18 +32,14 @@ namespace emc.camus.observability.otel.Logging
         /// Configures Serilog to write logs to the console. Intended for development and debugging.
         /// </summary>
         /// <param name="loggerConfiguration">The Serilog logger configuration.</param>
-        /// <param name="configuration">Application configuration (expects Logging:Console section).</param>
+        /// <param name="settings">OpenTelemetry settings containing console logging configuration.</param>
         /// <returns>The updated logger configuration.</returns>
         public static LoggerConfiguration WriteConsoleLogging(
             this LoggerConfiguration loggerConfiguration,
-            IConfiguration configuration)
+            OpenTelemetrySettings settings)
         {
-            var loggingConsole = configuration.GetSection("Logging:Console");
-
-            var enabled = loggingConsole.GetValue<bool>("Enabled", true);
-            var template = loggingConsole.GetValue<string>(
-                "OutputTemplate",
-                "[{Timestamp:HH:mm:ss} {Level:u3}] (trace_id={trace_id} span_id={span_id}) {Message:lj}{NewLine}{Exception}");
+            var enabled = settings.Logs.Console.Enabled;
+            var template = settings.Logs.Console.OutputTemplate;
 
             var configured = loggerConfiguration;
             if (enabled)
@@ -58,7 +55,7 @@ namespace emc.camus.observability.otel.Logging
         /// The collector can route logs to Loki or other supported backends.
         /// </summary>
         /// <param name="loggerConfiguration">The Serilog logger configuration.</param>
-        /// <param name="configuration">Application configuration (expects OpenTelemetry:Logs section).</param>
+        /// <param name="settings">OpenTelemetry configuration settings.</param>
         /// <param name="serviceName">Logical service name for resource attributes.</param>
         /// <param name="serviceVersion">Service version for resource attributes.</param>
         /// <param name="instanceId">Instance identifier for resource attributes.</param>
@@ -66,19 +63,18 @@ namespace emc.camus.observability.otel.Logging
         /// <returns>The updated logger configuration.</returns>
         public static LoggerConfiguration WriteLogsToOpenTelemetry(
             this LoggerConfiguration loggerConfiguration,
-            IConfiguration configuration,
+            OpenTelemetrySettings settings,
             string serviceName,
             string serviceVersion,
             string instanceId,
             string environmentName)
         {
-            var logsSection = configuration.GetSection("OpenTelemetry:Logs");
-            var exporter = logsSection.GetValue<string>("Exporter")?.ToLowerInvariant();
+            var exporter = settings.Logs.Exporter.ToLowerInvariant();
 
             var configured = loggerConfiguration;
             if (exporter == "otlp")
             {
-                var endpoint = logsSection.GetValue<string>("OtlpEndpoint") ?? "http://localhost:4317";
+                var endpoint = settings.Logs.OtlpEndpoint;
                 configured = configured.WriteTo.OpenTelemetry(options =>
                 {
                     options.Endpoint = endpoint;

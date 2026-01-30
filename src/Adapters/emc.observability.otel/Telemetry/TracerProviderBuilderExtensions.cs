@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using emc.camus.observability.otel.Configurations;
 
 namespace emc.camus.observability.otel.Telemetry
 {
@@ -79,21 +81,20 @@ namespace emc.camus.observability.otel.Telemetry
         /// Supported exporters: OTLP (default), Console.
         /// </summary>
         /// <param name="builder">The tracing provider builder.</param>
-        /// <param name="configuration">Application configuration (expects OpenTelemetry:Tracing section).</param>
+        /// <param name="settings">OpenTelemetry configuration settings.</param>
         /// <returns>The configured tracing provider builder.</returns>
         public static TracerProviderBuilder ConfigureTracingExporter(
             this TracerProviderBuilder builder, 
-            IConfiguration configuration)
+            OpenTelemetrySettings settings)
         {
-            var openTelemetryConfig = configuration.GetSection("OpenTelemetry");
-            var selectedExporter = openTelemetryConfig["Tracing:Exporter"] ?? "none";
+            var selectedExporter = settings.Tracing.Exporter;
 
             switch (selectedExporter.ToLowerInvariant())
             {
                 case "otlp":
                     builder.AddOtlpExporter(options =>
                     {
-                        var endpoint = openTelemetryConfig["Tracing:OtlpEndpoint"];
+                        var endpoint = settings.Tracing.OtlpEndpoint;
                         if (!string.IsNullOrWhiteSpace(endpoint))
                         {
                             options.Endpoint = new Uri(endpoint);

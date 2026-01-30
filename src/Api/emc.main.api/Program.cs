@@ -169,6 +169,9 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// Step # usings, caching and mappings
+await app.AppMappingsInjectionsAsync();
+
 app.UseHttpsRedirection();
 // Apply CORS before endpoints so all responses include the proper CORS headers
 app.UseCors("ClientCors");

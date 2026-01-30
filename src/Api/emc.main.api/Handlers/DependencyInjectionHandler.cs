@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using emc.camus.domain.Logging;
 using emc.camus.application.Secrets;
 using emc.camus.secretstorage.dapr;
+using emc.camus.secretstorage.dapr.Configurations;
 
 namespace emc.camus.main.api.Handlers
 {
@@ -47,13 +48,54 @@ namespace emc.camus.main.api.Handlers
 
 
             // Secret Provider Configuration ----------------------------------------
+            services.Configure<DaprSecretProviderSettings>(configuration.GetSection("DaprSecretProvider"));
+            
+            // HttpClient for DaprSecretProvider - configuration happens in the provider's constructor
+            services.AddHttpClient<DaprSecretProvider>();
+
             services.AddSingleton<ISecretProvider>(provider => 
             {
                 var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
                 var httpClient = httpClientFactory.CreateClient(nameof(DaprSecretProvider));
-                return new DaprSecretProvider(httpClient);
+                var logger = provider.GetRequiredService<ILogger<DaprSecretProvider>>();
+                var settings = provider.GetRequiredService<IOptions<DaprSecretProviderSettings>>();
+                return new DaprSecretProvider(httpClient, logger, settings);
             });
             return services;
+        }
+
+        /// <summary>
+        /// Configures application-level dependency injections and initializes services at startup.
+        /// </summary>
+        /// <param name="app">The web application instance.</param>
+        /// <returns>A task representing the asynchronous initialization operation.</returns>
+        public static async Task AppMappingsInjectionsAsync(this WebApplication app)
+        {
+            // Load secrets at application startup - this ensures they're loaded once and cached in the singleton
+            using (var scope = app.Services.CreateScope())
+            {
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                var secretProvider = scope.ServiceProvider.GetRequiredService<ISecretProvider>();
+
+                try
+                {
+                    // Get secret names from configuration or use default list
+                    var secrets = app.Configuration.GetSection("SecretNames").Get<List<string>>() ?? new List<string> { };
+
+                    logger.LogInformation("Loading {Count} secrets from Dapr secret store...", secrets.Count);
+
+                    // Load secrets - they will be cached in the singleton instance
+                    await secretProvider.LoadSecretsAsync(secrets);
+
+                    var loadedCount  = secretProvider.GetLoadedSecretsCount();
+                    logger.LogInformation("Successfully loaded {Count} our of {RequestedCount} secrets.", loadedCount, secrets.Count);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to load secrets from Dapr secret store.");
+                    throw; // Rethrow to prevent app from starting without necessary secrets
+                }
+            }
         }
     }
 }

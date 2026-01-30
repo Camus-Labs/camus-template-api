@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Serilog;
 using System;
+using emc.camus.observability.otel.Configurations;
 
 namespace emc.camus.observability.otel.Logging;
 
@@ -18,7 +19,7 @@ public static class HostBuilderExtensions
     /// Applies default enrichers, console logging, and OpenTelemetry log export.
     /// 
     /// <param name="host">The host builder to configure.</param>
-    /// <param name="configuration">Application configuration (expects OpenTelemetry:Logs section).</param>
+    /// <param name="settings">OpenTelemetry settings containing logs exporter configuration.</param>
     /// <param name="serviceName">Logical service name for resource attributes.</param>
     /// <param name="serviceVersion">Service version for resource attributes.</param>
     /// <param name="instanceId">Instance identifier for resource attributes.</param>
@@ -27,7 +28,7 @@ public static class HostBuilderExtensions
     /// </summary>
     public static IHostBuilder UseEmcSerilog(
         this IHostBuilder host,
-        IConfiguration configuration,
+        OpenTelemetrySettings settings,
         string serviceName,
         string serviceVersion,
         string instanceId,
@@ -35,9 +36,10 @@ public static class HostBuilderExtensions
     {
         host.UseSerilog((ctx, services, lc) =>
         {
-            lc.ApplyDefaultEnrichers()
-                .WriteConsoleLogging(configuration)
-                .WriteLogsToOpenTelemetry(configuration, serviceName, serviceVersion, instanceId, environmentName);
+            lc.ReadFrom.Configuration(ctx.Configuration)
+                .ApplyDefaultEnrichers()
+                .WriteConsoleLogging(settings)
+                .WriteLogsToOpenTelemetry(settings, serviceName, serviceVersion, instanceId, environmentName);
         });
 
         return host;

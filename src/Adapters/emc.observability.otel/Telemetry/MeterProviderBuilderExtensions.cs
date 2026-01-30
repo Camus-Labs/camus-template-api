@@ -5,6 +5,8 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using emc.camus.observability.otel.Configurations;
 
 namespace emc.camus.observability.otel.Telemetry
 {
@@ -38,21 +40,20 @@ namespace emc.camus.observability.otel.Telemetry
         /// Supported exporters: OTLP (default), Console.
         /// </summary>
         /// <param name="builder">The metrics provider builder.</param>
-        /// <param name="configuration">Application configuration (expects OpenTelemetry:Metrics section).</param>
+        /// <param name="settings">OpenTelemetry configuration settings.</param>
         /// <returns>The configured metrics provider builder.</returns>
         public static MeterProviderBuilder ConfigureCamusMetricsExporter(
             this MeterProviderBuilder builder, 
-            IConfiguration configuration)
+            OpenTelemetrySettings settings)
         {
-            var openTelemetryConfig = configuration.GetSection("OpenTelemetry");
-            var selectedExporter = openTelemetryConfig["Metrics:Exporter"] ?? "none";
+            var selectedExporter = settings.Metrics.Exporter;
 
             switch (selectedExporter.ToLowerInvariant())
             {
                 case "otlp":
                     builder.AddOtlpExporter(options =>
                     {
-                        var endpoint = openTelemetryConfig["Metrics:OtlpEndpoint"];
+                        var endpoint = settings.Metrics.OtlpEndpoint;
                         if (!string.IsNullOrWhiteSpace(endpoint))
                         {
                             options.Endpoint = new Uri(endpoint);

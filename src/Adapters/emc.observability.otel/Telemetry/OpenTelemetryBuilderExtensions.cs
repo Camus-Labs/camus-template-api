@@ -6,6 +6,7 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using Microsoft.AspNetCore.Builder;
+using emc.camus.observability.otel.Configurations;
 
 namespace emc.camus.observability.otel.Telemetry
 {
@@ -19,7 +20,7 @@ namespace emc.camus.observability.otel.Telemetry
         /// Adds resource attributes, ASP.NET Core, HTTP client, runtime, and process instrumentation, and configures metrics exporter.
         /// </summary>
         /// <param name="builder">The OpenTelemetry builder.</param>
-        /// <param name="configuration">Application configuration (expects OpenTelemetry:Metrics section).</param>
+        /// <param name="settings">OpenTelemetry settings containing metrics exporter configuration.</param>
         /// <param name="serviceName">Logical service name for resource attributes.</param>
         /// <param name="serviceVersion">Service version for resource attributes.</param>
         /// <param name="instanceId">Instance identifier for resource attributes.</param>
@@ -27,7 +28,7 @@ namespace emc.camus.observability.otel.Telemetry
         /// <returns>The configured OpenTelemetry builder.</returns>
         public static OpenTelemetryBuilder WithCamusMetrics(
             this OpenTelemetryBuilder builder,
-            IConfiguration configuration,
+            OpenTelemetrySettings settings,
             string serviceName,
             string serviceVersion,
             string instanceId,
@@ -41,7 +42,7 @@ namespace emc.camus.observability.otel.Telemetry
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation()
                     .AddProcessInstrumentation()
-                    .ConfigureCamusMetricsExporter(configuration);
+                    .ConfigureCamusMetricsExporter(settings);
             });
 
             return builder;
@@ -52,7 +53,7 @@ namespace emc.camus.observability.otel.Telemetry
         /// Adds resource attributes, ASP.NET Core and HTTP client instrumentation, and configures tracing exporter.
         /// </summary>
         /// <param name="builder">The OpenTelemetry builder.</param>
-        /// <param name="configuration">Application configuration (expects OpenTelemetry:Tracing section).</param>
+        /// <param name="settings">OpenTelemetry settings containing tracing exporter configuration.</param>
         /// <param name="serviceName">Logical service name for resource attributes.</param>
         /// <param name="serviceVersion">Service version for resource attributes.</param>
         /// <param name="instanceId">Instance identifier for resource attributes.</param>
@@ -60,7 +61,7 @@ namespace emc.camus.observability.otel.Telemetry
         /// <returns>The configured OpenTelemetry builder.</returns>
         public static OpenTelemetryBuilder WithCamusTracing(
             this OpenTelemetryBuilder builder,
-            IConfiguration configuration,
+            OpenTelemetrySettings settings,
             string serviceName,
             string serviceVersion,
             string instanceId,
@@ -72,7 +73,7 @@ namespace emc.camus.observability.otel.Telemetry
                     .UseCamusResource(serviceName, serviceVersion, instanceId, environmentName)
                     .AddCamusAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .ConfigureTracingExporter(configuration);
+                    .ConfigureTracingExporter(settings);
             });
 
             return builder;

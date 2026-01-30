@@ -2,6 +2,9 @@
 using System.Net;
 using System.Text.Json;
 using emc.camus.application.Secrets;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using emc.camus.secretstorage.dapr.Configurations;
 
 namespace emc.camus.secretstorage.dapr
 {
@@ -13,8 +16,8 @@ namespace emc.camus.secretstorage.dapr
     /// </remarks>
     public class DaprSecretProvider : ISecretProvider
     {
+        private readonly ILogger<DaprSecretProvider> _logger;
         private readonly HttpClient _httpClient;
-        private readonly string _baseUrl;
         private readonly string _secretStore;
         private readonly ConcurrentDictionary<string, string> _secrets = new();
 
@@ -23,27 +26,24 @@ namespace emc.camus.secretstorage.dapr
         /// Initializes a new instance of the <see cref="DaprSecretProvider"/> class.
         /// </summary>
         /// <param name="httpClient">The HTTP client used to communicate with the Dapr sidecar.</param>
-        public DaprSecretProvider(HttpClient httpClient)
+        /// <param name="logger">The logger instance for logging operations.</param>
+        /// <param name="settings">The configuration settings for the Dapr secret provider.</param>
+        public DaprSecretProvider(HttpClient httpClient, ILogger<DaprSecretProvider> logger, IOptions<DaprSecretProviderSettings> settings)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            
+            var config = settings?.Value ?? throw new ArgumentNullException(nameof(settings));
            
-            // Build base URL from environment variables with validation
-            var baseHost = Environment.GetEnvironmentVariable("BASE_URL") ?? "localhost";
-            var daprPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT") ?? "3500";
-           
-            // Remove any protocol if present in baseHost
-            if (baseHost.StartsWith("http://") || baseHost.StartsWith("https://"))
-            {
-                baseHost = new Uri(baseHost).Host;
-            }
-           
-            // Note: Dapr sidecar communication typically uses HTTP for local communication
-            // In production, ensure Dapr is configured with mTLS for sidecar-to-sidecar communication
-            var protocol = Environment.GetEnvironmentVariable("DAPR_USE_HTTPS") == "true" ? "https" : "http";
-            _baseUrl = $"{protocol}://{baseHost}:{daprPort}";
-            _secretStore = Environment.GetEnvironmentVariable("DAPR_SECRET_STORE") ?? Environment.GetEnvironmentVariable("SECRET_STORE_NAME") ?? GetDefaultSecretStoreName();
-           
-            Console.WriteLine($"DaprSecretProvider initialized with base URL: {_baseUrl}, Secret Store: {_secretStore}");
+            var protocol = config.UseHttps ? "https" : "http";
+            var baseUrl = $"{protocol}://{config.BaseHost}:{config.HttpPort}";
+            _secretStore = config.SecretStoreName;
+            
+            // Configure HttpClient with adapter-specific settings
+            _httpClient.BaseAddress = new Uri($"{baseUrl}/v1.0/secrets/{_secretStore}/");
+            _httpClient.Timeout = TimeSpan.FromSeconds(config.TimeoutSeconds);
+            
+            _logger.LogInformation("DaprSecretProvider initialized with base Host: {BaseHost}, Secret Store: {SecretStore}, Timeout: {Timeout}s", config.BaseHost, _secretStore, config.TimeoutSeconds);
         }
         
         /// <summary>
@@ -55,21 +55,18 @@ namespace emc.camus.secretstorage.dapr
         {
             if (secretNames == null)
             {
-                Console.WriteLine("WARNING: LoadSecretsAsync called with null secretNames");
+                _logger.LogWarning("LoadSecretsAsync called with null secretNames");
                 return;
             }
-
 
             var secretNamesList = secretNames.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
-           
             if (!secretNamesList.Any())
             {
-                Console.WriteLine("INFO: No valid secret names provided to load");
+                _logger.LogInformation("No valid secret names provided to load");
                 return;
             }
 
-
-            Console.WriteLine($"INFO: Starting to load {secretNamesList.Count} secrets from Dapr secret store");
+            _logger.LogInformation("Starting to load {Count} secrets from Dapr secret store", secretNamesList.Count);
 
 
             // Process secrets in parallel with resilience
@@ -92,12 +89,10 @@ namespace emc.camus.secretstorage.dapr
            
             var successCount = _secrets.Count;
             var failureCount = secretNamesList.Count - successCount;
-           
-            Console.WriteLine($"INFO: Secret loading completed. Success: {successCount}, Failed: {failureCount}");
-           
+            _logger.LogInformation("Secret loading completed. Success: {SuccessCount}, Failed: {FailureCount}", successCount, failureCount);
             if (failureCount > 0)
             {
-                Console.WriteLine("WARNING: Some secrets failed to load. Application may have reduced functionality");
+                _logger.LogWarning("Some secrets failed to load. Application may have reduced functionality");
             }
         }
 
@@ -110,7 +105,7 @@ namespace emc.camus.secretstorage.dapr
         {
             if (string.IsNullOrWhiteSpace(name))
             {
-                Console.WriteLine("WARNING: GetSecret called with null or empty name");
+                _logger.LogWarning("GetSecret called with null or empty name");
                 return null;
             }
 
@@ -157,15 +152,13 @@ namespace emc.camus.secretstorage.dapr
             if (string.IsNullOrWhiteSpace(secretName))
                 return;
 
-
-            var url = $"{_baseUrl}/v1.0/secrets/{_secretStore}/{secretName}";
-           
-            using var response = await _httpClient.GetAsync(url);
+            // Use relative URL - BaseAddress is configured in constructor
+            using var response = await _httpClient.GetAsync(secretName);
            
             // Handle 404 as acceptable - secret doesn't exist
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                Console.WriteLine($"INFO: Secret '{secretName}' not found in store '{_secretStore}' - this is acceptable");
+                _logger.LogInformation("Secret '{SecretName}' not found in store '{SecretStore}' - this is acceptable", secretName, _secretStore);
                 return;
             }
            
@@ -176,7 +169,7 @@ namespace emc.camus.secretstorage.dapr
            
             if (string.IsNullOrWhiteSpace(responseContent))
             {
-                Console.WriteLine($"WARNING: Empty response received for secret '{secretName}'");
+                _logger.LogWarning("Empty response received for secret '{SecretName}'", secretName);
                 return;
             }
 
@@ -189,16 +182,16 @@ namespace emc.camus.secretstorage.dapr
                 if (secretData != null && secretData.TryGetValue(secretName, out var secretValue) && !string.IsNullOrEmpty(secretValue))
                 {
                     _secrets[secretName] = secretValue;
-                    Console.WriteLine($"DEBUG: Secret '{secretName}' loaded successfully");
+                    _logger.LogDebug("Secret '{SecretName}' loaded successfully", secretName);
                 }
                 else
                 {
-                    Console.WriteLine($"WARNING: Secret '{secretName}' found but contains no value or unexpected format");
+                    _logger.LogWarning("Secret '{SecretName}' found but contains no value or unexpected format", secretName);
                 }
             }
             catch (JsonException ex)
             {
-                Console.WriteLine($"ERROR: Failed to deserialize secret '{secretName}' response: {responseContent}. Error: {ex.Message}");
+                _logger.LogError(ex, "Failed to deserialize secret '{SecretName}' response: {ResponseContent}", secretName, responseContent);
                 throw; // Re-throw to trigger retry logic
             }
         }
@@ -228,19 +221,19 @@ namespace emc.camus.secretstorage.dapr
                 try
                 {
                     await LoadSingleSecretAsync(secretName);
-                    Console.WriteLine($"DEBUG: Successfully loaded secret: {secretName}");
+                    _logger.LogDebug("Successfully loaded secret: {SecretName}", secretName);
                     return; // Success, exit retry loop
                 }
                 catch (HttpRequestException ex) when (IsTransientError(ex) && attempt < maxRetries)
                 {
                     var delay = TimeSpan.FromMilliseconds(baseDelay.TotalMilliseconds * Math.Pow(2, attempt));
-                    Console.WriteLine($"WARNING: Transient error loading secret '{secretName}' (attempt {attempt + 1}/{maxRetries + 1}). Retrying in {delay.TotalMilliseconds}ms. Error: {ex.Message}");
+                    _logger.LogWarning("Transient error loading secret '{SecretName}' (attempt {Attempt}/{MaxAttempts}). Retrying in {Delay}ms. Error: {Error}", secretName, attempt + 1, maxRetries + 1, delay.TotalMilliseconds, ex.Message);
                    
                     await Task.Delay(delay);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"ERROR: Failed to load secret '{secretName}' after {attempt + 1} attempts. Error: {ex.Message}");
+                    _logger.LogError(ex, "Failed to load secret '{SecretName}' after {Attempts} attempts.", secretName, attempt + 1);
                     return; // Non-retryable error or max retries reached
                 }
             }
