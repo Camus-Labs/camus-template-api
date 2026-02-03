@@ -25,7 +25,6 @@ namespace emc.camus.main.api.Controllers
     [ApiController]
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
-    [ApiVersion("3.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
     [Produces("application/json")]
     [Authorize]

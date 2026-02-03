@@ -154,7 +154,6 @@ if (app.Environment.IsDevelopment())
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
         options.SwaggerEndpoint("/swagger/v2/swagger.json", "API v2");
-        options.SwaggerEndpoint("/swagger/v3/swagger.json", "API v3");
     });
 
     //Redirect to Swagger UI if no path is specified

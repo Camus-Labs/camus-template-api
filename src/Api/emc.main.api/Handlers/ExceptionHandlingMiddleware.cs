@@ -82,6 +82,7 @@ namespace emc.camus.main.api.Handlers
 
             var showDetails = _environment?.IsDevelopment() == true;
 
+            // Standard Problem Details response defined by RFC 7807 ("Problem Details for HTTP APIs").
             var problem = new ProblemDetails
             {
                 Status = statusCode,
