@@ -1,0 +1,18 @@
+{
+    "recommendations": [
+        "aliasadidev.nugetpackagemanagergui",
+        "davidanson.vscode-markdownlint",
+        "github.copilot",
+        "github.copilot-chat",
+        "github.vscode-github-actions",
+        "hashicorp.terraform",
+        "mechatroner.rainbow-csv",
+        "ms-azuretools.vscode-containers",
+        "ms-azuretools.vscode-docker",
+        "ms-dotnettools.csdevkit",
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.vscode-dotnet-runtime",
+        "ms-vscode.powershell",
+        "ms-windows-ai-studio.windows-ai-studio"
+    ]
+}
