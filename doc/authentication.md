@@ -1,5 +1,3 @@
-curl -X GET http://localhost:5001/api/v3/Secure/profile \
-
 # JWT Authentication Implementation
 
 JWT authentication is implemented in the Camus API using ASP.NET Core 9, with tokens generated directly in `AuthController` and credentials retrieved from a secure `ISecretProvider`.
@@ -7,6 +5,7 @@ JWT authentication is implemented in the Camus API using ASP.NET Core 9, with to
 ## Configuration
 
 JWT settings are configured in `appsettings.json`:
+
 ```json
 "JwtSettings": {
   "Issuer": "https://auth.camuslabs.com/",
@@ -14,23 +13,27 @@ JWT settings are configured in `appsettings.json`:
   "ExpirationMinutes": 120
 }
 ```
+
 - The signing key (RSA or symmetric) is registered in DI and not stored in config files.
 - Access credentials (`AccessKey`, `AccessSecret`) are retrieved via `ISecretProvider`.
 
 ## How to Get a Token
 
-**Endpoint:** `POST /api/v2/Auth/token` or `POST /api/v3/Auth/token`
+**Endpoint:** `POST /api/v2/Auth/token`
 
 **Request Body:**
+
 ```json
 {
   "accessKey": "YOUR_ACCESS_KEY",
   "accessSecret": "YOUR_ACCESS_SECRET"
 }
 ```
+
 - Credentials are validated against the values from the secret provider.
 
 **Response:**
+
 ```json
 {
   "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -41,7 +44,8 @@ JWT settings are configured in `appsettings.json`:
 ## Using the Token
 
 Include the token in the `Authorization` header:
-```
+
+```http
 Authorization: Bearer {your-token}
 ```
 
@@ -51,12 +55,6 @@ Authorization: Bearer {your-token}
 - `GET /api/v1/Auth/info-apikey` — Requires API Key authentication.
 - `GET /api/v1/Auth/info-jwt` — Requires JWT authentication.
 - All info endpoints log and tag the API version for observability.
-
-## Protected Endpoints
-
-- Example: `GET /api/v3/Secure/profile` (requires JWT)
-- Example: `GET /api/v3/Secure/admin/dashboard` (requires Admin role in JWT)
-- Example: `GET /api/v3/Secure/public/status` (public)
 
 ## Claims in JWT
 

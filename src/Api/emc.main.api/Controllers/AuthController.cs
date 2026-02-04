@@ -73,7 +73,7 @@ namespace emc.camus.main.api.Controllers
             Description = "Allows public information request about the API for version 1.0, including features and timestamp."
         )]
         [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetInfoV1()
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfoV1", OperationType.Read, activity =>
@@ -114,7 +114,7 @@ namespace emc.camus.main.api.Controllers
             Description = "Returns API info for v2.0, requires API Key authentication."
         )]
         [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetInfoV2ApiKey()
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfoV2ApiKey", OperationType.Read, activity =>
@@ -154,7 +154,7 @@ namespace emc.camus.main.api.Controllers
             Description = "Returns API info for v2.0, requires JWT authentication."
         )]
         [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetInfoV2Jwt()
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfoV1Jwt", OperationType.Read, activity =>
@@ -194,9 +194,9 @@ namespace emc.camus.main.api.Controllers
             Description = "Generates a JWT token for valid credentials in API version >=2.0"
         )]
         [ProducesResponseType(typeof(AuthToken), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GenerateToken([FromBody] Credentials request)
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GenerateToken", OperationType.Auth, activity =>
@@ -270,9 +270,9 @@ namespace emc.camus.main.api.Controllers
         [SwaggerOperation(
             Description = "Handles unexpected errors in API version 1.0"
         )]
-        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetUnexpectedError()
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetUnexpectedError", OperationType.Test, activity =>

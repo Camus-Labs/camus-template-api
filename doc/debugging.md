@@ -12,24 +12,28 @@ This setup enables **hot reload** and **VS Code debugging** for the containerize
 ## 🚀 Quick Start
 
 ### 1. Start Full Stack with Hot Reload
+
 ```bash
 docker-compose -f docker-compose.dev.yml up --build
 ```
 
 **What happens:**
+
 - API runs with `dotnet watch` (auto-rebuild on file changes)
 - Source code mounted as volume from `./src` → `/src` in container
 - Observability stack starts (Postgres, Jaeger, Grafana, etc.)
 
 ### 2. Attach Debugger from VS Code
 
-**Option A: Use VS Code UI**
+#### Option A: Use VS Code UI
+
 1. Press `F5` or click **Run and Debug**
 2. Select **".NET Attach to Container"**
 3. Pick the `dotnet` process from the list
 4. Set breakpoints and debug! 🎉
 
-**Option B: Command Palette**
+#### Option B: Command Palette
+
 - `Cmd+Shift+P` → **"Debug: Select and Start Debugging"** → **".NET Attach to Container"**
 
 ### 3. Make Code Changes
@@ -37,13 +41,14 @@ docker-compose -f docker-compose.dev.yml up --build
 **Edit any file** in `src/` → Container automatically rebuilds → Debugger reconnects
 
 **No need to:**
+
 - ❌ Restart containers
 - ❌ Rebuild images manually
 - ❌ Detach/reattach debugger
 
 ## 📁 File Structure
 
-```
+```text
 ├── Dockerfile              # Production image (optimized, multi-stage)
 ├── Dockerfile.dev          # Development image (SDK, debugger, dotnet watch)
 ├── docker-compose.dev.yml  # Dev stack with volume mounts
@@ -56,17 +61,20 @@ docker-compose -f docker-compose.dev.yml up --build
 ## 🔧 How It Works
 
 ### Dockerfile.dev
+
 - Uses full SDK image (not aspnet runtime)
 - Installs `vsdbg` (VS Code debugger for .NET)
 - Runs `dotnet watch` for hot reload
 - **No source code copied** (mounted as volume instead)
 
 ### docker-compose.dev.yml
+
 - Mounts `./src:/src:cached` for hot reload
 - Excludes `bin/obj` folders to avoid conflicts
 - Exposes port `5001` for debugger (optional)
 
 ### launch.json
+
 - **".NET Launch API (Host)"** - Run API directly on host (faster for quick dev)
 - **".NET Attach to Container"** - Debug containerized API with breakpoints
 
@@ -74,16 +82,17 @@ docker-compose -f docker-compose.dev.yml up --build
 
 Available tasks (`Cmd+Shift+P` → **Tasks: Run Task**):
 
-| Task | Purpose |
-|------|---------|
-| `docker-compose-up-dev` | Start full stack (API + observability) |
-| `docker-compose-up-observability` | Start only observability (use with `watch-api` on host) |
-| `docker-compose-down` | Stop and remove containers |
-| `watch-api` | Run API on host with hot reload (fastest iteration) |
+| Task                              | Purpose                                                  |
+| --------------------------------- | -------------------------------------------------------- |
+| `docker-compose-up-dev`           | Start full stack (API + observability)                   |
+| `docker-compose-up-observability` | Start only observability (use with `watch-api` on host)  |
+| `docker-compose-down`             | Stop and remove containers                               |
+| `watch-api`                       | Run API on host with hot reload (fastest iteration)      |
 
 ## 💡 Development Workflows
 
 ### Workflow 1: Full Docker (Recommended)
+
 **Best for:** Testing complete containerized setup
 
 ```bash
@@ -98,6 +107,7 @@ docker-compose -f docker-compose.dev.yml down
 ```
 
 ### Workflow 2: Hybrid (Fastest)
+
 **Best for:** Day-to-day coding with fastest iteration
 
 ```bash
@@ -111,6 +121,7 @@ docker-compose -f docker-compose.dev.yml up postgres otel-collector jaeger loki 
 ```
 
 ### Workflow 3: Production Test
+
 **Best for:** Testing before deployment
 
 ```bash
@@ -124,20 +135,26 @@ docker-compose -f docker-compose.prod.yml up
 ## 🐛 Troubleshooting
 
 ### Debugger won't attach
+
 **Solution:** Ensure container is running and has `vsdbg` installed
+
 ```bash
 docker exec -it camus-api-dev ls /vsdbg
 ```
 
 ### Hot reload not working
+
 **Solution:** Check volume mount permissions
+
 ```bash
 docker-compose -f docker-compose.dev.yml down -v
 docker-compose -f docker-compose.dev.yml up --build
 ```
 
 ### Breakpoints not hitting
+
 **Solution:** Verify source file mapping in launch.json
+
 ```json
 "sourceFileMap": {
     "/src": "${workspaceFolder}/src"
@@ -145,7 +162,9 @@ docker-compose -f docker-compose.dev.yml up --build
 ```
 
 ### Build errors after code changes
+
 **Solution:** Clean and rebuild
+
 ```bash
 docker-compose -f docker-compose.dev.yml down
 docker-compose -f docker-compose.dev.yml up --build --force-recreate api
@@ -153,12 +172,12 @@ docker-compose -f docker-compose.dev.yml up --build --force-recreate api
 
 ## 📊 Access Points
 
-| Service | URL | Description |
-|---------|-----|-------------|
-| **API** | http://localhost:5001 | Camus API with hot reload |
-| **Grafana** | http://localhost:3000 | Dashboards (admin/admin) |
-| **Jaeger** | http://localhost:16686 | Distributed tracing UI |
-| **Prometheus** | http://localhost:9090 | Metrics query UI |
+| Service        | URL                         | Description                |
+| -------------- | --------------------------- | -------------------------- |
+| **API**        | <http://localhost:5001>     | Camus API with hot reload  |
+| **Grafana**    | <http://localhost:3000>     | Dashboards (admin/admin)   |
+| **Jaeger**     | <http://localhost:16686>    | Distributed tracing UI     |
+| **Prometheus** | <http://localhost:9090>     | Metrics query UI           |
 
 ## 🔐 Environment Variables
 

@@ -1,0 +1,198 @@
+# Deployment Guide
+
+## Production Deployment
+
+### Prerequisites
+
+- Docker Engine 20.10+
+- Container registry access (Docker Hub, ACR, etc.)
+- SSL/TLS certificates (for HTTPS)
+
+## Docker Deployment
+
+### 1. Build Production Image
+
+```bash
+docker build -t camus-api:latest -f Dockerfile .
+```
+
+### 2. Run with Docker Compose
+
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+**Services started:**
+
+- API (port 80)
+- OpenTelemetry Collector
+- Network: `camus-prod`
+
+### 3. Environment Configuration
+
+Create `.env` file:
+
+```env
+# Database
+DATABASE_CONNECTION_STRING=Host=db;Database=camus;Username=user;Password=pass
+
+# Observability
+APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=your-key
+
+# Security
+JWT_PRIVATE_KEY_PATH=/certs/certificate.pem
+API_KEY=your-secure-api-key-here
+```
+
+## Azure Container Apps
+
+### Quick Deploy
+
+```bash
+# Create resource group
+az group create --name camus-rg --location eastus
+
+# Create container app environment
+az containerapp env create \
+  --name camus-env \
+  --resource-group camus-rg \
+  --location eastus
+
+# Deploy container app
+az containerapp create \
+  --name camus-api \
+  --resource-group camus-rg \
+  --environment camus-env \
+  --image your-registry/camus-api:latest \
+  --target-port 80 \
+  --ingress external \
+  --env-vars \
+    ASPNETCORE_ENVIRONMENT=Production \
+    ConnectionStrings__DefaultConnection=secretref:db-connection
+```
+
+### Configure Scaling
+
+```bash
+az containerapp update \
+  --name camus-api \
+  --resource-group camus-rg \
+  --min-replicas 1 \
+  --max-replicas 10 \
+  --scale-rule-name http-rule \
+  --scale-rule-type http \
+  --scale-rule-http-concurrency 50
+```
+
+## Health Checks
+
+API includes built-in health endpoints:
+
+- `/health` - Basic health check
+- `/health/ready` - Readiness probe
+- `/health/live` - Liveness probe
+
+Configure in container orchestrator:
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health/live
+    port: 80
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: 80
+  initialDelaySeconds: 5
+  periodSeconds: 5
+```
+
+## Monitoring
+
+### Application Insights Integration
+
+Set connection string in environment:
+
+```env
+APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=xxx;IngestionEndpoint=https://xxx
+```
+
+### Prometheus Metrics
+
+Expose metrics endpoint:
+
+```yaml
+- name: metrics
+  containerPort: 80
+  protocol: TCP
+```
+
+Scrape configuration:
+
+```yaml
+- job_name: 'camus-api'
+  static_configs:
+    - targets: ['camus-api:80']
+  metrics_path: '/metrics'
+```
+
+## Security Checklist
+
+- [ ] Use HTTPS in production (TLS 1.2+)
+- [ ] Store secrets in Azure Key Vault or similar
+- [ ] Enable managed identity for Azure resources
+- [ ] Configure CORS for specific origins only
+- [ ] Set `ASPNETCORE_ENVIRONMENT=Production`
+- [ ] Use strong JWT signing keys (RSA 2048+)
+- [ ] Enable rate limiting
+- [ ] Configure firewall rules
+- [ ] Regular security updates
+
+## Rollback Strategy
+
+```bash
+# Tag current version
+docker tag camus-api:latest camus-api:v1.0.0
+
+# Deploy new version
+docker tag camus-api:latest camus-api:v1.1.0
+docker-compose up -d
+
+# Rollback if needed
+docker tag camus-api:v1.0.0 camus-api:latest
+docker-compose up -d --force-recreate
+```
+
+## Troubleshooting
+
+### Container won't start
+
+```bash
+# Check logs
+docker logs camus-api-prod
+
+# Inspect container
+docker inspect camus-api-prod
+```
+
+### Database connection issues
+
+```bash
+# Test connection from container
+docker exec -it camus-api-prod dotnet ef database update --connection "Host=db;..."
+```
+
+### Performance issues
+
+- Check resource limits in `docker-compose.prod.yml`
+- Review Application Insights performance metrics
+- Enable Grafana dashboards for monitoring
+
+## Resources
+
+- [Docker Documentation](https://docs.docker.com)
+- [Azure Container Apps](https://learn.microsoft.com/azure/container-apps)
+- [.NET Deployment Guide](https://learn.microsoft.com/aspnet/core/host-and-deploy)
