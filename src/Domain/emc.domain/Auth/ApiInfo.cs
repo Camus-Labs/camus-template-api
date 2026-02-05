@@ -24,9 +24,4 @@ public class ApiInfo
     /// List of features available in this API version.
     /// </summary>
     public List<string>? Features { get; set; }
-
-    /// <summary>
-    /// The timestamp of the API status or info (UTC).
-    /// </summary>
-    public DateTime? Timestamp { get; set; }
 }

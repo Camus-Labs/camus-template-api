@@ -76,8 +76,15 @@ namespace emc.camus.main.api.Handlers
                 {
                     Status = (int)HttpStatusCode.Unauthorized,
                     Title = "Unauthorized",
-                    Detail = "You are not authorized to access this resource.",
+                    Detail = isDevelopment ? exception.Message : "You are not authorized to access this resource.",
                     Type = "https://tools.ietf.org/html/rfc7235#section-3.1"
+                },
+                InvalidOperationException invalidOpEx when invalidOpEx.Message.Contains("permission") => new ProblemDetails
+                {
+                    Status = (int)HttpStatusCode.Forbidden,
+                    Title = "Forbidden",
+                    Detail = isDevelopment ? invalidOpEx.Message : "You do not have permission to access this resource.",
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
                 },
                 _ => new ProblemDetails
                 {
@@ -104,12 +111,16 @@ namespace emc.camus.main.api.Handlers
             _logger.LogError(exception, "Exception detected: {ErrorMessage}", exception.Message);
 
             context.Response.StatusCode = problemDetails.Status ?? 500;
-            
-            // Use WriteAsJsonAsync and then override the content type
-            var result = context.Response.WriteAsJsonAsync(problemDetails);
             context.Response.ContentType = "application/problem+json";
             
-            return result;
+            // Manually serialize to maintain control over ContentType
+            var json = JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            });
+            
+            return context.Response.WriteAsync(json);
         }
 
     }

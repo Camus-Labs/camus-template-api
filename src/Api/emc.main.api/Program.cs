@@ -4,13 +4,14 @@ using System.Reflection;
 using Microsoft.OpenApi;
 using emc.camus.main.api.Handlers;
 using System.Diagnostics;
-using emc.camus.domain.Logging;
+using Microsoft.OpenApi.Models;
 using emc.camus.main.api.Configurations;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 using System.Text;
+using Swashbuckle.AspNetCore.Filters;
 
 // Step 0: Define WebApplicationBuilder and settings
 var builder = WebApplication.CreateBuilder(args);
@@ -67,6 +68,8 @@ builder.Services.AddSwaggerGen(options =>
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     options.IncludeXmlComments(xmlPath);
+    options.OperationFilter<DefaultApiResponsesOperationFilterHandler>();
+    options.ExampleFilters();
 
     //Include swagger annotations
     options.EnableAnnotations();
@@ -95,41 +98,8 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-    .AddJwtBearer()
+    .AddCamusJwtAuthentication()
     .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationHandler.SchemeName, null);
-    
-builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
-    .Configure<IOptions<JwtSettings>, RsaSecurityKey>((options, jwtSettingsOptions, rsaKey) =>
-    {
-        var jwtSettings = jwtSettingsOptions.Value;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings.Issuer,
-            ValidAudience = jwtSettings.Audience,
-            IssuerSigningKey = rsaKey,
-            ClockSkew = TimeSpan.Zero
-        };
-
-        options.Events = new JwtBearerEvents
-        {
-            OnAuthenticationFailed = context =>
-            {
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogWarning("Authentication failed: {Error}", context.Exception.Message);
-                return Task.CompletedTask;
-            },
-            OnTokenValidated = context =>
-            {
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation("Token validated for user: {User}", context.Principal?.Identity?.Name);
-                return Task.CompletedTask;
-            }
-        };
-    });
 
 builder.Services.AddAuthorization();
 
@@ -143,10 +113,10 @@ var app = builder.Build();
 // Place response header BEFORE exception handling so exception logs include correlation IDs
 app.UseMiddleware<ResponseTraceIdMiddleware>();
 
-// Step 9: Global exception handling middleware (wraps everything that follows)
+// Step 10: Global exception handling middleware (catches auth, authz, and app exceptions)
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-//Step 10: Enable Swagger UI in development
+// Step 11: Enable Swagger UI in development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -175,7 +145,7 @@ app.UseHttpsRedirection();
 // Apply CORS before endpoints so all responses include the proper CORS headers
 app.UseCors("ClientCors");
 
-// Step 10.1: Add Authentication and Authorization middleware
+// Step 10: Add Authentication and Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 

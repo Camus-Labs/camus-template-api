@@ -38,11 +38,12 @@ namespace emc.camus.main.api.Handlers
         /// Handles authentication for API Key requests.
         /// </summary>
         /// <returns>An <see cref="AuthenticateResult"/> indicating success or failure.</returns>
+        /// <exception cref="UnauthorizedAccessException">Thrown when API Key is missing or invalid.</exception>
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             if (!Request.Headers.TryGetValue(ApiKeyHeaderName, out var apiKeyHeaderValues))
             {
-                return Task.FromResult(AuthenticateResult.Fail("API Key header not found."));
+                throw new UnauthorizedAccessException("API Key header not found.");
             }
 
             var providedApiKey = apiKeyHeaderValues.FirstOrDefault();
@@ -50,7 +51,7 @@ namespace emc.camus.main.api.Handlers
 
             if (string.IsNullOrEmpty(providedApiKey) || providedApiKey != configuredApiKey)
             {
-                return Task.FromResult(AuthenticateResult.Fail("Invalid API Key."));
+                throw new UnauthorizedAccessException("Invalid API Key.");
             }
 
             var claims = new[] { new Claim(ClaimTypes.Name, "ApiKeyUser") };

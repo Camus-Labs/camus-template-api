@@ -6,6 +6,8 @@ using emc.camus.domain.Logging;
 using emc.camus.application.Secrets;
 using emc.camus.secretstorage.dapr;
 using emc.camus.secretstorage.dapr.Configurations;
+using emc.camus.main.api.SwaggerExamples;
+using Swashbuckle.AspNetCore.Filters;
 
 namespace emc.camus.main.api.Handlers
 {
@@ -22,6 +24,10 @@ namespace emc.camus.main.api.Handlers
         /// <returns>The updated service collection.</returns>
         public static IServiceCollection AddDependencyInjections(this IServiceCollection services, IConfiguration configuration)
         {
+            // Swagger Examples Configuration ----------------------------------------
+            // Registers all IExamplesProvider implementations from the assembly containing ApiInfoExample thats why only one is needed
+            services.AddSwaggerExamplesFromAssemblyOf<ApiInfoExample>();
+
             // Secret Provider Configuration ----------------------------------------
             services.Configure<DaprSecretProviderSettings>(configuration.GetSection("DaprSecretProvider"));
             

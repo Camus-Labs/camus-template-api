@@ -22,12 +22,12 @@ namespace emc.camus.main.api.Controllers
     /// <remarks>
     /// Provides endpoints for public API info, API key-protected info, JWT-protected info, and token generation. Integrates with OpenTelemetry for activity tracing and logs API version for observability.
     /// </remarks>
-    [ApiController]
+    [Authorize]
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
     [Produces("application/json")]
-    [Authorize]
+    [ApiController]
     public class AuthController : ControllerBase
     {
         private readonly IConfiguration _configuration;
@@ -69,11 +69,11 @@ namespace emc.camus.main.api.Controllers
         [HttpGet("info")]
         [AllowAnonymous]
         [MapToApiVersion("1.0")]
+        [MapToApiVersion("2.0")]
         [SwaggerOperation(
             Description = "Allows public information request about the API for version 1.0, including features and timestamp."
         )]
-        [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ApiResponse<ApiInfo>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetInfoV1()
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfoV1", OperationType.Read, activity =>
@@ -81,21 +81,24 @@ namespace emc.camus.main.api.Controllers
                 var apiVersion = HttpContext.GetRequestedApiVersion()?.ToString() ?? "unknown";
                 _logger.LogInformation("API info v{Version} requested.", apiVersion);
 
-                var response = new ApiInfo
+                var apiInfo = new ApiInfo
                 {
                     Name = "My Basic API",
                     Version = apiVersion,
                     Status = $"Running with API Versioning v{apiVersion}",
-                    Features = new List<string> { "Logging", "Versioning", "Authentication", "Authorization", "Observability" },
-                    Timestamp = DateTime.UtcNow
+                    Features = new List<string> { "Logging", "Versioning", "Authentication", "Authorization", "Observability" }
                 };
 
-                var ts = response.Timestamp is DateTime dt ? dt.ToString("o") : response.Timestamp?.ToString() ?? string.Empty;
+                var response = new ApiResponse<ApiInfo>
+                {
+                    Message = "API information retrieved successfully",
+                    Data = apiInfo
+                };
+
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
-                    { "features", string.Join(",", response.Features) },
-                    { "timestamp", ts },
-                    { "status", response.Status }
+                    { "features", string.Join(",", apiInfo.Features) },
+                    { "status", apiInfo.Status }
                 });
                 _logger.LogInformation("API info v{Version} retrieved.", apiVersion);
                 return Task.FromResult<IActionResult>(Ok(response));
@@ -108,13 +111,11 @@ namespace emc.camus.main.api.Controllers
         /// <returns>API info for v2.0 (API Key required).</returns>
         [HttpGet("info-apikey")]
         [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
-        [MapToApiVersion("1.0")]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
             Description = "Returns API info for v2.0, requires API Key authentication."
         )]
-        [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<ApiInfo>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetInfoV2ApiKey()
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfoV2ApiKey", OperationType.Read, activity =>
@@ -122,21 +123,24 @@ namespace emc.camus.main.api.Controllers
                 var apiVersion = HttpContext.GetRequestedApiVersion()?.ToString() ?? "unknown";
                 _logger.LogInformation("API info v{Version} (API Key) requested.", apiVersion);
 
-                var response = new ApiInfo
+                var apiInfo = new ApiInfo
                 {
                     Name = "My Basic API",
                     Version = apiVersion,
                     Status = $"Running with API Versioning v{apiVersion} (API Key)",
-                    Features = new List<string> { "Logging", "Versioning", "Authentication", "Authorization", "Observability" },
-                    Timestamp = DateTime.UtcNow
+                    Features = new List<string> { "Logging", "Versioning", "Authentication", "Authorization", "Observability" }
                 };
 
-                var ts = response.Timestamp is DateTime dt ? dt.ToString("o") : response.Timestamp?.ToString() ?? string.Empty;
+                var response = new ApiResponse<ApiInfo>
+                {
+                    Message = "API information retrieved successfully",
+                    Data = apiInfo
+                };
+
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
-                    { "features", string.Join(",", response.Features) },
-                    { "timestamp", ts },
-                    { "status", response.Status }
+                    { "features", string.Join(",", apiInfo.Features) },
+                    { "status", apiInfo.Status }
                 });
                 _logger.LogInformation("API info v{Version} (API Key) retrieved.", apiVersion);
                 return Task.FromResult<IActionResult>(Ok(response));
@@ -153,8 +157,7 @@ namespace emc.camus.main.api.Controllers
         [SwaggerOperation(
             Description = "Returns API info for v2.0, requires JWT authentication."
         )]
-        [ProducesResponseType(typeof(ApiInfo), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<ApiInfo>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetInfoV2Jwt()
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfoV1Jwt", OperationType.Read, activity =>
@@ -162,21 +165,24 @@ namespace emc.camus.main.api.Controllers
                 var apiVersion = HttpContext.GetRequestedApiVersion()?.ToString() ?? "unknown";
                 _logger.LogInformation("API info v{Version} (JWT) requested.", apiVersion);
 
-                var response = new ApiInfo
+                var apiInfo = new ApiInfo
                 {
                     Name = "My Basic API",
                     Version = apiVersion,
                     Status = $"Running with API Versioning v{apiVersion} (JWT)",
-                    Features = new List<string> { "Logging", "Versioning", "Authentication", "Authorization", "Observability" },
-                    Timestamp = DateTime.UtcNow
+                    Features = new List<string> { "Logging", "Versioning", "Authentication", "Authorization", "Observability" }
                 };
 
-                var ts = response.Timestamp is DateTime dt ? dt.ToString("o") : response.Timestamp?.ToString() ?? string.Empty;
+                var response = new ApiResponse<ApiInfo>
+                {
+                    Message = "API information retrieved successfully",
+                    Data = apiInfo
+                };
+
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
-                    { "features", string.Join(",", response.Features) },
-                    { "timestamp", ts },
-                    { "status", response.Status }
+                    { "features", string.Join(",", apiInfo.Features) },
+                    { "status", apiInfo.Status }
                 });
                 _logger.LogInformation("API info v{Version} (JWT) retrieved.", apiVersion);
                 return Task.FromResult<IActionResult>(Ok(response));
@@ -185,18 +191,17 @@ namespace emc.camus.main.api.Controllers
 
         /// <summary>
         /// Generates a JWT token for valid credentials. Available for API version >=2.0.
+        /// Requires API Key authentication to access this endpoint.
         /// </summary>
         /// <param name="request">The JWT token request containing AccessKey and AccessSecret.</param>
         /// <returns>JWT token response if credentials are valid; otherwise, an error response.</returns>
         [HttpPost("token")]
+        [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
-            Description = "Generates a JWT token for valid credentials in API version >=2.0"
+            Description = "Generates a JWT token for valid credentials in API version >=2.0. Requires API Key authentication (X-API-Key header)."
         )]
-        [ProducesResponseType(typeof(AuthToken), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ApiResponse<AuthToken>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GenerateToken([FromBody] Credentials request)
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GenerateToken", OperationType.Auth, activity =>
@@ -243,15 +248,21 @@ namespace emc.camus.main.api.Controllers
 
                 var token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
 
-                var response = new AuthToken
+                var authToken = new AuthToken
                 {
                     Token = token,
                     ExpiresOn = expiresOn
                 };
 
+                var response = new ApiResponse<AuthToken>
+                {
+                    Message = "Token generated successfully",
+                    Data = authToken
+                };
+
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
-                    { "expiresOn", response.ExpiresOn.ToString("o") }
+                    { "expiresOn", authToken.ExpiresOn.ToString("o") }
                 });
 
                 _logger.LogInformation("JWT token generated for user: {User}, expires: {Expiration}", 
@@ -266,13 +277,11 @@ namespace emc.camus.main.api.Controllers
         /// </summary>
         /// <returns>Error message.</returns>
         [HttpPost("unexpected-error")]
-        [MapToApiVersion("1.0")]
+        [AllowAnonymous]
+        [MapToApiVersion("2.0")]
         [SwaggerOperation(
             Description = "Handles unexpected errors in API version 1.0"
         )]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetUnexpectedError()
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetUnexpectedError", OperationType.Test, activity =>
