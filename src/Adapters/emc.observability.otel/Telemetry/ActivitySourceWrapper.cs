@@ -1,13 +1,22 @@
+using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using emc.camus.application.Observability;
 
-namespace emc.camus.domain.Logging
+namespace emc.camus.observability.otel.Telemetry
 {
+    /// <summary>
+    /// OpenTelemetry-based implementation of activity source wrapper for distributed tracing.
+    /// </summary>
     public class ActivitySourceWrapper : IActivitySourceWrapper
     {
-
         private readonly ActivitySource _activitySource;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ActivitySourceWrapper"/> class.
+        /// </summary>
+        /// <param name="activitySource">The underlying ActivitySource for creating activities.</param>
+        /// <exception cref="ArgumentNullException">Thrown when activitySource is null.</exception>
         public ActivitySourceWrapper(ActivitySource activitySource)
         {
             _activitySource = activitySource ?? throw new ArgumentNullException(nameof(activitySource));
@@ -34,6 +43,9 @@ namespace emc.camus.domain.Logging
         /// <summary>
         /// Sets a tag on the given activity if not null.
         /// </summary>
+        /// <param name="activity">The activity to add the tag to.</param>
+        /// <param name="key">The tag key.</param>
+        /// <param name="value">The tag value.</param>
         public void SetTag(Activity? activity, string key, object? value)
         {
             activity?.SetTag(key, value);
@@ -42,6 +54,8 @@ namespace emc.camus.domain.Logging
         /// <summary>
         /// Sets multiple tags on the given activity from a dictionary.
         /// </summary>
+        /// <param name="activity">The activity to add tags to.</param>
+        /// <param name="tags">Dictionary of tag key-value pairs to add.</param>
         public void SetTags(Activity? activity, IDictionary<string, object?> tags)
         {
             if (activity != null && tags != null)
@@ -56,6 +70,8 @@ namespace emc.camus.domain.Logging
         /// <summary>
         /// Sets tags on the activity, prefixing each key with 'request.'
         /// </summary>
+        /// <param name="activity">The activity to add request tags to.</param>
+        /// <param name="tags">Dictionary of tag key-value pairs to add with 'request.' prefix.</param>
         public void SetRequestTags(Activity? activity, IDictionary<string, object?> tags)
         {
             if (activity != null && tags != null)
@@ -70,6 +86,8 @@ namespace emc.camus.domain.Logging
         /// <summary>
         /// Sets tags on the activity, prefixing each key with 'response.'
         /// </summary>
+        /// <param name="activity">The activity to add response tags to.</param>
+        /// <param name="tags">Dictionary of tag key-value pairs to add with 'response.' prefix.</param>
         public void SetResponseTags(Activity? activity, IDictionary<string, object?> tags)
         {
             if (activity != null && tags != null)
@@ -83,6 +101,7 @@ namespace emc.camus.domain.Logging
         /// <summary>
         /// Marks the activity as succeeded, sets operation.success = true, and adds a Succeeded event.
         /// </summary>
+        /// <param name="activity">The activity to mark as succeeded.</param>
         public void ActivitySucceeded(Activity? activity)
         {
             if (activity == null) return;
@@ -93,6 +112,8 @@ namespace emc.camus.domain.Logging
         /// <summary>
         /// Marks the activity as failed, sets status to ERROR with description, and adds a Failed event.
         /// </summary>
+        /// <param name="activity">The activity to mark as failed.</param>
+        /// <param name="ex">The exception that caused the failure.</param>
         public void ActivityFailed(Activity? activity, Exception ex)
         {
             if (activity == null) return;
@@ -112,6 +133,11 @@ namespace emc.camus.domain.Logging
         /// <summary>
         /// Starts an activity and executes the provided async function returning a value, marking success or failure automatically.
         /// </summary>
+        /// <typeparam name="T">The return type of the function.</typeparam>
+        /// <param name="name">The activity name.</param>
+        /// <param name="operationType">The operation type.</param>
+        /// <param name="func">The async function to execute within the activity context.</param>
+        /// <returns>The result of the executed function.</returns>
         public async Task<T> StartActivityAndRunAsync<T>(string name, OperationType operationType, Func<Activity?, Task<T>> func)
         {
             using var activity = StartActivity(name, operationType);

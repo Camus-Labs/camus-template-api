@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using Swashbuckle.AspNetCore.Annotations;
 using emc.camus.domain.Generic;
-using emc.camus.domain.Logging;
+using emc.camus.application.Observability;
 using emc.camus.application.Secrets;
 using emc.camus.application.Auth;
 using Microsoft.AspNetCore.Authorization;

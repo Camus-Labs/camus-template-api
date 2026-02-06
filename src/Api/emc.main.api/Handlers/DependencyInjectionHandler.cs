@@ -1,4 +1,3 @@
-using emc.camus.domain.Logging;
 using emc.camus.application.Secrets;
 using emc.camus.secretstorage.dapr;
 using emc.camus.secretstorage.dapr.Configurations;
@@ -30,9 +29,6 @@ namespace emc.camus.main.api.Handlers
             // Register DaprSecretProvider - secrets load in constructor
             services.AddHttpClient<DaprSecretProvider>();
             services.AddSingleton<ISecretProvider>(provider => provider.GetRequiredService<DaprSecretProvider>());
-
-            // Configure App services -------------------------------------------------
-            services.AddSingleton<IActivitySourceWrapper, ActivitySourceWrapper>();
 
             return services;
         }

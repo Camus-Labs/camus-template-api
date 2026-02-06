@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Diagnostics;
 using emc.camus.observability.otel.Configurations;
 using emc.camus.observability.otel.Logging;
 using emc.camus.observability.otel.Telemetry;
+using emc.camus.application.Observability;
 
 namespace emc.camus.observability.otel
 {
@@ -46,6 +48,11 @@ namespace emc.camus.observability.otel
 
             builder.Host.UseEmcSerilog(otelSettings, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);
             builder.Services.AddCamusOpenTelemetry(otelSettings, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);
+            
+            // Register ActivitySource and wrapper for distributed tracing
+            builder.Services.AddSingleton(new ActivitySource(normalizedServiceName, normalizedServiceVersion));
+            builder.Services.AddSingleton<IActivitySourceWrapper, ActivitySourceWrapper>();
+            
             // Ensure Serilog flushes on shutdown to avoid log loss
             builder.Services.AddHostedService<SerilogFlushHostedService>();
             return builder;

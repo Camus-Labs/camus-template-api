@@ -27,4 +27,9 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.14.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Process" Version="1.14.0-beta.2" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reference to Application layer for IActivitySourceWrapper interface -->
+    <ProjectReference Include="../../Application/emc.application/emc.camus.application.csproj" />
+  </ItemGroup>
 </Project>
