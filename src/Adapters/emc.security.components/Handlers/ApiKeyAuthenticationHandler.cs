@@ -1,23 +1,20 @@
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using emc.camus.application.Secrets;
-    
-namespace emc.camus.main.api.Handlers
+
+namespace emc.camus.security.components.Handlers
 {
     /// <summary>
     /// Authentication handler for validating API Key requests using a secret provider.
     /// </summary>
     public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
-        /// <summary>
-        /// The authentication scheme name for API Key authentication.
-        /// </summary>
-        public const string SchemeName = "ApiKey";
         private const string ApiKeyHeaderName = "X-Api-Key";
         private readonly ISecretProvider _secretProvider;
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ApiKeyAuthenticationHandler"/> class.
         /// </summary>
@@ -34,6 +31,7 @@ namespace emc.camus.main.api.Handlers
         {
             _secretProvider = secretProvider;
         }
+
         /// <summary>
         /// Handles authentication for API Key requests.
         /// </summary>
@@ -43,6 +41,7 @@ namespace emc.camus.main.api.Handlers
         {
             if (!Request.Headers.TryGetValue(ApiKeyHeaderName, out var apiKeyHeaderValues))
             {
+                Logger.LogWarning("API Key authentication failed: Header '{HeaderName}' not found", ApiKeyHeaderName);
                 throw new UnauthorizedAccessException("API Key header not found.");
             }
 
@@ -51,14 +50,16 @@ namespace emc.camus.main.api.Handlers
 
             if (string.IsNullOrEmpty(providedApiKey) || providedApiKey != configuredApiKey)
             {
+                Logger.LogWarning("API Key authentication failed: Invalid API Key provided");
                 throw new UnauthorizedAccessException("Invalid API Key.");
             }
 
             var claims = new[] { new Claim(ClaimTypes.Name, "ApiKeyUser") };
-            var identity = new ClaimsIdentity(claims, SchemeName);
+            var identity = new ClaimsIdentity(claims, CamusAuthenticationSchemes.ApiKey);
             var principal = new ClaimsPrincipal(identity);
-            var ticket = new AuthenticationTicket(principal, SchemeName);
+            var ticket = new AuthenticationTicket(principal, CamusAuthenticationSchemes.ApiKey);
 
+            Logger.LogInformation("API Key authentication successful for user: {User}", "ApiKeyUser");
             return Task.FromResult(AuthenticateResult.Success(ticket));
         }
     }

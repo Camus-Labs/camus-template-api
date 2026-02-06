@@ -1,30 +1,44 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using emc.camus.main.api.Configurations;
+using emc.camus.security.components.Configurations;
 
-namespace emc.camus.main.api.Handlers
+namespace emc.camus.security.components.Handlers
 {
     /// <summary>
-    /// Provides extension methods for configuring JWT authentication.
+    /// Provides extension methods for configuring JWT Bearer authentication.
     /// </summary>
     public static class JwtAuthenticationHandler
     {
         /// <summary>
-        /// Adds and configures JWT Bearer authentication with validation parameters and event handlers.
+        /// Adds JWT Bearer authentication with default configuration including event handlers for logging.
         /// </summary>
         /// <param name="builder">The authentication builder.</param>
-        /// <param name="services">The service collection.</param>
-        /// <returns>The updated authentication builder.</returns>
-        public static AuthenticationBuilder AddCamusJwtAuthentication(this AuthenticationBuilder builder)
+        /// <param name="services">The service collection for dependency resolution.</param>
+        /// <param name="configuration">The application configuration.</param>
+        /// <returns>The updated authentication builder for fluent configuration.</returns>
+        public static AuthenticationBuilder AddJwtBearerWithDefaults(
+            this AuthenticationBuilder builder,
+            IServiceCollection services,
+            IConfiguration configuration)
         {
-            builder.AddJwtBearer();
-            
-            builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
-                .Configure<IOptions<JwtSettings>, RsaSecurityKey>((options, jwtSettingsOptions, rsaKey) =>
+            builder.AddJwtBearer(options =>
+            {
+                // Initial configuration - will be overridden by AddOptions below
+            });
+
+            // Configure JWT Bearer Options with dependency injection
+            services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+                .Configure<IOptions<JwtSettings>, RsaSecurityKey, ILoggerFactory>((options, jwtSettingsOptions, rsaKey, loggerFactory) =>
                 {
                     var jwtSettings = jwtSettingsOptions.Value;
+                    var logger = loggerFactory.CreateLogger("JwtAuthenticationHandler");
+                    
+                    // Token Validation Parameters
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
@@ -37,38 +51,36 @@ namespace emc.camus.main.api.Handlers
                         ClockSkew = TimeSpan.Zero
                     };
 
+                    // JWT Bearer Events for logging and error handling
                     options.Events = new JwtBearerEvents
                     {
                         OnAuthenticationFailed = context =>
                         {
-                            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                            var message = $"Authentication failed: {context.Exception.Message}";
+                            var message = $"JWT Authentication failed: {context.Exception.Message}";
                             logger.LogWarning(message);
                             throw new UnauthorizedAccessException(message, context.Exception);
                         },
                         OnChallenge = context =>
                         {
-                            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                            var message = "Authentication is required to access this resource";
+                            var message = "JWT Authentication required to access this resource";
                             logger.LogWarning(message);
                             throw new UnauthorizedAccessException(message);
                         },
                         OnForbidden = context =>
                         {
-                            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                            var message = "You do not have permission to access this resource";
+                            var message = $"JWT Authorization forbidden for user: {context.Principal?.Identity?.Name ?? "Unknown"}";
                             logger.LogWarning(message);
                             throw new InvalidOperationException(message);
                         },
                         OnTokenValidated = context =>
                         {
-                            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                            logger.LogInformation("Token validated for user: {User}", context.Principal?.Identity?.Name);
+                            logger.LogInformation("JWT Token validated for user: {User}", 
+                                context.Principal?.Identity?.Name ?? "Unknown");
                             return Task.CompletedTask;
                         }
                     };
                 });
-            
+
             return builder;
         }
     }

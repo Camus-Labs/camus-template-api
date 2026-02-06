@@ -1,4 +1,4 @@
-namespace emc.camus.main.api.Configurations;
+namespace emc.camus.security.components.Configurations;
 
 /// <summary>
 /// Configuration settings for JWT authentication.
@@ -19,9 +19,4 @@ public class JwtSettings
     /// Token expiration time in minutes.
     /// </summary>
     public int ExpirationMinutes { get; set; } = 60;
-
-    /// <summary>
-    /// Optional RSA private key PEM file path for RSA signing.
-    /// </summary>
-    public string? RsaPrivateKeyPem { get; set; }
 }

@@ -19,13 +19,12 @@
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="9.0.6" />
     <PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="9.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.12" />
-    <!-- AUTHENTICATION -->
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.12" />
   </ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="../../Adapters/emc.datapersistance.postgresql/emc.camus.datapersistance.postgresql.csproj" />
     <ProjectReference Include="../../Adapters/emc.secretstorage.dapr/emc.camus.secretstorage.dapr.csproj" />
+    <ProjectReference Include="../../Adapters/emc.security.components/emc.camus.security.components.csproj" />
     <ProjectReference Include="../../Application/emc.application/emc.camus.application.csproj" />
     <ProjectReference Include="../../Adapters/emc.observability.otel/emc.camus.observability.otel.csproj" />
   </ItemGroup>

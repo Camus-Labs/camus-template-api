@@ -5,13 +5,8 @@ using Microsoft.OpenApi;
 using emc.camus.main.api.Handlers;
 using System.Diagnostics;
 using Microsoft.OpenApi.Models;
-using emc.camus.main.api.Configurations;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.Options;
-using System.Text;
 using Swashbuckle.AspNetCore.Filters;
+using emc.camus.security.components;
 
 // Step 0: Define WebApplicationBuilder and settings
 var builder = WebApplication.CreateBuilder(args);
@@ -64,6 +59,53 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Demo for private endpoints."
     });
 
+    // Add JWT Bearer Security Definition (this is what creates the Authorize button)
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    });
+
+    // Add ApiKey Security Definition (if you need it)
+    options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    {
+        Description = "API Key needed to access the endpoints. Example: 'ApiKey: {key}'",
+        Name = "X-Api-Key", // or whatever header you use
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey
+    });
+
+    // This makes the Authorize button apply to all endpoints by default
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        },
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "ApiKey"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+
     // Include XML comments if available
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
@@ -92,18 +134,11 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddDependencyInjections(builder.Configuration);
 
-// Step 6.1: Configure JWT Authentication
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-    .AddCamusJwtAuthentication()
-    .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationHandler.SchemeName, null);
+// Step 6: Configure Security (Authentication & Authorization) using Camus Security Adapter
+builder.AddCamusAuthentication();
+builder.AddCamusAuthorization();
 
-builder.Services.AddAuthorization();
-
-// Step 6: Add the controllers and build the app
+// Step 7: Add the controllers and build the app
 builder.Services.AddControllers();
 
 // Step 7: Build App Builder

@@ -4,15 +4,11 @@ using Swashbuckle.AspNetCore.Annotations;
 using emc.camus.domain.Generic;
 using emc.camus.domain.Logging;
 using emc.camus.application.Secrets;
+using emc.camus.application.Auth;
 using Microsoft.AspNetCore.Authorization;
 using emc.camus.domain.Auth;
-using emc.camus.main.api.Configurations;
-using emc.camus.main.api.Handlers;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
+using emc.camus.security.components;
 using System.Security.Claims;
-using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace emc.camus.main.api.Controllers
 {
@@ -34,8 +30,7 @@ namespace emc.camus.main.api.Controllers
         private readonly ISecretProvider _secretProvider;
         private readonly ILogger<AuthController> _logger;
         private readonly IActivitySourceWrapper _activitySource;
-        private readonly JwtSettings _jwtSettings;
-        private readonly SigningCredentials _signingCredentials;
+        private readonly IJwtTokenGenerator _tokenGenerator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AuthController"/> class.
@@ -44,22 +39,19 @@ namespace emc.camus.main.api.Controllers
         /// <param name="logger">Logger for AuthController.</param>
         /// <param name="activitySource">Activity source for OpenTelemetry tracing.</param>
         /// <param name="secretProvider">Provider for retrieving secrets and credentials.</param>
-        /// <param name="jwtSettings">JWT settings from configuration.</param>
-        /// <param name="signingCredentials">Signing credentials for JWT tokens.</param>
+        /// <param name="tokenGenerator">JWT token generator service.</param>
         public AuthController(
             IConfiguration configuration, 
             ILogger<AuthController> logger, 
             IActivitySourceWrapper activitySource,
             ISecretProvider secretProvider,
-            IOptions<JwtSettings> jwtSettings,
-            SigningCredentials signingCredentials)
+            IJwtTokenGenerator tokenGenerator)
         {
             _logger = logger;
             _configuration = configuration;
             _activitySource = activitySource;
             _secretProvider = secretProvider;
-            _jwtSettings = jwtSettings.Value;
-            _signingCredentials = signingCredentials;
+            _tokenGenerator = tokenGenerator;
         }
 
         /// <summary>
@@ -110,7 +102,7 @@ namespace emc.camus.main.api.Controllers
         /// </summary>
         /// <returns>API info for v2.0 (API Key required).</returns>
         [HttpGet("info-apikey")]
-        [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+        [Authorize(AuthenticationSchemes = CamusAuthenticationSchemes.ApiKey)]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
             Description = "Returns API info for v2.0, requires API Key authentication."
@@ -152,7 +144,7 @@ namespace emc.camus.main.api.Controllers
         /// </summary>
         /// <returns>API info for v2.0 (JWT required).</returns>
         [HttpGet("info-jwt")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [Authorize(AuthenticationSchemes = CamusAuthenticationSchemes.JwtBearer)]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
             Description = "Returns API info for v2.0, requires JWT authentication."
@@ -196,7 +188,7 @@ namespace emc.camus.main.api.Controllers
         /// <param name="request">The JWT token request containing AccessKey and AccessSecret.</param>
         /// <returns>JWT token response if credentials are valid; otherwise, an error response.</returns>
         [HttpPost("token")]
-        [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+        [Authorize(AuthenticationSchemes = CamusAuthenticationSchemes.ApiKey)]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
             Description = "Generates a JWT token for valid credentials in API version >=2.0. Requires API Key authentication (X-API-Key header)."
@@ -225,33 +217,19 @@ namespace emc.camus.main.api.Controllers
 
                 _logger.LogInformation("Valid credentials provided. Generating JWT token.");
 
-                // Generate JWT token
-                var claims = new List<Claim>
+                // Generate JWT token with roles
+                var roleClaims = new List<Claim>
                 {
-                    new Claim(JwtRegisteredClaimNames.Sub, request.AccessKey ?? "unknown"),
-                    new Claim(JwtRegisteredClaimNames.UniqueName, request.AccessKey ?? "unknown"),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
                     new Claim(ClaimTypes.Role, "User"),
                     new Claim(ClaimTypes.Role, "ApiClient")
                 };
 
-                var expiresOn = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
-
-                var jwtToken = new JwtSecurityToken(
-                    issuer: _jwtSettings.Issuer,
-                    audience: _jwtSettings.Audience,
-                    claims: claims,
-                    expires: expiresOn,
-                    signingCredentials: _signingCredentials
-                );
-
-                var token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+                var result = _tokenGenerator.GenerateToken(request.AccessKey ?? "unknown", roleClaims);
 
                 var authToken = new AuthToken
                 {
-                    Token = token,
-                    ExpiresOn = expiresOn
+                    Token = result.Token,
+                    ExpiresOn = result.ExpiresOn
                 };
 
                 var response = new ApiResponse<AuthToken>
@@ -266,7 +244,7 @@ namespace emc.camus.main.api.Controllers
                 });
 
                 _logger.LogInformation("JWT token generated for user: {User}, expires: {Expiration}", 
-                    request.AccessKey, expiresOn);
+                    request.AccessKey, result.ExpiresOn);
 
                 return Task.FromResult<IActionResult>(Ok(response));
             });

@@ -109,14 +109,24 @@ namespace emc.camus.secretstorage.dapr
         /// <returns>The secret value if found; otherwise, <c>null</c>.</returns>
         public string? GetSecret(string name)
         {
+            string? result = null;
+
             if (string.IsNullOrWhiteSpace(name))
             {
                 _logger.LogWarning("GetSecret called with null or empty name");
-                return null;
+            }
+            else if (_secrets.TryGetValue(name, out var value))
+            {
+                _logger.LogDebug("Secret '{SecretName}' retrieved successfully", name);
+                result = value;
+            }
+            else
+            {
+                _logger.LogWarning("Secret '{SecretName}' not found in loaded secrets. Available secrets: {LoadedCount}", 
+                    name, _secrets.Count);
             }
 
-
-            return _secrets.TryGetValue(name, out var value) ? value : null;
+            return result;
         }
         
         /// <summary>

@@ -1,7 +1,3 @@
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using emc.camus.main.api.Configurations;
-using System.Security.Cryptography;
 using emc.camus.domain.Logging;
 using emc.camus.application.Secrets;
 using emc.camus.secretstorage.dapr;
@@ -17,7 +13,7 @@ namespace emc.camus.main.api.Handlers
     public static class DependencyInjectionHandler
     {
         /// <summary>
-        /// Registers application services, JWT configuration, and secret providers in the dependency injection container.
+        /// Registers application services and secret providers in the dependency injection container.
         /// </summary>
         /// <param name="services">The service collection to add dependencies to.</param>
         /// <param name="configuration">The application configuration.</param>
@@ -34,27 +30,6 @@ namespace emc.camus.main.api.Handlers
             // Register DaprSecretProvider - secrets load in constructor
             services.AddHttpClient<DaprSecretProvider>();
             services.AddSingleton<ISecretProvider>(provider => provider.GetRequiredService<DaprSecretProvider>());
-
-            // Configure JWT --------------------------------------------------------
-            services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
-
-            services.AddSingleton<RsaSecurityKey>(provider =>
-            {
-                // Load RSA private key from Dapr secret
-                var secretProvider = provider.GetRequiredService<ISecretProvider>();
-                var pem = secretProvider.GetSecret("RsaPrivateKeyPem") 
-                    ?? throw new InvalidOperationException("RSA private key 'RsaPrivateKeyPem' not found in secrets");
-
-                var rsa = RSA.Create();
-                rsa.ImportFromPem(pem.ToCharArray());
-                return new RsaSecurityKey(rsa);
-            });
-
-            services.AddSingleton<SigningCredentials>(provider =>
-            {
-                var rsaKey = provider.GetRequiredService<RsaSecurityKey>();
-                return new SigningCredentials(rsaKey, SecurityAlgorithms.RsaSha256);
-            });
 
             // Configure App services -------------------------------------------------
             services.AddSingleton<IActivitySourceWrapper, ActivitySourceWrapper>();
