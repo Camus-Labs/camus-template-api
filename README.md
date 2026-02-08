@@ -1,52 +1,27 @@
 # Camus API Template
 
-A modern, production-ready **.NET 9.0 REST API template** built with **Hexagonal Architecture (Ports & Adapters)**. This template provides the architectural skeleton and infrastructure setup for building scalable, maintainable, and secure REST APIs with modern best practices baked in from the start.
+A modern, production-ready **.NET 9.0 REST API template** built with **Hexagonal Architecture (Ports & Adapters)**. This template provides infrastructure adapters and architectural patterns for building scalable, maintainable, and secure REST APIs.
 
-Think of it as a "starter kit" that handles authentication, observability, security, and infrastructure concerns - giving you a clean architectural foundation to build your business logic upon.
-
-> **Note**: This template focuses on providing the architectural foundation with working infrastructure. Business controllers and domain-specific logic are intentionally left for you to implement using the established patterns.
+> **📘 New to this project?** Start with the [Documentation Index](docs/README.md) for comprehensive guides on architecture, authentication, deployment, and debugging.
 
 ---
 
-## 🚀 What's Included
+## 🎯 What This Template Provides
 
-### ✅ Infrastructure & Foundation (Ready to Use)
+**Ready-to-use Infrastructure Adapters:**
 
-- **Authentication System**
-  - JWT Bearer with RSA256 signing
-  - API Key authentication (`X-Api-Key`)
-  - OAuth2-compatible token endpoint
-  
-- **API Infrastructure**
-  - OpenAPI/Swagger with interactive UI
-  - Multi-version support (v1, v2)
-  - Global exception handling
-  - Rate limiting (100 req/min)
-  - CORS policies
-  
-- **Observability**
-  - OpenTelemetry (tracing & metrics)
-  - Multiple exporters (Console, Jaeger, Zipkin, Azure Monitor, Prometheus)
-  - Serilog structured logging
-  - Health check endpoints
-  
-- **Data Access**
-  - PostgreSQL adapter with Dapper
-  - Generic repository pattern
-  - DTO mapping infrastructure
-  
-- **Cloud-Native**
-  - Docker multi-stage build
-  - Azure Container Apps ready
-  - Dapr integration (secrets, state, pub/sub)
-  - Environment-based configuration
+- 🔐 Authentication (JWT Bearer + API Key)
+- 📊 Observability (OpenTelemetry + Serilog)
+- 🗄️ Data Persistence (PostgreSQL + Dapper)
+- 🔒 Secrets Management (Dapr)
+- 📚 API Documentation (Swagger/OpenAPI)
 
-### 🏗️ What You Build (Business Logic)
+**Architectural Foundation:**
 
-- **Business Controllers**: Add your domain-specific API endpoints
-- **Use Cases**: Implement application services orchestrating business operations
-- **Domain Models**: Extend with your business entities and rules
-- **Integration Tests**: Build comprehensive test coverage
+- Clean separation between domain, application, and infrastructure layers
+- Dependency inversion with port/adapter pattern
+- Comprehensive test project structure
+- Docker containerization with hot-reload support
 
 ---
 
@@ -54,36 +29,45 @@ Think of it as a "starter kit" that handles authentication, observability, secur
 
 ```text
 src/
-├── CamusApp.sln
-├── Dockerfile
+├── Api/                                    # 🌐 REST API Layer
+│   └── emc.camus.api/
+│       ├── Controllers/                    # API endpoints
+│       ├── Middleware/                     # HTTP pipeline components
+│       ├── Extensions/                     # Service configuration
+│       └── Program.cs                      # Application startup
 │
-├── Api/                                   # 🌐 REST API Layer
-│   └── emc.main.api/
-│       ├── Controllers/                   # API endpoints (AuthController provided)
-│       ├── Handlers/                      # Middleware & authentication
-│       └── Program.cs                     # Application entry point
+├── Application/                            # 🔧 Use Cases & Ports
+│   └── emc.camus.application/
+│       ├── Auth/                          # Authentication interfaces
+│       ├── Observability/                 # Tracing interfaces
+│       └── Secrets/                       # Secret provider interfaces
 │
-├── Application/                           # 🔧 Use Cases & Ports
-│   └── emc.application/
-│       └── Data/                          # Port interfaces (contracts)
-│
-├── Domain/                                # 💼 Business Logic Core
-│   └── emc.domain/
+├── Domain/                                 # 💼 Business Core
+│   └── emc.camus.domain/
 │       ├── Auth/                          # Authentication models
-│       ├── Entities/                      # Domain models
-│       └── Generic/                       # Base classes
+│       └── Generic/                       # Base entities
 │
-├── Adapters/                              # 🔌 External Integrations
-│   ├── emc.datapersistance.postgresql/   # Database adapter
-│   ├── emc.secretstorage.dapr/           # Secret management
-│   └── emc.observability.otel/           # OpenTelemetry setup
+├── Adapters/                              # 🔌 Infrastructure
+│   ├── emc.camus.persistence.postgresql/  # Database adapter
+│   ├── emc.camus.secrets.dapr/           # Dapr secrets
+│   ├── emc.camus.observability.otel/     # OpenTelemetry
+│   ├── emc.camus.security.jwt/           # JWT authentication
+│   ├── emc.camus.security.apikey/        # API Key authentication
+│   ├── emc.camus.documentation.swagger/  # Swagger/OpenAPI
+│   ├── emc.adapterdapr.components/       # Dapr configurations
+│   └── emc.observability.components/     # Observability stack configs
 │
 └── Test/                                  # 🧪 Testing Projects
-    ├── api.main.test/
-    ├── application.test/
-    ├── domain.test/
-    └── adapter.postgresql.test/
+    ├── emc.camus.api.test/
+    ├── emc.camus.application.test/
+    ├── emc.camus.domain.test/
+    ├── emc.camus.persistence.postgresql.test/
+    ├── emc.camus.observability.otel.test/
+    ├── emc.camus.secrets.dapr.test/
+    └── emc.camus.security.jwt.test/
 ```
+
+> **📖 Learn More:** See [Architecture Guide](docs/architecture.md) for detailed layer responsibilities and dependency flow.
 
 ---
 
@@ -91,13 +75,13 @@ src/
 
 ### Prerequisites
 
-- .NET 9.0 SDK
-- Docker (optional, for containerization)
-- PostgreSQL (for database features)
+- [.NET 9.0 SDK](https://dotnet.microsoft.com/download)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) (optional, for containerization)
+- [Dapr CLI](https://docs.dapr.io/getting-started/install-dapr-cli/) (optional, for local Dapr development)
 
 ### Run Locally
 
-1. **Clone the repository**:
+1. **Clone and navigate**:
 
    ```bash
    git clone <your-repo>
@@ -110,166 +94,129 @@ src/
 
    ```json
    {
-     "AccessKey": "your-access-key",
-     "AccessSecret": "your-access-secret",
-     "XApiKey": "your-api-key"
+     "AccessKey": "dev-access-key",
+     "AccessSecret": "dev-access-secret",
+     "XApiKey": "dev-api-key-12345",
+     "RsaPrivateKeyPem": "<your-rsa-private-key>"
    }
    ```
 
-3. **Run the application**:
+3. **Run the API**:
 
    ```bash
-   dotnet run --project src/Api/emc.main.api/emc.camus.main.api.csproj
+   dotnet run --project src/Api/emc.camus.api/emc.camus.api.csproj
    ```
 
-4. **Explore the API**:
-   - **Swagger UI**: <http://localhost:5000/swagger>
-   - **Get JWT Token**: `POST /api/v1/auth/token` with your credentials
-   - **Metrics**: <http://localhost:5000/metrics> (if Prometheus enabled)
+4. **Explore**:
+   - Swagger UI: <http://localhost:5000/swagger>
+   - Get JWT Token: `POST /api/v2/auth/token`
+   - Health Check: `GET /health`
 
 ### Run with Docker
 
 ```bash
-docker-compose up --build
+# Development (with hot-reload)
+docker-compose -f docker-compose.dev.yml up --build
+
+# Production
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
-Access at: <http://localhost:9003/swagger>
-
----
-
-## 🏗️ Architecture: Hexagonal (Ports & Adapters)
-
-This template implements Hexagonal Architecture, separating your application into distinct layers:
-
-```text
-┌─────────────────────────────────────────────────────────┐
-│                    Adapters Layer                       │
-│  🌐 API Controllers  🗄️ PostgreSQL  🔌 External APIs   │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────┐
-│                 Application Layer                       │
-│      🔧 Use Cases  ⚡ Ports (Interfaces)               │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────┐
-│                   Domain Layer (Core)                   │
-│      💼 Entities  📋 Business Rules                    │
-└─────────────────────────────────────────────────────────┘
-```
-
-**Benefits:**
-
-- **Testability**: Easy unit testing without external dependencies
-- **Flexibility**: Swap databases/APIs without changing core logic
-- **Maintainability**: Clear separation of concerns
-
-**Current Flow (Authentication):**
-
-1. **API Layer**: `AuthController` receives JWT token requests
-2. **Application Layer**: Validates credentials via `ISecretProvider` interface
-3. **Domain Layer**: Uses authentication models (`JwtTokenRequest`, `JwtTokenResponse`)
-4. **Adapter Layer**: `DaprSecretProvider` retrieves credentials from secret store
+> **📖 Detailed Guide:** See [Debugging Documentation](docs/debugging.md) for Docker development workflow with VS Code debugging.
 
 ---
 
 ## 🔐 Authentication
 
+The template includes two authentication mechanisms ready to use:
+
 ### JWT Bearer Tokens
 
-Generate tokens via the authentication endpoint:
-
 ```bash
-POST /api/v1/auth/token
+# Request token
+POST /api/v2/auth/token
 Content-Type: application/json
 
 {
   "accessKey": "your-access-key",
   "accessSecret": "your-access-secret"
 }
+
+# Use token
+Authorization: Bearer <token>
 ```
 
-**Response:**
+### API Key
 
-```json
-{
-  "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expiresOn": "2026-02-04T23:55:05.123Z"
-}
-```
-
-**Use the token:**
-
-```http
-Authorization: Bearer {your-token}
-```
-
-### API Key Authentication
-
-Alternative authentication via header:
-
-```http
+```bash
 X-Api-Key: your-api-key
 ```
 
-**Configuration:**
-
-- JWT settings in `appsettings.json` (issuer, audience, expiration)
-- Secrets managed via Dapr (production) or `secrets.json` (development)
-- RSA256 signing with certificate-based keys
-
-📖 **Detailed Guide**: See [doc/authentication.md](doc/authentication.md)
+> **📖 Full Guide:** See [Authentication Documentation](docs/authentication.md) for configuration, claims, and security best practices.
 
 ---
 
 ## 📊 Observability
 
-### OpenTelemetry Integration
+Built-in OpenTelemetry integration with multiple exporter options:
 
-**Tracing**: Distributed tracing with correlation IDs across services
-**Metrics**: ASP.NET Core, HTTP client, and runtime instrumentation
-**Exporters**: Console, Jaeger, Zipkin, Azure Monitor, Prometheus
+- **Tracing**: OTLP, Jaeger, Zipkin, Console
+- **Metrics**: OTLP, Prometheus, Console
+- **Logging**: Serilog with OTLP exporter to Loki
 
-### Configuration
+**Quick Setup:**
 
 ```json
 {
   "OpenTelemetry": {
     "Tracing": {
-      "Exporter": "Console|Jaeger|Zipkin|AzureMonitor"
-    },
-    "Metrics": {
-      "MetricsExporter": "None|Prometheus"
+      "Exporter": "Otlp",
+      "OtlpEndpoint": "http://localhost:4317"
     }
   }
 }
 ```
 
-### Structured Logging
+The template includes Docker Compose configurations for a complete observability stack (Jaeger, Prometheus, Grafana, Loki).
 
-- **Serilog** with Elasticsearch sink support
-- Console and file outputs
-- Request/response logging with sanitization
-- Activity tracing with correlation IDs
+**📖 Learn More:**
+
+> - [Observability Adapter README](src/Adapters/emc.camus.observability.otel/README.md) - Usage guide
+> - [Observability Components README](src/Adapters/emc.observability.components/README.md) - Stack configuration
+
+---
+
+## 🏗️ Architecture Overview
+
+Camus follows **Hexagonal Architecture** (Ports & Adapters):
+
+```text
+┌─────────────────────────────────────────────┐
+│           Adapters (External)               │
+│  API | PostgreSQL | Dapr | OpenTelemetry   │
+├─────────────────────────────────────────────┤
+│         Application Layer                   │
+│  Use Cases | Port Interfaces                │
+├─────────────────────────────────────────────┤
+│         Domain Layer (Core)                 │
+│  Business Logic | Domain Models             │
+└─────────────────────────────────────────────┘
+```
+
+**Key Benefits:**
+
+- ✅ Domain logic isolated from infrastructure
+- ✅ Easy adapter swapping (PostgreSQL → MongoDB)
+- ✅ Testable without external dependencies
+- ✅ Clear separation of concerns
+
+> **📖 Deep Dive:** Read [Architecture Documentation](docs/architecture.md) for layer responsibilities, dependency flow, and patterns.
 
 ---
 
 ## 🧪 Testing
 
-### Framework Setup
-
-- **XUnit**: Test framework for all layers
-- **Moq**: Mocking dependencies
-- **Coverlet**: Code coverage collection
-
-### Test Projects
-
-- `api.main.test/` - API endpoint tests
-- `application.test/` - Use case tests
-- `domain.test/` - Domain logic tests
-- `adapter.postgresql.test/` - Database adapter tests
-
-### Run Tests
+Comprehensive test project structure included:
 
 ```bash
 # Run all tests
@@ -278,38 +225,16 @@ dotnet test
 # Run with coverage
 dotnet test /p:CollectCoverage=true
 
-# Run specific test project
-dotnet test src/Test/api.main.test/
+# Run specific project
+dotnet test src/Test/emc.camus.api.test/
 ```
 
----
+**Test Organization:**
 
-## ⚙️ Configuration
-
-### Application Settings
-
-Key configuration areas in `appsettings.json`:
-
-- **JWT Settings**: Token issuer, audience, expiration, RSA key path
-- **OpenTelemetry**: Exporter selection, endpoints
-- **Rate Limiting**: Request limits, time windows
-- **CORS**: Allowed origins, methods, headers
-- **Database**: Connection strings (use environment variables in production)
-
-### Environment Variables
-
-For production, override settings via environment variables:
-
-```bash
-JwtSettings__Issuer=https://api.production.com
-ConnectionStrings__DefaultConnection=Host=...
-OpenTelemetry__Tracing__Exporter=AzureMonitor
-```
-
-### Secrets Management
-
-- **Development**: `src/Adapters/emc.adapterdapr.components/secrets.json`
-- **Production**: Azure Key Vault, AWS Secrets Manager, or Dapr secret stores
+- `emc.camus.api.test` - Controller and middleware tests
+- `emc.camus.application.test` - Use case tests
+- `emc.camus.domain.test` - Domain logic tests
+- `emc.camus.*.test` - Adapter-specific tests
 
 ---
 
@@ -317,159 +242,135 @@ OpenTelemetry__Tracing__Exporter=AzureMonitor
 
 ### Docker
 
-**Build image:**
-
 ```bash
-docker build -t camus-api .
-```
+# Build production image
+docker build -t camus-api:latest .
 
-**Run container:**
-
-```bash
-docker run -p 8080:9003 camus-api
+# Run
+docker run -p 8080:8080 -e ASPNETCORE_ENVIRONMENT=Production camus-api:latest
 ```
 
 ### Azure Container Apps
 
-The template is optimized for Azure Container Apps:
+```bash
+az containerapp create \
+  --name camus-api \
+  --resource-group camus-rg \
+  --environment camus-env \
+  --image your-registry/camus-api:latest \
+  --target-port 8080 \
+  --ingress external
+```
 
-- Multi-stage Dockerfile for small image size
-- Non-root user execution
-- Health check endpoints
-- Environment-based configuration
-
-### Dapr Integration
-
-Optional Dapr features:
-
-- **Service Invocation**: Microservice communication
-- **State Management**: Pluggable state stores
-- **Pub/Sub**: Event-driven architecture
-- **Secrets**: Centralized secret management
-
-📖 **Deployment Guide**: See [doc/deployment.md](doc/deployment.md)
+> **📖 Complete Guide:** See [Deployment Documentation](docs/deployment.md) for production setup, scaling, and cloud deployment.
 
 ---
 
 ## 🛠️ Extending the Template
 
-### Add a New Business Controller
+### Add Business Controllers
 
-1. Create controller in `src/Api/emc.main.api/Controllers/`:
+Create controllers in `src/Api/emc.camus.api/Controllers/`:
 
-   ```csharp
-   [ApiController]
-   [Route("api/v{version:apiVersion}/[controller]")]
-   public class ProductsController : ControllerBase
-   {
-       // Your endpoints
-   }
-   ```
+```csharp
+[ApiController]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
+public class ProductsController : ControllerBase
+{
+    // Your endpoints
+}
+```
 
-2. Register services in `DependencyInjectionHandler.cs`
+### Implement Use Cases
 
-### Add a New Domain Entity
+Add application services in `src/Application/emc.camus.application/`:
 
-1. Create model in `src/Domain/emc.domain/Entities/`
-2. Define repository interface in `src/Application/emc.application/Data/`
-3. Implement adapter in `src/Adapters/emc.datapersistance.postgresql/`
+```csharp
+public interface IProductService
+{
+    Task<Product> GetProductAsync(int id);
+}
+```
 
-### Add External Integration
+### Create Domain Entities
 
-1. Create new adapter project in `src/Adapters/`
-2. Implement application interfaces (ports)
-3. Register in dependency injection
+Define business models in `src/Domain/emc.camus.domain/`:
+
+```csharp
+public class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    // Business rules here
+}
+```
 
 ---
 
 ## 📚 Documentation
 
-- **[Architecture Guide](doc/architecture.md)** - System design and patterns
-- **[Authentication](doc/authentication.md)** - JWT & API Key implementation
-- **[Debugging](doc/debugging.md)** - Development workflow with Docker
-- **[Deployment](doc/deployment.md)** - Production deployment guide
-- **[API Reference](/swagger)** - Interactive Swagger UI
+**Getting Started:**
+
+- [📖 Documentation Index](docs/README.md) - Complete documentation guide
+- [🏗️ Architecture](docs/architecture.md) - System design and patterns
+- [🔐 Authentication](docs/authentication.md) - JWT & API Key implementation
+- [🐛 Debugging](docs/debugging.md) - Development workflow
+- [🚢 Deployment](docs/deployment.md) - Production deployment
+
+**Adapter Documentation:**
+
+- [Observability (OpenTelemetry)](src/Adapters/emc.camus.observability.otel/README.md)
+- [Security (JWT)](src/Adapters/emc.camus.security.jwt/README.md)
+- [Secrets (Dapr)](src/Adapters/emc.camus.secrets.dapr/README.md)
+- [Persistence (PostgreSQL)](src/Adapters/emc.camus.persistence.postgresql/README.md)
+- [Documentation (Swagger)](src/Adapters/emc.camus.documentation.swagger/README.md)
 
 ---
 
 ## 💡 When to Use This Template
 
-**✅ Perfect For:**
+**✅ Ideal For:**
 
-- REST APIs with complex business logic
-- Microservices requiring clean architecture
-- Applications needing strong observability
-- Projects with multiple external integrations
-- Teams wanting maintainable, testable code
-- Dapr-enabled service mesh architectures
+- Microservices with clean architecture
+- APIs requiring strong observability
+- Projects with multiple integrations
+- Teams valuing maintainability and testability
 
-**⚠️ Consider Alternatives If:**
+**⚠️ Consider Alternatives:**
 
-- Building simple CRUD APIs (might be overkill)
-- Small teams unfamiliar with hexagonal architecture
-- Prototypes requiring rapid iteration
-
----
-
-## 🔗 Next Steps
-
-1. **Get the Template**: Visit [APIGen Portal](https://apigeninterface-01.ambitiouscoast-ca9f7f6e.eastus2.azurecontainerapps.io/)
-2. **Add Business Controllers**: Implement your domain-specific endpoints
-3. **Build Use Cases**: Create application services orchestrating business logic
-4. **Configure External Systems**: Set up PostgreSQL, monitoring, secrets
-5. **Write Tests**: Build comprehensive test coverage
-6. **Deploy**: Use Docker/Azure Container Apps for production
-
-**Remember**: This template provides the foundation - build your business logic on top! 🚀
+- Simple CRUD APIs (might be overkill)
+- Rapid prototyping (more structure than needed)
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please follow these steps:
-
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Write tests for your changes
-4. Ensure all tests pass: `dotnet test`
-5. Update documentation as needed
-6. Submit a Pull Request
-
-### Code Standards
-
-- Follow .NET naming conventions
-- Add XML documentation for public APIs
-- Include unit tests for new features
-- Keep business logic in Domain layer
-- Implement ports/adapters for external dependencies
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Write tests for changes
+4. Ensure tests pass: `dotnet test`
+5. Update relevant documentation
+6. Submit Pull Request
 
 ---
 
 ## 🔒 Security
 
-**Reporting Vulnerabilities**: See [SECURITY.md](SECURITY.md) for our security policy and how to report vulnerabilities.
+**Reporting Vulnerabilities:** See [SECURITY.md](SECURITY.md)
 
-**Best Practices**:
+**Best Practices:**
 
-- Never commit secrets to version control
-- Use environment variables for production
+- Never commit secrets
+- Use environment variables in production
 - Rotate credentials regularly
-- Keep dependencies updated
 - Enable HTTPS in production
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-## 🙋 Support & Questions
-
-- **Documentation**: Check the [doc/](doc/) folder for detailed guides
-- **Issues**: Create GitHub issues for bugs or feature requests
-- **Questions**: Review existing issues or start a discussion
+MIT License - see LICENSE file for details.
 
 ---
 

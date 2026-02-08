@@ -5,20 +5,23 @@ WORKDIR /src
 
 # Copy solution and all project files for restore
 COPY src/CamusApp.sln ./
-COPY src/Api/emc.main.api/*.csproj ./Api/emc.main.api/
-COPY src/Domain/emc.domain/*.csproj ./Domain/emc.domain/
-COPY src/Application/emc.application/*.csproj ./Application/emc.application/
-COPY src/Adapters/emc.datapersistance.postgresql/*.csproj ./Adapters/emc.datapersistance.postgresql/
-COPY src/Adapters/emc.observability.otel/*.csproj ./Adapters/emc.observability.otel/
-COPY src/Adapters/emc.secretstorage.dapr/*.csproj ./Adapters/emc.secretstorage.dapr/
+COPY src/Api/emc.camus.api/*.csproj ./Api/emc.camus.api/
+COPY src/Domain/emc.camus.domain/*.csproj ./Domain/emc.camus.domain/
+COPY src/Application/emc.camus.application/*.csproj ./Application/emc.camus.application/
+COPY src/Adapters/emc.camus.persistence.postgresql/*.csproj ./Adapters/emc.camus.persistence.postgresql/
+COPY src/Adapters/emc.camus.observability.otel/*.csproj ./Adapters/emc.camus.observability.otel/
+COPY src/Adapters/emc.camus.secrets.dapr/*.csproj ./Adapters/emc.camus.secrets.dapr/
+COPY src/Adapters/emc.camus.security.jwt/*.csproj ./Adapters/emc.camus.security.jwt/
+COPY src/Adapters/emc.camus.security.apikey/*.csproj ./Adapters/emc.camus.security.apikey/
+COPY src/Adapters/emc.camus.documentation.swagger/*.csproj ./Adapters/emc.camus.documentation.swagger/
 
 # Restore all dependencies
-RUN dotnet restore ./Api/emc.main.api/emc.camus.main.api.csproj
+RUN dotnet restore ./Api/emc.camus.api/emc.camus.api.csproj
 
 # Copy everything else and build
 COPY src/. ./
-WORKDIR /src/Api/emc.main.api
-RUN dotnet publish emc.camus.main.api.csproj \
+WORKDIR /src/Api/emc.camus.api
+RUN dotnet publish emc.camus.api.csproj \
     -c Release \
     -o /app/publish \
     -p:UseAppHost=false \
@@ -50,4 +53,4 @@ ENV OpenTelemetry__Logs__Exporter=otlp
 ENV OpenTelemetry__Logs__OtlpEndpoint=http://localhost:4317
 
 # Run the app
-ENTRYPOINT ["dotnet", "emc.camus.main.api.dll"]
+ENTRYPOINT ["dotnet", "emc.camus.api.dll"]

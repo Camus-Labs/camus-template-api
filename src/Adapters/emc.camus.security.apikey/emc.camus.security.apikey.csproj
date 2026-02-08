@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>emc.camus.security.apikey</RootNamespace>
+    <AssemblyName>emc.camus.security.apikey</AssemblyName>
+    <PackageId>emc.camus.security.apikey</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- ASP.NET Core Authentication -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reference to Application layer for ISecretProvider interface -->
+    <ProjectReference Include="..\..\Application\emc.camus.application\emc.camus.application.csproj" />
+  </ItemGroup>
+
+</Project>

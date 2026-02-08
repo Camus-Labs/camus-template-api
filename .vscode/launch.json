@@ -6,9 +6,9 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/Api/emc.main.api/bin/Debug/net9.0/emc.camus.main.api.dll",
+            "program": "${workspaceFolder}/src/Api/emc.camus.api/bin/Debug/net9.0/emc.camus.api.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/src/Api/emc.main.api",
+            "cwd": "${workspaceFolder}/src/Api/emc.camus.api",
             "stopAtEntry": false,
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"

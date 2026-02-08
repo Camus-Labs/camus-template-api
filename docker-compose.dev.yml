@@ -23,8 +23,8 @@ services:
       # Mount source code for hot reload
       - ./src:/src:cached
       # Exclude bin/obj to avoid conflicts
-      - /src/Api/emc.main.api/bin
-      - /src/Api/emc.main.api/obj
+      - /src/Api/emc.camus.api/bin
+      - /src/Api/emc.camus.api/obj
     depends_on:
       - postgres
       - otel-collector
@@ -61,7 +61,7 @@ services:
       - "4318:4318"   # OTLP HTTP
       - "8889:8889"   # Prometheus metrics
     volumes:
-      - ./src/Adapters/emc.observability.components/otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+      - ./src/Infrastructure/observability/otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
     depends_on:
       - jaeger
       - loki
@@ -89,7 +89,7 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - ./src/Adapters/emc.observability.components/loki-config.yaml:/etc/loki/config.yml:ro
+      - ./src/Infrastructure/observability/loki-config.yaml:/etc/loki/config.yml:ro
       - loki-data:/loki
     networks:
       - camus-dev
@@ -105,7 +105,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./src/Adapters/emc.observability.components/prometheus-config.yml:/etc/prometheus/prometheus.yml:ro
+      - ./src/Infrastructure/observability/prometheus-config.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     depends_on:
       - otel-collector
@@ -124,7 +124,7 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
-      - ./src/Adapters/emc.observability.components/grafana-config.yaml:/etc/grafana/provisioning/datasources/grafana-config.yaml:ro
+      - ./src/Infrastructure/observability/grafana-config.yaml:/etc/grafana/provisioning/datasources/grafana-config.yaml:ro
       - grafana-data:/var/lib/grafana
     depends_on:
       - prometheus

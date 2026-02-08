@@ -24,7 +24,7 @@
         {
             "label": "run-api",
             "type": "shell",
-            "command": "dotnet run --project src/Api/emc.main.api/emc.camus.main.api.csproj /p:GeneratePullPaths=true",
+            "command": "dotnet run --project src/Api/emc.camus.api/emc.camus.api.csproj /p:GeneratePullPaths=true",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -34,7 +34,7 @@
         {
             "label": "watch-api",
             "type": "shell",
-            "command": "dotnet watch --project src/Api/emc.main.api/emc.camus.main.api.csproj run /p:GeneratePullPaths=true",
+            "command": "dotnet watch --project src/Api/emc.camus.api/emc.camus.api.csproj run /p:GeneratePullPaths=true",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -45,7 +45,7 @@
         {
             "label": "publish-api",
             "type": "shell",
-            "command": "dotnet publish src/Api/emc.main.api/emc.camus.main.api.csproj -c Release /p:GeneratePullPaths=true",
+            "command": "dotnet publish src/Api/emc.camus.api/emc.camus.api.csproj -c Release /p:GeneratePullPaths=true",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -57,7 +57,7 @@
             "type": "shell",
             "command": "dapr run --app-id camus-app --dapr-http-port 3500 --dapr-grpc-port 50001 --resources-path .",
             "options": {
-                "cwd": "${workspaceFolder}/src/Adapters/emc.adapterdapr.components"
+                "cwd": "${workspaceFolder}/src/Infrastructure/dapr"
             },
             "group": "none",
             "problemMatcher": []

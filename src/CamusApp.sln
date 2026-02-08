@@ -5,35 +5,47 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Adapters", "Adapters", "{09DF2EE5-5FE7-3EC7-59CB-CAD7E0928979}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.datapersistance.postgresql", "Adapters\emc.datapersistance.postgresql\emc.camus.datapersistance.postgresql.csproj", "{964F24AC-0F60-4BEA-88AB-0168E57B9CFC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.persistence.postgresql", "Adapters\emc.camus.persistence.postgresql\emc.camus.persistence.postgresql.csproj", "{964F24AC-0F60-4BEA-88AB-0168E57B9CFC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.secretstorage.dapr", "Adapters\emc.secretstorage.dapr\emc.camus.secretstorage.dapr.csproj", "{EEC1170E-763D-40AC-B88B-CF9662772EBE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.secrets.dapr", "Adapters\emc.camus.secrets.dapr\emc.camus.secrets.dapr.csproj", "{EEC1170E-763D-40AC-B88B-CF9662772EBE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Api", "Api", "{D82C56D6-B2CD-F611-9E31-04638F7EC30E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.main.api", "Api\emc.main.api\emc.camus.main.api.csproj", "{2B4C5F96-0498-4BDA-B6A4-985BBA94A775}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.api", "Api\emc.camus.api\emc.camus.api.csproj", "{2B4C5F96-0498-4BDA-B6A4-985BBA94A775}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Application", "Application", "{A74F262E-BDE7-D5D2-89E9-785413424D0A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.application", "Application\emc.application\emc.camus.application.csproj", "{E62BF511-8F80-4D40-A905-A6C9B2607C17}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.application", "Application\emc.camus.application\emc.camus.application.csproj", "{E62BF511-8F80-4D40-A905-A6C9B2607C17}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Domain", "Domain", "{996CEBED-A05B-5D42-3FF0-982E087A2599}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.domain", "Domain\emc.domain\emc.camus.domain.csproj", "{269922F1-240F-4697-A669-CACDE08ABE1D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.domain", "Domain\emc.camus.domain\emc.camus.domain.csproj", "{269922F1-240F-4697-A669-CACDE08ABE1D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{0C88DD14-F956-CE84-757C-A364CCF449FC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "adapter.postgresql.test", "Test\adapter.postgresql.test\adapter.postgresql.test.csproj", "{16EE136F-5C36-4AFB-ADC5-16B427396DE9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.persistence.postgresql.test", "Test\emc.camus.persistence.postgresql.test\emc.camus.persistence.postgresql.test.csproj", "{16EE136F-5C36-4AFB-ADC5-16B427396DE9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "api.main.test", "Test\api.main.test\api.main.test.csproj", "{B3A6F6D5-78C1-44E2-B1AC-3155616B9786}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.api.test", "Test\emc.camus.api.test\emc.camus.api.test.csproj", "{B3A6F6D5-78C1-44E2-B1AC-3155616B9786}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "application.test", "Test\application.test\application.test.csproj", "{8CD53263-6E2E-49B0-8999-77489BC85C36}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.application.test", "Test\emc.camus.application.test\emc.camus.application.test.csproj", "{8CD53263-6E2E-49B0-8999-77489BC85C36}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "domain.test", "Test\domain.test\domain.test.csproj", "{FF782063-CD14-4F73-A8CE-E59D18641EC5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.domain.test", "Test\emc.camus.domain.test\emc.camus.domain.test.csproj", "{FF782063-CD14-4F73-A8CE-E59D18641EC5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "emc.security.components", "emc.security.components", "{D39BBFF2-2AAF-4F4E-C085-8FB025C79395}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.security.components", "Adapters\emc.security.components\emc.camus.security.components.csproj", "{675E663E-9741-4C17-86B8-57E4102494DD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.security.jwt", "Adapters\emc.camus.security.jwt\emc.camus.security.jwt.csproj", "{675E663E-9741-4C17-86B8-57E4102494DD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.security.apikey", "Adapters\emc.camus.security.apikey\emc.camus.security.apikey.csproj", "{B8F7D3E2-4A1C-4D2E-9F3B-C5E6F7A8B9C0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.documentation.swagger", "Adapters\emc.camus.documentation.swagger\emc.camus.documentation.swagger.csproj", "{DC4C64B0-4829-45D4-8E07-087850FCDFC3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.observability.otel.test", "Test\emc.camus.observability.otel.test\emc.camus.observability.otel.test.csproj", "{A99BA312-1F24-409B-BB89-39CD6D19C64A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.secrets.dapr.test", "Test\emc.camus.secrets.dapr.test\emc.camus.secrets.dapr.test.csproj", "{0608670D-6983-4BCD-A867-2D9A63FA36DE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.security.jwt.test", "Test\emc.camus.security.jwt.test\emc.camus.security.jwt.test.csproj", "{3540E3CF-4A0E-4130-85CB-961F145C53DB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.observability.otel", "Adapters\emc.camus.observability.otel\emc.camus.observability.otel.csproj", "{7D7B4AF5-F609-46B9-9C80-3C140BA8DFDA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -165,6 +177,66 @@ Global
 		{675E663E-9741-4C17-86B8-57E4102494DD}.Release|x64.Build.0 = Release|Any CPU
 		{675E663E-9741-4C17-86B8-57E4102494DD}.Release|x86.ActiveCfg = Release|Any CPU
 		{675E663E-9741-4C17-86B8-57E4102494DD}.Release|x86.Build.0 = Release|Any CPU
+		{DC4C64B0-4829-45D4-8E07-087850FCDFC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC4C64B0-4829-45D4-8E07-087850FCDFC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC4C64B0-4829-45D4-8E07-087850FCDFC3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DC4C64B0-4829-45D4-8E07-087850FCDFC3}.Debug|x64.Build.0 = Debug|Any CPU
+		{DC4C64B0-4829-45D4-8E07-087850FCDFC3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DC4C64B0-4829-45D4-8E07-087850FCDFC3}.Debug|x86.Build.0 = Debug|Any CPU
+		{DC4C64B0-4829-45D4-8E07-087850FCDFC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC4C64B0-4829-45D4-8E07-087850FCDFC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC4C64B0-4829-45D4-8E07-087850FCDFC3}.Release|x64.ActiveCfg = Release|Any CPU
+		{DC4C64B0-4829-45D4-8E07-087850FCDFC3}.Release|x64.Build.0 = Release|Any CPU
+		{DC4C64B0-4829-45D4-8E07-087850FCDFC3}.Release|x86.ActiveCfg = Release|Any CPU
+		{DC4C64B0-4829-45D4-8E07-087850FCDFC3}.Release|x86.Build.0 = Release|Any CPU
+		{A99BA312-1F24-409B-BB89-39CD6D19C64A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A99BA312-1F24-409B-BB89-39CD6D19C64A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A99BA312-1F24-409B-BB89-39CD6D19C64A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A99BA312-1F24-409B-BB89-39CD6D19C64A}.Debug|x64.Build.0 = Debug|Any CPU
+		{A99BA312-1F24-409B-BB89-39CD6D19C64A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A99BA312-1F24-409B-BB89-39CD6D19C64A}.Debug|x86.Build.0 = Debug|Any CPU
+		{A99BA312-1F24-409B-BB89-39CD6D19C64A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A99BA312-1F24-409B-BB89-39CD6D19C64A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A99BA312-1F24-409B-BB89-39CD6D19C64A}.Release|x64.ActiveCfg = Release|Any CPU
+		{A99BA312-1F24-409B-BB89-39CD6D19C64A}.Release|x64.Build.0 = Release|Any CPU
+		{A99BA312-1F24-409B-BB89-39CD6D19C64A}.Release|x86.ActiveCfg = Release|Any CPU
+		{A99BA312-1F24-409B-BB89-39CD6D19C64A}.Release|x86.Build.0 = Release|Any CPU
+		{0608670D-6983-4BCD-A867-2D9A63FA36DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0608670D-6983-4BCD-A867-2D9A63FA36DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0608670D-6983-4BCD-A867-2D9A63FA36DE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0608670D-6983-4BCD-A867-2D9A63FA36DE}.Debug|x64.Build.0 = Debug|Any CPU
+		{0608670D-6983-4BCD-A867-2D9A63FA36DE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0608670D-6983-4BCD-A867-2D9A63FA36DE}.Debug|x86.Build.0 = Debug|Any CPU
+		{0608670D-6983-4BCD-A867-2D9A63FA36DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0608670D-6983-4BCD-A867-2D9A63FA36DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0608670D-6983-4BCD-A867-2D9A63FA36DE}.Release|x64.ActiveCfg = Release|Any CPU
+		{0608670D-6983-4BCD-A867-2D9A63FA36DE}.Release|x64.Build.0 = Release|Any CPU
+		{0608670D-6983-4BCD-A867-2D9A63FA36DE}.Release|x86.ActiveCfg = Release|Any CPU
+		{0608670D-6983-4BCD-A867-2D9A63FA36DE}.Release|x86.Build.0 = Release|Any CPU
+		{3540E3CF-4A0E-4130-85CB-961F145C53DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3540E3CF-4A0E-4130-85CB-961F145C53DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3540E3CF-4A0E-4130-85CB-961F145C53DB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3540E3CF-4A0E-4130-85CB-961F145C53DB}.Debug|x64.Build.0 = Debug|Any CPU
+		{3540E3CF-4A0E-4130-85CB-961F145C53DB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3540E3CF-4A0E-4130-85CB-961F145C53DB}.Debug|x86.Build.0 = Debug|Any CPU
+		{3540E3CF-4A0E-4130-85CB-961F145C53DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3540E3CF-4A0E-4130-85CB-961F145C53DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3540E3CF-4A0E-4130-85CB-961F145C53DB}.Release|x64.ActiveCfg = Release|Any CPU
+		{3540E3CF-4A0E-4130-85CB-961F145C53DB}.Release|x64.Build.0 = Release|Any CPU
+		{3540E3CF-4A0E-4130-85CB-961F145C53DB}.Release|x86.ActiveCfg = Release|Any CPU
+		{3540E3CF-4A0E-4130-85CB-961F145C53DB}.Release|x86.Build.0 = Release|Any CPU
+		{7D7B4AF5-F609-46B9-9C80-3C140BA8DFDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D7B4AF5-F609-46B9-9C80-3C140BA8DFDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D7B4AF5-F609-46B9-9C80-3C140BA8DFDA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7D7B4AF5-F609-46B9-9C80-3C140BA8DFDA}.Debug|x64.Build.0 = Debug|Any CPU
+		{7D7B4AF5-F609-46B9-9C80-3C140BA8DFDA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7D7B4AF5-F609-46B9-9C80-3C140BA8DFDA}.Debug|x86.Build.0 = Debug|Any CPU
+		{7D7B4AF5-F609-46B9-9C80-3C140BA8DFDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D7B4AF5-F609-46B9-9C80-3C140BA8DFDA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D7B4AF5-F609-46B9-9C80-3C140BA8DFDA}.Release|x64.ActiveCfg = Release|Any CPU
+		{7D7B4AF5-F609-46B9-9C80-3C140BA8DFDA}.Release|x64.Build.0 = Release|Any CPU
+		{7D7B4AF5-F609-46B9-9C80-3C140BA8DFDA}.Release|x86.ActiveCfg = Release|Any CPU
+		{7D7B4AF5-F609-46B9-9C80-3C140BA8DFDA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -181,5 +253,10 @@ Global
 		{FF782063-CD14-4F73-A8CE-E59D18641EC5} = {0C88DD14-F956-CE84-757C-A364CCF449FC}
 		{D39BBFF2-2AAF-4F4E-C085-8FB025C79395} = {09DF2EE5-5FE7-3EC7-59CB-CAD7E0928979}
 		{675E663E-9741-4C17-86B8-57E4102494DD} = {D39BBFF2-2AAF-4F4E-C085-8FB025C79395}
+		{DC4C64B0-4829-45D4-8E07-087850FCDFC3} = {09DF2EE5-5FE7-3EC7-59CB-CAD7E0928979}
+		{A99BA312-1F24-409B-BB89-39CD6D19C64A} = {0C88DD14-F956-CE84-757C-A364CCF449FC}
+		{0608670D-6983-4BCD-A867-2D9A63FA36DE} = {0C88DD14-F956-CE84-757C-A364CCF449FC}
+		{3540E3CF-4A0E-4130-85CB-961F145C53DB} = {0C88DD14-F956-CE84-757C-A364CCF449FC}
+		{7D7B4AF5-F609-46B9-9C80-3C140BA8DFDA} = {09DF2EE5-5FE7-3EC7-59CB-CAD7E0928979}
 	EndGlobalSection
 EndGlobal

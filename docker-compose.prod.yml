@@ -45,7 +45,7 @@ services:
       # Azure Monitor connection string from environment or Key Vault
       - APPLICATIONINSIGHTS_CONNECTION_STRING=${APPLICATIONINSIGHTS_CONNECTION_STRING}
     volumes:
-      - ./src/Adapters/emc.observability.components/otel-collector-config.prod.yaml:/etc/otelcol/config.yaml:ro
+      - ./src/Infrastructure/observability/otel-collector-config.prod.yaml:/etc/otelcol/config.yaml:ro
     networks:
       - camus-prod
     restart: unless-stopped
