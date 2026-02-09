@@ -39,5 +39,56 @@ namespace emc.camus.api.Configurations
         /// Gets or sets the preflight cache duration in minutes.
         /// </summary>
         public int PreflightMaxAgeMinutes { get; set; } = 60;
+
+        /// <summary>
+        /// Validates the CORS configuration.
+        /// Throws ArgumentException if any setting is invalid.
+        /// </summary>
+        public void Validate()
+        {
+            if (string.IsNullOrWhiteSpace(PolicyName))
+                throw new ArgumentException("PolicyName cannot be null or empty", nameof(PolicyName));
+
+            if (AllowedOrigins == null)
+                throw new ArgumentException("AllowedOrigins cannot be null", nameof(AllowedOrigins));
+
+            if (AllowedOrigins.Length == 0)
+                throw new ArgumentException("At least one allowed origin must be specified", nameof(AllowedOrigins));
+
+            // Validate each origin
+            foreach (var origin in AllowedOrigins)
+            {
+                if (string.IsNullOrWhiteSpace(origin))
+                    throw new ArgumentException("AllowedOrigins cannot contain null or empty values", nameof(AllowedOrigins));
+
+                // Validate origin format (must be valid URL or wildcard)
+                if (origin != "*" && !Uri.TryCreate(origin, UriKind.Absolute, out _))
+                    throw new ArgumentException($"Invalid origin URL: '{origin}'. Must be a valid absolute URL or '*'", nameof(AllowedOrigins));
+            }
+
+            // Security check: AllowCredentials with wildcard origin is not allowed
+            if (AllowCredentials && AllowedOrigins.Any(o => o == "*"))
+                throw new ArgumentException(
+                    "AllowCredentials cannot be true when AllowedOrigins contains '*'. Specify explicit origins instead.",
+                    nameof(AllowCredentials));
+
+            if (AllowedMethods == null || AllowedMethods.Length == 0)
+                throw new ArgumentException("At least one allowed HTTP method must be specified", nameof(AllowedMethods));
+
+            foreach (var method in AllowedMethods)
+            {
+                if (string.IsNullOrWhiteSpace(method))
+                    throw new ArgumentException("AllowedMethods cannot contain null or empty values", nameof(AllowedMethods));
+            }
+
+            if (AllowedHeaders == null)
+                throw new ArgumentException("AllowedHeaders cannot be null", nameof(AllowedHeaders));
+
+            if (ExposedHeaders == null)
+                throw new ArgumentException("ExposedHeaders cannot be null", nameof(ExposedHeaders));
+
+            if (PreflightMaxAgeMinutes <= 0 || PreflightMaxAgeMinutes > 86400) // Max 24 hours
+                throw new ArgumentException("PreflightMaxAgeMinutes must be between 1 and 86400 (24 hours)", nameof(PreflightMaxAgeMinutes));
+        }
     }
 }

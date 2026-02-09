@@ -6,6 +6,8 @@ using emc.camus.security.jwt;
 using emc.camus.security.apikey;
 using emc.camus.secrets.dapr;
 using emc.camus.documentation.swagger;
+using emc.camus.ratelimiting.memory;
+using Microsoft.AspNetCore.HttpOverrides;
 
 // Step 0: Define WebApplicationBuilder and settings
 var builder = WebApplication.CreateBuilder(args);
@@ -25,40 +27,66 @@ builder.AddObservability(SERVICE_NAME, SERVICE_VERSION, INSTANCE_ID, ENV_NAME);
 // Step 2: Configure application services (versioning, CORS, authorization, controllers, business DI)
 builder.AddApplicationServices();
 
-// Step 3: Add Swagger documentation via adapter (depends on API versioning)
+// Step 3: Configure rate limiting (always enabled for security)
+builder.AddMemoryRateLimiting(SERVICE_NAME);
+
+// Step 4: Add Swagger documentation via adapter (depends on API versioning)
 builder.AddSwaggerDocumentation();
 
-// Step 4: Configure Secrets Provider using Dapr Adapter
+// Step 5: Configure Secrets Provider using Dapr Adapter
 builder.AddDaprSecrets();
 
-// Step 5: Configure Authentication using Security Adapters
+// Step 6: Configure Authentication using Security Adapters
 builder.AddJwtAuthentication();
 builder.AddApiKeyAuthentication();
 
-// Step 6: Build App Builder
+// Step 7: Build App Builder
 var app = builder.Build();
 
-// Step 7: Enable observability middleware (adds X-Trace-Id header to responses)
+// Get logger for startup events (after app is built so DI is ready)
+var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
+
+startupLogger.LogInformation("Starting {ServiceName} v{ServiceVersion} in {Environment} environment", 
+    SERVICE_NAME, SERVICE_VERSION, ENV_NAME);
+startupLogger.LogInformation("Instance ID: {InstanceId}", INSTANCE_ID);
+
+// Step 8: Configure forwarded headers for proxy/load balancer scenarios
+// This ensures X-Forwarded-For and X-Real-IP headers are properly processed
+// Critical for rate limiting to work correctly behind proxies (Azure LB, nginx, CloudFlare, etc.)
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    // In production, configure KnownProxies or KnownNetworks for security
+    // For now, trust all proxies (suitable for Azure App Service, k8s ingress)
+    ForwardLimit = null // Process all X-Forwarded-For entries
+});
+
+// Step 9: Enable observability middleware (adds X-Trace-Id header to responses)
 // Must be BEFORE exception handling so trace IDs are available in error logs
 app.UseObservability();
 
-// Step 8: Global exception handling middleware (catches auth, authz, and app exceptions)
+// Step 10: Global exception handling middleware (catches auth, authz, and app exceptions)
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// Step 9: Enable Swagger UI in development
+// Step 11: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
+app.UseMemoryRateLimiting();
+
+// Step 12: Enable Swagger UI in development
 app.UseSwaggerDocumentation();
 
-// Step 10: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
+// Step 13: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
 app.UseDaprSecrets();
 
 app.UseHttpsRedirection();
 
-// Step 11: Add Authentication and Authorization
+// Step 14: Add Authentication and Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Step 12: Apply application services (CORS, endpoint routing)
+// Step 15: Apply application services (CORS, endpoint routing)
 app.UseApplicationServices();
 
-// Step 13: Run the app
+startupLogger.LogInformation("{ServiceName} startup complete. Ready to accept requests", SERVICE_NAME);
+
+// Step 16: Run the app
 await app.RunAsync();

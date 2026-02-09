@@ -8,6 +8,8 @@
     <PackageId>emc.camus.security.jwt</PackageId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Version>1.0.0</Version>
+    <Authors>Camus Labs</Authors>
+    <Description>JWT authentication adapter for Camus API with token validation and generation.</Description>
   </PropertyGroup>
 
   <ItemGroup>

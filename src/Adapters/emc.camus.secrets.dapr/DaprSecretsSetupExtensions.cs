@@ -25,9 +25,11 @@ namespace emc.camus.secrets.dapr
         /// </remarks>
         public static WebApplicationBuilder AddDaprSecrets(this WebApplicationBuilder builder)
         {
-            // Configure Dapr Secret Provider Settings
-            builder.Services.Configure<DaprSecretProviderSettings>(
-                builder.Configuration.GetSection("DaprSecretProvider"));
+            // Load, validate, and register Dapr Secret Provider Settings
+            var daprSettings = builder.Configuration.GetSection("DaprSecretProvider").Get<DaprSecretProviderSettings>() 
+                ?? new DaprSecretProviderSettings();
+            daprSettings.Validate();
+            builder.Services.AddSingleton(daprSettings);
             
             // Register DaprSecretProvider with HttpClient
             builder.Services.AddHttpClient<DaprSecretProvider>();

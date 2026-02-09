@@ -7,6 +7,7 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using Microsoft.AspNetCore.Builder;
 using emc.camus.observability.otel.Configurations;
+using emc.camus.application.Observability;
 
 namespace emc.camus.observability.otel.Telemetry
 {
@@ -36,13 +37,33 @@ namespace emc.camus.observability.otel.Telemetry
         {
             builder.WithMetrics(meterProviderBuilder =>
             {
-                meterProviderBuilder
+                var metricsBuilder = meterProviderBuilder
                     .UseResourceAttributes(serviceName, serviceVersion, instanceId, environmentName)
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation()
-                    .AddProcessInstrumentation()
-                    .ConfigureMetricsExporter(settings);
+                    .AddProcessInstrumentation();
+
+                // Drop specific metrics using Views (for built-in instrumentations)
+                var disabledMetrics = settings.Metrics.DisabledMetrics ?? Array.Empty<string>();
+                foreach (var metricName in disabledMetrics)
+                {
+                    metricsBuilder.AddView(metricName, MetricStreamConfiguration.Drop);
+                }
+
+                // Register application meters, excluding any specified in DisabledMeters configuration
+                var disabledMeters = settings.Metrics.DisabledMeters ?? Array.Empty<string>();
+                
+                foreach (var meterSuffix in MeterNames.GetAll())
+                {
+                    // Skip meters that are in the disabled list
+                    if (!disabledMeters.Contains(meterSuffix))
+                    {
+                        metricsBuilder.AddMeter($"{serviceName}{meterSuffix}");
+                    }
+                }
+
+                metricsBuilder.ConfigureMetricsExporter(settings);
             });
 
             return builder;

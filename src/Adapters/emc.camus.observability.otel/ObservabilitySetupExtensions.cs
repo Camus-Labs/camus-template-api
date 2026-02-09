@@ -46,6 +46,9 @@ namespace emc.camus.observability.otel
 
             // Parse OpenTelemetry settings once from configuration
             var otelSettings = configuration.GetSection("OpenTelemetry").Get<OpenTelemetrySettings>() ?? new OpenTelemetrySettings();
+            
+            // Validate configuration at startup
+            otelSettings.Validate();
 
             builder.Host.UseSerilogWithOpenTelemetry(otelSettings, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);
             builder.Services.AddOpenTelemetryServices(otelSettings, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);

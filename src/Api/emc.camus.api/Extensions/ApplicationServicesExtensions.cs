@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Options;
 using Asp.Versioning;
 using emc.camus.api.Configurations;
 
@@ -37,7 +38,10 @@ namespace emc.camus.api.Extensions
 
             // Configure CORS policy
             var corsSettings = builder.Configuration.GetSection("CorsSettings").Get<CorsSettings>() ?? new CorsSettings();
-            builder.Services.Configure<CorsSettings>(builder.Configuration.GetSection("CorsSettings"));
+            corsSettings.Validate();
+            
+            // Register settings as singleton for DI consistency
+            builder.Services.AddSingleton(corsSettings);
 
             builder.Services.AddCors(options =>
             {
@@ -76,18 +80,16 @@ namespace emc.camus.api.Extensions
 
         /// <summary>
         /// Configures application-level middleware and endpoint routing in the request pipeline.
-        /// Applies CORS policy and maps controller endpoints.
+        /// Applies CORS policy, rate limiting, and maps controller endpoints.
         /// </summary>
         /// <param name="app">The web application instance.</param>
         /// <returns>The web application instance for method chaining.</returns>
         public static WebApplication UseApplicationServices(this WebApplication app)
         {
-            // Load CORS settings to apply the configured policy
-            var corsSettings = app.Configuration.GetSection("CorsSettings").Get<CorsSettings>() ?? new CorsSettings();
-            
-            // Apply CORS before endpoints so all responses include the proper CORS headers
+            // Load CORS settings from DI and Apply so all responses include the proper CORS headers
+            var corsSettings = app.Services.GetRequiredService<CorsSettings>();
             app.UseCors(corsSettings.PolicyName);
-            
+
             // Map controller endpoints
             app.MapControllers();
             

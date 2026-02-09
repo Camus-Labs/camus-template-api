@@ -8,6 +8,8 @@
     <PackageId>emc.camus.security.apikey</PackageId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Version>1.0.0</Version>
+    <Authors>Camus Labs</Authors>
+    <Description>API Key authentication adapter for Camus API with header-based validation.</Description>
   </PropertyGroup>
 
   <ItemGroup>

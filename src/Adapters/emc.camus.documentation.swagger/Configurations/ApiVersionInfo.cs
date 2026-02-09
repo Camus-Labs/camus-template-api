@@ -19,5 +19,18 @@ namespace emc.camus.documentation.swagger.Configurations
         /// Gets or sets the description for this version.
         /// </summary>
         public string Description { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Validates the API version info configuration.
+        /// Throws ArgumentException if any setting is invalid.
+        /// </summary>
+        public void Validate()
+        {
+            if (string.IsNullOrWhiteSpace(Version))
+                throw new ArgumentException("Version cannot be null or empty", nameof(Version));
+
+            if (string.IsNullOrWhiteSpace(Title))
+                throw new ArgumentException("Title cannot be null or empty", nameof(Title));
+        }
     }
 }

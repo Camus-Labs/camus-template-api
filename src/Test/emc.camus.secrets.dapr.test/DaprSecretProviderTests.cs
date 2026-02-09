@@ -6,7 +6,6 @@ using emc.camus.secrets.dapr.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Moq;
 using Moq.Protected;
 
 namespace emc.camus.secrets.dapr.test;
@@ -251,9 +250,9 @@ public class DaprSecretProviderTests
         provider.GetSecret(secret2Name).Should().Be(secret2Value);
     }
 
-    private IOptions<DaprSecretProviderSettings> CreateDefaultSettings(List<string>? secretNames = null)
+    private DaprSecretProviderSettings CreateDefaultSettings(List<string>? secretNames = null)
     {
-        return Options.Create(new DaprSecretProviderSettings
+        return new DaprSecretProviderSettings
         {
             BaseHost = "localhost",
             HttpPort = "3500",
@@ -261,7 +260,7 @@ public class DaprSecretProviderTests
             SecretStoreName = "test-store",
             TimeoutSeconds = 5,
             SecretNames = secretNames ?? new List<string>()
-        });
+        };
     }
 
     private void SetupHttpResponse(HttpStatusCode statusCode, string content)

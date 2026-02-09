@@ -38,6 +38,7 @@ Camus follows **Hexagonal Architecture (Ports & Adapters)** pattern with clean s
 - **API** (`emc.camus.api`) - REST endpoints, middleware
 - **Persistence** (`emc.camus.persistence.postgresql`) - Database access with Dapper
 - **Observability** (`emc.camus.observability.otel`) - OpenTelemetry integration
+- **Rate Limiting** (`emc.camus.ratelimiting.memory`) - IP-based sliding window rate limiter
 - **Secrets** (`emc.camus.secrets.dapr`) - Dapr secret management
 - **Security JWT** (`emc.camus.security.jwt`) - JWT Bearer authentication
 - **Security API Key** (`emc.camus.security.apikey`) - API Key authentication
@@ -66,6 +67,6 @@ API → Application → Domain
 - **JWT Authentication** - RSA256 token validation
 - **API Key Authentication** - Header-based (`X-Api-Key`)
 - **CORS** - Configurable policies
-- **Rate Limiting** - Sliding window algorithm
+- **Rate Limiting** - Sliding window algorithm (memory-based, Redis-ready)
 
 See [authentication.md](authentication.md) for implementation details.

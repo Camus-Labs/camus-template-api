@@ -14,5 +14,15 @@ namespace emc.camus.observability.otel.Configurations
         /// Gets or sets the output template for console logs. Defaults to a format that includes trace context.
         /// </summary>
         public string OutputTemplate { get; set; } = "[{Timestamp:HH:mm:ss} {Level:u3}] (trace_id={trace_id} span_id={span_id}) {Message:lj}{NewLine}{Exception}";
+
+        /// <summary>
+        /// Validates the console settings configuration.
+        /// Throws ArgumentException if any setting is invalid.
+        /// </summary>
+        public void Validate()
+        {
+            if (string.IsNullOrWhiteSpace(OutputTemplate))
+                throw new ArgumentException("OutputTemplate cannot be null or empty", nameof(OutputTemplate));
+        }
     }
 }

@@ -22,6 +22,26 @@
             "problemMatcher": "$msCompile"
         },
         {
+            "label": "test-with-coverage",
+            "type": "shell",
+            "command": "dotnet test src/CamusApp.sln --collect:\"XPlat Code Coverage\" /p:GeneratePullPaths=true",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "test",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "test-coverage-report",
+            "type": "shell",
+            "command": "reportgenerator -reports:\"src/Test/**/TestResults/**/coverage.cobertura.xml\" -targetdir:\"coveragereport\" -reporttypes:Html && open coveragereport/index.html",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "none",
+            "problemMatcher": []
+        },
+        {
             "label": "run-api",
             "type": "shell",
             "command": "dotnet run --project src/Api/emc.camus.api/emc.camus.api.csproj /p:GeneratePullPaths=true",

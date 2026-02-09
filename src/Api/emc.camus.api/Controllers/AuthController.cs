@@ -5,9 +5,11 @@ using emc.camus.domain.Generic;
 using emc.camus.application.Observability;
 using emc.camus.application.Secrets;
 using emc.camus.application.Auth;
+using emc.camus.application.Generic;
 using Microsoft.AspNetCore.Authorization;
 using emc.camus.domain.Auth;
 using System.Security.Claims;
+using emc.camus.application.RateLimiting;
 
 namespace emc.camus.api.Controllers
 {
@@ -15,9 +17,14 @@ namespace emc.camus.api.Controllers
     /// Handles authentication endpoints, including JWT token generation, API key authentication, and API info retrieval per version.
     /// </summary>
     /// <remarks>
-    /// Provides endpoints for public API info, API key-protected info, JWT-protected info, and token generation. Integrates with OpenTelemetry for activity tracing and logs API version for observability.
+    /// Provides endpoints for public API info, API key-protected info, JWT-protected info, and token generation. 
+    /// Integrates with OpenTelemetry for activity tracing and logs API version for observability.
+    /// 
+    /// Rate Limiting: Uses strict policy (lower limits) to protect authentication endpoints from brute force attacks.
+    /// Configure rate limit policies in appsettings.json under RateLimitSettings.Policies.
     /// </remarks>
     [Authorize]
+    [RateLimit(RateLimitPolicies.Strict)]
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
@@ -59,6 +66,7 @@ namespace emc.camus.api.Controllers
         /// <returns>API info for v1.0.</returns>
         [HttpGet("info")]
         [AllowAnonymous]
+        [RateLimit(RateLimitPolicies.Relaxed)]
         [MapToApiVersion("1.0")]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
@@ -102,6 +110,7 @@ namespace emc.camus.api.Controllers
         /// <returns>API info for v2.0 (API Key required).</returns>
         [HttpGet("info-apikey")]
         [Authorize(AuthenticationSchemes = AuthenticationSchemes.ApiKey)]
+        [RateLimit(RateLimitPolicies.Default)]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
             Description = "Returns API info for v2.0, requires API Key authentication."
@@ -144,6 +153,7 @@ namespace emc.camus.api.Controllers
         /// <returns>API info for v2.0 (JWT required).</returns>
         [HttpGet("info-jwt")]
         [Authorize(AuthenticationSchemes = AuthenticationSchemes.JwtBearer)]
+        [RateLimit(RateLimitPolicies.Default)]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
             Description = "Returns API info for v2.0, requires JWT authentication."
@@ -211,7 +221,9 @@ namespace emc.camus.api.Controllers
                 if (request.AccessKey != accessKeyFromVault || request.AccessSecret != accessSecretFromVault)
                 {
                     _logger.LogWarning("Invalid credentials provided for AccessKey: {AccessKey}.", request.AccessKey);
-                    throw new UnauthorizedAccessException("Invalid credentials.");
+                    var invalidCredsException = new UnauthorizedAccessException("Invalid credentials.");
+                    invalidCredsException.Data["ErrorCode"] = ErrorCodes.InvalidCredentials;
+                    throw invalidCredsException;
                 }
 
                 _logger.LogInformation("Valid credentials provided. Generating JWT token.");

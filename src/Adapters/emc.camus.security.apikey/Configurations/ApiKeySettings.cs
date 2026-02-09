@@ -10,5 +10,15 @@ namespace emc.camus.security.apikey.Configurations
         /// Defaults to "XApiKey".
         /// </summary>
         public string SecretKeyName { get; set; } = "XApiKey";
+
+        /// <summary>
+        /// Validates the API Key settings configuration.
+        /// Throws ArgumentException if any setting is invalid.
+        /// </summary>
+        public void Validate()
+        {
+            if (string.IsNullOrWhiteSpace(SecretKeyName))
+                throw new ArgumentException("SecretKeyName cannot be null or empty", nameof(SecretKeyName));
+        }
     }
 }

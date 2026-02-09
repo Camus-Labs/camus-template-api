@@ -28,12 +28,12 @@ namespace emc.camus.secrets.dapr.Services
         /// <param name="httpClient">The HTTP client used to communicate with the Dapr sidecar.</param>
         /// <param name="logger">The logger instance for logging operations.</param>
         /// <param name="settings">The configuration settings for the Dapr secret provider.</param>
-        public DaprSecretProvider(HttpClient httpClient, ILogger<DaprSecretProvider> logger, IOptions<DaprSecretProviderSettings> settings)
+        public DaprSecretProvider(HttpClient httpClient, ILogger<DaprSecretProvider> logger, DaprSecretProviderSettings settings)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             
-            _settings = settings?.Value ?? throw new ArgumentNullException(nameof(settings));
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
            
             var protocol = _settings.UseHttps ? "https" : "http";
             var baseUrl = $"{protocol}://{_settings.BaseHost}:{_settings.HttpPort}";

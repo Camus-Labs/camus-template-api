@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using emc.camus.security.apikey.Handlers;
@@ -31,8 +32,10 @@ namespace emc.camus.security.apikey
             
             logger.LogInformation("Configuring API Key authentication services");
 
-            // Configure API Key Settings
-            builder.Services.Configure<ApiKeySettings>(builder.Configuration.GetSection("ApiKeySettings"));
+            // Load, validate, and register API Key Settings
+            var apiKeySettings = builder.Configuration.GetSection("ApiKeySettings").Get<ApiKeySettings>() ?? new ApiKeySettings();
+            apiKeySettings.Validate();
+            builder.Services.AddSingleton(apiKeySettings);
 
             builder.Services.AddAuthentication()
                 .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(

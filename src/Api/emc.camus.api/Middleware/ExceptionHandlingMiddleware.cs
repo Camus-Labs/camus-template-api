@@ -1,6 +1,8 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using emc.camus.application.Generic;
+using emc.camus.application.Exceptions;
 
 namespace emc.camus.api.Middleware
 {
@@ -79,6 +81,17 @@ namespace emc.camus.api.Middleware
                     Detail = isDevelopment ? exception.Message : "You are not authorized to access this resource.",
                     Type = "https://tools.ietf.org/html/rfc7235#section-3.1"
                 },
+                RateLimitExceededException rateLimitEx => new ProblemDetails
+                {
+                    Status = (int)HttpStatusCode.TooManyRequests,
+                    Title = "Too Many Requests",
+                    Detail = exception.Message,
+                    Type = "https://tools.ietf.org/html/rfc6585#section-4",
+                    Extensions =
+                    {
+                        ["error"] = ErrorCodes.RateLimitExceeded
+                    }
+                },
                 InvalidOperationException invalidOpEx when invalidOpEx.Message.Contains("permission") => new ProblemDetails
                 {
                     Status = (int)HttpStatusCode.Forbidden,
@@ -98,10 +111,33 @@ namespace emc.camus.api.Middleware
             // Add request path as instance identifier
             problemDetails.Instance = context.Request.Path;
             
-            // Add machine-readable error code if present (for frontend error handling)
+            // Add machine-readable error code (always present for frontend error handling)
             if (exception.Data.Contains("ErrorCode"))
             {
+                // Use custom error code if provided (e.g., token_expired, invalid_signature)
                 problemDetails.Extensions["error"] = exception.Data["ErrorCode"];
+            }
+            else
+            {
+                // Set default error code based on status code
+                problemDetails.Extensions["error"] = problemDetails.Status switch
+                {
+                    400 => ErrorCodes.BadRequest,
+                    401 => ErrorCodes.Unauthorized,
+                    403 => ErrorCodes.Forbidden,
+                    429 => ErrorCodes.RateLimitExceeded,
+                    500 => ErrorCodes.InternalServerError,
+                    _ => ErrorCodes.UnknownError
+                };
+            }
+            
+            // Add retry-after metadata if present (for rate limiting)
+            if (exception.Data.Contains("RetryAfter"))
+            {
+                var retryAfterSeconds = exception.Data["RetryAfter"];
+                problemDetails.Extensions["retryAfter"] = retryAfterSeconds;
+                // Also set the standard Retry-After header
+                context.Response.Headers.RetryAfter = retryAfterSeconds?.ToString() ?? string.Empty;
             }
             
             // Add additional development debugging information

@@ -19,5 +19,26 @@ namespace emc.camus.observability.otel.Configurations
         /// Gets or sets the logs configuration.
         /// </summary>
         public LogsSettings Logs { get; set; } = new();
+
+        /// <summary>
+        /// Validates the OpenTelemetry configuration.
+        /// Throws ArgumentException if any setting is invalid.
+        /// </summary>
+        public void Validate()
+        {
+            if (Tracing == null)
+                throw new ArgumentException("Tracing settings cannot be null", nameof(Tracing));
+
+            if (Metrics == null)
+                throw new ArgumentException("Metrics settings cannot be null", nameof(Metrics));
+
+            if (Logs == null)
+                throw new ArgumentException("Logs settings cannot be null", nameof(Logs));
+
+            // Validate each subsection
+            Tracing.Validate();
+            Metrics.Validate();
+            Logs.Validate();
+        }
     }
 }

@@ -6,7 +6,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Moq;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace adapter.security.jwt.test.Services;
@@ -227,7 +226,7 @@ public class JwtTokenGeneratorTests
     private JwtTokenGenerator CreateGenerator()
     {
         return new JwtTokenGenerator(
-            Options.Create(_jwtSettings),
+            _jwtSettings,
             _signingCredentials,
             _mockLogger.Object);
     }

@@ -8,6 +8,8 @@
     <PackageId>emc.camus.observability.otel</PackageId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Version>1.0.0</Version>
+    <Authors>Camus Labs</Authors>
+    <Description>OpenTelemetry observability adapter for Camus API with distributed tracing, metrics, and logging.</Description>
   </PropertyGroup>
 
   <ItemGroup>

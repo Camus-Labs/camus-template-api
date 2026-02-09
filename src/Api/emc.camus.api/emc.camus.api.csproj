@@ -9,6 +9,8 @@
     <PackageId>emc.camus.api</PackageId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Version>1.0.0</Version>
+    <Authors>Camus Labs</Authors>
+    <Description>Camus REST API with clean architecture, authentication, observability, and rate limiting.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +26,7 @@
     <ProjectReference Include="../../Adapters/emc.camus.documentation.swagger/emc.camus.documentation.swagger.csproj" />
     <ProjectReference Include="../../Application/emc.camus.application/emc.camus.application.csproj" />
     <ProjectReference Include="../../Adapters/emc.camus.observability.otel/emc.camus.observability.otel.csproj" />
+    <ProjectReference Include="..\..\Adapters\emc.camus.ratelimiting.memory\emc.camus.ratelimiting.memory.csproj" />
   </ItemGroup>
 
 </Project>

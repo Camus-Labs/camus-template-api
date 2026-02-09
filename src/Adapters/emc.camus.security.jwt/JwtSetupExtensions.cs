@@ -35,8 +35,10 @@ namespace emc.camus.security.jwt
             
             logger.LogInformation("Configuring Camus authentication services");
 
-            // Configure JWT Settings
-            builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+            // Load, validate, and register JWT Settings
+            var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
+            jwtSettings.Validate();
+            builder.Services.AddSingleton(jwtSettings);
 
             // Register RSA Security Key (requires ISecretProvider)
             builder.Services.AddSingleton<RsaSecurityKey>(provider =>

@@ -26,7 +26,10 @@ namespace emc.camus.documentation.swagger
             this WebApplicationBuilder builder,
             Assembly? apiAssembly = null)
         {
+            // Load, validate, and register Swagger Settings
             var settings = builder.Configuration.GetSection("SwaggerSettings").Get<SwaggerSettings>() ?? new SwaggerSettings();
+            settings.Validate();
+            builder.Services.AddSingleton(settings);
 
             if (!settings.Enabled)
             {

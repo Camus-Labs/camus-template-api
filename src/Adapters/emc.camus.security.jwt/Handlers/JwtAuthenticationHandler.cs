@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using emc.camus.security.jwt.Configurations;
+using emc.camus.application.Generic;
 
 namespace emc.camus.security.jwt.Handlers
 {
@@ -33,9 +34,8 @@ namespace emc.camus.security.jwt.Handlers
 
             // Configure JWT Bearer Options with dependency injection
             services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
-                .Configure<IOptions<JwtSettings>, RsaSecurityKey, ILoggerFactory>((options, jwtSettingsOptions, rsaKey, loggerFactory) =>
+                .Configure<JwtSettings, RsaSecurityKey, ILoggerFactory>((options, jwtSettings, rsaKey, loggerFactory) =>
                 {
-                    var jwtSettings = jwtSettingsOptions.Value;
                     var logger = loggerFactory.CreateLogger("JwtAuthenticationHandler");
                     
                     // Token Validation Parameters
@@ -64,31 +64,31 @@ namespace emc.camus.security.jwt.Handlers
 
                             if (exception is SecurityTokenExpiredException)
                             {
-                                errorCode = "token_expired";
+                                errorCode = ErrorCodes.Jwt.TokenExpired;
                                 message = "JWT token has expired";
                                 logger.LogWarning("JWT token expired for request to {Path}", context.Request.Path);
                             }
                             else if (exception is SecurityTokenInvalidSignatureException)
                             {
-                                errorCode = "invalid_signature";
+                                errorCode = ErrorCodes.Jwt.InvalidSignature;
                                 message = "JWT token signature is invalid";
                                 logger.LogWarning("JWT token signature validation failed for request to {Path}", context.Request.Path);
                             }
                             else if (exception is SecurityTokenInvalidIssuerException)
                             {
-                                errorCode = "invalid_issuer";
+                                errorCode = ErrorCodes.Jwt.InvalidIssuer;
                                 message = "JWT token issuer is invalid";
                                 logger.LogWarning("JWT token issuer validation failed for request to {Path}", context.Request.Path);
                             }
                             else if (exception is SecurityTokenInvalidAudienceException)
                             {
-                                errorCode = "invalid_audience";
+                                errorCode = ErrorCodes.Jwt.InvalidAudience;
                                 message = "JWT token audience is invalid";
                                 logger.LogWarning("JWT token audience validation failed for request to {Path}", context.Request.Path);
                             }
                             else
                             {
-                                errorCode = "invalid_token";
+                                errorCode = ErrorCodes.Jwt.InvalidToken;
                                 message = $"JWT token validation failed: {exception.Message}";
                                 logger.LogWarning(exception, "JWT authentication failed for request to {Path}", context.Request.Path);
                             }
@@ -107,13 +107,13 @@ namespace emc.camus.security.jwt.Handlers
                             context.HandleResponse();
                             
                             // Retrieve error details stored by OnAuthenticationFailed, if not present is because authentication was not provided at all
-                            var errorCode = context.HttpContext.Items["AuthErrorCode"] as string ?? "authentication_required";
+                            var errorCode = context.HttpContext.Items["AuthErrorCode"] as string ?? ErrorCodes.AuthenticationRequired;
                             var errorMessage = context.HttpContext.Items["AuthErrorMessage"] as string 
                                 ?? "JWT authentication is required to access this resource";
                             var originalException = context.HttpContext.Items["AuthException"] as Exception;
                             
                             // Log only if no token was provided (not already logged in OnAuthenticationFailed)
-                            if (errorCode == "authentication_required")
+                            if (errorCode == ErrorCodes.AuthenticationRequired)
                             {
                                 logger.LogWarning("JWT authentication required for request to {Path}", context.Request.Path);
                             }
@@ -130,7 +130,7 @@ namespace emc.camus.security.jwt.Handlers
                             logger.LogWarning("JWT authorization forbidden for user {User} accessing {Path}", userName, context.Request.Path);
                             
                             var forbiddenException = new InvalidOperationException($"User {userName} does not have permission to access this resource");
-                            forbiddenException.Data["ErrorCode"] = "forbidden";
+                            forbiddenException.Data["ErrorCode"] = ErrorCodes.Forbidden;
                             forbiddenException.Data["UserName"] = userName;
                             throw forbiddenException;
                         },

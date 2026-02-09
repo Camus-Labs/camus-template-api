@@ -24,11 +24,11 @@ public class JwtTokenGenerator : IJwtTokenGenerator
     /// <param name="signingCredentials">Signing credentials for token generation.</param>
     /// <param name="logger">Logger for token generation events.</param>
     public JwtTokenGenerator(
-        IOptions<JwtSettings> jwtSettings,
+        JwtSettings jwtSettings,
         SigningCredentials signingCredentials,
         ILogger<JwtTokenGenerator> logger)
     {
-        _jwtSettings = jwtSettings.Value;
+        _jwtSettings = jwtSettings;
         _signingCredentials = signingCredentials;
         _logger = logger;
     }

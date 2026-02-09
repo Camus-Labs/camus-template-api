@@ -11,6 +11,7 @@ A modern, production-ready **.NET 9.0 REST API template** built with **Hexagonal
 **Ready-to-use Infrastructure Adapters:**
 
 - 🔐 Authentication (JWT Bearer + API Key)
+- �️ Rate Limiting (Sliding Window Algorithm)
 - 📊 Observability (OpenTelemetry + Serilog)
 - 🗄️ Data Persistence (PostgreSQL + Dapper)
 - 🔒 Secrets Management (Dapr)
@@ -51,6 +52,7 @@ src/
 │   ├── emc.camus.persistence.postgresql/  # Database adapter
 │   ├── emc.camus.secrets.dapr/           # Dapr secrets
 │   ├── emc.camus.observability.otel/     # OpenTelemetry
+│   ├── emc.camus.ratelimiting.memory/    # Rate limiting
 │   ├── emc.camus.security.jwt/           # JWT authentication
 │   ├── emc.camus.security.apikey/        # API Key authentication
 │   ├── emc.camus.documentation.swagger/  # Swagger/OpenAPI
@@ -153,6 +155,29 @@ X-Api-Key: your-api-key
 ```
 
 > **📖 Full Guide:** See [Authentication Documentation](docs/authentication.md) for configuration, claims, and security best practices.
+
+---
+
+## �️ Rate Limiting
+
+Built-in IP-based rate limiting with sliding window algorithm:
+
+- **Policy-based configuration** - Multiple limit profiles (strict/default/relaxed)
+- **Proxy support** - Automatic X-Forwarded-For header detection
+- **RFC-compliant headers** - Standard rate limit response headers
+- **OpenTelemetry metrics** - Track rejections and usage patterns
+
+**Apply to endpoints:**
+
+```csharp
+[RateLimit(RateLimitPolicies.Strict)]  // 50 req/min
+public class AuthController : ControllerBase { }
+
+[RateLimit(RateLimitPolicies.Relaxed)]  // 500 req/min
+public IActionResult GetData() { }
+```
+
+> **📖 Full Guide:** See [Rate Limiting Adapter README](src/Adapters/emc.camus.ratelimiting.memory/README.md) for configuration and deployment.
 
 ---
 
@@ -321,6 +346,7 @@ public class Product
 **Adapter Documentation:**
 
 - [Observability (OpenTelemetry)](src/Adapters/emc.camus.observability.otel/README.md)
+- [Rate Limiting (Memory)](src/Adapters/emc.camus.ratelimiting.memory/README.md)
 - [Security (JWT)](src/Adapters/emc.camus.security.jwt/README.md)
 - [Secrets (Dapr)](src/Adapters/emc.camus.secrets.dapr/README.md)
 - [Persistence (PostgreSQL)](src/Adapters/emc.camus.persistence.postgresql/README.md)

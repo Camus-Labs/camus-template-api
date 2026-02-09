@@ -34,5 +34,41 @@ namespace emc.camus.secrets.dapr.Configurations
         /// Gets or sets the list of secret names to load at startup.
         /// </summary>
         public List<string> SecretNames { get; set; } = new();
+
+        /// <summary>
+        /// Validates the Dapr secret provider settings configuration.
+        /// Throws ArgumentException if any setting is invalid.
+        /// </summary>
+        public void Validate()
+        {
+            if (string.IsNullOrWhiteSpace(BaseHost))
+                throw new ArgumentException("BaseHost cannot be null or empty", nameof(BaseHost));
+
+            if (string.IsNullOrWhiteSpace(HttpPort))
+                throw new ArgumentException("HttpPort cannot be null or empty", nameof(HttpPort));
+
+            // Validate HttpPort is a valid port number
+            if (!int.TryParse(HttpPort, out int portNumber) || portNumber < 1 || portNumber > 65535)
+                throw new ArgumentException($"HttpPort must be a valid port number (1-65535): '{HttpPort}'", nameof(HttpPort));
+
+            if (string.IsNullOrWhiteSpace(SecretStoreName))
+                throw new ArgumentException("SecretStoreName cannot be null or empty", nameof(SecretStoreName));
+
+            if (TimeoutSeconds <= 0 || TimeoutSeconds > 300)
+                throw new ArgumentException("TimeoutSeconds must be between 1 and 300", nameof(TimeoutSeconds));
+
+            if (SecretNames == null)
+                throw new ArgumentException("SecretNames cannot be null", nameof(SecretNames));
+
+            if (SecretNames.Count == 0)
+                throw new ArgumentException("At least one secret name must be specified in SecretNames", nameof(SecretNames));
+
+            // Validate each secret name
+            foreach (var secretName in SecretNames)
+            {
+                if (string.IsNullOrWhiteSpace(secretName))
+                    throw new ArgumentException("SecretNames cannot contain null or empty values", nameof(SecretNames));
+            }
+        }
     }
 }

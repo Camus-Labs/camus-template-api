@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using emc.camus.application.Secrets;
 using emc.camus.application.Auth;
+using emc.camus.application.Generic;
 using emc.camus.security.apikey.Configurations;
 
 namespace emc.camus.security.apikey.Handlers
@@ -31,11 +32,11 @@ namespace emc.camus.security.apikey.Handlers
             ILoggerFactory logger,
             UrlEncoder encoder,
             ISecretProvider secretProvider,
-            IOptions<ApiKeySettings> settings)
+            ApiKeySettings settings)
             : base(options, logger, encoder)
         {
             _secretProvider = secretProvider;
-            _settings = settings.Value;
+            _settings = settings;
         }
 
         /// <summary>
@@ -48,7 +49,9 @@ namespace emc.camus.security.apikey.Handlers
             if (!Request.Headers.TryGetValue(ApiKeyHeaderName, out var apiKeyHeaderValues))
             {
                 Logger.LogWarning("API Key authentication failed: Header '{HeaderName}' not found", ApiKeyHeaderName);
-                throw new UnauthorizedAccessException("API Key header not found.");
+                var missingHeaderException = new UnauthorizedAccessException("API Key header not found.");
+                missingHeaderException.Data["ErrorCode"] = ErrorCodes.AuthenticationRequired;
+                throw missingHeaderException;
             }
 
             var providedApiKey = apiKeyHeaderValues.FirstOrDefault();
@@ -57,7 +60,9 @@ namespace emc.camus.security.apikey.Handlers
             if (string.IsNullOrEmpty(providedApiKey) || providedApiKey != configuredApiKey)
             {
                 Logger.LogWarning("API Key authentication failed: Invalid API Key provided");
-                throw new UnauthorizedAccessException("Invalid API Key.");
+                var invalidKeyException = new UnauthorizedAccessException("Invalid API Key.");
+                invalidKeyException.Data["ErrorCode"] = ErrorCodes.InvalidCredentials;
+                throw invalidKeyException;
             }
 
             var claims = new[] { new Claim(ClaimTypes.Name, "ApiKeyUser") };
