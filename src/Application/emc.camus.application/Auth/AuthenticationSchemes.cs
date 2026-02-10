@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.application.Auth;
 
 /// <summary>
 /// Defines authentication scheme names for the application.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public static class AuthenticationSchemes
 {
     /// <summary>

@@ -41,34 +41,58 @@ namespace emc.camus.secrets.dapr.Configurations
         /// </summary>
         public void Validate()
         {
+            ValidateBaseHost();
+            ValidateHttpPort();
+            ValidateSecretStoreName();
+            ValidateTimeoutSeconds();
+            ValidateSecretNames();
+        }
+
+        private void ValidateBaseHost()
+        {
             if (string.IsNullOrWhiteSpace(BaseHost))
                 throw new ArgumentException("BaseHost cannot be null or empty", nameof(BaseHost));
+        }
 
+        private void ValidateHttpPort()
+        {
             if (string.IsNullOrWhiteSpace(HttpPort))
                 throw new ArgumentException("HttpPort cannot be null or empty", nameof(HttpPort));
 
-            // Validate HttpPort is a valid port number
             if (!int.TryParse(HttpPort, out int portNumber) || portNumber < 1 || portNumber > 65535)
                 throw new ArgumentException($"HttpPort must be a valid port number (1-65535): '{HttpPort}'", nameof(HttpPort));
+        }
 
+        private void ValidateSecretStoreName()
+        {
             if (string.IsNullOrWhiteSpace(SecretStoreName))
                 throw new ArgumentException("SecretStoreName cannot be null or empty", nameof(SecretStoreName));
+        }
 
+        private void ValidateTimeoutSeconds()
+        {
             if (TimeoutSeconds <= 0 || TimeoutSeconds > 300)
                 throw new ArgumentException("TimeoutSeconds must be between 1 and 300", nameof(TimeoutSeconds));
+        }
 
+        private void ValidateSecretNames()
+        {
             if (SecretNames == null)
                 throw new ArgumentException("SecretNames cannot be null", nameof(SecretNames));
 
             if (SecretNames.Count == 0)
                 throw new ArgumentException("At least one secret name must be specified in SecretNames", nameof(SecretNames));
 
-            // Validate each secret name
             foreach (var secretName in SecretNames)
             {
-                if (string.IsNullOrWhiteSpace(secretName))
-                    throw new ArgumentException("SecretNames cannot contain null or empty values", nameof(SecretNames));
+                ValidateSecretName(secretName);
             }
+        }
+
+        private void ValidateSecretName(string secretName)
+        {
+            if (string.IsNullOrWhiteSpace(secretName))
+                throw new ArgumentException("SecretNames cannot contain null or empty values", nameof(SecretNames));
         }
     }
 }

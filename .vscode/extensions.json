@@ -12,6 +12,7 @@
         "ms-dotnettools.csdevkit",
         "ms-dotnettools.csharp",
         "ms-dotnettools.vscode-dotnet-runtime",
-        "ms-windows-ai-studio.windows-ai-studio"
+        "ms-windows-ai-studio.windows-ai-studio",
+        "ryanluker.vscode-coverage-gutters"
     ]
 }

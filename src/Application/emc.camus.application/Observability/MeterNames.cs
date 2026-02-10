@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.application.Observability
 {
     /// <summary>
@@ -5,6 +7,7 @@ namespace emc.camus.application.Observability
     /// Each meter logically groups related metrics.
     /// Full meter name format: "{ServiceName}{Suffix}" (e.g., "emc.camus.main.api.ratelimiting")
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class MeterNames
     {
         /// <summary>

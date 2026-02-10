@@ -1,5 +1,6 @@
 using emc.camus.observability.otel;
 using System.Reflection;
+using System.Diagnostics.CodeAnalysis;
 using emc.camus.api.Extensions;
 using emc.camus.api.Middleware;
 using emc.camus.security.jwt;
@@ -8,6 +9,8 @@ using emc.camus.secrets.dapr;
 using emc.camus.documentation.swagger;
 using emc.camus.ratelimiting.memory;
 using Microsoft.AspNetCore.HttpOverrides;
+
+[assembly: ExcludeFromCodeCoverage]
 
 // Step 0: Define WebApplicationBuilder and settings
 var builder = WebApplication.CreateBuilder(args);

@@ -3,7 +3,7 @@ using emc.camus.application.Observability;
 using emc.camus.observability.otel.Telemetry;
 using FluentAssertions;
 
-namespace adapter.observability.otel.test.Telemetry;
+namespace emc.camus.observability.otel.test.Telemetry;
 
 /// <summary>
 /// Unit tests for ActivitySourceWrapper to verify tracing logic and behavior.
@@ -32,7 +32,7 @@ public class ActivitySourceWrapperTests : IDisposable
     public void Constructor_WithNullActivitySource_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        var act = () => new ActivitySourceWrapper(null!);
+        var act = () => new ActivitySourceWrapper(null);
         act.Should().Throw<ArgumentNullException>().WithParameterName("activitySource");
     }
 
@@ -59,11 +59,11 @@ public class ActivitySourceWrapperTests : IDisposable
     }
 
     [Theory]
-    [InlineData(OperationType.Read, "read")]
-    [InlineData(OperationType.Auth, "auth")]
-    [InlineData(OperationType.Create, "create")]
-    [InlineData(OperationType.Update, "update")]
-    [InlineData(OperationType.Delete, "delete")]
+    [InlineData(OperationType.Read, "read")]        // Read operation
+    [InlineData(OperationType.Auth, "auth")]        // Authentication operation
+    [InlineData(OperationType.Create, "create")]    // Create operation
+    [InlineData(OperationType.Update, "update")]    // Update operation
+    [InlineData(OperationType.Delete, "delete")]    // Delete operation
     public void StartActivity_WithVariousOperationTypes_ShouldSetCorrectTag(OperationType opType, string expected)
     {
         // Act
@@ -127,6 +127,29 @@ public class ActivitySourceWrapperTests : IDisposable
     }
 
     [Fact]
+    public void SetTags_WithNullTags_ShouldNotThrow()
+    {
+        // Arrange
+        using var activity = _wrapper.StartActivity("test", OperationType.Read);
+
+        // Act & Assert
+        var act = () => _wrapper.SetTags(activity, null);
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void SetTags_WithEmptyDictionary_ShouldNotThrow()
+    {
+        // Arrange
+        using var activity = _wrapper.StartActivity("test", OperationType.Read);
+        var emptyTags = new Dictionary<string, object?>();
+
+        // Act & Assert
+        var act = () => _wrapper.SetTags(activity, emptyTags);
+        act.Should().NotThrow();
+    }
+
+    [Fact]
     public void SetRequestTags_ShouldPrefixWithRequest()
     {
         // Arrange
@@ -146,6 +169,40 @@ public class ActivitySourceWrapperTests : IDisposable
     }
 
     [Fact]
+    public void SetRequestTags_WithNullActivity_ShouldNotThrow()
+    {
+        // Arrange
+        var tags = new Dictionary<string, object?> { { "key", "value" } };
+
+        // Act & Assert
+        var act = () => _wrapper.SetRequestTags(null, tags);
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void SetRequestTags_WithNullTags_ShouldNotThrow()
+    {
+        // Arrange
+        using var activity = _wrapper.StartActivity("test", OperationType.Read);
+
+        // Act & Assert
+        var act = () => _wrapper.SetRequestTags(activity, null);
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void SetRequestTags_WithEmptyDictionary_ShouldNotThrow()
+    {
+        // Arrange
+        using var activity = _wrapper.StartActivity("test", OperationType.Read);
+        var emptyTags = new Dictionary<string, object?>();
+
+        // Act & Assert
+        var act = () => _wrapper.SetRequestTags(activity, emptyTags);
+        act.Should().NotThrow();
+    }
+
+    [Fact]
     public void SetResponseTags_ShouldPrefixWithResponse()
     {
         // Arrange
@@ -162,6 +219,40 @@ public class ActivitySourceWrapperTests : IDisposable
         // Assert
         activity!.GetTagItem("response.statusCode").Should().Be(200);
         activity.GetTagItem("response.size").Should().Be(1024);
+    }
+
+    [Fact]
+    public void SetResponseTags_WithNullActivity_ShouldNotThrow()
+    {
+        // Arrange
+        var tags = new Dictionary<string, object?> { { "key", "value" } };
+
+        // Act & Assert
+        var act = () => _wrapper.SetResponseTags(null, tags);
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void SetResponseTags_WithNullTags_ShouldNotThrow()
+    {
+        // Arrange
+        using var activity = _wrapper.StartActivity("test", OperationType.Read);
+
+        // Act & Assert
+        var act = () => _wrapper.SetResponseTags(activity, null);
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void SetResponseTags_WithEmptyDictionary_ShouldNotThrow()
+    {
+        // Arrange
+        using var activity = _wrapper.StartActivity("test", OperationType.Read);
+        var emptyTags = new Dictionary<string, object?>();
+
+        // Act & Assert
+        var act = () => _wrapper.SetResponseTags(activity, emptyTags);
+        act.Should().NotThrow();
     }
 
     [Fact]
@@ -226,6 +317,20 @@ public class ActivitySourceWrapperTests : IDisposable
         // Act & Assert
         var act = () => _wrapper.ActivityFailed(null, exception);
         act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void ActivityFailed_WithNullException_ShouldNotThrow()
+    {
+        // Arrange
+        using var activity = _wrapper.StartActivity("test", OperationType.Read);
+
+        // Act & Assert
+        var act = () => _wrapper.ActivityFailed(activity, null);
+        act.Should().NotThrow();
+
+        // Should still set status code to ERROR
+        activity!.Tags.Should().Contain(new KeyValuePair<string, string?>("otel.status_code", "ERROR"));
     }
 
     [Fact]

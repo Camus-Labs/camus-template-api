@@ -5,7 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Xunit;
+using FluentAssertions;
 using emc.camus.api.Middleware;
+using emc.camus.application.Exceptions;
+using emc.camus.application.Generic;
 
 namespace emc.camus.api.test.Middleware
 {
@@ -112,7 +115,7 @@ namespace emc.camus.api.test.Middleware
             Assert.Equal("Bad Request", problemDetails.Title);
             Assert.Equal("The request contains invalid parameters.", problemDetails.Detail);
             Assert.DoesNotContain("Invalid argument", problemDetails.Detail); // No sensitive info in production
-            Assert.False(problemDetails.Extensions.ContainsKey("exceptionType")); // No debug info in production
+            problemDetails.Extensions.Should().NotContainKey("exceptionType"); // No debug info in production
         }
 
         [Fact]
@@ -211,7 +214,7 @@ namespace emc.camus.api.test.Middleware
             Assert.Equal("Internal Server Error", problemDetails.Title);
             Assert.Equal("An unexpected error occurred.", problemDetails.Detail);
             Assert.DoesNotContain("Something went wrong", problemDetails.Detail); // No sensitive info
-            Assert.False(problemDetails.Extensions.ContainsKey("exceptionType")); // No debug info
+            problemDetails.Extensions.Should().NotContainKey("exceptionType"); // No debug info
         }
 
         [Fact]
@@ -262,6 +265,149 @@ namespace emc.camus.api.test.Middleware
 
             Assert.NotNull(problemDetails);
             Assert.Equal("/api/test", problemDetails.Instance);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_InvalidOperationExceptionWithPermission_ReturnsForbidden()
+        {
+            // Arrange
+            var middleware = CreateMiddleware();
+            var exception = new InvalidOperationException("User does not have permission to perform this action");
+            _nextMock.Setup(next => next(_httpContext)).ThrowsAsync(exception);
+
+            // Act
+            await middleware.InvokeAsync(_httpContext);
+
+            // Assert
+            Assert.Equal((int)HttpStatusCode.Forbidden, _httpContext.Response.StatusCode);
+            Assert.Equal("application/problem+json", _httpContext.Response.ContentType);
+
+            // Read response body
+            _httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
+            var reader = new StreamReader(_httpContext.Response.Body);
+            var responseBody = await reader.ReadToEndAsync();
+            
+            var problemDetails = JsonSerializer.Deserialize<ProblemDetails>(responseBody, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            Assert.NotNull(problemDetails);
+            Assert.Equal((int)HttpStatusCode.Forbidden, problemDetails.Status);
+            Assert.Equal("Forbidden", problemDetails.Title);
+            Assert.Equal("https://tools.ietf.org/html/rfc7231#section-6.5.3", problemDetails.Type);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_InvalidOperationExceptionWithoutPermission_ReturnsInternalServerError()
+        {
+            // Arrange
+            var middleware = CreateMiddleware();
+            var exception = new InvalidOperationException("Invalid operation");
+            _nextMock.Setup(next => next(_httpContext)).ThrowsAsync(exception);
+
+            // Act
+            await middleware.InvokeAsync(_httpContext);
+
+            // Assert
+            Assert.Equal((int)HttpStatusCode.InternalServerError, _httpContext.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_RateLimitExceededException_ReturnsTooManyRequestsWithRetryAfter()
+        {
+            // Arrange
+            var middleware = CreateMiddleware();
+            var retryAfterSeconds = 45;
+            var resetTimestamp = DateTimeOffset.UtcNow.AddSeconds(retryAfterSeconds).ToUnixTimeSeconds();
+            var exception = new RateLimitExceededException("strict", 100, 60, retryAfterSeconds, resetTimestamp);
+            _nextMock.Setup(next => next(_httpContext)).ThrowsAsync(exception);
+
+            // Act
+            await middleware.InvokeAsync(_httpContext);
+
+            // Assert
+            Assert.Equal((int)HttpStatusCode.TooManyRequests, _httpContext.Response.StatusCode);
+            Assert.Equal("application/problem+json", _httpContext.Response.ContentType);
+            
+            // Verify Retry-After header is set
+            _httpContext.Response.Headers.Should().ContainKey("Retry-After");
+            Assert.Equal(retryAfterSeconds.ToString(), _httpContext.Response.Headers["Retry-After"].ToString());
+
+            // Read response body
+            _httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
+            var reader = new StreamReader(_httpContext.Response.Body);
+            var responseBody = await reader.ReadToEndAsync();
+            
+            var problemDetails = JsonSerializer.Deserialize<ProblemDetails>(responseBody, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            Assert.NotNull(problemDetails);
+            Assert.Equal((int)HttpStatusCode.TooManyRequests, problemDetails.Status);
+            Assert.Equal("Too Many Requests", problemDetails.Title);
+            Assert.Contains("Rate limit exceeded", problemDetails.Detail);
+            Assert.Equal("https://tools.ietf.org/html/rfc6585#section-4", problemDetails.Type);
+            Assert.Contains("error", problemDetails.Extensions.Keys);
+            Assert.Equal(ErrorCodes.RateLimitExceeded, problemDetails.Extensions["error"]?.ToString());
+            Assert.Contains("retryAfter", problemDetails.Extensions.Keys);
+            var retryAfterElement = (JsonElement)problemDetails.Extensions["retryAfter"]!;
+            Assert.Equal(retryAfterSeconds, retryAfterElement.GetInt32());
+        }
+
+        [Fact]
+        public async Task InvokeAsync_ExceptionWithErrorCodeInData_IncludesErrorCode()
+        {
+            // Arrange
+            var middleware = CreateMiddleware();
+            var exception = new InvalidOperationException("Custom error");
+            exception.Data["ErrorCode"] = "CUSTOM_ERROR_001";
+            _nextMock.Setup(next => next(_httpContext)).ThrowsAsync(exception);
+
+            // Act
+            await middleware.InvokeAsync(_httpContext);
+
+            // Assert
+            _httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
+            var reader = new StreamReader(_httpContext.Response.Body);
+            var responseBody = await reader.ReadToEndAsync();
+            
+            var problemDetails = JsonSerializer.Deserialize<ProblemDetails>(responseBody, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            Assert.NotNull(problemDetails);
+            problemDetails.Extensions.Should().ContainKey("error");
+            Assert.Equal("CUSTOM_ERROR_001", problemDetails.Extensions["error"]?.ToString());
+        }
+
+        [Fact]
+        public async Task InvokeAsync_ExceptionWithoutRetryAfter_DoesNotSetRetryAfterHeader()
+        {
+            // Arrange
+            var middleware = CreateMiddleware();
+            var exception = new InvalidOperationException("Some error");
+            _nextMock.Setup(next => next(_httpContext)).ThrowsAsync(exception);
+
+            // Act
+            await middleware.InvokeAsync(_httpContext);
+
+            // Assert
+            _httpContext.Response.Headers.Should().NotContainKey("Retry-After");
+
+            _httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
+            var reader = new StreamReader(_httpContext.Response.Body);
+            var responseBody = await reader.ReadToEndAsync();
+            
+            var problemDetails = JsonSerializer.Deserialize<ProblemDetails>(responseBody, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            Assert.NotNull(problemDetails);
+            problemDetails.Extensions.Should().NotContainKey("retryAfter");
         }
     }
 }

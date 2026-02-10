@@ -7,6 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace emc.camus.documentation.swagger
@@ -14,6 +16,7 @@ namespace emc.camus.documentation.swagger
     /// <summary>
     /// Provides extension methods for configuring Swagger/OpenAPI documentation.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class SwaggerSetupExtensions
     {
         /// <summary>
@@ -41,105 +44,12 @@ namespace emc.camus.documentation.swagger
 
             builder.Services.AddSwaggerGen(options =>
             {
-                // Configure API versions
-                foreach (var versionInfo in settings.Versions)
-                {
-                    options.SwaggerDoc(versionInfo.Version, new OpenApiInfo
-                    {
-                        Title = versionInfo.Title,
-                        Version = versionInfo.Version,
-                        Description = versionInfo.Description
-                    });
-                }
-
-                // Add security definitions based on configured schemes
-                foreach (var scheme in settings.SecuritySchemes)
-                {
-                    switch (scheme.ToLowerInvariant())
-                    {
-                        case "bearer":
-                        case "jwt":
-                            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                            {
-                                Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
-                                Name = "Authorization",
-                                In = ParameterLocation.Header,
-                                Type = SecuritySchemeType.Http,
-                                Scheme = "bearer",
-                                BearerFormat = "JWT"
-                            });
-                            break;
-
-                        case "apikey":
-                            options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
-                            {
-                                Description = "API Key needed to access the endpoints. Example: 'X-Api-Key: {key}'",
-                                Name = "X-Api-Key",
-                                In = ParameterLocation.Header,
-                                Type = SecuritySchemeType.ApiKey
-                            });
-                            break;
-                    }
-                }
-
-                // Add security requirements for configured schemes
-                if (settings.SecuritySchemes.Any())
-                {
-                    var securityRequirements = new OpenApiSecurityRequirement();
-
-                    foreach (var scheme in settings.SecuritySchemes)
-                    {
-                        var schemeKey = scheme.ToLowerInvariant() switch
-                        {
-                            "bearer" or "jwt" => "Bearer",
-                            "apikey" => "ApiKey",
-                            _ => null
-                        };
-
-                        if (schemeKey != null)
-                        {
-                            securityRequirements.Add(
-                                new OpenApiSecurityScheme
-                                {
-                                    Reference = new OpenApiReference
-                                    {
-                                        Type = ReferenceType.SecurityScheme,
-                                        Id = schemeKey
-                                    }
-                                },
-                                Array.Empty<string>()
-                            );
-                        }
-                    }
-
-                    options.AddSecurityRequirement(securityRequirements);
-                }
-
-                // Include XML comments if enabled
-                if (settings.IncludeXmlComments)
-                {
-                    var xmlFile = $"{targetAssembly.GetName().Name}.xml";
-                    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                    if (File.Exists(xmlPath))
-                    {
-                        options.IncludeXmlComments(xmlPath);
-                    }
-                }
-
-                // Enable annotations if configured
-                if (settings.EnableAnnotations)
-                {
-                    options.EnableAnnotations();
-                }
-
-                // Add default API responses operation filter
-                options.OperationFilter<DefaultApiResponsesOperationFilter>();
-
-                // Enable example filters if configured
-                if (settings.EnableExampleFilters)
-                {
-                    options.ExampleFilters();
-                }
+                ConfigureApiVersions(options, settings);
+                ConfigureSecurityDefinitions(options, settings);
+                ConfigureSecurityRequirements(options, settings);
+                ConfigureXmlComments(options, settings, targetAssembly);
+                ConfigureAnnotations(options, settings);
+                ConfigureFilters(options, settings);
             });
 
             // Register Swagger examples from the target assembly if example filters are enabled
@@ -166,6 +76,168 @@ namespace emc.camus.documentation.swagger
             }
 
             app.UseSwagger();
+            ConfigureSwaggerUI(app, settings);
+            ConfigureRootRedirect(app, settings);
+
+            return app;
+        }
+
+        /// <summary>
+        /// Configures API version documentation.
+        /// </summary>
+        private static void ConfigureApiVersions(SwaggerGenOptions options, SwaggerSettings settings)
+        {
+            foreach (var versionInfo in settings.Versions)
+            {
+                options.SwaggerDoc(versionInfo.Version, new OpenApiInfo
+                {
+                    Title = versionInfo.Title,
+                    Version = versionInfo.Version,
+                    Description = versionInfo.Description
+                });
+            }
+        }
+
+        /// <summary>
+        /// Configures security definitions based on configured schemes.
+        /// </summary>
+        private static void ConfigureSecurityDefinitions(SwaggerGenOptions options, SwaggerSettings settings)
+        {
+            foreach (var scheme in settings.SecuritySchemes)
+            {
+                var securityScheme = CreateSecurityScheme(scheme);
+                if (securityScheme != null)
+                {
+                    var schemeKey = GetSecuritySchemeKey(scheme);
+                    if (schemeKey != null)
+                    {
+                        options.AddSecurityDefinition(schemeKey, securityScheme);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates an OpenAPI security scheme based on the scheme type.
+        /// </summary>
+        private static OpenApiSecurityScheme? CreateSecurityScheme(string scheme)
+        {
+            return scheme.ToLowerInvariant() switch
+            {
+                "bearer" or "jwt" => new OpenApiSecurityScheme
+                {
+                    Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Scheme = AuthenticationSchemes.JwtBearer.ToLowerInvariant(),
+                    BearerFormat = "JWT"
+                },
+                "apikey" => new OpenApiSecurityScheme
+                {
+                    Description = "API Key needed to access the endpoints. Example: 'X-Api-Key: {key}'",
+                    Name = "X-Api-Key",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey
+                },
+                _ => null
+            };
+        }
+
+        /// <summary>
+        /// Gets the security scheme key for the given scheme type.
+        /// </summary>
+        private static string? GetSecuritySchemeKey(string scheme)
+        {
+            return scheme.ToLowerInvariant() switch
+            {
+                "bearer" or "jwt" => AuthenticationSchemes.JwtBearer,
+                "apikey" => AuthenticationSchemes.ApiKey,
+                _ => null
+            };
+        }
+
+        /// <summary>
+        /// Configures security requirements for all operations.
+        /// </summary>
+        private static void ConfigureSecurityRequirements(SwaggerGenOptions options, SwaggerSettings settings)
+        {
+            if (!settings.SecuritySchemes.Any())
+            {
+                return;
+            }
+
+            var securityRequirements = new OpenApiSecurityRequirement();
+
+            foreach (var scheme in settings.SecuritySchemes)
+            {
+                var schemeKey = GetSecuritySchemeKey(scheme);
+                if (schemeKey != null)
+                {
+                    securityRequirements.Add(
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = schemeKey
+                            }
+                        },
+                        Array.Empty<string>()
+                    );
+                }
+            }
+
+            options.AddSecurityRequirement(securityRequirements);
+        }
+
+        /// <summary>
+        /// Configures XML comment documentation.
+        /// </summary>
+        private static void ConfigureXmlComments(SwaggerGenOptions options, SwaggerSettings settings, Assembly targetAssembly)
+        {
+            if (!settings.IncludeXmlComments)
+            {
+                return;
+            }
+
+            var xmlFile = $"{targetAssembly.GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            if (File.Exists(xmlPath))
+            {
+                options.IncludeXmlComments(xmlPath);
+            }
+        }
+
+        /// <summary>
+        /// Configures Swagger annotations.
+        /// </summary>
+        private static void ConfigureAnnotations(SwaggerGenOptions options, SwaggerSettings settings)
+        {
+            if (settings.EnableAnnotations)
+            {
+                options.EnableAnnotations();
+            }
+        }
+
+        /// <summary>
+        /// Configures Swagger filters.
+        /// </summary>
+        private static void ConfigureFilters(SwaggerGenOptions options, SwaggerSettings settings)
+        {
+            options.OperationFilter<DefaultApiResponsesOperationFilter>();
+
+            if (settings.EnableExampleFilters)
+            {
+                options.ExampleFilters();
+            }
+        }
+
+        /// <summary>
+        /// Configures Swagger UI endpoints.
+        /// </summary>
+        private static void ConfigureSwaggerUI(WebApplication app, SwaggerSettings settings)
+        {
             app.UseSwaggerUI(options =>
             {
                 foreach (var versionInfo in settings.Versions)
@@ -173,22 +245,27 @@ namespace emc.camus.documentation.swagger
                     options.SwaggerEndpoint($"/swagger/{versionInfo.Version}/swagger.json", versionInfo.Title);
                 }
             });
+        }
 
-            // Redirect root path to Swagger UI if configured
-            if (settings.RedirectRootToSwagger)
+        /// <summary>
+        /// Configures root path redirect to Swagger UI.
+        /// </summary>
+        private static void ConfigureRootRedirect(WebApplication app, SwaggerSettings settings)
+        {
+            if (!settings.RedirectRootToSwagger)
             {
-                app.Use(async (context, next) =>
-                {
-                    if (context.Request.Path == "/" || context.Request.Path == string.Empty)
-                    {
-                        context.Response.Redirect("/swagger/index.html", permanent: false);
-                        return;
-                    }
-                    await next();
-                });
+                return;
             }
 
-            return app;
+            app.Use(async (context, next) =>
+            {
+                if (context.Request.Path == "/" || context.Request.Path == string.Empty)
+                {
+                    context.Response.Redirect("/swagger/index.html", permanent: false);
+                    return;
+                }
+                await next();
+            });
         }
     }
 }

@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 
-namespace adapter.security.jwt.test.Services;
+namespace emc.camus.security.jwt.test.Services;
 
 /// <summary>
 /// Unit tests for JwtTokenGenerator to verify token generation logic.
@@ -35,23 +35,7 @@ public class JwtTokenGeneratorTests
     }
 
     [Fact]
-    public void GenerateToken_WithValidSubject_ShouldReturnToken()
-    {
-        // Arrange
-        var generator = CreateGenerator();
-        var subject = "testuser";
-
-        // Act
-        var result = generator.GenerateToken(subject);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.Token.Should().NotBeNullOrEmpty();
-        result.ExpiresOn.Should().BeAfter(DateTime.UtcNow);
-    }
-
-    [Fact]
-    public void GenerateToken_WithValidSubject_ShouldSetCorrectExpiration()
+    public void GenerateToken_WithValidSubject_ShouldReturnValidTokenWithCorrectClaimsAndExpiration()
     {
         // Arrange
         var generator = CreateGenerator();
@@ -62,43 +46,20 @@ public class JwtTokenGeneratorTests
         var result = generator.GenerateToken(subject);
 
         // Assert
+        result.Should().NotBeNull();
+        result.Token.Should().NotBeNullOrEmpty();
         result.ExpiresOn.Should().BeCloseTo(expectedExpiration, TimeSpan.FromSeconds(5));
-    }
-
-    [Fact]
-    public void GenerateToken_ShouldIncludeStandardClaims()
-    {
-        // Arrange
-        var generator = CreateGenerator();
-        var subject = "testuser";
-
-        // Act
-        var result = generator.GenerateToken(subject);
-
-        // Assert
+        
         var handler = new JwtSecurityTokenHandler();
         var token = handler.ReadJwtToken(result.Token);
         
+        // Verify standard claims
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == subject);
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.UniqueName && c.Value == subject);
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Jti);
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Iat);
-    }
-
-    [Fact]
-    public void GenerateToken_ShouldSetCorrectIssuerAndAudience()
-    {
-        // Arrange
-        var generator = CreateGenerator();
-        var subject = "testuser";
-
-        // Act
-        var result = generator.GenerateToken(subject);
-
-        // Assert
-        var handler = new JwtSecurityTokenHandler();
-        var token = handler.ReadJwtToken(result.Token);
         
+        // Verify issuer and audience
         token.Issuer.Should().Be(_jwtSettings.Issuer);
         token.Audiences.Should().Contain(_jwtSettings.Audience);
     }
@@ -151,7 +112,7 @@ public class JwtTokenGeneratorTests
     }
 
     [Fact]
-    public void GenerateToken_MultipleCallsWithSameSubject_ShouldGenerateUniqueTokens()
+    public void GenerateToken_MultipleCallsWithSameSubject_ShouldGenerateUniqueTokensAndJti()
     {
         // Arrange
         var generator = CreateGenerator();
@@ -163,20 +124,7 @@ public class JwtTokenGeneratorTests
 
         // Assert
         result1.Token.Should().NotBe(result2.Token);
-    }
-
-    [Fact]
-    public void GenerateToken_ShouldGenerateUniqueJti()
-    {
-        // Arrange
-        var generator = CreateGenerator();
-        var subject = "testuser";
-
-        // Act
-        var result1 = generator.GenerateToken(subject);
-        var result2 = generator.GenerateToken(subject);
-
-        // Assert
+        
         var handler = new JwtSecurityTokenHandler();
         var token1 = handler.ReadJwtToken(result1.Token);
         var token2 = handler.ReadJwtToken(result2.Token);
@@ -188,9 +136,9 @@ public class JwtTokenGeneratorTests
     }
 
     [Theory]
-    [InlineData("user1")]
-    [InlineData("admin@example.com")]
-    [InlineData("test-user-123")]
+    [InlineData("user1")]                    // Simple alphanumeric
+    [InlineData("admin@example.com")]        // Email format
+    [InlineData("test-user-123")]            // With hyphens and numbers
     public void GenerateToken_WithVariousSubjects_ShouldGenerateValidTokens(string subject)
     {
         // Arrange
@@ -204,23 +152,9 @@ public class JwtTokenGeneratorTests
         result.Token.Should().NotBeNullOrEmpty();
         
         var handler = new JwtSecurityTokenHandler();
+        handler.CanReadToken(result.Token).Should().BeTrue();
         var token = handler.ReadJwtToken(result.Token);
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == subject);
-    }
-
-    [Fact]
-    public void GenerateToken_ReturnedToken_ShouldBeValidJwt()
-    {
-        // Arrange
-        var generator = CreateGenerator();
-        var subject = "testuser";
-
-        // Act
-        var result = generator.GenerateToken(subject);
-
-        // Assert
-        var handler = new JwtSecurityTokenHandler();
-        handler.CanReadToken(result.Token).Should().BeTrue();
     }
 
     private JwtTokenGenerator CreateGenerator()

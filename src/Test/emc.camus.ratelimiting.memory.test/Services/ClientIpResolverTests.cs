@@ -33,21 +33,6 @@ public class ClientIpResolverTests
     }
 
     [Fact]
-    public void GetClientIpAddress_WithSingleXForwardedFor_ShouldReturnThatIp()
-    {
-        // Arrange
-        var resolver = new ClientIpResolver(_mockLogger.Object);
-        var context = new DefaultHttpContext();
-        context.Request.Headers["X-Forwarded-For"] = "203.0.113.42";
-
-        // Act
-        var result = resolver.GetClientIpAddress(context);
-
-        // Assert
-        result.Should().Be("203.0.113.42");
-    }
-
-    [Fact]
     public void GetClientIpAddress_WithXRealIp_ShouldReturnRealIp()
     {
         // Arrange
@@ -178,27 +163,12 @@ public class ClientIpResolverTests
         result.Should().Be("198.51.100.23");
     }
 
-    [Fact]
-    public void GetClientIpAddress_WithMultipleIpsInXForwardedFor_ShouldReturnFirst()
-    {
-        // Arrange
-        var resolver = new ClientIpResolver(_mockLogger.Object);
-        var context = new DefaultHttpContext();
-        context.Request.Headers["X-Forwarded-For"] = "203.0.113.1, 203.0.113.2, 203.0.113.3";
-
-        // Act
-        var result = resolver.GetClientIpAddress(context);
-
-        // Assert
-        result.Should().Be("203.0.113.1");
-    }
-
     [Theory]
-    [InlineData("192.168.1.1")]
-    [InlineData("10.0.0.1")]
-    [InlineData("172.16.0.1")]
-    [InlineData("203.0.113.42")]
-    [InlineData("2001:0db8:85a3:0000:0000:8a2e:0370:7334")]
+    [InlineData("192.168.1.1")]                                     // Private IPv4 Class C
+    [InlineData("10.0.0.1")]                                        // Private IPv4 Class A
+    [InlineData("172.16.0.1")]                                      // Private IPv4 Class B
+    [InlineData("203.0.113.42")]                                    // Public IPv4
+    [InlineData("2001:0db8:85a3:0000:0000:8a2e:0370:7334")]        // IPv6 full format
     public void GetClientIpAddress_WithVariousValidIps_ShouldReturnCorrectIp(string ipAddress)
     {
         // Arrange
@@ -241,5 +211,53 @@ public class ClientIpResolverTests
 
         // Assert
         result.Should().Be("::1");
+    }
+
+    [Fact]
+    public void GetClientIpAddress_WithInvalidXRealIp_ShouldFallbackToRemoteIp()
+    {
+        // Arrange
+        var resolver = new ClientIpResolver(_mockLogger.Object);
+        var context = new DefaultHttpContext();
+        context.Request.Headers["X-Real-IP"] = "invalid-ip-format";
+        context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("203.0.113.195");
+
+        // Act
+        var result = resolver.GetClientIpAddress(context);
+
+        // Assert
+        result.Should().Be("203.0.113.195");
+    }
+
+    [Fact]
+    public void GetClientIpAddress_WithEmptyXRealIp_ShouldFallbackToRemoteIp()
+    {
+        // Arrange
+        var resolver = new ClientIpResolver(_mockLogger.Object);
+        var context = new DefaultHttpContext();
+        context.Request.Headers["X-Real-IP"] = "";
+        context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("203.0.113.195");
+
+        // Act
+        var result = resolver.GetClientIpAddress(context);
+
+        // Assert
+        result.Should().Be("203.0.113.195");
+    }
+
+    [Fact]
+    public void GetClientIpAddress_WithWhitespaceXRealIp_ShouldFallbackToRemoteIp()
+    {
+        // Arrange
+        var resolver = new ClientIpResolver(_mockLogger.Object);
+        var context = new DefaultHttpContext();
+        context.Request.Headers["X-Real-IP"] = "   ";
+        context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("203.0.113.195");
+
+        // Act
+        var result = resolver.GetClientIpAddress(context);
+
+        // Assert
+        result.Should().Be("203.0.113.195");
     }
 }

@@ -44,66 +44,107 @@ namespace emc.camus.ratelimiting.memory.Services
         public string GetClientIpAddress(HttpContext context)
         {
             // Check X-Forwarded-For header (standard for proxies/load balancers)
-            // Format: "client-ip, proxy1-ip, proxy2-ip"
-            // We take the leftmost (original client) IP
-            if (context.Request.Headers.TryGetValue("X-Forwarded-For", out var forwardedFor))
+            var forwardedIp = TryGetForwardedForIp(context);
+            if (forwardedIp != null)
             {
-                var ips = forwardedFor.ToString().Split(',', StringSplitOptions.RemoveEmptyEntries);
-                if (ips.Length > 0)
-                {
-                    var clientIp = ips[0].Trim();
-                    if (!string.IsNullOrWhiteSpace(clientIp) && System.Net.IPAddress.TryParse(clientIp, out _))
-                    {
-                        return clientIp;
-                    }
-                    else if (!string.IsNullOrWhiteSpace(clientIp))
-                    {
-                        // Invalid IP format in X-Forwarded-For - log once to avoid spam
-                        _logger.LogWarning(
-                            "Invalid IP format in X-Forwarded-For header: {ForwardedFor}. " +
-                            "This may indicate header tampering or proxy misconfiguration. " +
-                            "Endpoint: {Path}",
-                            clientIp, context.Request.Path);
-                    }
-                }
+                return forwardedIp;
             }
             
             // Check X-Real-IP header (used by some proxies like nginx)
-            if (context.Request.Headers.TryGetValue("X-Real-IP", out var realIp))
+            var realIp = TryGetRealIp(context);
+            if (realIp != null)
             {
-                var ip = realIp.ToString().Trim();
-                if (!string.IsNullOrWhiteSpace(ip) && System.Net.IPAddress.TryParse(ip, out _))
-                {
-                    return ip;
-                }
+                return realIp;
             }
             
             // Fallback to direct connection IP (only works without proxy)
-            var remoteIp = context.Connection.RemoteIpAddress?.ToString();
+            var remoteIp = TryGetRemoteIp(context);
             if (remoteIp != null)
             {
-                // Log once that we're using direct connection
-                // Note: This is normal for local dev, testing, or direct connections
-                // Only a concern in production behind proxies/load balancers
-                if (_hasLoggedDirectConnection == 0 && 
-                    Interlocked.CompareExchange(ref _hasLoggedDirectConnection, 1, 0) == 0)
-                {
-                    _logger.LogInformation(
-                        "Rate limiting using direct connection IP address: {RemoteIp} (no X-Forwarded-For or X-Real-IP proxy headers detected). " +
-                        "This is normal for development, testing, or direct connections. " +
-                        "If this is production behind a reverse proxy (nginx, HAProxy, CDN), verify: " +
-                        "1) Proxy forwards X-Forwarded-For header, " +
-                        "2) UseForwardedHeaders() is configured in Program.cs. " +
-                        "Otherwise, all requests from the same proxy share one rate limit. " +
-                        "First occurrence: {Path}",
-                        remoteIp, context.Request.Path);
-                }
                 return remoteIp;
             }
             
-            // Unable to determine IP - log once (lock-free)
-            if (_hasLoggedUnknownIp == 0 && 
-                Interlocked.CompareExchange(ref _hasLoggedUnknownIp, 1, 0) == 0)
+            // Unable to determine IP - log once
+            LogUnknownIp(context);
+            return "unknown";
+        }
+
+        private string? TryGetForwardedForIp(HttpContext context)
+        {
+            if (!context.Request.Headers.TryGetValue("X-Forwarded-For", out var forwardedFor))
+            {
+                return null;
+            }
+
+            var ips = forwardedFor.ToString().Split(',', StringSplitOptions.RemoveEmptyEntries);
+            if (ips.Length == 0)
+            {
+                return null;
+            }
+
+            var clientIp = ips[0].Trim();
+            if (string.IsNullOrWhiteSpace(clientIp))
+            {
+                return null;
+            }
+
+            if (System.Net.IPAddress.TryParse(clientIp, out _))
+            {
+                return clientIp;
+            }
+
+            // Invalid IP format in X-Forwarded-For - log warning
+            _logger.LogWarning(
+                "Invalid IP format in X-Forwarded-For header: {ForwardedFor}. " +
+                "This may indicate header tampering or proxy misconfiguration. " +
+                "Endpoint: {Path}",
+                clientIp, context.Request.Path);
+            
+            return null;
+        }
+
+        private string? TryGetRealIp(HttpContext context)
+        {
+            if (!context.Request.Headers.TryGetValue("X-Real-IP", out var realIp))
+            {
+                return null;
+            }
+
+            var ip = realIp.ToString().Trim();
+            return IsValidIp(ip) ? ip : null;
+        }
+
+        private string? TryGetRemoteIp(HttpContext context)
+        {
+            var remoteIp = context.Connection.RemoteIpAddress?.ToString();
+            if (remoteIp == null)
+            {
+                return null;
+            }
+
+            LogDirectConnectionOnce(remoteIp, context);
+            return remoteIp;
+        }
+
+        private void LogDirectConnectionOnce(string remoteIp, HttpContext context)
+        {
+            if (Interlocked.CompareExchange(ref _hasLoggedDirectConnection, 1, 0) == 0)
+            {
+                _logger.LogInformation(
+                    "Rate limiting using direct connection IP address: {RemoteIp} (no X-Forwarded-For or X-Real-IP proxy headers detected). " +
+                    "This is normal for development, testing, or direct connections. " +
+                    "If this is production behind a reverse proxy (nginx, HAProxy, CDN), verify: " +
+                    "1) Proxy forwards X-Forwarded-For header, " +
+                    "2) UseForwardedHeaders() is configured in Program.cs. " +
+                    "Otherwise, all requests from the same proxy share one rate limit. " +
+                    "First occurrence: {Path}",
+                    remoteIp, context.Request.Path);
+            }
+        }
+
+        private void LogUnknownIp(HttpContext context)
+        {
+            if (Interlocked.CompareExchange(ref _hasLoggedUnknownIp, 1, 0) == 0)
             {
                 _logger.LogWarning(
                     "Unable to determine client IP address for rate limiting. " +
@@ -111,8 +152,11 @@ namespace emc.camus.ratelimiting.memory.Services
                     "First occurrence: {Path}",
                     context.Request.Path);
             }
-            
-            return "unknown";
+        }
+
+        private static bool IsValidIp(string ip)
+        {
+            return !string.IsNullOrWhiteSpace(ip) && System.Net.IPAddress.TryParse(ip, out _);
         }
     }
 }

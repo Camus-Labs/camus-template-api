@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using emc.camus.security.jwt.Configurations;
 using emc.camus.application.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace emc.camus.security.jwt.Handlers
 {
@@ -56,83 +57,31 @@ namespace emc.camus.security.jwt.Handlers
                     {
                         OnAuthenticationFailed = context =>
                         {
-                            var exception = context.Exception;
-                            
-                            // Detect specific token validation failures for better client error handling
-                            string errorCode;
-                            string message;
-
-                            if (exception is SecurityTokenExpiredException)
-                            {
-                                errorCode = ErrorCodes.Jwt.TokenExpired;
-                                message = "JWT token has expired";
-                                logger.LogWarning("JWT token expired for request to {Path}", context.Request.Path);
-                            }
-                            else if (exception is SecurityTokenInvalidSignatureException)
-                            {
-                                errorCode = ErrorCodes.Jwt.InvalidSignature;
-                                message = "JWT token signature is invalid";
-                                logger.LogWarning("JWT token signature validation failed for request to {Path}", context.Request.Path);
-                            }
-                            else if (exception is SecurityTokenInvalidIssuerException)
-                            {
-                                errorCode = ErrorCodes.Jwt.InvalidIssuer;
-                                message = "JWT token issuer is invalid";
-                                logger.LogWarning("JWT token issuer validation failed for request to {Path}", context.Request.Path);
-                            }
-                            else if (exception is SecurityTokenInvalidAudienceException)
-                            {
-                                errorCode = ErrorCodes.Jwt.InvalidAudience;
-                                message = "JWT token audience is invalid";
-                                logger.LogWarning("JWT token audience validation failed for request to {Path}", context.Request.Path);
-                            }
-                            else
-                            {
-                                errorCode = ErrorCodes.Jwt.InvalidToken;
-                                message = $"JWT token validation failed: {exception.Message}";
-                                logger.LogWarning(exception, "JWT authentication failed for request to {Path}", context.Request.Path);
-                            }
-
+                            var (errorCode, message) = GetAuthenticationError(context.Exception);
+                            LogAuthenticationFailure(logger, context.Exception, errorCode, context.Request.Path);
                             // Store error details in HttpContext.Items for OnChallenge to use
-                            context.HttpContext.Items["AuthErrorCode"] = errorCode;
-                            context.HttpContext.Items["AuthErrorMessage"] = message;
-                            context.HttpContext.Items["AuthException"] = exception;
-                            
-                            // Don't throw here - let OnChallenge handle it to avoid double-invocation
+                            StoreAuthenticationError(context.HttpContext, errorCode, message, context.Exception);
                             return Task.CompletedTask;
                         },
                         OnChallenge = context =>
                         {
                             // Skip default challenge response - we'll throw to use our error handler
                             context.HandleResponse();
-                            
                             // Retrieve error details stored by OnAuthenticationFailed, if not present is because authentication was not provided at all
-                            var errorCode = context.HttpContext.Items["AuthErrorCode"] as string ?? ErrorCodes.AuthenticationRequired;
-                            var errorMessage = context.HttpContext.Items["AuthErrorMessage"] as string 
-                                ?? "JWT authentication is required to access this resource";
-                            var originalException = context.HttpContext.Items["AuthException"] as Exception;
+                            var (errorCode, errorMessage, originalException) = RetrieveAuthenticationError(context.HttpContext);
                             
-                            // Log only if no token was provided (not already logged in OnAuthenticationFailed)
                             if (errorCode == ErrorCodes.AuthenticationRequired)
                             {
                                 logger.LogWarning("JWT authentication required for request to {Path}", context.Request.Path);
                             }
                             
-                            // Create exception with error code for error handler
-                            var unauthorizedException = new UnauthorizedAccessException(errorMessage, originalException);
-                            unauthorizedException.Data["ErrorCode"] = errorCode;
-                            throw unauthorizedException;
+                            throw CreateUnauthorizedException(errorCode, errorMessage, originalException);
                         },
                         OnForbidden = context =>
                         {
-                            // Called when authentication succeeded but authorization failed (insufficient permissions)
                             var userName = context.Principal?.Identity?.Name ?? "Unknown";
                             logger.LogWarning("JWT authorization forbidden for user {User} accessing {Path}", userName, context.Request.Path);
-                            
-                            var forbiddenException = new InvalidOperationException($"User {userName} does not have permission to access this resource");
-                            forbiddenException.Data["ErrorCode"] = ErrorCodes.Forbidden;
-                            forbiddenException.Data["UserName"] = userName;
-                            throw forbiddenException;
+                            throw CreateForbiddenException(userName);
                         },
                         OnTokenValidated = context =>
                         {
@@ -144,6 +93,71 @@ namespace emc.camus.security.jwt.Handlers
                 });
 
             return builder;
+        }
+
+        private static (string ErrorCode, string Message) GetAuthenticationError(Exception exception)
+        {
+            return exception switch
+            {
+                SecurityTokenExpiredException => (ErrorCodes.Jwt.TokenExpired, "JWT token has expired"),
+                SecurityTokenInvalidSignatureException => (ErrorCodes.Jwt.InvalidSignature, "JWT token signature is invalid"),
+                SecurityTokenInvalidIssuerException => (ErrorCodes.Jwt.InvalidIssuer, "JWT token issuer is invalid"),
+                SecurityTokenInvalidAudienceException => (ErrorCodes.Jwt.InvalidAudience, "JWT token audience is invalid"),
+                _ => (ErrorCodes.Jwt.InvalidToken, $"JWT token validation failed: {exception.Message}")
+            };
+        }
+
+        private static void LogAuthenticationFailure(ILogger logger, Exception exception, string errorCode, string path)
+        {
+            var logMessage = errorCode switch
+            {
+                var code when code == ErrorCodes.Jwt.TokenExpired => "JWT token expired for request to {Path}",
+                var code when code == ErrorCodes.Jwt.InvalidSignature => "JWT token signature validation failed for request to {Path}",
+                var code when code == ErrorCodes.Jwt.InvalidIssuer => "JWT token issuer validation failed for request to {Path}",
+                var code when code == ErrorCodes.Jwt.InvalidAudience => "JWT token audience validation failed for request to {Path}",
+                _ => "JWT authentication failed for request to {Path}"
+            };
+
+            if (errorCode == ErrorCodes.Jwt.InvalidToken)
+            {
+                logger.LogWarning(exception, logMessage, path);
+            }
+            else
+            {
+                logger.LogWarning(logMessage, path);
+            }
+        }
+
+        private static void StoreAuthenticationError(Microsoft.AspNetCore.Http.HttpContext httpContext, string errorCode, string message, Exception exception)
+        {
+            httpContext.Items["AuthErrorCode"] = errorCode;
+            httpContext.Items["AuthErrorMessage"] = message;
+            httpContext.Items["AuthException"] = exception;
+        }
+
+        private static (string ErrorCode, string ErrorMessage, Exception? OriginalException) RetrieveAuthenticationError(Microsoft.AspNetCore.Http.HttpContext httpContext)
+        {
+            var errorCode = httpContext.Items["AuthErrorCode"] as string ?? ErrorCodes.AuthenticationRequired;
+            var errorMessage = httpContext.Items["AuthErrorMessage"] as string 
+                ?? "JWT authentication is required to access this resource";
+            var originalException = httpContext.Items["AuthException"] as Exception;
+            
+            return (errorCode, errorMessage, originalException);
+        }
+
+        private static UnauthorizedAccessException CreateUnauthorizedException(string errorCode, string errorMessage, Exception? originalException)
+        {
+            var unauthorizedException = new UnauthorizedAccessException(errorMessage, originalException);
+            unauthorizedException.Data["ErrorCode"] = errorCode;
+            return unauthorizedException;
+        }
+
+        private static InvalidOperationException CreateForbiddenException(string userName)
+        {
+            var forbiddenException = new InvalidOperationException($"User {userName} does not have permission to access this resource");
+            forbiddenException.Data["ErrorCode"] = ErrorCodes.Forbidden;
+            forbiddenException.Data["UserName"] = userName;
+            return forbiddenException;
         }
     }
 }

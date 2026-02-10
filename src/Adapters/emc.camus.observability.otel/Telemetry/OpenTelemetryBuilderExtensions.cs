@@ -8,12 +8,14 @@ using OpenTelemetry.Trace;
 using Microsoft.AspNetCore.Builder;
 using emc.camus.observability.otel.Configurations;
 using emc.camus.application.Observability;
+using System.Diagnostics.CodeAnalysis;
 
 namespace emc.camus.observability.otel.Telemetry
 {
     /// <summary>
     /// Extension methods for configuring OpenTelemetry metrics and tracing.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class OpenTelemetryBuilderExtensions
     {
         /// <summary>

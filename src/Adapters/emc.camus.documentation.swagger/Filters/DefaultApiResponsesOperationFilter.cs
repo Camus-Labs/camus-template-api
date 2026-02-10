@@ -130,18 +130,19 @@ namespace emc.camus.documentation.swagger.Filters
             };
             
             // Add other status codes with single examples
-            foreach (var status in new[] { "400", "403", "429", "500" })
+            var descriptions = new Dictionary<string, string>
+            {
+                ["400"] = "Bad Request",
+                ["403"] = "Forbidden",
+                ["429"] = "Too Many Requests",
+                ["500"] = "Internal Server Error"
+            };
+            
+            foreach (var status in descriptions.Keys)
             {
                 operation.Responses[status] = new OpenApiResponse
                 {
-                    Description = status switch
-                    {
-                        "400" => "Bad Request",
-                        "403" => "Forbidden",
-                        "429" => "Too Many Requests",
-                        "500" => "Internal Server Error",
-                        _ => ""
-                    },
+                    Description = descriptions[status],
                     Content = {
                         ["application/problem+json"] = new OpenApiMediaType
                         {

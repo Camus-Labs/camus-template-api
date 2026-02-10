@@ -53,6 +53,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.security.apikey.t
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.ratelimiting.memory.test", "Test\emc.camus.ratelimiting.memory.test\emc.camus.ratelimiting.memory.test.csproj", "{F4821BF6-9A21-4575-AD3E-CE126A40F1BD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "emc.camus.documentation.swagger.test", "Test\emc.camus.documentation.swagger.test\emc.camus.documentation.swagger.test.csproj", "{4F12D871-557E-4FD3-B611-F53DCD3F5ECC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -279,6 +281,18 @@ Global
 		{F4821BF6-9A21-4575-AD3E-CE126A40F1BD}.Release|x64.Build.0 = Release|Any CPU
 		{F4821BF6-9A21-4575-AD3E-CE126A40F1BD}.Release|x86.ActiveCfg = Release|Any CPU
 		{F4821BF6-9A21-4575-AD3E-CE126A40F1BD}.Release|x86.Build.0 = Release|Any CPU
+		{4F12D871-557E-4FD3-B611-F53DCD3F5ECC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F12D871-557E-4FD3-B611-F53DCD3F5ECC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F12D871-557E-4FD3-B611-F53DCD3F5ECC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4F12D871-557E-4FD3-B611-F53DCD3F5ECC}.Debug|x64.Build.0 = Debug|Any CPU
+		{4F12D871-557E-4FD3-B611-F53DCD3F5ECC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4F12D871-557E-4FD3-B611-F53DCD3F5ECC}.Debug|x86.Build.0 = Debug|Any CPU
+		{4F12D871-557E-4FD3-B611-F53DCD3F5ECC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F12D871-557E-4FD3-B611-F53DCD3F5ECC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F12D871-557E-4FD3-B611-F53DCD3F5ECC}.Release|x64.ActiveCfg = Release|Any CPU
+		{4F12D871-557E-4FD3-B611-F53DCD3F5ECC}.Release|x64.Build.0 = Release|Any CPU
+		{4F12D871-557E-4FD3-B611-F53DCD3F5ECC}.Release|x86.ActiveCfg = Release|Any CPU
+		{4F12D871-557E-4FD3-B611-F53DCD3F5ECC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -303,5 +317,6 @@ Global
 		{9F10F736-A3E5-4668-B53B-F962708A8EA0} = {09DF2EE5-5FE7-3EC7-59CB-CAD7E0928979}
 		{1009236B-2223-4801-863D-4AC8BBEF1229} = {0C88DD14-F956-CE84-757C-A364CCF449FC}
 		{F4821BF6-9A21-4575-AD3E-CE126A40F1BD} = {0C88DD14-F956-CE84-757C-A364CCF449FC}
+		{4F12D871-557E-4FD3-B611-F53DCD3F5ECC} = {0C88DD14-F956-CE84-757C-A364CCF449FC}
 	EndGlobalSection
 EndGlobal

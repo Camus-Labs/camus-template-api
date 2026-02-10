@@ -6,6 +6,10 @@ namespace emc.camus.documentation.swagger.Configurations
     public class SwaggerSettings
     {
         /// <summary>
+        /// Valid security scheme names supported by Swagger configuration.
+        /// </summary>
+        private static readonly string[] ValidSecuritySchemes = { "bearer", "jwt", "apikey" };
+        /// <summary>
         /// Gets or sets whether Swagger should be enabled.
         /// </summary>
         public bool Enabled { get; set; } = false;
@@ -46,43 +50,58 @@ namespace emc.camus.documentation.swagger.Configurations
         /// </summary>
         public void Validate()
         {
+            ValidateVersions();
+            ValidateSecuritySchemes();
+        }
+
+        private void ValidateVersions()
+        {
             if (Versions == null)
                 throw new ArgumentException("Versions cannot be null", nameof(Versions));
 
-            // Only validate versions if Swagger is enabled
-            if (Enabled)
+            if (!Enabled)
+                return;
+
+            if (Versions.Count == 0)
+                throw new ArgumentException("At least one API version must be configured when Swagger is enabled", nameof(Versions));
+
+            foreach (var version in Versions)
             {
-                if (Versions.Count == 0)
-                    throw new ArgumentException("At least one API version must be configured when Swagger is enabled", nameof(Versions));
-
-                // Validate each version
-                foreach (var version in Versions)
-                {
-                    if (version == null)
-                        throw new ArgumentException("Versions cannot contain null values", nameof(Versions));
-
-                    version.Validate();
-                }
+                ValidateVersion(version);
             }
+        }
 
+        private void ValidateVersion(ApiVersionInfo version)
+        {
+            if (version == null)
+                throw new ArgumentException("Versions cannot contain null values", nameof(Versions));
+
+            version.Validate();
+        }
+
+        private void ValidateSecuritySchemes()
+        {
             if (SecuritySchemes == null)
                 throw new ArgumentException("SecuritySchemes cannot be null", nameof(SecuritySchemes));
 
-            // Validate security schemes if Swagger is enabled
-            if (Enabled && SecuritySchemes.Count > 0)
-            {
-                var validSchemes = new[] { "bearer", "jwt", "apikey" };
-                foreach (var scheme in SecuritySchemes)
-                {
-                    if (string.IsNullOrWhiteSpace(scheme))
-                        throw new ArgumentException("SecuritySchemes cannot contain null or empty values", nameof(SecuritySchemes));
+            if (!Enabled || SecuritySchemes.Count == 0)
+                return;
 
-                    if (!validSchemes.Contains(scheme.ToLowerInvariant()))
-                        throw new ArgumentException(
-                            $"Invalid security scheme '{scheme}'. Valid values are: {string.Join(", ", validSchemes)}",
-                            nameof(SecuritySchemes));
-                }
+            foreach (var scheme in SecuritySchemes)
+            {
+                ValidateSecurityScheme(scheme, ValidSecuritySchemes);
             }
+        }
+
+        private void ValidateSecurityScheme(string scheme, string[] validSchemes)
+        {
+            if (string.IsNullOrWhiteSpace(scheme))
+                throw new ArgumentException("SecuritySchemes cannot contain null or empty values", nameof(SecuritySchemes));
+
+            if (!validSchemes.Contains(scheme.ToLowerInvariant()))
+                throw new ArgumentException(
+                    $"Invalid security scheme '{scheme}'. Valid values are: {string.Join(", ", validSchemes)}",
+                    nameof(SecuritySchemes));
         }
     }
 }

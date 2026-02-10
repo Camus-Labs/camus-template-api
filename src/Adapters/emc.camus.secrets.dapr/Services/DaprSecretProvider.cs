@@ -55,14 +55,10 @@ namespace emc.camus.secrets.dapr.Services
         /// <returns>A task representing the asynchronous load operation.</returns>
         public async Task LoadSecretsAsync(IEnumerable<string> secretNames)
         {
-            if (secretNames == null)
-            {
-                _logger.LogWarning("LoadSecretsAsync called with null secretNames");
-                return;
-            }
-
-            var secretNamesList = secretNames.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
-            if (!secretNamesList.Any())
+            // Filter out null/empty names - settings validation ensures this won't be empty at startup
+            var secretNamesList = secretNames?.Where(s => !string.IsNullOrWhiteSpace(s)).ToList() ?? new List<string>();
+            
+            if (secretNamesList.Count == 0)
             {
                 _logger.LogInformation("No valid secret names provided to load");
                 return;
@@ -109,24 +105,21 @@ namespace emc.camus.secrets.dapr.Services
         /// <returns>The secret value if found; otherwise, <c>null</c>.</returns>
         public string? GetSecret(string name)
         {
-            string? result = null;
-
             if (string.IsNullOrWhiteSpace(name))
             {
                 _logger.LogWarning("GetSecret called with null or empty name");
-            }
-            else if (_secrets.TryGetValue(name, out var value))
-            {
-                _logger.LogDebug("Secret '{SecretName}' retrieved successfully", name);
-                result = value;
-            }
-            else
-            {
-                _logger.LogWarning("Secret '{SecretName}' not found in loaded secrets. Available secrets: {LoadedCount}", 
-                    name, _secrets.Count);
+                return null;
             }
 
-            return result;
+            if (_secrets.TryGetValue(name, out var value))
+            {
+                _logger.LogDebug("Secret '{SecretName}' retrieved successfully", name);
+                return value;
+            }
+
+            _logger.LogWarning("Secret '{SecretName}' not found in loaded secrets. Available secrets: {LoadedCount}", 
+                name, _secrets.Count);
+            return null;
         }
         
         /// <summary>
@@ -157,17 +150,8 @@ namespace emc.camus.secrets.dapr.Services
             return _secrets.Keys.ToList();
         }
         
-        private static string GetDefaultSecretStoreName()
-        {
-            // Construct default name to avoid static string detection
-            return string.Concat("default", "-", "secret", "-", "store");
-        }
-        
         private async Task LoadSingleSecretAsync(string secretName)
         {
-            if (string.IsNullOrWhiteSpace(secretName))
-                return;
-
             // Use relative URL - BaseAddress is configured in constructor
             using var response = await _httpClient.GetAsync(secretName);
            
@@ -192,18 +176,7 @@ namespace emc.camus.secrets.dapr.Services
 
             try
             {
-                // Dapr returns JSON: { "secretName": "value" }
-                var secretData = JsonSerializer.Deserialize<Dictionary<string, string>>(responseContent);
-               
-                if (secretData != null && secretData.TryGetValue(secretName, out var secretValue) && !string.IsNullOrEmpty(secretValue))
-                {
-                    _secrets[secretName] = secretValue;
-                    _logger.LogDebug("Secret '{SecretName}' loaded successfully", secretName);
-                }
-                else
-                {
-                    _logger.LogWarning("Secret '{SecretName}' found but contains no value or unexpected format", secretName);
-                }
+                ParseAndStoreSecret(secretName, responseContent);
             }
             catch (JsonException ex)
             {
@@ -212,19 +185,39 @@ namespace emc.camus.secrets.dapr.Services
             }
         }
         
+        private void ParseAndStoreSecret(string secretName, string responseContent)
+        {
+            // Dapr returns JSON: { "secretName": "value" }
+            var secretData = JsonSerializer.Deserialize<Dictionary<string, string>>(responseContent);
+            
+            if (secretData == null)
+            {
+                _logger.LogWarning("Secret '{SecretName}' found but response was null after deserialization", secretName);
+                return;
+            }
+            
+            if (!secretData.TryGetValue(secretName, out var secretValue))
+            {
+                _logger.LogWarning("Secret '{SecretName}' not found in response dictionary", secretName);
+                return;
+            }
+            
+            if (string.IsNullOrWhiteSpace(secretValue))
+            {
+                _logger.LogWarning("Secret '{SecretName}' found but contains empty or whitespace-only value", secretName);
+                return;
+            }
+            
+            _secrets[secretName] = secretValue;
+            _logger.LogDebug("Secret '{SecretName}' loaded successfully", secretName);
+        }
+        
         private static bool IsTransientError(HttpRequestException ex)
         {
-            // Check for common transient HTTP errors
+            // Check for common transient HTTP errors in message (network/timeout issues)
             return ex.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase) ||
                    ex.Message.Contains("connection", StringComparison.OrdinalIgnoreCase) ||
-                   ex.Message.Contains("network", StringComparison.OrdinalIgnoreCase) ||
-                   ex.Data.Contains("StatusCode") && ex.Data["StatusCode"] is HttpStatusCode statusCode &&
-                   (statusCode == HttpStatusCode.ServiceUnavailable ||
-                    statusCode == HttpStatusCode.RequestTimeout ||
-                    statusCode == HttpStatusCode.TooManyRequests ||
-                    statusCode == HttpStatusCode.InternalServerError ||
-                    statusCode == HttpStatusCode.BadGateway ||
-                    statusCode == HttpStatusCode.GatewayTimeout);
+                   ex.Message.Contains("network", StringComparison.OrdinalIgnoreCase);
         }
         
         private async Task LoadSingleSecretWithRetryAsync(string secretName)
@@ -247,10 +240,16 @@ namespace emc.camus.secrets.dapr.Services
                    
                     await Task.Delay(delay);
                 }
+                catch (HttpRequestException ex) when (IsTransientError(ex))
+                {
+                    // Transient error on final attempt - let loop exit naturally
+                    _logger.LogError(ex, "Transient error on final attempt loading secret '{SecretName}'. Max retries exhausted.", secretName);
+                }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to load secret '{SecretName}' after {Attempts} attempts.", secretName, attempt + 1);
-                    return; // Non-retryable error or max retries reached
+                    // Non-transient error - stop immediately
+                    _logger.LogError(ex, "Non-retryable error loading secret '{SecretName}' (attempt {Attempt}).", secretName, attempt + 1);
+                    break;
                 }
             }
         }

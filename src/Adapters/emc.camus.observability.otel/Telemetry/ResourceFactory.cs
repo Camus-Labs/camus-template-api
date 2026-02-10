@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry.Resources;
 
@@ -8,6 +9,7 @@ namespace emc.camus.observability.otel.Telemetry
     /// <summary>
     /// Factory for creating OpenTelemetry resource builders with standard attributes.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class ResourceFactory
     {
         /// <summary>

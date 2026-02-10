@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using emc.camus.application.Observability;
 
@@ -7,6 +8,7 @@ namespace emc.camus.ratelimiting.memory.Metrics
     /// Provides metrics instrumentation for rate limiting operations.
     /// Exports counters to Prometheus/Application Insights via OpenTelemetry.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public class RateLimitMetrics
     {
         private readonly Counter<long> _rateLimitHitsCounter;

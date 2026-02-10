@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.application.RateLimiting
 {
     /// <summary>
@@ -5,6 +7,7 @@ namespace emc.camus.application.RateLimiting
     /// These constants ensure type safety when applying rate limit attributes.
     /// Each policy must be configured in appsettings.json under RateLimitSettings.Policies.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class RateLimitPolicies
     {
         /// <summary>

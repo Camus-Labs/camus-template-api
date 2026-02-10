@@ -64,98 +64,19 @@ namespace emc.camus.api.Middleware
         private Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
             var isDevelopment = _environment.IsDevelopment();
+            var problemDetails = CreateProblemDetails(exception, isDevelopment);
             
-            ProblemDetails problemDetails = exception switch
-            {
-                ArgumentException argEx => new ProblemDetails
-                {
-                    Status = (int)HttpStatusCode.BadRequest,
-                    Title = "Bad Request",
-                    Detail = isDevelopment ? $"Argument validation failed: {argEx.Message}" : "The request contains invalid parameters.",
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                },
-                UnauthorizedAccessException => new ProblemDetails
-                {
-                    Status = (int)HttpStatusCode.Unauthorized,
-                    Title = "Unauthorized",
-                    Detail = isDevelopment ? exception.Message : "You are not authorized to access this resource.",
-                    Type = "https://tools.ietf.org/html/rfc7235#section-3.1"
-                },
-                RateLimitExceededException rateLimitEx => new ProblemDetails
-                {
-                    Status = (int)HttpStatusCode.TooManyRequests,
-                    Title = "Too Many Requests",
-                    Detail = exception.Message,
-                    Type = "https://tools.ietf.org/html/rfc6585#section-4",
-                    Extensions =
-                    {
-                        ["error"] = ErrorCodes.RateLimitExceeded
-                    }
-                },
-                InvalidOperationException invalidOpEx when invalidOpEx.Message.Contains("permission") => new ProblemDetails
-                {
-                    Status = (int)HttpStatusCode.Forbidden,
-                    Title = "Forbidden",
-                    Detail = isDevelopment ? invalidOpEx.Message : "You do not have permission to access this resource.",
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
-                },
-                _ => new ProblemDetails
-                {
-                    Status = (int)HttpStatusCode.InternalServerError,
-                    Title = "Internal Server Error",
-                    Detail = isDevelopment ? $"An unexpected error occurred: {exception.Message}" : "An unexpected error occurred.",
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
-                }
-            };
-
-            // Add request path as instance identifier
             problemDetails.Instance = context.Request.Path;
             
-            // Add machine-readable error code (always present for frontend error handling)
-            if (exception.Data.Contains("ErrorCode"))
-            {
-                // Use custom error code if provided (e.g., token_expired, invalid_signature)
-                problemDetails.Extensions["error"] = exception.Data["ErrorCode"];
-            }
-            else
-            {
-                // Set default error code based on status code
-                problemDetails.Extensions["error"] = problemDetails.Status switch
-                {
-                    400 => ErrorCodes.BadRequest,
-                    401 => ErrorCodes.Unauthorized,
-                    403 => ErrorCodes.Forbidden,
-                    429 => ErrorCodes.RateLimitExceeded,
-                    500 => ErrorCodes.InternalServerError,
-                    _ => ErrorCodes.UnknownError
-                };
-            }
-            
-            // Add retry-after metadata if present (for rate limiting)
-            if (exception.Data.Contains("RetryAfter"))
-            {
-                var retryAfterSeconds = exception.Data["RetryAfter"];
-                problemDetails.Extensions["retryAfter"] = retryAfterSeconds;
-                // Also set the standard Retry-After header
-                context.Response.Headers.RetryAfter = retryAfterSeconds?.ToString() ?? string.Empty;
-            }
-            
-            // Add additional development debugging information
-            if (isDevelopment)
-            {
-                problemDetails.Extensions["exceptionType"] = exception.GetType().Name;
-                if (!string.IsNullOrEmpty(exception.StackTrace))
-                {
-                    problemDetails.Extensions["stackTrace"] = exception.StackTrace;
-                }
-            }
+            AddErrorCode(problemDetails, exception);
+            AddRetryAfterMetadata(problemDetails, exception, context);
+            AddDevelopmentInformation(problemDetails, exception, isDevelopment);
 
             _logger.LogError(exception, "Exception detected: {ErrorMessage}", exception.Message);
 
             context.Response.StatusCode = problemDetails.Status ?? 500;
             context.Response.ContentType = "application/problem+json";
             
-            // Manually serialize to maintain control over ContentType
             var json = JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -163,6 +84,143 @@ namespace emc.camus.api.Middleware
             });
             
             return context.Response.WriteAsync(json);
+        }
+
+        /// <summary>
+        /// Creates a ProblemDetails object based on the exception type.
+        /// </summary>
+        private ProblemDetails CreateProblemDetails(Exception exception, bool isDevelopment)
+        {
+            return exception switch
+            {
+                ArgumentException argEx => CreateBadRequestProblem(argEx, isDevelopment),
+                UnauthorizedAccessException => CreateUnauthorizedProblem(exception, isDevelopment),
+                RateLimitExceededException => CreateRateLimitProblem(exception),
+                InvalidOperationException invalidOpEx when invalidOpEx.Message.Contains("permission") => CreateForbiddenProblem(invalidOpEx, isDevelopment),
+                _ => CreateInternalServerErrorProblem(exception, isDevelopment)
+            };
+        }
+
+        private ProblemDetails CreateBadRequestProblem(ArgumentException exception, bool isDevelopment)
+        {
+            return new ProblemDetails
+            {
+                Status = (int)HttpStatusCode.BadRequest,
+                Title = "Bad Request",
+                Detail = isDevelopment ? $"Argument validation failed: {exception.Message}" : "The request contains invalid parameters.",
+                Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            };
+        }
+
+        private ProblemDetails CreateUnauthorizedProblem(Exception exception, bool isDevelopment)
+        {
+            return new ProblemDetails
+            {
+                Status = (int)HttpStatusCode.Unauthorized,
+                Title = "Unauthorized",
+                Detail = isDevelopment ? exception.Message : "You are not authorized to access this resource.",
+                Type = "https://tools.ietf.org/html/rfc7235#section-3.1"
+            };
+        }
+
+        private ProblemDetails CreateRateLimitProblem(Exception exception)
+        {
+            return new ProblemDetails
+            {
+                Status = (int)HttpStatusCode.TooManyRequests,
+                Title = "Too Many Requests",
+                Detail = exception.Message,
+                Type = "https://tools.ietf.org/html/rfc6585#section-4",
+                Extensions =
+                {
+                    ["error"] = ErrorCodes.RateLimitExceeded
+                }
+            };
+        }
+
+        private ProblemDetails CreateForbiddenProblem(InvalidOperationException exception, bool isDevelopment)
+        {
+            return new ProblemDetails
+            {
+                Status = (int)HttpStatusCode.Forbidden,
+                Title = "Forbidden",
+                Detail = isDevelopment ? exception.Message : "You do not have permission to access this resource.",
+                Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+            };
+        }
+
+        private ProblemDetails CreateInternalServerErrorProblem(Exception exception, bool isDevelopment)
+        {
+            return new ProblemDetails
+            {
+                Status = (int)HttpStatusCode.InternalServerError,
+                Title = "Internal Server Error",
+                Detail = isDevelopment ? $"An unexpected error occurred: {exception.Message}" : "An unexpected error occurred.",
+                Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+            };
+        }
+
+        /// <summary>
+        /// Adds machine-readable error code to the problem details.
+        /// </summary>
+        private void AddErrorCode(ProblemDetails problemDetails, Exception exception)
+        {
+            if (exception.Data.Contains("ErrorCode"))
+            {
+                problemDetails.Extensions["error"] = exception.Data["ErrorCode"];
+            }
+            else
+            {
+                problemDetails.Extensions["error"] = GetDefaultErrorCode(problemDetails.Status ?? 500);
+            }
+        }
+
+        private string GetDefaultErrorCode(int statusCode)
+        {
+            return statusCode switch
+            {
+                400 => ErrorCodes.BadRequest,
+                401 => ErrorCodes.Unauthorized,
+                403 => ErrorCodes.Forbidden,
+                429 => ErrorCodes.RateLimitExceeded,
+                500 => ErrorCodes.InternalServerError,
+                _ => ErrorCodes.UnknownError
+            };
+        }
+
+        /// <summary>
+        /// Adds retry-after metadata if present in the exception data.
+        /// </summary>
+        private void AddRetryAfterMetadata(ProblemDetails problemDetails, Exception exception, HttpContext context)
+        {
+            int? retryAfterSeconds = null;
+
+            // Check if it's a RateLimitExceededException
+            if (exception is RateLimitExceededException rateLimitException)
+            {
+                retryAfterSeconds = rateLimitException.RetryAfterSeconds;
+            }
+
+            if (retryAfterSeconds.HasValue)
+            {
+                problemDetails.Extensions["retryAfter"] = retryAfterSeconds.Value;
+                context.Response.Headers.RetryAfter = retryAfterSeconds.Value.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Adds development debugging information to the problem details.
+        /// </summary>
+        private void AddDevelopmentInformation(ProblemDetails problemDetails, Exception exception, bool isDevelopment)
+        {
+            if (isDevelopment)
+            {
+                problemDetails.Extensions["exceptionType"] = exception.GetType().Name;
+                if (!string.IsNullOrWhiteSpace(exception.StackTrace))
+                {
+                    problemDetails.Extensions["stackTrace"] = exception.StackTrace;
+                }
+            }
         }
 
     }

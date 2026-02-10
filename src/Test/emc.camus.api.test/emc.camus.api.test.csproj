@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <NoWarn>$(NoWarn);CS8620;IDE0300;CS8625;CS8619;CS8600</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

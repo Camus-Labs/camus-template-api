@@ -71,40 +71,60 @@ namespace emc.camus.ratelimiting.memory.Configurations
         /// </summary>
         public void Validate()
         {
+            ValidateSegmentsPerWindow();
+            ValidatePolicies();
+            ValidateExemptPaths();
+        }
+
+        private void ValidateSegmentsPerWindow()
+        {
             if (SegmentsPerWindow <= 0 || SegmentsPerWindow > 20)
                 throw new ArgumentException("SegmentsPerWindow must be between 1 and 20", nameof(SegmentsPerWindow));
-            
+        }
+
+        private void ValidatePolicies()
+        {
             if (Policies == null || Policies.Count == 0)
                 throw new ArgumentException("At least one rate limit policy must be defined", nameof(Policies));
             
             if (!Policies.ContainsKey(RateLimitPolicies.Default))
                 throw new ArgumentException($"A '{RateLimitPolicies.Default}' rate limit policy must be defined", nameof(Policies));
             
-            // Validate each policy
             foreach (var (policyName, policy) in Policies)
             {
-                if (string.IsNullOrWhiteSpace(policyName))
-                    throw new ArgumentException("Policy name cannot be null or empty", nameof(Policies));
-                
-                if (policy == null)
-                    throw new ArgumentException($"Policy '{policyName}' cannot be null", nameof(Policies));
-                
-                // Delegate validation to the policy itself
-                policy.Validate(policyName);
+                ValidatePolicy(policyName, policy);
             }
+        }
+
+        private void ValidatePolicy(string policyName, RateLimitPolicy policy)
+        {
+            if (string.IsNullOrWhiteSpace(policyName))
+                throw new ArgumentException("Policy name cannot be null or empty", nameof(Policies));
             
+            if (policy == null)
+                throw new ArgumentException($"Policy '{policyName}' cannot be null", nameof(Policies));
+            
+            policy.Validate(policyName);
+        }
+
+        private void ValidateExemptPaths()
+        {
             if (ExemptPaths == null)
                 throw new ArgumentException("ExemptPaths cannot be null", nameof(ExemptPaths));
             
-            // Validate each exempt path
             foreach (var path in ExemptPaths)
             {
-                if (string.IsNullOrWhiteSpace(path))
-                    throw new ArgumentException("ExemptPaths cannot contain null or empty values", nameof(ExemptPaths));
-                
-                if (!path.StartsWith('/'))
-                    throw new ArgumentException($"ExemptPath '{path}' must start with '/' (e.g., '/health')", nameof(ExemptPaths));
+                ValidateExemptPath(path);
             }
+        }
+
+        private void ValidateExemptPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException("ExemptPaths cannot contain null or empty values", nameof(ExemptPaths));
+            
+            if (!path.StartsWith('/'))
+                throw new ArgumentException($"ExemptPath '{path}' must start with '/' (e.g., '/health')", nameof(ExemptPaths));
         }
     }
 }

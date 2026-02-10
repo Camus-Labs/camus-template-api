@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.application.Generic
 {
     /// <summary>
     /// Standard error codes for API error responses.
     /// These codes provide machine-readable error identification for frontend error handling.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class ErrorCodes
     {
         /// <summary>

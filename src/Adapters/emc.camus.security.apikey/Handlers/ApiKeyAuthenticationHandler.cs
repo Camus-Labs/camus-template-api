@@ -57,7 +57,7 @@ namespace emc.camus.security.apikey.Handlers
             var providedApiKey = apiKeyHeaderValues.FirstOrDefault();
             var configuredApiKey = _secretProvider.GetSecret(_settings.SecretKeyName);
 
-            if (string.IsNullOrEmpty(providedApiKey) || providedApiKey != configuredApiKey)
+            if (string.IsNullOrWhiteSpace(providedApiKey) || providedApiKey != configuredApiKey)
             {
                 Logger.LogWarning("API Key authentication failed: Invalid API Key provided");
                 var invalidKeyException = new UnauthorizedAccessException("Invalid API Key.");

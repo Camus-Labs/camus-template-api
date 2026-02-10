@@ -7,12 +7,14 @@ using emc.camus.security.apikey.Handlers;
 using emc.camus.security.apikey.Configurations;
 using emc.camus.application.Auth;
 using emc.camus.application.Secrets;
+using System.Diagnostics.CodeAnalysis;
 
 namespace emc.camus.security.apikey
 {
     /// <summary>
     /// Provides extension methods for configuring API Key authentication.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class ApiKeySetupExtensions
     {
         /// <summary>

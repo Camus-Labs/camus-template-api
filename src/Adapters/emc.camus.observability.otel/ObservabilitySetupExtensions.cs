@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using emc.camus.observability.otel.Configurations;
 using emc.camus.observability.otel.Logging;
 using emc.camus.observability.otel.Telemetry;
@@ -14,6 +15,7 @@ namespace emc.camus.observability.otel
     /// <summary>
     /// Extension methods for configuring observability (logging, tracing, metrics) in a .NET application.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class ObservabilitySetupExtensions
     {
         private const string DefaultServiceName = "unknown-service-name";

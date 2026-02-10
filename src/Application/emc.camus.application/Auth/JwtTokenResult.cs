@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.application.Auth;
 
 /// <summary>
 /// Represents the result of a JWT token generation operation.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class JwtTokenResult
 {
     /// <summary>

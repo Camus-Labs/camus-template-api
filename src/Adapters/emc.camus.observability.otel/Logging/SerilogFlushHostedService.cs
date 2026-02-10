@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -8,6 +9,7 @@ namespace emc.camus.observability.otel.Logging
     /// <summary>
     /// Hosted service to ensure Serilog logs are flushed on application shutdown, preventing log loss.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public sealed class SerilogFlushHostedService : IHostedService
     {
         /// <summary>

@@ -24,7 +24,7 @@
         {
             "label": "test-with-coverage",
             "type": "shell",
-            "command": "dotnet test src/CamusApp.sln --collect:\"XPlat Code Coverage\" /p:GeneratePullPaths=true",
+            "command": "find src/Test -type d -name 'TestResults' -exec rm -rf {} + 2>/dev/null || true && find src/Test -type d \\( -name 'bin' -o -name 'obj' \\) -exec rm -rf {} + 2>/dev/null || true && dotnet clean src/CamusApp.sln && dotnet build src/CamusApp.sln && dotnet test src/CamusApp.sln --collect:\"XPlat Code Coverage\" --no-build /p:GeneratePullPaths=true",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -34,12 +34,13 @@
         {
             "label": "test-coverage-report",
             "type": "shell",
-            "command": "reportgenerator -reports:\"src/Test/**/TestResults/**/coverage.cobertura.xml\" -targetdir:\"coveragereport\" -reporttypes:Html && open coveragereport/index.html",
+            "command": "rm -rf coveragereport && reportgenerator -reports:\"src/Test/**/TestResults/**/coverage.cobertura.xml\" -targetdir:\"coveragereport\" -reporttypes:Html && open coveragereport/index.html",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
             "group": "none",
-            "problemMatcher": []
+            "problemMatcher": [],
+            "dependsOn": ["test-with-coverage"]
         },
         {
             "label": "run-api",

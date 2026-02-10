@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Extensions.Hosting;
@@ -8,6 +9,7 @@ namespace emc.camus.observability.otel.Telemetry
     /// <summary>
     /// Extension methods for configuring OpenTelemetry tracing and metrics for .NET applications.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class OpenTelemetrySetupExtensions
     {
         /// <summary>

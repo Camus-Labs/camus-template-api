@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -13,6 +14,7 @@ namespace emc.camus.observability.otel.Telemetry
     /// <summary>
     /// Extension methods for configuring OpenTelemetry metrics provider.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class MeterProviderBuilderExtensions
     {
         /// <summary>

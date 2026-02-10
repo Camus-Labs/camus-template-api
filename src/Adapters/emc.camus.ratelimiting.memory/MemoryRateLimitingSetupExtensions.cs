@@ -11,6 +11,7 @@ using emc.camus.ratelimiting.memory.Middleware;
 using emc.camus.ratelimiting.memory.Services;
 using emc.camus.application.Exceptions;
 using emc.camus.application.RateLimiting;
+using System.Diagnostics.CodeAnalysis;
 
 namespace emc.camus.ratelimiting.memory
 {
@@ -21,6 +22,7 @@ namespace emc.camus.ratelimiting.memory
     /// ⚠️ WARNING: This implementation uses in-memory storage and is NOT suitable for 
     /// multi-instance deployments. For production scale-out scenarios, use the Redis adapter.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class MemoryRateLimitingSetupExtensions
     {
         /// <summary>
@@ -130,7 +132,7 @@ namespace emc.camus.ratelimiting.memory
                 {
                     var policyName = rateLimitAttribute.PolicyName;
                     
-                    if (!string.IsNullOrEmpty(policyName))
+                    if (!string.IsNullOrWhiteSpace(policyName))
                     {
                         // Validate that the policy exists in configuration
                         if (settings.Policies.ContainsKey(policyName))

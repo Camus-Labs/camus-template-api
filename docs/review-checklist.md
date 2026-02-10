@@ -192,11 +192,19 @@ Review unit tests for **[FEATURE_NAME]** feature:
 
 #### Test Coverage
 
-- [ ] All public methods have corresponding tests
+- [ ] All public methods have corresponding tests (excluding infrastructure/plumbing code - see below)
 - [ ] Happy path scenarios covered
 - [ ] Error/exception paths tested
 - [ ] Edge cases and boundary conditions covered
 - [ ] No untested business logic
+
+**Acceptable to exclude from unit testing:**
+
+- Swagger example providers (static data for documentation)
+- Simple DTOs/POCOs without logic
+- Constants classes and enums
+- Classes marked with `[ExcludeFromCodeCoverage]` attribute
+- Metric recording classes (tested via integration/observability tests)
 
 #### Test Quality
 
@@ -245,8 +253,16 @@ For each test ask:
 
 ### Unit Testing Review Output
 
-- List untested public methods/classes
+- List untested public methods/classes **with business logic** (exclude infrastructure, examples, DTOs)
+- Note classes marked with `[ExcludeFromCodeCoverage]` (acceptable exclusion)
 - List tests that need improvement (poor naming, unclear assertions, testing implementation)
 - List missing test scenarios (edge cases, error paths)
 - Confirm: Tests run successfully and independently
 - Confirm: No integration tests in unit test projects
+
+**Infrastructure code excluded from review:**
+
+- Setup/extension methods for DI registration
+- Middleware pipeline configuration
+- Swagger example providers
+- Metric collection classes marked for exclusion

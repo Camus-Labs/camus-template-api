@@ -5,12 +5,14 @@ using Microsoft.Extensions.Logging;
 using emc.camus.application.Secrets;
 using emc.camus.secrets.dapr.Configurations;
 using emc.camus.secrets.dapr.Services;
+using System.Diagnostics.CodeAnalysis;
 
 namespace emc.camus.secrets.dapr
 {
     /// <summary>
     /// Provides extension methods for configuring Dapr secrets services.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class DaprSecretsSetupExtensions
     {
         /// <summary>

@@ -10,12 +10,14 @@ using emc.camus.security.jwt.Services;
 using emc.camus.security.jwt.Handlers;
 using emc.camus.application.Secrets;
 using emc.camus.application.Auth;
+using System.Diagnostics.CodeAnalysis;
 
 namespace emc.camus.security.jwt
 {
     /// <summary>
     /// Provides extension methods for configuring JWT authentication services.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class JwtSetupExtensions
     {
         /// <summary>

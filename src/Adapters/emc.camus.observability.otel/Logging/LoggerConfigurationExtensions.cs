@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using System.Collections.Generic;
@@ -13,6 +14,7 @@ namespace emc.camus.observability.otel.Logging
     /// Extension methods for configuring Serilog loggers with Camus observability conventions.
     /// Includes enrichers, console logging, and OpenTelemetry log export.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class LoggerConfigurationExtensions
     {
         /// <summary>

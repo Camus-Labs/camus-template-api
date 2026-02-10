@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Builder;
@@ -12,6 +13,7 @@ namespace emc.camus.observability.otel.Logging;
 /// This keeps Serilog dependencies out of the API project and enables structured logging with OpenTelemetry integration.
 /// Supported log exporters: OTLP (default, via Collector), Loki (via Collector), Console.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public static class HostBuilderExtensions
 {
     /// <summary>

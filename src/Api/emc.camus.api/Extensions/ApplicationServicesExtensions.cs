@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Options;
+using System.Diagnostics.CodeAnalysis;
 using Asp.Versioning;
 using emc.camus.api.Configurations;
 
@@ -10,6 +11,7 @@ namespace emc.camus.api.Extensions
     /// <summary>
     /// Provides extension methods for configuring application-level services and policies.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class ApplicationServicesExtensions
     {
         /// <summary>
