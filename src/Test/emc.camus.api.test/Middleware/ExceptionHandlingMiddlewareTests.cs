@@ -64,7 +64,7 @@ namespace emc.camus.api.test.Middleware
 
             // Assert
             Assert.Equal((int)HttpStatusCode.BadRequest, _httpContext.Response.StatusCode);
-            Assert.Equal("application/problem+json", _httpContext.Response.ContentType);
+            Assert.Equal(MediaTypes.ProblemJson, _httpContext.Response.ContentType);
 
             // Read response body
             _httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
@@ -98,7 +98,7 @@ namespace emc.camus.api.test.Middleware
 
             // Assert
             Assert.Equal((int)HttpStatusCode.BadRequest, _httpContext.Response.StatusCode);
-            Assert.Equal("application/problem+json", _httpContext.Response.ContentType);
+            Assert.Equal(MediaTypes.ProblemJson, _httpContext.Response.ContentType);
 
             // Read response body
             _httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
@@ -131,7 +131,7 @@ namespace emc.camus.api.test.Middleware
 
             // Assert
             Assert.Equal((int)HttpStatusCode.Unauthorized, _httpContext.Response.StatusCode);
-            Assert.Equal("application/problem+json", _httpContext.Response.ContentType);
+            Assert.Equal(MediaTypes.ProblemJson, _httpContext.Response.ContentType);
 
             // Read response body
             _httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
@@ -163,7 +163,7 @@ namespace emc.camus.api.test.Middleware
 
             // Assert
             Assert.Equal((int)HttpStatusCode.InternalServerError, _httpContext.Response.StatusCode);
-            Assert.Equal("application/problem+json", _httpContext.Response.ContentType);
+            Assert.Equal(MediaTypes.ProblemJson, _httpContext.Response.ContentType);
 
             // Read response body
             _httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
@@ -197,7 +197,7 @@ namespace emc.camus.api.test.Middleware
 
             // Assert
             Assert.Equal((int)HttpStatusCode.InternalServerError, _httpContext.Response.StatusCode);
-            Assert.Equal("application/problem+json", _httpContext.Response.ContentType);
+            Assert.Equal(MediaTypes.ProblemJson, _httpContext.Response.ContentType);
 
             // Read response body
             _httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
@@ -280,7 +280,7 @@ namespace emc.camus.api.test.Middleware
 
             // Assert
             Assert.Equal((int)HttpStatusCode.Forbidden, _httpContext.Response.StatusCode);
-            Assert.Equal("application/problem+json", _httpContext.Response.ContentType);
+            Assert.Equal(MediaTypes.ProblemJson, _httpContext.Response.ContentType);
 
             // Read response body
             _httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
@@ -328,11 +328,11 @@ namespace emc.camus.api.test.Middleware
 
             // Assert
             Assert.Equal((int)HttpStatusCode.TooManyRequests, _httpContext.Response.StatusCode);
-            Assert.Equal("application/problem+json", _httpContext.Response.ContentType);
+            Assert.Equal(MediaTypes.ProblemJson, _httpContext.Response.ContentType);
             
-            // Verify Retry-After header is set
-            _httpContext.Response.Headers.Should().ContainKey("Retry-After");
-            Assert.Equal(retryAfterSeconds.ToString(), _httpContext.Response.Headers["Retry-After"].ToString());
+            // Verify RetryAfter header is set
+            _httpContext.Response.Headers.Should().ContainKey(Headers.RetryAfter);
+            Assert.Equal(retryAfterSeconds.ToString(), _httpContext.Response.Headers[Headers.RetryAfter].ToString());
 
             // Read response body
             _httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
@@ -395,7 +395,7 @@ namespace emc.camus.api.test.Middleware
             await middleware.InvokeAsync(_httpContext);
 
             // Assert
-            _httpContext.Response.Headers.Should().NotContainKey("Retry-After");
+            _httpContext.Response.Headers.Should().NotContainKey(Headers.RetryAfter);
 
             _httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
             var reader = new StreamReader(_httpContext.Response.Body);

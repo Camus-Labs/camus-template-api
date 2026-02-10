@@ -200,7 +200,7 @@ namespace emc.camus.api.Controllers
         [Authorize(AuthenticationSchemes = AuthenticationSchemes.ApiKey)]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
-            Description = "Generates a JWT token for valid credentials in API version >=2.0. Requires API Key authentication (X-API-Key header)."
+            Description = "Generates a JWT token for valid credentials in API version >=2.0. Requires API Key authentication."
         )]
         [ProducesResponseType(typeof(ApiResponse<AuthToken>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GenerateToken([FromBody] Credentials request)

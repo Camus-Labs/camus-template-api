@@ -137,10 +137,8 @@ public class SwaggerSettingsTests
 
     [Theory]
     [InlineData("bearer")]
-    [InlineData("jwt")]
     [InlineData("apikey")]
     [InlineData("Bearer")]
-    [InlineData("JWT")]
     [InlineData("ApiKey")]
     public void Validate_WithValidSecurityScheme_ShouldNotThrow(string scheme)
     {

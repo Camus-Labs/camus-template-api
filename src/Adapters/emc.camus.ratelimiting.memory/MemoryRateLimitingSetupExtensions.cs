@@ -11,6 +11,7 @@ using emc.camus.ratelimiting.memory.Middleware;
 using emc.camus.ratelimiting.memory.Services;
 using emc.camus.application.Exceptions;
 using emc.camus.application.RateLimiting;
+using emc.camus.application.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace emc.camus.ratelimiting.memory
@@ -220,13 +221,13 @@ namespace emc.camus.ratelimiting.memory
             // These will be preserved when ExceptionHandlingMiddleware catches the exception
             
             // RFC-compliant IETF Draft headers
-            context.HttpContext.Response.Headers["RateLimit-Limit"] = policy.PermitLimit.ToString();
-            context.HttpContext.Response.Headers["RateLimit-Reset"] = resetTimestamp.ToString();
-            context.HttpContext.Response.Headers["Retry-After"] = retryAfterSeconds.ToString();
+            context.HttpContext.Response.Headers[Headers.RateLimitLimit] = policy.PermitLimit.ToString();
+            context.HttpContext.Response.Headers[Headers.RateLimitReset] = resetTimestamp.ToString();
+            context.HttpContext.Response.Headers[Headers.RetryAfter] = retryAfterSeconds.ToString();
             
             // Custom headers for additional context (backward compatibility)
-            context.HttpContext.Response.Headers["X-RateLimit-Policy"] = policyName;
-            context.HttpContext.Response.Headers["X-RateLimit-Window"] = policy.WindowSeconds.ToString();
+            context.HttpContext.Response.Headers[Headers.RateLimitPolicy] = policyName;
+            context.HttpContext.Response.Headers[Headers.RateLimitWindow] = policy.WindowSeconds.ToString();
 
             // Log rate limit rejection
             logger.LogWarning(

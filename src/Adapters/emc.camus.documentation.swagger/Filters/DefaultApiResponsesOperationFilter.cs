@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -24,37 +26,33 @@ namespace emc.camus.documentation.swagger.Filters
             // Single examples for most status codes
             var examples = new Dictionary<string, OpenApiObject>
             {
-                ["400"] = new OpenApiObject
+                [StatusCodes.Status400BadRequest.ToString()] = new OpenApiObject
                 {
-                    ["status"] = new OpenApiInteger(400),
-                    ["title"] = new OpenApiString("Bad Request"),
+                    ["status"] = new OpenApiInteger(StatusCodes.Status400BadRequest),
+                    ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status400BadRequest)),
                     ["detail"] = new OpenApiString("A detailed error message describing what went wrong."),
-                    ["type"] = new OpenApiString("https://tools.ietf.org/html/rfc7231#section-6.5.1"),
                     ["error"] = new OpenApiString(ErrorCodes.BadRequest)
                 },
-                ["403"] = new OpenApiObject
+                [StatusCodes.Status403Forbidden.ToString()] = new OpenApiObject
                 {
-                    ["status"] = new OpenApiInteger(403),
-                    ["title"] = new OpenApiString("Forbidden"),
+                    ["status"] = new OpenApiInteger(StatusCodes.Status403Forbidden),
+                    ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status403Forbidden)),
                     ["detail"] = new OpenApiString("You do not have permission to access this resource."),
-                    ["type"] = new OpenApiString("https://tools.ietf.org/html/rfc7235#section-3.3"),
                     ["error"] = new OpenApiString(ErrorCodes.Forbidden)
                 },
-                ["429"] = new OpenApiObject
+                [StatusCodes.Status429TooManyRequests.ToString()] = new OpenApiObject
                 {
-                    ["status"] = new OpenApiInteger(429),
-                    ["title"] = new OpenApiString("Too Many Requests"),
+                    ["status"] = new OpenApiInteger(StatusCodes.Status429TooManyRequests),
+                    ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status429TooManyRequests)),
                     ["detail"] = new OpenApiString("Too many requests. Please try again later."),
-                    ["type"] = new OpenApiString("https://tools.ietf.org/html/rfc6585#section-4"),
                     ["error"] = new OpenApiString(ErrorCodes.RateLimitExceeded),
                     ["retryAfter"] = new OpenApiDouble(20.0)
                 },
-                ["500"] = new OpenApiObject
+                [StatusCodes.Status500InternalServerError.ToString()] = new OpenApiObject
                 {
-                    ["status"] = new OpenApiInteger(500),
-                    ["title"] = new OpenApiString("Internal Server Error"),
+                    ["status"] = new OpenApiInteger(StatusCodes.Status500InternalServerError),
+                    ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status500InternalServerError)),
                     ["detail"] = new OpenApiString("An unexpected error occurred on the server."),
-                    ["type"] = new OpenApiString("https://tools.ietf.org/html/rfc7231#section-6.6.1"),
                     ["error"] = new OpenApiString(ErrorCodes.InternalServerError)
                 }
             };
@@ -68,10 +66,9 @@ namespace emc.camus.documentation.swagger.Filters
                     Description = "JWT token has expired and needs to be refreshed",
                     Value = new OpenApiObject
                     {
-                        ["status"] = new OpenApiInteger(401),
-                        ["title"] = new OpenApiString("Unauthorized"),
+                        ["status"] = new OpenApiInteger(StatusCodes.Status401Unauthorized),
+                        ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status401Unauthorized)),
                         ["detail"] = new OpenApiString("The token has expired."),
-                        ["type"] = new OpenApiString("https://tools.ietf.org/html/rfc7235#section-3.1"),
                         ["error"] = new OpenApiString(ErrorCodes.Jwt.TokenExpired)
                     }
                 },
@@ -81,10 +78,9 @@ namespace emc.camus.documentation.swagger.Filters
                     Description = "JWT token is malformed or invalid",
                     Value = new OpenApiObject
                     {
-                        ["status"] = new OpenApiInteger(401),
-                        ["title"] = new OpenApiString("Unauthorized"),
+                        ["status"] = new OpenApiInteger(StatusCodes.Status401Unauthorized),
+                        ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status401Unauthorized)),
                         ["detail"] = new OpenApiString("The token is invalid."),
-                        ["type"] = new OpenApiString("https://tools.ietf.org/html/rfc7235#section-3.1"),
                         ["error"] = new OpenApiString(ErrorCodes.Jwt.InvalidToken)
                     }
                 },
@@ -94,10 +90,9 @@ namespace emc.camus.documentation.swagger.Filters
                     Description = "JWT token signature validation failed",
                     Value = new OpenApiObject
                     {
-                        ["status"] = new OpenApiInteger(401),
-                        ["title"] = new OpenApiString("Unauthorized"),
+                        ["status"] = new OpenApiInteger(StatusCodes.Status401Unauthorized),
+                        ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status401Unauthorized)),
                         ["detail"] = new OpenApiString("The token signature is invalid."),
-                        ["type"] = new OpenApiString("https://tools.ietf.org/html/rfc7235#section-3.1"),
                         ["error"] = new OpenApiString(ErrorCodes.Jwt.InvalidSignature)
                     }
                 },
@@ -107,21 +102,20 @@ namespace emc.camus.documentation.swagger.Filters
                     Description = "No authentication token provided",
                     Value = new OpenApiObject
                     {
-                        ["status"] = new OpenApiInteger(401),
-                        ["title"] = new OpenApiString("Unauthorized"),
+                        ["status"] = new OpenApiInteger(StatusCodes.Status401Unauthorized),
+                        ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status401Unauthorized)),
                         ["detail"] = new OpenApiString("Authentication is required to access this resource."),
-                        ["type"] = new OpenApiString("https://tools.ietf.org/html/rfc7235#section-3.1"),
                         ["error"] = new OpenApiString(ErrorCodes.AuthenticationRequired)
                     }
                 }
             };
 
             // Add 401 with multiple examples
-            operation.Responses["401"] = new OpenApiResponse
+            operation.Responses[StatusCodes.Status401Unauthorized.ToString()] = new OpenApiResponse
             {
-                Description = "Unauthorized",
+                Description = ReasonPhrases.GetReasonPhrase(StatusCodes.Status401Unauthorized),
                 Content = {
-                    ["application/problem+json"] = new OpenApiMediaType
+                    [MediaTypes.ProblemJson] = new OpenApiMediaType
                     {
                         Schema = schema,
                         Examples = unauthorizedExamples
@@ -130,21 +124,21 @@ namespace emc.camus.documentation.swagger.Filters
             };
             
             // Add other status codes with single examples
-            var descriptions = new Dictionary<string, string>
+            var statusCodesToAdd = new Dictionary<string, string>
             {
-                ["400"] = "Bad Request",
-                ["403"] = "Forbidden",
-                ["429"] = "Too Many Requests",
-                ["500"] = "Internal Server Error"
+                [StatusCodes.Status400BadRequest.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status400BadRequest),
+                [StatusCodes.Status403Forbidden.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status403Forbidden),
+                [StatusCodes.Status429TooManyRequests.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status429TooManyRequests),
+                [StatusCodes.Status500InternalServerError.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status500InternalServerError)
             };
             
-            foreach (var status in descriptions.Keys)
+            foreach (var status in statusCodesToAdd.Keys)
             {
                 operation.Responses[status] = new OpenApiResponse
                 {
-                    Description = descriptions[status],
+                    Description = statusCodesToAdd[status],
                     Content = {
-                        ["application/problem+json"] = new OpenApiMediaType
+                        [MediaTypes.ProblemJson] = new OpenApiMediaType
                         {
                             Schema = schema,
                             Example = examples[status]

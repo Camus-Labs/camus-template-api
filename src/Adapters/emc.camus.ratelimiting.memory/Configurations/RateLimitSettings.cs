@@ -9,7 +9,7 @@ namespace emc.camus.ratelimiting.memory.Configurations
     /// Implementation Details:
     /// - Uses sliding window algorithm with configurable segments for smooth distribution
     /// - IP-based rate limiting for ALL requests (runs before authentication)
-    /// - Returns 429 with Retry-After header when limit exceeded
+    /// - Returns 429 with RetryAfter header when limit exceeded
     /// - No queueing (QueueLimit=0) - requests rejected immediately
     /// - Policy-based approach allows different limits per endpoint
     /// 

@@ -1,4 +1,5 @@
 using emc.camus.ratelimiting.memory.Metrics;
+using emc.camus.application.Generic;
 using Microsoft.AspNetCore.Http;
 
 namespace emc.camus.ratelimiting.memory.Middleware
@@ -35,18 +36,18 @@ namespace emc.camus.ratelimiting.memory.Middleware
 
             // Add RFC-compliant IETF Draft headers
             // See: https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/
-            context.Response.Headers["RateLimit-Limit"] = limit;
+            context.Response.Headers[Headers.RateLimitLimit] = limit;
             
             // Calculate reset timestamp (current time + window)
             if (int.TryParse(window, out var windowSeconds))
             {
                 var resetTimestamp = DateTimeOffset.UtcNow.AddSeconds(windowSeconds).ToUnixTimeSeconds();
-                context.Response.Headers["RateLimit-Reset"] = resetTimestamp.ToString();
+                context.Response.Headers[Headers.RateLimitReset] = resetTimestamp.ToString();
             }
 
             // Add custom headers for additional context (backward compatibility)
-            context.Response.Headers["X-RateLimit-Policy"] = policy;
-            context.Response.Headers["X-RateLimit-Window"] = window;
+            context.Response.Headers[Headers.RateLimitPolicy] = policy;
+            context.Response.Headers[Headers.RateLimitWindow] = window;
 
             // Record that this request passed rate limiting
             var endpoint = context.Request.Path;

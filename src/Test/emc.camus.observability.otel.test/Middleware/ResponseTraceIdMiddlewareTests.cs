@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using emc.camus.application.Generic;
 using emc.camus.observability.otel.Middleware;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
@@ -46,8 +47,8 @@ public class ResponseTraceIdMiddlewareTests
 
         // Assert
         response.IsSuccessStatusCode.Should().BeTrue();
-        response.Headers.Should().ContainKey("X-Trace-Id");
-        response.Headers.GetValues("X-Trace-Id").First().Should().NotBeNullOrWhiteSpace();
+        response.Headers.Should().ContainKey(Headers.TraceId);
+        response.Headers.GetValues(Headers.TraceId).First().Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -114,7 +115,7 @@ public class ResponseTraceIdMiddlewareTests
         {
             app.Use(async (context, next) =>
             {
-                context.Response.Headers["X-Trace-Id"] = existingTraceId;
+                context.Response.Headers[Headers.TraceId] = existingTraceId;
                 await next();
             });
             app.UseMiddleware<ResponseTraceIdMiddleware>();
@@ -127,7 +128,7 @@ public class ResponseTraceIdMiddlewareTests
         var response = await client.GetAsync("/");
 
         // Assert
-        response.Headers.GetValues("X-Trace-Id").First().Should().Be(existingTraceId);
+        response.Headers.GetValues(Headers.TraceId).First().Should().Be(existingTraceId);
     }
 
     [Fact]
@@ -153,7 +154,7 @@ public class ResponseTraceIdMiddlewareTests
         var response = await client.GetAsync("/");
 
         // Assert
-        response.Headers.Should().NotContainKey("X-Trace-Id");
+        response.Headers.Should().NotContainKey(Headers.TraceId);
     }
 
     [Fact]
@@ -179,7 +180,7 @@ public class ResponseTraceIdMiddlewareTests
         var response = await client.GetAsync("/");
 
         // Assert
-        response.Headers.Should().NotContainKey("X-Trace-Id");
+        response.Headers.Should().NotContainKey(Headers.TraceId);
     }
 
     [Fact]
@@ -216,8 +217,8 @@ public class ResponseTraceIdMiddlewareTests
             var response = await client.GetAsync("/");
 
             // Assert
-            response.Headers.Should().ContainKey("X-Trace-Id");
-            var traceId = response.Headers.GetValues("X-Trace-Id").First();
+            response.Headers.Should().ContainKey(Headers.TraceId);
+            var traceId = response.Headers.GetValues(Headers.TraceId).First();
             traceId.Should().Be(expectedTraceId);
         }
         finally

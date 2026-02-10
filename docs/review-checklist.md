@@ -188,39 +188,26 @@ For each documentation file ask:
 
 Review unit tests for **[FEATURE_NAME]** feature:
 
+> **Note**: Validate line/branch coverage percentages via coverage report. This review focuses on test quality and best practices.
+
 ### Unit Testing Checklist
 
-#### Test Coverage
-
-- [ ] All public methods have corresponding tests (excluding infrastructure/plumbing code - see below)
-- [ ] Happy path scenarios covered
-- [ ] Error/exception paths tested
-- [ ] Edge cases and boundary conditions covered
-- [ ] No untested business logic
-
-**Acceptable to exclude from unit testing:**
-
-- Swagger example providers (static data for documentation)
-- Simple DTOs/POCOs without logic
-- Constants classes and enums
-- Classes marked with `[ExcludeFromCodeCoverage]` attribute
-- Metric recording classes (tested via integration/observability tests)
-
-#### Test Quality
+#### Test Quality & Maintainability
 
 - [ ] Tests follow Arrange-Act-Assert (AAA) pattern
 - [ ] Test names clearly describe what is being tested (Given_When_Then or MethodName_Scenario_ExpectedResult)
-- [ ] Each test validates one specific behavior
+- [ ] Each test validates one specific behavior (no duplicate test logic)
 - [ ] Tests are isolated (no dependencies on other tests)
 - [ ] Tests are deterministic (no random values, no DateTime.Now)
+- [ ] No tests checking implementation details (will break on safe refactoring)
 
 #### Mocking Strategy
 
-- [ ] Mocks used only for external dependencies (database, HTTP, file system)
+- [ ] Mocks used ONLY for external dependencies (database, HTTP, file system)
 - [ ] Domain logic NOT mocked (test real implementations)
 - [ ] Application services mocked when testing controllers
 - [ ] Adapters mocked when testing application layer
-- [ ] Mock setup is clear and minimal
+- [ ] Mock setup is clear and minimal (no over-mocking)
 - [ ] Verify interactions only when behavior matters (not implementation details)
 
 #### Test Organization
@@ -228,7 +215,7 @@ Review unit tests for **[FEATURE_NAME]** feature:
 - [ ] Tests in correct test project matching production structure
 - [ ] Test classes mirror production code structure
 - [ ] Integration tests separated from unit tests
-- [ ] Test fixtures/helpers reused appropriately
+- [ ] Test fixtures/helpers reused appropriately (no duplication)
 - [ ] Each adapter has its own test project (e.g., `emc.camus.security.jwt.test`)
 
 #### Assertions
@@ -243,26 +230,20 @@ Review unit tests for **[FEATURE_NAME]** feature:
 
 For each test ask:
 
-1. Does this test verify behavior or implementation details?
-2. Will this test break when refactoring without changing behavior?
+1. Does this test verify **behavior** or **implementation details**?
+2. Will this test break when refactoring **without changing behavior**?
 3. Is the test name clear enough to understand what failed?
 4. Can this test run in isolation without setup from other tests?
 5. Is the test in the correct layer's test project?
+6. Is this test **duplicating** logic from another test?
 
-**Rule**: If test checks implementation details or breaks on safe refactoring → rewrite it.
+**Rule**: If test checks implementation details, breaks on safe refactoring, or duplicates another test → rewrite or remove it.
 
 ### Unit Testing Review Output
 
-- List untested public methods/classes **with business logic** (exclude infrastructure, examples, DTOs)
-- Note classes marked with `[ExcludeFromCodeCoverage]` (acceptable exclusion)
-- List tests that need improvement (poor naming, unclear assertions, testing implementation)
-- List missing test scenarios (edge cases, error paths)
+- List tests that check **implementation details** (not behavior)
+- List tests with **poor naming** (unclear what failed)
+- List **duplicate tests** (same behavior tested multiple times)
+- List tests with **unclear assertions** or over-mocking
 - Confirm: Tests run successfully and independently
 - Confirm: No integration tests in unit test projects
-
-**Infrastructure code excluded from review:**
-
-- Setup/extension methods for DI registration
-- Middleware pipeline configuration
-- Swagger example providers
-- Metric collection classes marked for exclusion

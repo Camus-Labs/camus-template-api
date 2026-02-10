@@ -1,3 +1,5 @@
+using emc.camus.application.Auth;
+
 namespace emc.camus.documentation.swagger.Configurations
 {
     /// <summary>
@@ -6,9 +8,14 @@ namespace emc.camus.documentation.swagger.Configurations
     public class SwaggerSettings
     {
         /// <summary>
-        /// Valid security scheme names supported by Swagger configuration.
+        /// Valid security scheme names supported by Swagger configuration (case-insensitive).
+        /// Accepts: "Bearer", or "ApiKey" in any case.
         /// </summary>
-        private static readonly string[] ValidSecuritySchemes = { "bearer", "jwt", "apikey" };
+        private static readonly string[] ValidSecuritySchemes = 
+        { 
+            AuthenticationSchemes.JwtBearer, 
+            AuthenticationSchemes.ApiKey 
+        };
         /// <summary>
         /// Gets or sets whether Swagger should be enabled.
         /// </summary>
@@ -30,19 +37,9 @@ namespace emc.camus.documentation.swagger.Configurations
         public bool IncludeXmlComments { get; set; } = false;
 
         /// <summary>
-        /// Gets or sets whether to enable Swagger annotations.
-        /// </summary>
-        public bool EnableAnnotations { get; set; } = false;
-
-        /// <summary>
         /// Gets or sets whether to enable example filters.
         /// </summary>
         public bool EnableExampleFilters { get; set; } = false;
-
-        /// <summary>
-        /// Gets or sets whether to redirect root path to Swagger UI.
-        /// </summary>
-        public bool RedirectRootToSwagger { get; set; } = false;
 
         /// <summary>
         /// Validates the Swagger settings configuration.
@@ -98,9 +95,9 @@ namespace emc.camus.documentation.swagger.Configurations
             if (string.IsNullOrWhiteSpace(scheme))
                 throw new ArgumentException("SecuritySchemes cannot contain null or empty values", nameof(SecuritySchemes));
 
-            if (!validSchemes.Contains(scheme.ToLowerInvariant()))
+            if (!validSchemes.Contains(scheme, StringComparer.OrdinalIgnoreCase))
                 throw new ArgumentException(
-                    $"Invalid security scheme '{scheme}'. Valid values are: {string.Join(", ", validSchemes)}",
+                    $"Invalid security scheme '{scheme}'. Valid values are: {string.Join(", ", validSchemes)} (case-insensitive)",
                     nameof(SecuritySchemes));
         }
     }

@@ -64,7 +64,7 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardLimit = null // Process all X-Forwarded-For entries
 });
 
-// Step 9: Enable observability middleware (adds X-Trace-Id header to responses)
+// Step 9: Enable observability middleware (adds Trace Id header to responses)
 // Must be BEFORE exception handling so trace IDs are available in error logs
 app.UseObservability();
 

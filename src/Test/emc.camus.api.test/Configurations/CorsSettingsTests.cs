@@ -1,5 +1,7 @@
 using emc.camus.api.Configurations;
+using emc.camus.application.Generic;
 using FluentAssertions;
+using Microsoft.Net.Http.Headers;
 
 namespace emc.camus.api.test.Configurations;
 
@@ -18,7 +20,7 @@ public class CorsSettingsTests
             AllowedOrigins = new[] { "https://example.com" },
             AllowedMethods = new[] { "GET", "POST" },
             AllowedHeaders = new[] { "Content-Type" },
-            ExposedHeaders = new[] { "X-Trace-Id" },
+            ExposedHeaders = new[] { Headers.TraceId },
             AllowCredentials = false,
             PreflightMaxAgeMinutes = 60
         };
@@ -396,8 +398,15 @@ public class CorsSettingsTests
         settings.PolicyName.Should().Be("DefaultCorsPolicy");
         settings.AllowedOrigins.Should().BeEmpty();
         settings.AllowedMethods.Should().Equal("GET", "POST");
-        settings.AllowedHeaders.Should().Equal("Content-Type", "Authorization", "X-Api-Key");
-        settings.ExposedHeaders.Should().Equal("Content-Type", "X-Trace-Id");
+        settings.AllowedHeaders.Should().Equal(HeaderNames.ContentType, HeaderNames.Authorization, Headers.ApiKey);
+        settings.ExposedHeaders.Should().Equal(
+            HeaderNames.ContentType, 
+            Headers.TraceId,
+            Headers.RetryAfter,
+            Headers.RateLimitLimit,
+            Headers.RateLimitReset,
+            Headers.RateLimitPolicy,
+            Headers.RateLimitWindow);
         settings.AllowCredentials.Should().BeFalse();
         settings.PreflightMaxAgeMinutes.Should().Be(60);
     }

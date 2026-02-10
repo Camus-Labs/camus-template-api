@@ -48,14 +48,40 @@ In `appsettings.json`:
 ```json
 {
   "SwaggerSettings": {
-    "Title": "Camus API",
-    "Description": "Production-ready .NET API with Hexagonal Architecture",
-    "Version": "v1",
-    "EnableXmlComments": true,
-    "EnableAnnotations": true
+    "Enabled": true,
+    "Versions": [
+      {
+        "Version": "v1",
+        "Title": "Camus API v1.0",
+        "Description": "Production-ready .NET API with Hexagonal Architecture"
+      },
+      {
+        "Version": "v2",
+        "Title": "Camus API v2.0",
+        "Description": "Enhanced API with additional features"
+      }
+    ],
+    "SecuritySchemes": [ "Bearer", "ApiKey" ],
+    "IncludeXmlComments": true,
+    "EnableAnnotations": true,
+    "EnableExampleFilters": true,
+    "RedirectRootToSwagger": true
   }
 }
 ```
+
+**Configuration Properties:**
+
+- **Enabled** - Enable/disable Swagger (default: `false`, recommended for development only)
+- **Versions** - Array of API versions to document (required when enabled)
+  - **Version** - Version identifier (e.g., "v1", "v2")
+  - **Title** - Display title for this version
+  - **Description** - Version description (optional)
+- **SecuritySchemes** - Authentication schemes to document (`"Bearer"`, `"ApiKey"`)
+- **IncludeXmlComments** - Include XML documentation comments (default: `false`)
+- **EnableAnnotations** - Enable Swagger annotations (default: `false`)
+- **EnableExampleFilters** - Enable request/response examples (default: `false`)
+- **RedirectRootToSwagger** - Redirect `/` to Swagger UI (default: `true`)
 
 ### 3. Access Swagger UI
 
@@ -260,6 +286,70 @@ app.UseSwaggerUI(options =>
         "() => { ui.preauthorizeApiKey('ApiKey', 'your-key-here'); }";
 });
 ```
+
+---
+
+## ⚠️ Limitations & Constraints
+
+### Development-Only by Default
+
+- **Disabled in Production**: `Enabled: false` by default for security
+- **Environment Check**: `UseSwaggerDocumentation()` only activates in Development environment
+- **Explicit Override Required**: Must set `Enabled: true` AND configure for non-development use
+
+```csharp
+// Built-in environment check in middleware
+if (!settings.Enabled || !app.Environment.IsDevelopment())
+{
+    return app; // Swagger disabled
+}
+```
+
+### Security Considerations
+
+**⚠️ Exposing Swagger in Production:**
+
+Swagger UI exposes:
+
+- Complete API structure and endpoints
+- Request/response schemas
+- Authentication mechanisms
+- Internal error details
+
+**If production exposure is required:**
+
+1. **Add Authentication**: Protect Swagger UI endpoint
+2. **Whitelist IPs**: Restrict access to internal networks
+3. **Remove Sensitive Data**: Sanitize examples and descriptions
+4. **Disable Try-It-Out**: Prevent direct API calls from UI
+
+```csharp
+// Example: Restrict to authenticated users
+app.MapWhen(
+    context => context.Request.Path.StartsWithSegments("/swagger"),
+    appBuilder =>
+    {
+        appBuilder.Use(async (context, next) =>
+        {
+            if (!context.User.Identity?.IsAuthenticated ?? true)
+            {
+                context.Response.StatusCode = 401;
+                return;
+            }
+            await next();
+        });
+        appBuilder.UseSwagger();
+        appBuilder.UseSwaggerUI();
+    });
+```
+
+### Configuration Validation
+
+Configuration is validated at startup with fail-fast behavior:
+
+- At least one version required when `Enabled: true`
+- SecuritySchemes must be "Bearer" or "ApiKey" (case-insensitive)
+- Validation skipped when `Enabled: false`
 
 ---
 

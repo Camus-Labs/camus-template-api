@@ -15,7 +15,6 @@ namespace emc.camus.security.apikey.Handlers
     /// </summary>
     public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
-        private const string ApiKeyHeaderName = "X-Api-Key";
         private readonly ISecretProvider _secretProvider;
         private readonly ApiKeySettings _settings;
 
@@ -46,9 +45,9 @@ namespace emc.camus.security.apikey.Handlers
         /// <exception cref="UnauthorizedAccessException">Thrown when API Key is missing or invalid.</exception>
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            if (!Request.Headers.TryGetValue(ApiKeyHeaderName, out var apiKeyHeaderValues))
+            if (!Request.Headers.TryGetValue(Headers.ApiKey, out var apiKeyHeaderValues))
             {
-                Logger.LogWarning("API Key authentication failed: Header '{HeaderName}' not found", ApiKeyHeaderName);
+                Logger.LogWarning("API Key authentication failed: Header '{HeaderName}' not found", Headers.ApiKey);
                 var missingHeaderException = new UnauthorizedAccessException("API Key header not found.");
                 missingHeaderException.Data["ErrorCode"] = ErrorCodes.AuthenticationRequired;
                 throw missingHeaderException;

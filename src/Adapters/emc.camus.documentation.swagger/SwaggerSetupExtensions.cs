@@ -1,10 +1,12 @@
 using emc.camus.application.Auth;
+using emc.camus.application.Generic;
 using emc.camus.documentation.swagger.Configurations;
 using emc.camus.documentation.swagger.Filters;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -48,7 +50,7 @@ namespace emc.camus.documentation.swagger
                 ConfigureSecurityDefinitions(options, settings);
                 ConfigureSecurityRequirements(options, settings);
                 ConfigureXmlComments(options, settings, targetAssembly);
-                ConfigureAnnotations(options, settings);
+                options.EnableAnnotations();
                 ConfigureFilters(options, settings);
             });
 
@@ -122,26 +124,31 @@ namespace emc.camus.documentation.swagger
         /// </summary>
         private static OpenApiSecurityScheme? CreateSecurityScheme(string scheme)
         {
-            return scheme.ToLowerInvariant() switch
+            if (scheme.Equals(AuthenticationSchemes.JwtBearer, StringComparison.OrdinalIgnoreCase))
             {
-                "bearer" or "jwt" => new OpenApiSecurityScheme
+                return new OpenApiSecurityScheme
                 {
                     Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
-                    Name = "Authorization",
+                    Name = HeaderNames.Authorization,
                     In = ParameterLocation.Header,
                     Type = SecuritySchemeType.Http,
                     Scheme = AuthenticationSchemes.JwtBearer.ToLowerInvariant(),
                     BearerFormat = "JWT"
-                },
-                "apikey" => new OpenApiSecurityScheme
+                };
+            }
+
+            if (scheme.Equals(AuthenticationSchemes.ApiKey, StringComparison.OrdinalIgnoreCase))
+            {
+                return new OpenApiSecurityScheme
                 {
-                    Description = "API Key needed to access the endpoints. Example: 'X-Api-Key: {key}'",
-                    Name = "X-Api-Key",
+                    Description = $"API Key needed to access the endpoints. Example: '{Headers.ApiKey}: {{key}}'",
+                    Name = Headers.ApiKey,
                     In = ParameterLocation.Header,
                     Type = SecuritySchemeType.ApiKey
-                },
-                _ => null
-            };
+                };
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -149,12 +156,17 @@ namespace emc.camus.documentation.swagger
         /// </summary>
         private static string? GetSecuritySchemeKey(string scheme)
         {
-            return scheme.ToLowerInvariant() switch
+            if (scheme.Equals(AuthenticationSchemes.JwtBearer, StringComparison.OrdinalIgnoreCase))
             {
-                "bearer" or "jwt" => AuthenticationSchemes.JwtBearer,
-                "apikey" => AuthenticationSchemes.ApiKey,
-                _ => null
-            };
+                return AuthenticationSchemes.JwtBearer;
+            }
+
+            if (scheme.Equals(AuthenticationSchemes.ApiKey, StringComparison.OrdinalIgnoreCase))
+            {
+                return AuthenticationSchemes.ApiKey;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -210,17 +222,6 @@ namespace emc.camus.documentation.swagger
         }
 
         /// <summary>
-        /// Configures Swagger annotations.
-        /// </summary>
-        private static void ConfigureAnnotations(SwaggerGenOptions options, SwaggerSettings settings)
-        {
-            if (settings.EnableAnnotations)
-            {
-                options.EnableAnnotations();
-            }
-        }
-
-        /// <summary>
         /// Configures Swagger filters.
         /// </summary>
         private static void ConfigureFilters(SwaggerGenOptions options, SwaggerSettings settings)
@@ -252,11 +253,6 @@ namespace emc.camus.documentation.swagger
         /// </summary>
         private static void ConfigureRootRedirect(WebApplication app, SwaggerSettings settings)
         {
-            if (!settings.RedirectRootToSwagger)
-            {
-                return;
-            }
-
             app.Use(async (context, next) =>
             {
                 if (context.Request.Path == "/" || context.Request.Path == string.Empty)

@@ -1,3 +1,6 @@
+using emc.camus.application.Generic;
+using Microsoft.Net.Http.Headers;
+
 namespace emc.camus.api.Configurations
 {
     /// <summary>
@@ -23,12 +26,21 @@ namespace emc.camus.api.Configurations
         /// <summary>
         /// Gets or sets the allowed headers for CORS requests.
         /// </summary>
-        public string[] AllowedHeaders { get; set; } = new[] { "Content-Type", "Authorization", "X-Api-Key" };
+        public string[] AllowedHeaders { get; set; } = new[] { HeaderNames.ContentType, HeaderNames.Authorization, Headers.ApiKey };
 
         /// <summary>
         /// Gets or sets the headers that should be exposed to the client.
         /// </summary>
-        public string[] ExposedHeaders { get; set; } = new[] { "Content-Type", "X-Trace-Id"  };
+        public string[] ExposedHeaders { get; set; } = new[] 
+        { 
+            HeaderNames.ContentType, 
+            Headers.TraceId,
+            Headers.RetryAfter,
+            Headers.RateLimitLimit,
+            Headers.RateLimitReset,
+            Headers.RateLimitPolicy,
+            Headers.RateLimitWindow
+        };
 
         /// <summary>
         /// Gets or sets whether credentials are allowed in CORS requests.

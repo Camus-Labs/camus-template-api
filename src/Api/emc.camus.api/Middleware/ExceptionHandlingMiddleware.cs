@@ -75,7 +75,7 @@ namespace emc.camus.api.Middleware
             _logger.LogError(exception, "Exception detected: {ErrorMessage}", exception.Message);
 
             context.Response.StatusCode = problemDetails.Status ?? 500;
-            context.Response.ContentType = "application/problem+json";
+            context.Response.ContentType = MediaTypes.ProblemJson;
             
             var json = JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions
             {
@@ -189,7 +189,7 @@ namespace emc.camus.api.Middleware
         }
 
         /// <summary>
-        /// Adds retry-after metadata if present in the exception data.
+        /// Adds RetryAfter metadata if present in the exception data.
         /// </summary>
         private void AddRetryAfterMetadata(ProblemDetails problemDetails, Exception exception, HttpContext context)
         {

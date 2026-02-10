@@ -1,5 +1,6 @@
 using emc.camus.ratelimiting.memory.Metrics;
 using emc.camus.ratelimiting.memory.Middleware;
+using emc.camus.application.Generic;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 
@@ -36,17 +37,17 @@ public class RateLimitMetricsMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers.Should().ContainKey("RateLimit-Limit");
-        context.Response.Headers["RateLimit-Limit"].ToString().Should().Be("100");
+        context.Response.Headers.Should().ContainKey(Headers.RateLimitLimit);
+        context.Response.Headers[Headers.RateLimitLimit].ToString().Should().Be("100");
         
-        context.Response.Headers.Should().ContainKey("RateLimit-Reset");
-        context.Response.Headers["RateLimit-Reset"].Should().NotBeEmpty();
+        context.Response.Headers.Should().ContainKey(Headers.RateLimitReset);
+        context.Response.Headers[Headers.RateLimitReset].Should().NotBeEmpty();
         
-        context.Response.Headers.Should().ContainKey("X-RateLimit-Policy");
-        context.Response.Headers["X-RateLimit-Policy"].ToString().Should().Be("default");
+        context.Response.Headers.Should().ContainKey(Headers.RateLimitPolicy);
+        context.Response.Headers[Headers.RateLimitPolicy].ToString().Should().Be("default");
         
-        context.Response.Headers.Should().ContainKey("X-RateLimit-Window");
-        context.Response.Headers["X-RateLimit-Window"].ToString().Should().Be("60");
+        context.Response.Headers.Should().ContainKey(Headers.RateLimitWindow);
+        context.Response.Headers[Headers.RateLimitWindow].ToString().Should().Be("60");
     }
 
     [Fact]
@@ -106,7 +107,7 @@ public class RateLimitMetricsMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers["X-RateLimit-Policy"].ToString().Should().Be("unknown");
+        context.Response.Headers[Headers.RateLimitPolicy].ToString().Should().Be("unknown");
     }
 
     [Fact]
@@ -124,7 +125,7 @@ public class RateLimitMetricsMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers["RateLimit-Limit"].ToString().Should().Be("unknown");
+        context.Response.Headers[Headers.RateLimitLimit].ToString().Should().Be("unknown");
     }
 
     [Fact]
@@ -142,7 +143,7 @@ public class RateLimitMetricsMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers["X-RateLimit-Window"].ToString().Should().Be("unknown");
+        context.Response.Headers[Headers.RateLimitWindow].ToString().Should().Be("unknown");
     }
 
     [Fact]
@@ -165,8 +166,8 @@ public class RateLimitMetricsMiddlewareTests
         var afterInvoke = DateTimeOffset.UtcNow.AddSeconds(60).ToUnixTimeSeconds();
 
         // Assert
-        context.Response.Headers.Should().ContainKey("RateLimit-Reset");
-        var resetTimestamp = long.Parse(context.Response.Headers["RateLimit-Reset"]!);
+        context.Response.Headers.Should().ContainKey(Headers.RateLimitReset);
+        var resetTimestamp = long.Parse(context.Response.Headers[Headers.RateLimitReset]!);
         resetTimestamp.Should().BeGreaterThanOrEqualTo(beforeInvoke);
         resetTimestamp.Should().BeLessThanOrEqualTo(afterInvoke + 1); // Allow 1 second tolerance
     }
@@ -191,9 +192,9 @@ public class RateLimitMetricsMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers["X-RateLimit-Policy"].ToString().Should().Be(policy);
-        context.Response.Headers["RateLimit-Limit"].ToString().Should().Be(limit);
-        context.Response.Headers["X-RateLimit-Window"].ToString().Should().Be(window);
+        context.Response.Headers[Headers.RateLimitPolicy].ToString().Should().Be(policy);
+        context.Response.Headers[Headers.RateLimitLimit].ToString().Should().Be(limit);
+        context.Response.Headers[Headers.RateLimitWindow].ToString().Should().Be(window);
     }
 
     [Fact]
@@ -229,8 +230,8 @@ public class RateLimitMetricsMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers["RateLimit-Limit"].ToString().Should().Be("100");
-        context.Response.Headers["X-RateLimit-Window"].ToString().Should().Be("invalid");
-        // RateLimit-Reset should still be added but won't have a calculated value
+        context.Response.Headers[Headers.RateLimitLimit].ToString().Should().Be("100");
+        context.Response.Headers[Headers.RateLimitWindow].ToString().Should().Be("invalid");
+        // RateLimitReset should still be added but won't have a calculated value
     }
 }

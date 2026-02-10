@@ -1,10 +1,11 @@
+using emc.camus.application.Generic;
 using Microsoft.AspNetCore.Http;
 using System.Diagnostics;
 
 namespace emc.camus.observability.otel.Middleware
 {
     /// <summary>
-    /// Adds an X-Trace-Id header to every HTTP response so clients can correlate
+    /// Adds a Trace-Id header to every HTTP response so clients can correlate
     /// requests with traces. Uses Activity.Current.TraceId when available, falling
     /// back to HttpContext.TraceIdentifier.
     /// </summary>
@@ -22,16 +23,16 @@ namespace emc.camus.observability.otel.Middleware
         }
 
         /// <summary>
-        /// Adds the X-Trace-Id header on the response.
+        /// Adds a Trace-Id header on the response.
         /// </summary>
         public async Task InvokeAsync(HttpContext context)
         {
             context.Response.OnStarting(() =>
             {
                 var traceId = Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier;
-                if (!string.IsNullOrWhiteSpace(traceId) && !context.Response.Headers.ContainsKey("X-Trace-Id"))
+                if (!string.IsNullOrWhiteSpace(traceId) && !context.Response.Headers.ContainsKey(Headers.TraceId))
                 {
-                    context.Response.Headers["X-Trace-Id"] = traceId;
+                    context.Response.Headers[Headers.TraceId] = traceId;
                 }
                 return Task.CompletedTask;
             });

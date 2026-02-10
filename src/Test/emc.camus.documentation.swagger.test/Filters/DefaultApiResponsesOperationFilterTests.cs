@@ -50,9 +50,9 @@ public class DefaultApiResponsesOperationFilterTests
         // Assert
         var response = operation.Responses["400"];
         response.Description.Should().Be("Bad Request");
-        response.Content.Should().ContainKey("application/problem+json");
-        response.Content["application/problem+json"].Schema.Should().NotBeNull();
-        response.Content["application/problem+json"].Example.Should().NotBeNull();
+        response.Content.Should().ContainKey(MediaTypes.ProblemJson);
+        response.Content[MediaTypes.ProblemJson].Schema.Should().NotBeNull();
+        response.Content[MediaTypes.ProblemJson].Example.Should().NotBeNull();
     }
 
     [Fact]
@@ -68,9 +68,9 @@ public class DefaultApiResponsesOperationFilterTests
         // Assert
         var response = operation.Responses["401"];
         response.Description.Should().Be("Unauthorized");
-        response.Content.Should().ContainKey("application/problem+json");
+        response.Content.Should().ContainKey(MediaTypes.ProblemJson);
         
-        var mediaType = response.Content["application/problem+json"];
+        var mediaType = response.Content[MediaTypes.ProblemJson];
         mediaType.Schema.Should().NotBeNull();
         mediaType.Examples.Should().NotBeNull();
         mediaType.Examples.Should().ContainKeys("Token Expired", "Invalid Token", "Invalid Signature", "Authentication Required");
@@ -89,8 +89,8 @@ public class DefaultApiResponsesOperationFilterTests
         // Assert
         var response = operation.Responses["403"];
         response.Description.Should().Be("Forbidden");
-        response.Content.Should().ContainKey("application/problem+json");
-        response.Content["application/problem+json"].Example.Should().NotBeNull();
+        response.Content.Should().ContainKey(MediaTypes.ProblemJson);
+        response.Content[MediaTypes.ProblemJson].Example.Should().NotBeNull();
     }
 
     [Fact]
@@ -106,8 +106,8 @@ public class DefaultApiResponsesOperationFilterTests
         // Assert
         var response = operation.Responses["429"];
         response.Description.Should().Be("Too Many Requests");
-        response.Content.Should().ContainKey("application/problem+json");
-        response.Content["application/problem+json"].Example.Should().NotBeNull();
+        response.Content.Should().ContainKey(MediaTypes.ProblemJson);
+        response.Content[MediaTypes.ProblemJson].Example.Should().NotBeNull();
     }
 
     [Fact]
@@ -123,8 +123,8 @@ public class DefaultApiResponsesOperationFilterTests
         // Assert
         var response = operation.Responses["500"];
         response.Description.Should().Be("Internal Server Error");
-        response.Content.Should().ContainKey("application/problem+json");
-        response.Content["application/problem+json"].Example.Should().NotBeNull();
+        response.Content.Should().ContainKey(MediaTypes.ProblemJson);
+        response.Content[MediaTypes.ProblemJson].Example.Should().NotBeNull();
     }
 
     [Fact]
@@ -161,7 +161,7 @@ public class DefaultApiResponsesOperationFilterTests
         // Assert
         foreach (var statusCode in new[] { "400", "401", "403", "429", "500" })
         {
-            operation.Responses[statusCode].Content.Should().ContainKey("application/problem+json");
+            operation.Responses[statusCode].Content.Should().ContainKey(MediaTypes.ProblemJson);
         }
     }
 
@@ -191,7 +191,7 @@ public class DefaultApiResponsesOperationFilterTests
         _filter.Apply(operation, context);
 
         // Assert
-        var examples = operation.Responses["401"].Content["application/problem+json"].Examples;
+        var examples = operation.Responses["401"].Content[MediaTypes.ProblemJson].Examples;
         
         examples["Token Expired"].Summary.Should().Be("Token Expired");
         examples["Token Expired"].Description.Should().Contain("JWT token has expired");
