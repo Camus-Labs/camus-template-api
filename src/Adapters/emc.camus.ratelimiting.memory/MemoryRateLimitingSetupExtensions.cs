@@ -42,7 +42,7 @@ namespace emc.camus.ratelimiting.memory
 
             // Register settings and services as singletons for DI
             builder.Services.AddSingleton(rateLimitSettings);
-            builder.Services.AddSingleton<IClientIpResolver, ClientIpResolver>();
+            builder.Services.AddSingleton<ClientIpResolver>();
             builder.Services.AddSingleton(new RateLimitMetrics(serviceName));
 
             // Register rate limiting with partitioned policies
@@ -98,8 +98,8 @@ namespace emc.camus.ratelimiting.memory
             // Apply ASP.NET Core's rate limiting middleware
             app.UseRateLimiter();
 
-            // Record metrics for successful requests that passed rate limiting
-            app.UseMiddleware<RateLimitMetricsMiddleware>();
+            // Add RFC-compliant rate limit headers to all responses (for client visibility)
+            app.UseMiddleware<RateLimitHeadersMiddleware>();
 
             return app;
         }
@@ -169,7 +169,7 @@ namespace emc.camus.ratelimiting.memory
             RateLimitSettings settings,
             string policyName)
         {
-            var ipResolver = context.RequestServices.GetRequiredService<IClientIpResolver>();
+            var ipResolver = context.RequestServices.GetRequiredService<ClientIpResolver>();
             var ipAddress = ipResolver.GetClientIpAddress(context);
             var policy = settings.Policies[policyName];
             
@@ -201,7 +201,7 @@ namespace emc.camus.ratelimiting.memory
             // Resolve services from request scope
             var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<WebApplication>>();
             var metrics = context.HttpContext.RequestServices.GetRequiredService<RateLimitMetrics>();
-            var ipResolver = context.HttpContext.RequestServices.GetRequiredService<IClientIpResolver>();
+            var ipResolver = context.HttpContext.RequestServices.GetRequiredService<ClientIpResolver>();
 
             var endpoint = context.HttpContext.Request.Path;
             var method = context.HttpContext.Request.Method;
@@ -236,7 +236,7 @@ namespace emc.camus.ratelimiting.memory
                 policy.PermitLimit,
                 policy.WindowSeconds);
 
-            metrics.RecordRejection(policyName, endpoint, method, ipAddress);
+            metrics.RecordRejection(policyName, method);
 
             // Throw custom exception for ExceptionHandlingMiddleware
             // Headers are already set above, exception carries context for response body

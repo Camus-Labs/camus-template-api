@@ -11,7 +11,6 @@ namespace emc.camus.ratelimiting.memory.Metrics
     [ExcludeFromCodeCoverage]
     public class RateLimitMetrics
     {
-        private readonly Counter<long> _rateLimitHitsCounter;
         private readonly Counter<long> _rateLimitRejectionsCounter;
         private readonly Counter<long> _undefinedPolicyCounter;
 
@@ -22,12 +21,6 @@ namespace emc.camus.ratelimiting.memory.Metrics
         public RateLimitMetrics(string serviceName)
         {
             var meter = new Meter($"{serviceName}{MeterNames.RateLimiting}");
-
-            // Counter for successful requests that were checked against rate limits
-            _rateLimitHitsCounter = meter.CreateCounter<long>(
-                name: "rate_limit_hits_total",
-                unit: "requests",
-                description: "Total number of requests checked against rate limiting");
 
             // Counter for requests rejected due to rate limiting
             _rateLimitRejectionsCounter = meter.CreateCounter<long>(
@@ -43,33 +36,15 @@ namespace emc.camus.ratelimiting.memory.Metrics
         }
 
         /// <summary>
-        /// Records a successful request that passed rate limiting.
-        /// </summary>
-        /// <param name="partition">The partition type (authenticated-user, anonymous-ip, or health-check).</param>
-        /// <param name="endpoint">The endpoint path.</param>
-        /// <param name="method">The HTTP method.</param>
-        public void RecordHit(string partition, string endpoint, string method)
-        {
-            _rateLimitHitsCounter.Add(1, 
-                new KeyValuePair<string, object?>("partition", partition),
-                new KeyValuePair<string, object?>("endpoint", endpoint),
-                new KeyValuePair<string, object?>("method", method));
-        }
-
-        /// <summary>
         /// Records a request rejected due to rate limiting.
         /// </summary>
-        /// <param name="partition">The partition type (authenticated-user or anonymous-ip).</param>
-        /// <param name="endpoint">The endpoint path.</param>
+        /// <param name="policyName">The rate limit policy that was exceeded.</param>
         /// <param name="method">The HTTP method.</param>
-        /// <param name="userOrIp">The username or IP address that was rate limited.</param>
-        public void RecordRejection(string partition, string endpoint, string method, string userOrIp)
+        public void RecordRejection(string policyName, string method)
         {
             _rateLimitRejectionsCounter.Add(1,
-                new KeyValuePair<string, object?>("partition", partition),
-                new KeyValuePair<string, object?>("endpoint", endpoint),
-                new KeyValuePair<string, object?>("method", method),
-                new KeyValuePair<string, object?>("user_or_ip", userOrIp));
+                new KeyValuePair<string, object?>("policy", policyName),
+                new KeyValuePair<string, object?>("method", method));
         }
 
         /// <summary>

@@ -1,4 +1,3 @@
-using emc.camus.ratelimiting.memory.Metrics;
 using emc.camus.ratelimiting.memory.Middleware;
 using emc.camus.application.Generic;
 using FluentAssertions;
@@ -7,25 +6,22 @@ using Microsoft.AspNetCore.Http;
 namespace emc.camus.ratelimiting.memory.test.Middleware;
 
 /// <summary>
-/// Unit tests for RateLimitMetricsMiddleware to verify header and metric recording logic.
+/// Unit tests for RateLimitHeadersMiddleware to verify header logic.
 /// </summary>
-public class RateLimitMetricsMiddlewareTests
+public class RateLimitHeadersMiddlewareTests
 {
     private readonly Mock<RequestDelegate> _mockNext;
-    private readonly RateLimitMetrics _metrics;
-    private const string TestServiceName = "test-service";
 
-    public RateLimitMetricsMiddlewareTests()
+    public RateLimitHeadersMiddlewareTests()
     {
         _mockNext = new Mock<RequestDelegate>();
-        _metrics = new RateLimitMetrics(TestServiceName);
     }
 
     [Fact]
     public async Task InvokeAsync_ShouldAddRateLimitHeaders()
     {
         // Arrange
-        var middleware = new RateLimitMetricsMiddleware(_mockNext.Object, _metrics);
+        var middleware = new RateLimitHeadersMiddleware(_mockNext.Object);
         var context = new DefaultHttpContext();
         context.Items["RateLimit:Policy"] = "default";
         context.Items["RateLimit:Limit"] = "100";
@@ -54,7 +50,7 @@ public class RateLimitMetricsMiddlewareTests
     public async Task InvokeAsync_ShouldCallNextMiddleware()
     {
         // Arrange
-        var middleware = new RateLimitMetricsMiddleware(_mockNext.Object, _metrics);
+        var middleware = new RateLimitHeadersMiddleware(_mockNext.Object);
         var context = new DefaultHttpContext();
         context.Items["RateLimit:Policy"] = "default";
         context.Items["RateLimit:Limit"] = "100";
@@ -70,31 +66,10 @@ public class RateLimitMetricsMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_ShouldRecordHit()
-    {
-        // Arrange
-        var middleware = new RateLimitMetricsMiddleware(_mockNext.Object, _metrics);
-        var context = new DefaultHttpContext();
-        context.Request.Path = "/api/test";
-        context.Request.Method = "GET";
-        context.Items["RateLimit:Policy"] = "default";
-        context.Items["RateLimit:Limit"] = "100";
-        context.Items["RateLimit:Window"] = "60";
-
-        _mockNext.Setup(x => x(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert - Just verify it doesn't throw, we can't easily verify the metric was recorded
-        _mockNext.Verify(x => x(context), Times.Once);
-    }
-
-    [Fact]
     public async Task InvokeAsync_WithMissingPolicy_ShouldUseUnknown()
     {
         // Arrange
-        var middleware = new RateLimitMetricsMiddleware(_mockNext.Object, _metrics);
+        var middleware = new RateLimitHeadersMiddleware(_mockNext.Object);
         var context = new DefaultHttpContext();
         context.Request.Path = "/api/test";
         context.Request.Method = "GET";
@@ -114,7 +89,7 @@ public class RateLimitMetricsMiddlewareTests
     public async Task InvokeAsync_WithMissingLimit_ShouldUseUnknown()
     {
         // Arrange
-        var middleware = new RateLimitMetricsMiddleware(_mockNext.Object, _metrics);
+        var middleware = new RateLimitHeadersMiddleware(_mockNext.Object);
         var context = new DefaultHttpContext();
         context.Items["RateLimit:Policy"] = "default";
         context.Items["RateLimit:Window"] = "60";
@@ -132,7 +107,7 @@ public class RateLimitMetricsMiddlewareTests
     public async Task InvokeAsync_WithMissingWindow_ShouldUseUnknown()
     {
         // Arrange
-        var middleware = new RateLimitMetricsMiddleware(_mockNext.Object, _metrics);
+        var middleware = new RateLimitHeadersMiddleware(_mockNext.Object);
         var context = new DefaultHttpContext();
         context.Items["RateLimit:Policy"] = "default";
         context.Items["RateLimit:Limit"] = "100";
@@ -150,7 +125,7 @@ public class RateLimitMetricsMiddlewareTests
     public async Task InvokeAsync_WithValidWindow_ShouldCalculateResetTimestamp()
     {
         // Arrange
-        var middleware = new RateLimitMetricsMiddleware(_mockNext.Object, _metrics);
+        var middleware = new RateLimitHeadersMiddleware(_mockNext.Object);
         var context = new DefaultHttpContext();
         context.Items["RateLimit:Policy"] = "default";
         context.Items["RateLimit:Limit"] = "100";
@@ -180,7 +155,7 @@ public class RateLimitMetricsMiddlewareTests
         string policy, string limit, string window)
     {
         // Arrange
-        var middleware = new RateLimitMetricsMiddleware(_mockNext.Object, _metrics);
+        var middleware = new RateLimitHeadersMiddleware(_mockNext.Object);
         var context = new DefaultHttpContext();
         context.Items["RateLimit:Policy"] = policy;
         context.Items["RateLimit:Limit"] = limit;
@@ -201,7 +176,7 @@ public class RateLimitMetricsMiddlewareTests
     public async Task InvokeAsync_WhenNextMiddlewareThrows_ShouldPropagateException()
     {
         // Arrange
-        var middleware = new RateLimitMetricsMiddleware(_mockNext.Object, _metrics);
+        var middleware = new RateLimitHeadersMiddleware(_mockNext.Object);
         var context = new DefaultHttpContext();
         context.Items["RateLimit:Policy"] = "default";
         context.Items["RateLimit:Limit"] = "100";
@@ -218,7 +193,7 @@ public class RateLimitMetricsMiddlewareTests
     public async Task InvokeAsync_WithInvalidWindowValue_ShouldNotSetResetHeader()
     {
         // Arrange
-        var middleware = new RateLimitMetricsMiddleware(_mockNext.Object, _metrics);
+        var middleware = new RateLimitHeadersMiddleware(_mockNext.Object);
         var context = new DefaultHttpContext();
         context.Items["RateLimit:Policy"] = "default";
         context.Items["RateLimit:Limit"] = "100";
@@ -232,6 +207,7 @@ public class RateLimitMetricsMiddlewareTests
         // Assert
         context.Response.Headers[Headers.RateLimitLimit].ToString().Should().Be("100");
         context.Response.Headers[Headers.RateLimitWindow].ToString().Should().Be("invalid");
-        // RateLimitReset should still be added but won't have a calculated value
+        // RateLimitReset should not be set when window is invalid
+        context.Response.Headers.Should().NotContainKey(Headers.RateLimitReset);
     }
 }

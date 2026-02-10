@@ -79,17 +79,27 @@ public class ClientIpResolverTests
     }
 
     [Fact]
-    public void GetClientIpAddress_WithNoHeaders_AndNoRemoteIp_ShouldReturnUnknown()
+    public void GetClientIpAddress_WithNoHeaders_AndNoRemoteIp_ShouldThrowInvalidOperationException()
     {
         // Arrange
         var resolver = new ClientIpResolver(_mockLogger.Object);
         var context = new DefaultHttpContext();
 
         // Act
-        var result = resolver.GetClientIpAddress(context);
+        var act = () => resolver.GetClientIpAddress(context);
 
         // Assert
-        result.Should().Be("unknown");
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("Unable to determine client IP address for rate limiting.");
+        
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Unable to determine client IP address")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     [Fact]
@@ -116,6 +126,8 @@ public class ClientIpResolverTests
         var context = new DefaultHttpContext();
         context.Request.Path = "/api/test";
         context.Request.Headers["X-Forwarded-For"] = "not-a-valid-ip";
+        // Without fall back it will throw exception, so we need to set remote ip to avoid that and reach the logging code for invalid x-forwarded-for header.
+        context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("203.0.113.195");
 
         // Act
         resolver.GetClientIpAddress(context);

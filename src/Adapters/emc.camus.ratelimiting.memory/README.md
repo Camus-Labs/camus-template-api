@@ -149,13 +149,14 @@ The adapter logs a warning on first request if no proxy headers are detected. Re
 
 ## Metrics
 
-Exports OpenTelemetry metrics:
+Exports OpenTelemetry metrics for anomaly detection:
 
-- `rate_limit_hits_total` - Requests checked against rate limiting
-- `rate_limit_rejections_total` - Requests rejected due to rate limiting
+- `rate_limit_rejections_total` - Requests rejected due to rate limiting (signals attacks or misbehaving clients)
 - `rate_limit_undefined_policy_total` - Requests using undefined policy (configuration error)
 
 Tagged with: `partition`, `endpoint`, `method`, `user_or_ip`
+
+**Note**: Success cases are not metered to avoid high-volume noise. Rate limit information for successful requests is available via response headers (`RateLimit-Limit`, `RateLimit-Reset`).
 
 ## Migration to Redis
 
@@ -192,7 +193,14 @@ To migrate to Redis-based distributed rate limiting:
 
 ## Response Headers
 
-The adapter adds RFC-compliant IETF Draft Rate Limit Headers:
+The adapter adds RFC-compliant IETF Draft Rate Limit Headers to **all responses** (both 200 OK and 429 Too Many Requests).
+
+**Why headers on all responses?**
+
+- **Client visibility**: Clients know their limits proactively before hitting them
+- **Intelligent retry logic**: Clients can implement exponential backoff based on actual limits
+- **Usage tracking**: Clients can monitor their request usage and plan accordingly
+- **Industry standard**: Follows practice of GitHub, Twitter, Stripe, and other major APIs
 
 ### Success Response (200 OK)
 

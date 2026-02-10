@@ -1,30 +1,34 @@
-using emc.camus.ratelimiting.memory.Metrics;
 using emc.camus.application.Generic;
 using Microsoft.AspNetCore.Http;
 
 namespace emc.camus.ratelimiting.memory.Middleware
 {
     /// <summary>
-    /// Middleware that records rate limiting metrics and adds RFC-compliant headers for successful requests.
-    /// Implements IETF Draft Rate Limit Headers specification.
+    /// Middleware that adds RFC-compliant rate limit headers to all responses.
+    /// Implements IETF Draft Rate Limit Headers specification for client visibility.
     /// Must be placed after UseRateLimiter() in the pipeline.
     /// </summary>
-    public class RateLimitMetricsMiddleware
+    /// <remarks>
+    /// Headers are added to ALL responses (not just 429) to allow clients to:
+    /// - Know their rate limits proactively
+    /// - Implement intelligent retry logic
+    /// - Track usage and plan requests accordingly
+    /// This follows industry standard practice (GitHub, Twitter, Stripe APIs).
+    /// </remarks>
+    public class RateLimitHeadersMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly RateLimitMetrics _metrics;
 
         /// <summary>
-        /// Initializes a new instance of the RateLimitMetricsMiddleware.
+        /// Initializes a new instance of the RateLimitHeadersMiddleware.
         /// </summary>
-        public RateLimitMetricsMiddleware(RequestDelegate next, RateLimitMetrics metrics)
+        public RateLimitHeadersMiddleware(RequestDelegate next)
         {
             _next = next;
-            _metrics = metrics;
         }
 
         /// <summary>
-        /// Invokes the middleware to record metrics and add rate limit headers.
+        /// Invokes the middleware to add rate limit headers to the response.
         /// Adds both RFC-compliant headers and custom headers for backward compatibility.
         /// </summary>
         public async Task InvokeAsync(HttpContext context)
@@ -48,13 +52,6 @@ namespace emc.camus.ratelimiting.memory.Middleware
             // Add custom headers for additional context (backward compatibility)
             context.Response.Headers[Headers.RateLimitPolicy] = policy;
             context.Response.Headers[Headers.RateLimitWindow] = window;
-
-            // Record that this request passed rate limiting
-            var endpoint = context.Request.Path;
-            var method = context.Request.Method;
-
-            // Record the hit (request passed rate limiting)
-            _metrics.RecordHit(policy, endpoint, method);
 
             // Continue to next middleware
             await _next(context);
