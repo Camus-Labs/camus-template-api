@@ -71,10 +71,10 @@ namespace emc.camus.observability.otel.Logging
             string instanceId,
             string environmentName)
         {
-            var exporter = settings.Logs.Exporter.ToLowerInvariant();
+            var exporter = settings.Logs.Exporter;
 
             var configured = loggerConfiguration;
-            if (exporter == "otlp")
+            if (exporter.Equals(ExporterTypes.Otlp, StringComparison.OrdinalIgnoreCase))
             {
                 var endpoint = settings.Logs.OtlpEndpoint;
                 configured = configured.WriteTo.OpenTelemetry(options =>

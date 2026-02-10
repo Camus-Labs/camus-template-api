@@ -12,6 +12,13 @@ namespace emc.camus.observability.otel.Telemetry
     {
         private readonly ActivitySource _activitySource;
 
+        private const string TagOperationType = "operation.type";
+        private const string TagOtelStatusCode = "otel.status_code";
+        private const string TagOtelStatusDescription = "otel.status_description";
+        private const string StatusUnset = "UNSET";
+        private const string StatusOk = "OK";
+        private const string StatusError = "ERROR";
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ActivitySourceWrapper"/> class.
         /// </summary>
@@ -33,38 +40,11 @@ namespace emc.camus.observability.otel.Telemetry
             var activity = _activitySource.StartActivity(name);
             if (activity != null)
             {
-                activity.SetTag("operation.type", operationType.ToString().ToLowerInvariant());
+                activity.SetTag(TagOperationType, operationType.ToString().ToLowerInvariant());
                 // Use standard OpenTelemetry status codes: start as UNSET
-                activity.SetTag("otel.status_code", "UNSET");
+                activity.SetTag(TagOtelStatusCode, StatusUnset);
             }
             return activity;
-        }
-
-        /// <summary>
-        /// Sets a tag on the given activity if not null.
-        /// </summary>
-        /// <param name="activity">The activity to add the tag to.</param>
-        /// <param name="key">The tag key.</param>
-        /// <param name="value">The tag value.</param>
-        public void SetTag(Activity? activity, string key, object? value)
-        {
-            activity?.SetTag(key, value);
-        }
-
-        /// <summary>
-        /// Sets multiple tags on the given activity from a dictionary.
-        /// </summary>
-        /// <param name="activity">The activity to add tags to.</param>
-        /// <param name="tags">Dictionary of tag key-value pairs to add.</param>
-        public void SetTags(Activity? activity, IDictionary<string, object?> tags)
-        {
-            if (activity != null && tags != null)
-            {
-                foreach (var tag in tags)
-                {
-                    activity.SetTag(tag.Key, tag.Value);
-                }
-            }
         }
 
         /// <summary>
@@ -73,15 +53,7 @@ namespace emc.camus.observability.otel.Telemetry
         /// <param name="activity">The activity to add request tags to.</param>
         /// <param name="tags">Dictionary of tag key-value pairs to add with 'request.' prefix.</param>
         public void SetRequestTags(Activity? activity, IDictionary<string, object?> tags)
-        {
-            if (activity != null && tags != null)
-            {
-                foreach (var tag in tags)
-                {
-                    activity.SetTag($"request.{tag.Key}", tag.Value);
-                }
-            }
-        }
+            => SetTagsWithPrefix(activity, tags, "request");
 
         /// <summary>
         /// Sets tags on the activity, prefixing each key with 'response.'
@@ -89,15 +61,26 @@ namespace emc.camus.observability.otel.Telemetry
         /// <param name="activity">The activity to add response tags to.</param>
         /// <param name="tags">Dictionary of tag key-value pairs to add with 'response.' prefix.</param>
         public void SetResponseTags(Activity? activity, IDictionary<string, object?> tags)
+            => SetTagsWithPrefix(activity, tags, "response");
+
+        /// <summary>
+        /// Helper method to set tags with a required prefix.
+        /// </summary>
+        /// <param name="activity">The activity to add tags to.</param>
+        /// <param name="tags">Dictionary of tag key-value pairs to add.</param>
+        /// <param name="prefix">Required prefix to prepend to each tag key.</param>
+        private void SetTagsWithPrefix(Activity? activity, IDictionary<string, object?> tags, string prefix)
         {
             if (activity != null && tags != null)
             {
                 foreach (var tag in tags)
                 {
-                    activity.SetTag($"response.{tag.Key}", tag.Value);
+                    var key = $"{prefix}.{tag.Key}";
+                    activity.SetTag(key, tag.Value);
                 }
             }
         }
+
         /// <summary>
         /// Marks the activity as succeeded, sets operation.success = true, and adds a Succeeded event.
         /// </summary>
@@ -106,7 +89,7 @@ namespace emc.camus.observability.otel.Telemetry
         {
             if (activity == null) return;
             // Set OpenTelemetry span status via standard tag
-            activity.SetTag("otel.status_code", "OK");
+            activity.SetTag(TagOtelStatusCode, StatusOk);
         }
 
         /// <summary>
@@ -117,8 +100,8 @@ namespace emc.camus.observability.otel.Telemetry
         public void ActivityFailed(Activity? activity, Exception ex)
         {
             if (activity == null) return;
-            activity.SetTag("otel.status_code", "ERROR");
-            activity.SetTag("otel.status_description", ex?.Message);
+            activity.SetTag(TagOtelStatusCode, StatusError);
+            activity.SetTag(TagOtelStatusDescription, ex?.Message);
             // Add an 'exception' event with attributes for better trace correlation
             var exceptionTags = new ActivityTagsCollection
             {

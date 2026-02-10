@@ -55,9 +55,11 @@ src/
 │   ├── emc.camus.ratelimiting.memory/    # Rate limiting
 │   ├── emc.camus.security.jwt/           # JWT authentication
 │   ├── emc.camus.security.apikey/        # API Key authentication
-│   ├── emc.camus.documentation.swagger/  # Swagger/OpenAPI
-│   ├── emc.adapterdapr.components/       # Dapr configurations
-│   └── emc.observability.components/     # Observability stack configs
+│   └── emc.camus.documentation.swagger/  # Swagger/OpenAPI
+│
+├── Infrastructure/                        # 🏗️ Infrastructure Config
+│   ├── dapr/                             # Dapr configurations
+│   └── observability/                    # Observability stack configs
 │
 └── Test/                                  # 🧪 Testing Projects
     ├── emc.camus.api.test/
@@ -207,7 +209,7 @@ The template includes Docker Compose configurations for a complete observability
 **📖 Learn More:**
 
 > - [Observability Adapter README](src/Adapters/emc.camus.observability.otel/README.md) - Usage guide
-> - [Observability Components README](src/Adapters/emc.observability.components/README.md) - Stack configuration
+> - [Observability Stack README](src/Infrastructure/observability/README.md) - Stack configuration
 
 ---
 

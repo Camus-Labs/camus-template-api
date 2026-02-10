@@ -59,11 +59,28 @@ In `appsettings.json`:
     },
     "Metrics": {
       "Exporter": "Otlp",
-      "OtlpEndpoint": "http://localhost:4317"
+      "OtlpEndpoint": "http://localhost:4317",
+      "DisabledMetrics": [
+        "http.server.request.duration",
+        "http.server.active_requests"
+      ],
+      "DisabledMeters": [ ".infrastructure" ]
     },
     "Logs": {
+      "Console": {
+        "Enabled": true,
+        "OutputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] (trace_id={trace_id} span_id={span_id}) {Message:lj}{NewLine}{Exception}"
+      },
       "Exporter": "Otlp",
       "OtlpEndpoint": "http://localhost:4317"
+    }
+  },
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft.AspNetCore": "Warning"
+      }
     }
   }
 }

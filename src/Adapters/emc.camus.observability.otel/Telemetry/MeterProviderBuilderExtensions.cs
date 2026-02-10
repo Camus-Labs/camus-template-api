@@ -52,7 +52,7 @@ namespace emc.camus.observability.otel.Telemetry
 
             switch (selectedExporter.ToLowerInvariant())
             {
-                case "otlp":
+                case var _ when selectedExporter.Equals(ExporterTypes.Otlp, StringComparison.OrdinalIgnoreCase):
                     builder.AddOtlpExporter(options =>
                     {
                         var endpoint = settings.Metrics.OtlpEndpoint;
@@ -65,7 +65,7 @@ namespace emc.camus.observability.otel.Telemetry
                     });
                     break;
 
-                case "console":
+                case var _ when selectedExporter.Equals(ExporterTypes.Console, StringComparison.OrdinalIgnoreCase):
                     builder.AddConsoleExporter();
                     break;
 

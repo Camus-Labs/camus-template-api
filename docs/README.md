@@ -78,8 +78,8 @@ Detailed usage guides for infrastructure adapters:
 
 Infrastructure component setup guides:
 
-- **[Observability Stack](../src/Adapters/emc.observability.components/README.md)** - Jaeger, Prometheus, Grafana, Loki setup
-- **[Dapr Components](../src/Adapters/emc.adapterdapr.components/README.md)** - Dapr secret store and component configuration
+- **[Observability Stack](../src/Infrastructure/observability/README.md)** - Jaeger, Prometheus, Grafana, Loki setup
+- **[Dapr Components](../src/Infrastructure/dapr/README.md)** - Dapr secret store and component configuration
 
 ---
 

@@ -5,7 +5,6 @@ namespace emc.camus.observability.otel.Configurations
     /// </summary>
     public class LogsSettings
     {
-        private static readonly string[] ValidExporters = { "otlp", "console", "none" };
 
         /// <summary>
         /// Gets or sets the console logging configuration.
@@ -15,12 +14,12 @@ namespace emc.camus.observability.otel.Configurations
         /// <summary>
         /// Gets or sets the exporter type. Valid values: "otlp", "console", "none". Defaults to "none".
         /// </summary>
-        public string Exporter { get; set; } = "none";
+        public string Exporter { get; set; } = ExporterTypes.None;
 
         /// <summary>
-        /// Gets or sets the OTLP endpoint for logs. Defaults to "http://localhost:4317".
+        /// Gets or sets the OTLP endpoint for logs. Defaults to the OTLP default endpoint.
         /// </summary>
-        public string OtlpEndpoint { get; set; } = "http://localhost:4317";
+        public string OtlpEndpoint { get; set; } = OtlpDefaults.DefaultEndpoint;
 
         /// <summary>
         /// Validates the logs configuration.
@@ -34,22 +33,8 @@ namespace emc.camus.observability.otel.Configurations
             // Validate console settings
             Console.Validate();
 
-            if (string.IsNullOrWhiteSpace(Exporter))
-                throw new ArgumentException("Exporter cannot be null or empty", nameof(Exporter));
-
-            if (!ValidExporters.Contains(Exporter.ToLowerInvariant()))
-                throw new ArgumentException(
-                    $"Invalid Exporter value '{Exporter}'. Valid values are: {string.Join(", ", ValidExporters)}", 
-                    nameof(Exporter));
-
-            if (Exporter.Equals("otlp", StringComparison.OrdinalIgnoreCase))
-            {
-                if (string.IsNullOrWhiteSpace(OtlpEndpoint))
-                    throw new ArgumentException("OtlpEndpoint cannot be null or empty when Exporter is 'otlp'", nameof(OtlpEndpoint));
-
-                if (!Uri.TryCreate(OtlpEndpoint, UriKind.Absolute, out _))
-                    throw new ArgumentException($"OtlpEndpoint must be a valid URI: '{OtlpEndpoint}'", nameof(OtlpEndpoint));
-            }
+            ExporterValidator.ValidateExporter(Exporter, nameof(Exporter));
+            ExporterValidator.ValidateOtlpEndpoint(OtlpEndpoint, Exporter, nameof(OtlpEndpoint));
         }
     }
 }

@@ -74,82 +74,6 @@ public class ActivitySourceWrapperTests : IDisposable
     }
 
     [Fact]
-    public void SetTag_WithValidActivity_ShouldAddTag()
-    {
-        // Arrange
-        using var activity = _wrapper.StartActivity("test", OperationType.Info);
-
-        // Act
-        _wrapper.SetTag(activity, "custom.tag", "custom-value");
-
-        // Assert
-        activity!.GetTagItem("custom.tag").Should().Be("custom-value");
-    }
-
-    [Fact]
-    public void SetTag_WithNullActivity_ShouldNotThrow()
-    {
-        // Act & Assert
-        var act = () => _wrapper.SetTag(null, "key", "value");
-        act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void SetTags_WithMultipleTags_ShouldAddAllTags()
-    {
-        // Arrange
-        using var activity = _wrapper.StartActivity("test", OperationType.Read);
-        var tags = new Dictionary<string, object?>
-        {
-            { "tag1", "value1" },
-            { "tag2", 123 },
-            { "tag3", true }
-        };
-
-        // Act
-        _wrapper.SetTags(activity, tags);
-
-        // Assert
-        activity!.GetTagItem("tag1").Should().Be("value1");
-        activity.GetTagItem("tag2").Should().Be(123);
-        activity.GetTagItem("tag3").Should().Be(true);
-    }
-
-    [Fact]
-    public void SetTags_WithNullActivity_ShouldNotThrow()
-    {
-        // Arrange
-        var tags = new Dictionary<string, object?> { { "key", "value" } };
-
-        // Act & Assert
-        var act = () => _wrapper.SetTags(null, tags);
-        act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void SetTags_WithNullTags_ShouldNotThrow()
-    {
-        // Arrange
-        using var activity = _wrapper.StartActivity("test", OperationType.Read);
-
-        // Act & Assert
-        var act = () => _wrapper.SetTags(activity, null);
-        act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void SetTags_WithEmptyDictionary_ShouldNotThrow()
-    {
-        // Arrange
-        using var activity = _wrapper.StartActivity("test", OperationType.Read);
-        var emptyTags = new Dictionary<string, object?>();
-
-        // Act & Assert
-        var act = () => _wrapper.SetTags(activity, emptyTags);
-        act.Should().NotThrow();
-    }
-
-    [Fact]
     public void SetRequestTags_ShouldPrefixWithRequest()
     {
         // Arrange
@@ -253,6 +177,48 @@ public class ActivitySourceWrapperTests : IDisposable
         // Act & Assert
         var act = () => _wrapper.SetResponseTags(activity, emptyTags);
         act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void SetRequestTags_WithMultipleTagsAndNullValues_ShouldSetAllTags()
+    {
+        // Arrange
+        using var activity = _wrapper.StartActivity("test", OperationType.Read);
+        var tags = new Dictionary<string, object?>
+        {
+            { "validKey", "validValue" },
+            { "nullKey", null },
+            { "intKey", 123 }
+        };
+
+        // Act
+        _wrapper.SetRequestTags(activity, tags);
+
+        // Assert
+        activity!.GetTagItem("request.validKey").Should().Be("validValue");
+        activity.GetTagItem("request.nullKey").Should().BeNull();
+        activity.GetTagItem("request.intKey").Should().Be(123);
+    }
+
+    [Fact]
+    public void SetResponseTags_WithMultipleTagsAndNullValues_ShouldSetAllTags()
+    {
+        // Arrange
+        using var activity = _wrapper.StartActivity("test", OperationType.Read);
+        var tags = new Dictionary<string, object?>
+        {
+            { "validKey", "validValue" },
+            { "nullKey", null },
+            { "boolKey", true }
+        };
+
+        // Act
+        _wrapper.SetResponseTags(activity, tags);
+
+        // Assert
+        activity!.GetTagItem("response.validKey").Should().Be("validValue");
+        activity.GetTagItem("response.nullKey").Should().BeNull();
+        activity.GetTagItem("response.boolKey").Should().Be(true);
     }
 
     [Fact]

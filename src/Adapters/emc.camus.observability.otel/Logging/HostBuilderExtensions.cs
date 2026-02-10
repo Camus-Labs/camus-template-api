@@ -19,6 +19,7 @@ public static class HostBuilderExtensions
     /// <summary>
     /// Configures Serilog for the host with OpenTelemetry integration.
     /// Applies default enrichers, console logging, and OpenTelemetry log export.
+    /// </summary>
     /// 
     /// <param name="host">The host builder to configure.</param>
     /// <param name="settings">OpenTelemetry settings containing logs exporter configuration.</param>
@@ -27,7 +28,6 @@ public static class HostBuilderExtensions
     /// <param name="instanceId">Instance identifier for resource attributes.</param>
     /// <param name="environmentName">Environment name (e.g., Development, Production).</param>
     /// <returns>The configured host builder.</returns>
-    /// </summary>
     public static IHostBuilder UseSerilogWithOpenTelemetry(
         this IHostBuilder host,
         OpenTelemetrySettings settings,
