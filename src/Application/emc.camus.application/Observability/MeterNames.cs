@@ -32,7 +32,6 @@ namespace emc.camus.application.Observability
 
         /// <summary>
         /// Returns all meter name suffixes defined in the application.
-        /// Use DisabledMeters configuration to selectively exclude meters.
         /// </summary>
         /// <returns>Array of all meter name suffixes</returns>
         public static string[] GetAll()

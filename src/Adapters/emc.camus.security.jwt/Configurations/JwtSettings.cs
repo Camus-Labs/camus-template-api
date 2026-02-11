@@ -9,6 +9,17 @@ public class JwtSettings
     /// The configuration section name for JWT settings.
     /// </summary>
     public const string ConfigurationSectionName = "JwtSettings";
+
+    /// <summary>
+    /// Maximum allowed token expiration time in minutes (30 days).
+    /// </summary>
+    public const int MaxExpirationMinutes = 43200;
+    
+    /// <summary>
+    /// Gets or sets the name of the secret key used to retrieve the RSA private key from the secret provider.
+    /// Defaults to "RsaPrivateKeyPem".
+    /// </summary>
+    public string SecretKeyName { get; set; } = "RsaPrivateKeyPem";
     
     /// <summary>
     /// The issuer of the JWT token (usually your API's URL).
@@ -31,6 +42,9 @@ public class JwtSettings
     /// </summary>
     public void Validate()
     {
+        if (string.IsNullOrWhiteSpace(SecretKeyName))
+            throw new ArgumentException("SecretKeyName cannot be null or empty", nameof(SecretKeyName));
+
         if (string.IsNullOrWhiteSpace(Issuer))
             throw new ArgumentException("Issuer cannot be null or empty", nameof(Issuer));
 
@@ -45,7 +59,7 @@ public class JwtSettings
         if (!Uri.TryCreate(Audience, UriKind.Absolute, out _))
             throw new ArgumentException($"Audience must be a valid absolute URL: '{Audience}'", nameof(Audience));
 
-        if (ExpirationMinutes <= 0 || ExpirationMinutes > 43200) // Max 30 days
-            throw new ArgumentException("ExpirationMinutes must be between 1 and 43200 (30 days)", nameof(ExpirationMinutes));
+        if (ExpirationMinutes <= 0 || ExpirationMinutes > MaxExpirationMinutes)
+            throw new ArgumentException($"ExpirationMinutes must be between 1 and {MaxExpirationMinutes} (30 days)", nameof(ExpirationMinutes));
     }
 }

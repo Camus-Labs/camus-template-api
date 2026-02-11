@@ -4,35 +4,22 @@ Camus API supports two authentication mechanisms: **JWT Bearer tokens** and **AP
 
 ## JWT Authentication
 
-## Configuration
+JWT Bearer authentication provides secure token-based authentication using RSA256 asymmetric signing.
 
-JWT settings are configured in `appsettings.json`:
-
-```json
-"JwtSettings": {
-  "Issuer": "https://auth.camus.com/",
-  "Audience": "https://app.camus.com/",
-  "ExpirationMinutes": 120
-}
-```
-
-- The signing key (RSA or symmetric) is registered in DI and not stored in config files.
-- Access credentials (`AccessKey`, `AccessSecret`) are retrieved via `ISecretProvider`.
+> **📖 Complete Configuration Guide:** See [JWT Adapter README](../src/Adapters/emc.camus.security.jwt/README.md) for detailed configuration, settings, and security best practices.
 
 ## How to Get a Token
 
 **Endpoint:** `POST /api/v2/Auth/token`
 
-**Request Body:**
+**Request:**
 
-```json
-{
-  "accessKey": "YOUR_ACCESS_KEY",
-  "accessSecret": "YOUR_ACCESS_SECRET"
-}
+```bash
+curl -X POST http://localhost:5000/api/v2/auth/token \
+  -H "X-Api-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"accessKey":"your-key","accessSecret":"your-secret"}'
 ```
-
-- Credentials are validated against the values from the secret provider.
 
 **Response:**
 
@@ -45,29 +32,18 @@ JWT settings are configured in `appsettings.json`:
 
 ## Using the Token
 
-Include the token in the `Authorization` header:
-
-```http
-Authorization: Bearer {your-token}
+```bash
+curl -H "Authorization: Bearer {your-token}" \
+  http://localhost:5000/api/v2/auth/info-jwt
 ```
 
-## Info Endpoints
+> **📖 Complete Usage Guide:** See [JWT Adapter README](../src/Adapters/emc.camus.security.jwt/README.md) for detailed examples, token generation, endpoint protection, and testing.
 
-- `GET /api/v1/Auth/info` — Public, no authentication required. Returns API info and version (from request context).
-- `GET /api/v1/Auth/info-apikey` — Requires API Key authentication.
-- `GET /api/v1/Auth/info-jwt` — Requires JWT authentication.
-- All info endpoints log and tag the API version for observability.
+## JWT Claims
 
-## Claims in JWT
+JWT tokens include standard claims for user identification, roles, and token metadata.
 
-- `sub`: User ID (from accessKey)
-- `unique_name`: Username
-- `jti`: Unique token ID (GUID)
-- `iat`: Issued at timestamp
-- `role`: User roles (e.g., "User", "ApiClient")
-- `exp`: Expiration timestamp
-- `iss`: Issuer (from config)
-- `aud`: Audience (from config)
+> **📖 Complete Claims Reference:** See [JWT Adapter README - JWT Claims](../src/Adapters/emc.camus.security.jwt/README.md#-jwt-claims) for detailed claims documentation and usage examples.
 
 ## Security Notes
 

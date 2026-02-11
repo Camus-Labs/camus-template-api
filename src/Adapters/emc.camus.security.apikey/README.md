@@ -333,7 +333,7 @@ The adapter exports the following metrics via OpenTelemetry:
 - **Description:** Total number of API Key authentication failures
 - **Unit:** requests
 - **Labels:**
-  - `failure_reason`: Reason for failure (`missing_header` | `invalid_key`)
+  - `failure_reason`: Error code (`authentication_required` | `invalid_credentials`)
   - `endpoint`: The request path that was attempted
 
 **Example Queries:**

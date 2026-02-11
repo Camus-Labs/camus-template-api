@@ -77,9 +77,9 @@ The adapter retrieves the RSA private key from your `ISecretProvider`:
 
 ## 🔐 Token Generation
 
-### Authentication Controller
+### Using IJwtTokenGenerator
 
-Tokens are typically generated in your authentication controller:
+The adapter provides `IJwtTokenGenerator` interface for token generation. Inject it into your authentication controller:
 
 ```csharp
 [ApiController]
@@ -87,59 +87,57 @@ Tokens are typically generated in your authentication controller:
 public class AuthController : ControllerBase
 {
     private readonly ISecretProvider _secretProvider;
-    private readonly IConfiguration _configuration;
+    private readonly IJwtTokenGenerator _tokenGenerator;
+    private readonly ILogger<AuthController> _logger;
     
-    [HttpPost("token")]
-    public async Task<ActionResult<JwtTokenResponse>> GetToken(JwtTokenRequest request)
+    public AuthController(
+        ISecretProvider secretProvider,
+        IJwtTokenGenerator tokenGenerator,
+        ILogger<AuthController> logger)
     {
-        // Validate credentials (implement your logic)
-        if (!await ValidateCredentialsAsync(request))
-            return Unauthorized();
-        
-        // Generate token
-        var token = GenerateJwtToken(request.AccessKey);
-        
-        return Ok(new JwtTokenResponse
-        {
-            Token = token,
-            ExpiresOn = DateTime.UtcNow.AddMinutes(60)
-        });
+        _secretProvider = secretProvider;
+        _tokenGenerator = tokenGenerator;
+        _logger = logger;
     }
     
-    private string GenerateJwtToken(string userId)
+    [HttpPost("token")]
+    public async Task<IActionResult> GenerateToken([FromBody] Credentials request)
     {
-        var settings = _configuration.GetSection(JwtSettings.ConfigurationSectionName).Get<JwtSettings>();
-        settings.Validate();
-        builder.Services.AddSingleton(settings);
-
-        var rsaKey = await _secretProvider.GetSecretAsync("RsaPrivateKeyPem");
+        // Validate credentials against secrets
+        var accessKey = _secretProvider.GetSecret("AccessKey");
+        var accessSecret = _secretProvider.GetSecret("AccessSecret");
         
-        var rsa = RSA.Create();
-        rsa.ImportFromPem(rsaKey);
-        var credentials = new SigningCredentials(
-            new RsaSecurityKey(rsa), 
-            SecurityAlgorithms.RsaSha256
-        );
-        
-        var claims = new[]
+        if (request.AccessKey != accessKey || request.AccessSecret != accessSecret)
         {
-            new Claim(JwtRegisteredClaimNames.Sub, userId),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim("role", "User")
+            var exception = new UnauthorizedAccessException("Invalid credentials");
+            exception.Data[ErrorCodes.ErrorCodeKey] = ErrorCodes.InvalidCredentials;
+            throw exception;
+        }
+        
+        // Generate token with custom claims
+        var roleClaims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Role, "User"),
+            new Claim(ClaimTypes.Role, "ApiClient")
         };
         
-        var token = new JwtSecurityToken(
-            issuer: settings.Issuer,
-            audience: settings.Audience,
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(settings.ExpirationMinutes),
-            signingCredentials: credentials
-        );
+        var result = _tokenGenerator.GenerateToken(request.AccessKey, roleClaims);
         
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return Ok(new AuthToken
+        {
+            Token = result.Token,
+            ExpiresOn = result.ExpiresOn
+        });
     }
 }
 ```
+
+**Key Points:**
+
+- ✅ Inject `IJwtTokenGenerator` via constructor
+- ✅ Token generation is handled by the adapter
+- ✅ Add custom claims as needed (roles, permissions, etc.)
+- ✅ Returns `JwtTokenResult` with token and expiration
 
 ---
 
@@ -253,6 +251,108 @@ Content-Type: application/json
 GET /api/v1/products
 Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
+
+---
+
+## 📊 Observability
+
+### Metrics
+
+The adapter exports OpenTelemetry metrics for monitoring authentication failures:
+
+#### `jwt_authentication_failures_total`
+
+**Type:** Counter  
+**Unit:** requests  
+**Description:** Total number of JWT authentication failures
+
+**Dimensions:**
+
+- `failure_reason` - The specific error code:
+  - `token_expired` - JWT token has expired
+  - `invalid_signature` - Token signature validation failed (potential tampering)
+  - `invalid_issuer` - Token issuer doesn't match configuration
+  - `invalid_audience` - Token audience doesn't match configuration
+  - `invalid_token` - Token is malformed or cannot be parsed
+  - `authentication_required` - No authentication provided
+  - `forbidden` - Valid token but insufficient permissions
+- `endpoint` - The API endpoint path that was accessed
+
+**Use Cases:**
+
+- **Attack Detection**: Spike in `invalid_signature` indicates potential token tampering attempts
+- **Misconfiguration**: Sustained `invalid_issuer` or `invalid_audience` errors indicate configuration mismatch
+- **User Experience**: High rate of `token_expired` may indicate expiration window is too short
+- **Security Monitoring**: Track which endpoints are being targeted by unauthorized access attempts
+
+**Example Queries:**
+
+```promql
+# Total authentication failures in the last hour
+sum(increase(jwt_authentication_failures_total[1h]))
+
+# Failure rate by reason
+sum by (failure_reason) (rate(jwt_authentication_failures_total[5m]))
+
+# Endpoints under attack (high invalid_signature rate)
+topk(5, sum by (endpoint) (rate(jwt_authentication_failures_total{failure_reason="invalid_signature"}[5m])))
+```
+
+### Error Handling
+
+Authentication failures are handled via exceptions with error codes in `exception.Data[ErrorCodes.ErrorCodeKey]`. The global exception handler logs errors and returns RFC 7807 Problem Details responses.
+
+---
+
+## 🔒 Error Codes
+
+The adapter surfaces machine-readable error codes in HTTP responses for client error handling:
+
+### JWT Error Codes
+
+| Error Code | HTTP Status | Description | Client Action |
+| ---------- | ----------- | ----------- | ------------- |
+| `token_expired` | 401 | JWT token has expired | Refresh token or redirect to login |
+| `invalid_token` | 401 | Token is malformed or cannot be parsed | Request new token |
+| `invalid_signature` | 401 | Token signature validation failed | Token may be tampered, request new token |
+| `invalid_issuer` | 401 | Token issuer doesn't match expected value | Check token source |
+| `invalid_audience` | 401 | Token audience doesn't match expected value | Token not intended for this API |
+| `authentication_required` | 401 | No authentication credentials provided | Provide JWT token in Authorization header |
+| `invalid_credentials` | 401 | Credentials are incorrect | Check access key and secret |
+| `forbidden` | 403 | Valid authentication but insufficient permissions | Request elevated access or different endpoint |
+
+**Error Response Example:**
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc7235#section-3.1",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "You are not authorized to access this resource.",
+  "instance": "/api/v2/protected",
+  "error": "token_expired"
+}
+```
+
+**Client Implementation:**
+
+```typescript
+// Example: TypeScript client handling JWT errors
+if (response.status === 401) {
+  const error = response.body.error;
+  
+  if (error === 'token_expired') {
+    // Refresh token or redirect to login
+    await refreshToken();
+  } else if (error === 'invalid_signature') {
+    // Security issue, clear token and re-authenticate
+    clearToken();
+    redirectToLogin();
+  }
+}
+```
+
+> **📖 Error Codes Reference:** See [ErrorCodes.cs](../../../Application/emc.camus.application/Generic/ErrorCodes.cs) for complete error code definitions.
 
 ---
 

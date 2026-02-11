@@ -212,10 +212,9 @@ namespace emc.camus.api.Controllers
 
                 if (request.AccessKey != accessKeyFromVault || request.AccessSecret != accessSecretFromVault)
                 {
-                    _logger.LogWarning("Invalid credentials provided for AccessKey: {AccessKey}.", request.AccessKey);
-                    var invalidCredsException = new UnauthorizedAccessException("Invalid credentials.");
-                    invalidCredsException.Data["ErrorCode"] = ErrorCodes.InvalidCredentials;
-                    throw invalidCredsException;
+                    var exception = new UnauthorizedAccessException("The provided credentials are invalid");
+                    exception.Data[ErrorCodes.ErrorCodeKey] = ErrorCodes.InvalidCredentials;
+                    throw exception;
                 }
 
                 // Generate JWT token with roles

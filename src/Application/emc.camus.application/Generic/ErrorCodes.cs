@@ -6,7 +6,6 @@ namespace emc.camus.application.Generic
     /// Standard error codes for API error responses.
     /// These codes provide machine-readable error identification for frontend error handling.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public static class ErrorCodes
     {
         /// <summary>
@@ -14,6 +13,24 @@ namespace emc.camus.application.Generic
         /// Usage: exception.Data[ErrorCodes.ErrorCodeKey] = ErrorCodes.InvalidCredentials;
         /// </summary>
         public const string ErrorCodeKey = "ErrorCode";
+
+        /// <summary>
+        /// Gets the appropriate error code string for a given HTTP status code.
+        /// </summary>
+        /// <param name="statusCode">The HTTP status code.</param>
+        /// <returns>The corresponding error code string.</returns>
+        public static string GetErrorCodeFromStatusCode(int statusCode)
+        {
+            return statusCode switch
+            {
+                400 => BadRequest,
+                401 => Unauthorized,
+                403 => Forbidden,
+                429 => RateLimitExceeded,
+                500 => InternalServerError,
+                _ => UnknownError
+            };
+        }
 
         /// <summary>
         /// Error code for 400 Bad Request responses.

@@ -159,7 +159,6 @@ public class JwtTokenGeneratorTests
     {
         return new JwtTokenGenerator(
             _jwtSettings,
-            _signingCredentials,
-            _mockLogger.Object);
+            _signingCredentials);
     }
 }

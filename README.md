@@ -351,6 +351,7 @@ public class Product
 - [Observability (OpenTelemetry)](src/Adapters/emc.camus.observability.otel/README.md)
 - [Rate Limiting (Memory)](src/Adapters/emc.camus.ratelimiting.memory/README.md)
 - [Security (JWT)](src/Adapters/emc.camus.security.jwt/README.md)
+- [Security (API Key)](src/Adapters/emc.camus.security.apikey/README.md)
 - [Secrets (Dapr)](src/Adapters/emc.camus.secrets.dapr/README.md)
 - [Persistence (PostgreSQL)](src/Adapters/emc.camus.persistence.postgresql/README.md)
 - [Documentation (Swagger)](src/Adapters/emc.camus.documentation.swagger/README.md)

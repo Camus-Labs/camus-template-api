@@ -11,6 +11,9 @@ namespace emc.camus.ratelimiting.memory.Metrics
     [ExcludeFromCodeCoverage]
     public class RateLimitMetrics
     {
+        private const string MetricNameRateLimitRejections = "rate_limit_rejections_total";
+        private const string MetricNameUndefinedPolicy = "rate_limit_undefined_policy_total";
+        
         private readonly Counter<long> _rateLimitRejectionsCounter;
         private readonly Counter<long> _undefinedPolicyCounter;
 
@@ -24,13 +27,13 @@ namespace emc.camus.ratelimiting.memory.Metrics
 
             // Counter for requests rejected due to rate limiting
             _rateLimitRejectionsCounter = meter.CreateCounter<long>(
-                name: "rate_limit_rejections_total",
+                name: MetricNameRateLimitRejections,
                 unit: "requests",
                 description: "Total number of requests rejected due to rate limiting");
 
             // Counter for undefined policy usage (configuration issue)
             _undefinedPolicyCounter = meter.CreateCounter<long>(
-                name: "rate_limit_undefined_policy_total",
+                name: MetricNameUndefinedPolicy,
                 unit: "requests",
                 description: "Total number of requests using undefined rate limit policy (fell back to default)");
         }

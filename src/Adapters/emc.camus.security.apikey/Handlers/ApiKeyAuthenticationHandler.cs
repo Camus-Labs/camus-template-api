@@ -56,10 +56,11 @@ namespace emc.camus.security.apikey.Handlers
         {
             if (!Request.Headers.TryGetValue(Headers.ApiKey, out var apiKeyHeaderValues))
             {
-                _metrics.RecordAuthenticationFailure("missing_header", Request.Path);
-                var missingHeaderException = new UnauthorizedAccessException("API Key header not found.");
-                missingHeaderException.Data[ErrorCodes.ErrorCodeKey] = ErrorCodes.AuthenticationRequired;
-                throw missingHeaderException;
+                var errorCode = ErrorCodes.AuthenticationRequired;
+                _metrics.RecordAuthenticationFailure(errorCode, Request.Path);
+                var exception = new UnauthorizedAccessException("Authentication is required to access this resource");
+                exception.Data[ErrorCodes.ErrorCodeKey] = errorCode;
+                throw exception;
             }
 
             var providedApiKey = apiKeyHeaderValues.FirstOrDefault();
@@ -67,10 +68,11 @@ namespace emc.camus.security.apikey.Handlers
 
             if (string.IsNullOrWhiteSpace(providedApiKey) || providedApiKey != configuredApiKey)
             {
-                _metrics.RecordAuthenticationFailure("invalid_key", Request.Path);
-                var invalidKeyException = new UnauthorizedAccessException("Invalid API Key.");
-                invalidKeyException.Data[ErrorCodes.ErrorCodeKey] = ErrorCodes.InvalidCredentials;
-                throw invalidKeyException;
+                var errorCode = ErrorCodes.InvalidCredentials;
+                _metrics.RecordAuthenticationFailure(errorCode, Request.Path);
+                var exception = new UnauthorizedAccessException("The provided credentials are invalid");
+                exception.Data[ErrorCodes.ErrorCodeKey] = errorCode;
+                throw exception;
             }
 
             var claims = new[] { new Claim(ClaimTypes.Name, ApiKeySettings.DefaultUserName) };

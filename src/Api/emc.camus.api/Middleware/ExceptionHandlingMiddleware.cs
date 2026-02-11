@@ -165,27 +165,14 @@ namespace emc.camus.api.Middleware
         /// </summary>
         private void AddErrorCode(ProblemDetails problemDetails, Exception exception)
         {
-            if (exception.Data.Contains("ErrorCode"))
+            if (exception.Data.Contains(ErrorCodes.ErrorCodeKey))
             {
-                problemDetails.Extensions["error"] = exception.Data["ErrorCode"];
+                problemDetails.Extensions["error"] = exception.Data[ErrorCodes.ErrorCodeKey];
             }
             else
             {
-                problemDetails.Extensions["error"] = GetDefaultErrorCode(problemDetails.Status ?? 500);
+                problemDetails.Extensions["error"] = ErrorCodes.GetErrorCodeFromStatusCode(problemDetails.Status ?? 500);
             }
-        }
-
-        private string GetDefaultErrorCode(int statusCode)
-        {
-            return statusCode switch
-            {
-                400 => ErrorCodes.BadRequest,
-                401 => ErrorCodes.Unauthorized,
-                403 => ErrorCodes.Forbidden,
-                429 => ErrorCodes.RateLimitExceeded,
-                500 => ErrorCodes.InternalServerError,
-                _ => ErrorCodes.UnknownError
-            };
         }
 
         /// <summary>

@@ -361,7 +361,7 @@ namespace emc.camus.api.test.Middleware
             // Arrange
             var middleware = CreateMiddleware();
             var exception = new InvalidOperationException("Custom error");
-            exception.Data["ErrorCode"] = "CUSTOM_ERROR_001";
+            exception.Data[ErrorCodes.ErrorCodeKey] = "CUSTOM_ERROR_001";
             _nextMock.Setup(next => next(_httpContext)).ThrowsAsync(exception);
 
             // Act

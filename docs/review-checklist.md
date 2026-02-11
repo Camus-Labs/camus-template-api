@@ -40,37 +40,25 @@ Review the **[FEATURE_NAME]** feature implementation:
 - [ ] Error messages are actionable and specific
 - [ ] Code follows existing project patterns
 
-#### Over-Engineering Check (YAGNI)
+#### Interface Placement (Critical for Clean Architecture)
 
-**❌ Remove if present:**
+For each Application interface ask: **Who consumes it?**
 
-- [ ] Interfaces with single implementation (keep in adapter if only one)
-- [ ] Abstractions "for future Redis/other adapters" (not building now)
+- ✅ **API layer** → KEEP in Application (prevents coupling, even if single implementation)
+- ✅ **Multiple adapters** → KEEP in Application (shared contract)
+- ⚠️ **Single adapter only** → Move to that adapter
+- ❌ **Nobody (future use)** → Remove it
+
+**Remove if present:**
+
 - [ ] Configuration for unused features
-- [ ] "Extensibility points" with no current use case
-
-**✅ Keep only if:**
-
-- Used by multiple implementations RIGHT NOW
-- Fixes actual current problem
-- Required by framework/architecture rules
-
-### DECISION FRAMEWORK
-
-For each component ask:
-
-1. What current problem does this solve? (not future)
-2. What breaks if removed today?
-3. Is this adding complexity or reducing it?
-4. Is this information already available? (headers, exceptions, existing metrics)
-
-**Rule**: If "nothing breaks" and "adds complexity" → remove it.
+- [ ] "For future other provider" abstractions (not built yet)
 
 ### Architecture Review Output
 
-- List actual violations found (with file:line references)
+- List actual violations (with file:line references)
 - Suggest removals for over-engineering
-- Propose moves ONLY if violating dependency rules
+- For each interface: **WHO consumes it?** (API/adapters/none)
 - Skip "could be improved" - only "must be fixed"
 
 ---

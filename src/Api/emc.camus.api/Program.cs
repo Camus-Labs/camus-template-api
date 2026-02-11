@@ -40,7 +40,7 @@ builder.AddSwaggerDocumentation();
 builder.AddDaprSecrets();
 
 // Step 6: Configure Authentication using Security Adapters
-builder.AddJwtAuthentication();
+builder.AddJwtAuthentication(SERVICE_NAME);
 builder.AddApiKeyAuthentication(SERVICE_NAME);
 
 // Step 7: Build App Builder

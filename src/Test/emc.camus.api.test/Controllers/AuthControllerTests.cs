@@ -204,7 +204,7 @@ public class AuthControllerTests
         // Act & Assert
         var act = async () => await controller.GenerateToken(credentials);
         await act.Should().ThrowAsync<UnauthorizedAccessException>()
-            .WithMessage("Invalid credentials.");
+            .WithMessage("*The provided credentials are invalid*");
     }
 
     [Fact]
