@@ -28,10 +28,9 @@ namespace emc.camus.secrets.dapr
         public static WebApplicationBuilder AddDaprSecrets(this WebApplicationBuilder builder)
         {
             // Load, validate, and register Dapr Secret Provider Settings
-            var daprSettings = builder.Configuration.GetSection("DaprSecretProvider").Get<DaprSecretProviderSettings>() 
-                ?? new DaprSecretProviderSettings();
-            daprSettings.Validate();
-            builder.Services.AddSingleton(daprSettings);
+            var settings = builder.Configuration.GetSection(DaprSecretProviderSettings.ConfigurationSectionName).Get<DaprSecretProviderSettings>() ?? new DaprSecretProviderSettings();
+            settings.Validate();
+            builder.Services.AddSingleton(settings);
             
             // Register DaprSecretProvider with HttpClient
             builder.Services.AddHttpClient<DaprSecretProvider>();
@@ -54,8 +53,12 @@ namespace emc.camus.secrets.dapr
         public static WebApplication UseDaprSecrets(this WebApplication app)
         {
             // Force ISecretProvider singleton creation during startup
-            // This loads all secrets and fails fast if there are any issues
-            app.Services.GetRequiredService<ISecretProvider>();
+            var secretProvider = app.Services.GetRequiredService<ISecretProvider>();
+            
+            // Load all configured secrets and fail fast if there are any issues
+            var settings = app.Services.GetRequiredService<DaprSecretProviderSettings>();
+            secretProvider.LoadSecretsAsync(settings.SecretNames).GetAwaiter().GetResult();
+            
             return app;
         }
     }

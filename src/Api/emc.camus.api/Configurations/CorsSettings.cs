@@ -9,6 +9,11 @@ namespace emc.camus.api.Configurations
     public class CorsSettings
     {
         /// <summary>
+        /// The configuration section name for CORS settings.
+        /// </summary>
+        public const string ConfigurationSectionName = "CorsSettings";
+        
+        /// <summary>
         /// Gets or sets the name of the CORS policy.
         /// </summary>
         public string PolicyName { get; set; } = "DefaultCorsPolicy";

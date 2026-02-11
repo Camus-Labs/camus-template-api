@@ -32,7 +32,7 @@ namespace emc.camus.documentation.swagger
             Assembly? apiAssembly = null)
         {
             // Load, validate, and register Swagger Settings
-            var settings = builder.Configuration.GetSection("SwaggerSettings").Get<SwaggerSettings>() ?? new SwaggerSettings();
+            var settings = builder.Configuration.GetSection(SwaggerSettings.ConfigurationSectionName).Get<SwaggerSettings>() ?? new SwaggerSettings();
             settings.Validate();
             builder.Services.AddSingleton(settings);
 
@@ -70,7 +70,7 @@ namespace emc.camus.documentation.swagger
         /// <returns>The web application for method chaining.</returns>
         public static WebApplication UseSwaggerDocumentation(this WebApplication app)
         {
-            var settings = app.Configuration.GetSection("SwaggerSettings").Get<SwaggerSettings>() ?? new SwaggerSettings();
+            var settings = app.Services.GetRequiredService<SwaggerSettings>();
 
             if (!settings.Enabled || !app.Environment.IsDevelopment())
             {

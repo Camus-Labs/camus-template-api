@@ -155,6 +155,7 @@ Review documentation for **[FEATURE_NAME]** feature:
 - [ ] Code samples tested and working
 - [ ] Metric names match actual implementation
 - [ ] All cross-references/links are correct
+- [ ] XML documentation comments are accurate and complete for all public APIs
 
 #### Structure
 

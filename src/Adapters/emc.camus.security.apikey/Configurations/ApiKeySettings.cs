@@ -7,6 +7,11 @@ namespace emc.camus.security.apikey.Configurations
     public class ApiKeySettings
     {
         /// <summary>
+        /// The configuration section name for API Key settings.
+        /// </summary>
+        public const string ConfigurationSectionName = "ApiKeySettings";
+        
+        /// <summary>
         /// Gets or sets the name of the secret key used to retrieve the API key from the secret provider.
         /// Defaults to "XApiKey".
         /// </summary>

@@ -16,6 +16,14 @@ namespace emc.camus.secrets.dapr.Services
     /// </remarks>
     public class DaprSecretProvider : ISecretProvider
     {
+        private const int MaxRetryAttempts = 3;
+        private const int RetryBaseDelayMilliseconds = 500;
+        private const string DaprProtocol = "http://";
+        private const string DaprSecretsApiPath = "/v1.0/secrets/";
+        private const string TimeoutErrorIndicator = "timeout";
+        private const string ConnectionErrorIndicator = "connection";
+        private const string NetworkErrorIndicator = "network";
+        
         private readonly ILogger<DaprSecretProvider> _logger;
         private readonly HttpClient _httpClient;
         private readonly DaprSecretProviderSettings _settings;
@@ -35,17 +43,11 @@ namespace emc.camus.secrets.dapr.Services
             
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
            
-            var protocol = _settings.UseHttps ? "https" : "http";
-            var baseUrl = $"{protocol}://{_settings.BaseHost}:{_settings.HttpPort}";
+            var baseUrl = $"{DaprProtocol}{_settings.BaseHost}:{_settings.HttpPort}";
             
             // Configure HttpClient with adapter-specific settings
-            _httpClient.BaseAddress = new Uri($"{baseUrl}/v1.0/secrets/{_settings.SecretStoreName}/");
+            _httpClient.BaseAddress = new Uri($"{baseUrl}{DaprSecretsApiPath}{_settings.SecretStoreName}/");
             _httpClient.Timeout = TimeSpan.FromSeconds(_settings.TimeoutSeconds);
-            
-            _logger.LogInformation("DaprSecretProvider initialized with base Host: {BaseHost}, Secret Store: {SecretStore}, Timeout: {Timeout}s", _settings.BaseHost, _settings.SecretStoreName, _settings.TimeoutSeconds);
-            
-            // Load secrets from settings during construction
-            LoadSecretsAsync(_settings.SecretNames).GetAwaiter().GetResult();
         }
         
         /// <summary>
@@ -60,40 +62,26 @@ namespace emc.camus.secrets.dapr.Services
             
             if (secretNamesList.Count == 0)
             {
-                _logger.LogInformation("No valid secret names provided to load");
                 return;
             }
 
-            _logger.LogInformation("Starting to load {Count} secrets from Dapr secret store", secretNamesList.Count);
-
-
-            // Process secrets in parallel with resilience
-            var semaphore = new SemaphoreSlim(5, 5); // Limit concurrent requests to 5
-            var loadTasks = secretNamesList.Select(async secretName =>
+            // Load secrets sequentially with retry logic
+            foreach (var secretName in secretNamesList)
             {
-                await semaphore.WaitAsync();
-                try
-                {
-                    await LoadSingleSecretWithRetryAsync(secretName);
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            });
-
-
-            await Task.WhenAll(loadTasks);
+                await LoadSingleSecretWithRetryAsync(secretName);
+            }
            
             var successCount = _secrets.Count;
             var failureCount = secretNamesList.Count - successCount;
-            _logger.LogInformation("Secret loading completed. Success: {SuccessCount}, Failed: {FailureCount}", successCount, failureCount);
             
             if (failureCount > 0)
             {
                 var failedSecrets = secretNamesList.Except(_secrets.Keys).ToList();
-                var errorMessage = $"Failed to load {failureCount} required secret(s): {string.Join(", ", failedSecrets)}";
-                _logger.LogError(errorMessage);
+                var errorMessage = $"Failed to load {failureCount} required secret(s): {string.Join(", ", failedSecrets)}. " +
+                    $"Troubleshooting: 1) Verify Dapr sidecar is running at {_settings.BaseHost}:{_settings.HttpPort}, " +
+                    $"2) Check secret store '{_settings.SecretStoreName}' is configured in Dapr, " +
+                    $"3) Verify secrets exist in the secret store, " +
+                    $"4) Check Dapr logs for additional details.";
                 throw new InvalidOperationException(errorMessage);
             }
         }
@@ -107,13 +95,11 @@ namespace emc.camus.secrets.dapr.Services
         {
             if (string.IsNullOrWhiteSpace(name))
             {
-                _logger.LogWarning("GetSecret called with null or empty name");
-                return null;
+                throw new ArgumentException("Secret name cannot be null or empty", nameof(name));
             }
 
             if (_secrets.TryGetValue(name, out var value))
             {
-                _logger.LogDebug("Secret '{SecretName}' retrieved successfully", name);
                 return value;
             }
 
@@ -123,33 +109,14 @@ namespace emc.camus.secrets.dapr.Services
         }
         
         /// <summary>
-        /// Gets the number of secrets currently loaded in the provider.
+        /// Loads a single secret from the Dapr secret store via HTTP.
         /// </summary>
-        /// <returns>The count of loaded secrets.</returns>
-        public int GetLoadedSecretsCount()
-        {
-            return _secrets.Count;
-        }
-        
-        /// <summary>
-        /// Determines whether a secret with the specified name is loaded.
-        /// </summary>
-        /// <param name="name">The name of the secret to check.</param>
-        /// <returns><c>true</c> if the secret is loaded; otherwise, <c>false</c>.</returns>
-        public bool HasSecret(string name)
-        {
-            return !string.IsNullOrWhiteSpace(name) && _secrets.ContainsKey(name);
-        }
-        
-        /// <summary>
-        /// Gets the names of all secrets currently loaded in the provider.
-        /// </summary>
-        /// <returns>An enumerable of loaded secret names.</returns>
-        public IEnumerable<string> GetLoadedSecretNames()
-        {
-            return _secrets.Keys.ToList();
-        }
-        
+        /// <param name="secretName">The name of the secret to load.</param>
+        /// <returns>A task representing the asynchronous load operation.</returns>
+        /// <remarks>
+        /// Handles 404 responses gracefully (secret not found). Throws exceptions for other HTTP errors.
+        /// Validates response content is not empty before parsing.
+        /// </remarks>
         private async Task LoadSingleSecretAsync(string secretName)
         {
             // Use relative URL - BaseAddress is configured in constructor
@@ -158,7 +125,7 @@ namespace emc.camus.secrets.dapr.Services
             // Handle 404 as acceptable - secret doesn't exist
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                _logger.LogInformation("Secret '{SecretName}' not found in store '{SecretStore}' - this is acceptable", secretName, _settings.SecretStoreName);
+                _logger.LogWarning("Secret '{SecretName}' not found in store '{SecretStore}'", secretName, _settings.SecretStoreName);
                 return;
             }
            
@@ -185,6 +152,16 @@ namespace emc.camus.secrets.dapr.Services
             }
         }
         
+        /// <summary>
+        /// Parses the Dapr secret response JSON and stores the secret value in the in-memory cache.
+        /// </summary>
+        /// <param name="secretName">The name of the secret being parsed.</param>
+        /// <param name="responseContent">The JSON response content from Dapr containing the secret.</param>
+        /// <exception cref="InvalidOperationException">Thrown when deserialization fails, secret key is not found in response, or secret value is empty.</exception>
+        /// <remarks>
+        /// Expects Dapr JSON format: { "secretName": "secretValue" }.
+        /// Validates that the secret value is not null, empty, or whitespace.
+        /// </remarks>
         private void ParseAndStoreSecret(string secretName, string responseContent)
         {
             // Dapr returns JSON: { "secretName": "value" }
@@ -192,52 +169,61 @@ namespace emc.camus.secrets.dapr.Services
             
             if (secretData == null)
             {
-                _logger.LogWarning("Secret '{SecretName}' found but response was null after deserialization", secretName);
-                return;
+                throw new InvalidOperationException($"Secret '{secretName}' response was null after deserialization");
             }
             
             if (!secretData.TryGetValue(secretName, out var secretValue))
             {
-                _logger.LogWarning("Secret '{SecretName}' not found in response dictionary", secretName);
-                return;
+                throw new InvalidOperationException($"Secret '{secretName}' not found in response dictionary. Available keys: {string.Join(", ", secretData.Keys)}");
             }
             
             if (string.IsNullOrWhiteSpace(secretValue))
             {
-                _logger.LogWarning("Secret '{SecretName}' found but contains empty or whitespace-only value", secretName);
-                return;
+                throw new InvalidOperationException($"Secret '{secretName}' contains empty or whitespace-only value");
             }
             
             _secrets[secretName] = secretValue;
-            _logger.LogDebug("Secret '{SecretName}' loaded successfully", secretName);
         }
         
+        /// <summary>
+        /// Determines whether an HTTP request exception represents a transient error that can be retried.
+        /// </summary>
+        /// <param name="ex">The HTTP request exception to analyze.</param>
+        /// <returns><c>true</c> if the error is transient (timeout, connection, network issues); otherwise, <c>false</c>.</returns>
+        /// <remarks>
+        /// Checks the exception message for common transient error indicators such as timeout, connection, or network issues.
+        /// </remarks>
         private static bool IsTransientError(HttpRequestException ex)
         {
             // Check for common transient HTTP errors in message (network/timeout issues)
-            return ex.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase) ||
-                   ex.Message.Contains("connection", StringComparison.OrdinalIgnoreCase) ||
-                   ex.Message.Contains("network", StringComparison.OrdinalIgnoreCase);
+            return ex.Message.Contains(TimeoutErrorIndicator, StringComparison.OrdinalIgnoreCase) ||
+                   ex.Message.Contains(ConnectionErrorIndicator, StringComparison.OrdinalIgnoreCase) ||
+                   ex.Message.Contains(NetworkErrorIndicator, StringComparison.OrdinalIgnoreCase);
         }
         
+        /// <summary>
+        /// Loads a single secret with exponential backoff retry logic for transient errors.
+        /// </summary>
+        /// <param name="secretName">The name of the secret to load.</param>
+        /// <returns>A task representing the asynchronous load operation with retry.</returns>
+        /// <remarks>
+        /// Retries up to <see cref="MaxRetryAttempts"/> times for transient HTTP errors.
+        /// Uses exponential backoff with base delay of <see cref="RetryBaseDelayMilliseconds"/> milliseconds.
+        /// Non-transient errors fail immediately without retry.
+        /// </remarks>
         private async Task LoadSingleSecretWithRetryAsync(string secretName)
         {
-            const int maxRetries = 3;
-            var baseDelay = TimeSpan.FromMilliseconds(500);
-           
-            for (int attempt = 0; attempt <= maxRetries; attempt++)
+            for (int attempt = 0; attempt <= MaxRetryAttempts; attempt++)
             {
                 try
                 {
                     await LoadSingleSecretAsync(secretName);
-                    _logger.LogDebug("Successfully loaded secret: {SecretName}", secretName);
                     return; // Success, exit retry loop
                 }
-                catch (HttpRequestException ex) when (IsTransientError(ex) && attempt < maxRetries)
+                catch (HttpRequestException ex) when (IsTransientError(ex) && attempt < MaxRetryAttempts)
                 {
-                    var delay = TimeSpan.FromMilliseconds(baseDelay.TotalMilliseconds * Math.Pow(2, attempt));
-                    _logger.LogWarning("Transient error loading secret '{SecretName}' (attempt {Attempt}/{MaxAttempts}). Retrying in {Delay}ms. Error: {Error}", secretName, attempt + 1, maxRetries + 1, delay.TotalMilliseconds, ex.Message);
-                   
+                    var delay = TimeSpan.FromMilliseconds(RetryBaseDelayMilliseconds * Math.Pow(2, attempt));
+
                     await Task.Delay(delay);
                 }
                 catch (HttpRequestException ex) when (IsTransientError(ex))

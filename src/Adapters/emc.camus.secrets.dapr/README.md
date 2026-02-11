@@ -47,8 +47,10 @@ In `appsettings.json`:
 ```json
 {
   "DaprSecretProvider": {
-    "DaprHttpEndpoint": "http://localhost:3500",
-    "SecretStoreName": "localsecretstore"
+    "BaseHost": "localhost",
+    "HttpPort": "3500",
+    "SecretStoreName": "default-secret-store",
+    "SecretNames": ["AccessKey", "AccessSecret", "XApiKey", "RsaPrivateKeyPem"]
   }
 }
 ```
@@ -119,31 +121,21 @@ dapr run --app-id camus-app \
 
 > **📖 Full Guide:** See [Dapr Components README](../../../Infrastructure/dapr/README.md) for detailed Dapr setup.
 
-### Production (Azure Key Vault)
+### Production
 
-```yaml
-apiVersion: dapr.io/v1alpha1
-kind: Component
-metadata:
-  name: azurekeyvault
-spec:
-  type: secretstores.azure.keyvault
-  version: v1
-  metadata:
-  - name: vaultName
-    value: "your-keyvault-name"
-  - name: azureTenantId
-    value: "your-tenant-id"
-  # Use managed identity in production
-```
+For production deployments, configure Dapr to use proper secret stores like Azure Key Vault or AWS Secrets Manager.
 
-Update `appsettings.Production.json`:
+> **📖 Production Configuration:** See [Dapr Components README](../../../Infrastructure/dapr/README.md#production-configuration) for complete production secret store configurations (Azure Key Vault, AWS Secrets Manager, etc.).
+
+Update your production settings to reference the appropriate secret store:
 
 ```json
 {
   "DaprSecretProvider": {
-    "DaprHttpEndpoint": "http://localhost:3500",
-    "SecretStoreName": "azurekeyvault"
+    "BaseHost": "localhost",
+    "HttpPort": "3500",
+    "SecretStoreName": "azurekeyvault",
+    "SecretNames": ["AccessKey", "AccessSecret", "XApiKey", "RsaPrivateKeyPem"]
   }
 }
 ```

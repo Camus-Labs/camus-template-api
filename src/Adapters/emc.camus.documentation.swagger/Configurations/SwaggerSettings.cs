@@ -8,6 +8,11 @@ namespace emc.camus.documentation.swagger.Configurations
     public class SwaggerSettings
     {
         /// <summary>
+        /// The configuration section name for Swagger settings.
+        /// </summary>
+        public const string ConfigurationSectionName = "SwaggerSettings";
+        
+        /// <summary>
         /// Valid security scheme names supported by Swagger configuration (case-insensitive).
         /// Accepts: "Bearer", or "ApiKey" in any case.
         /// </summary>

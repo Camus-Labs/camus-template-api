@@ -139,10 +139,89 @@ Scrape configuration:
   metrics_path: '/metrics'
 ```
 
+## Dapr Secret Store Configuration
+
+The application uses Dapr for secret management. Configure appropriate secret stores for production.
+
+### Azure Key Vault
+
+Create a Dapr component for Azure Key Vault:
+
+```yaml
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: azurekeyvault
+spec:
+  type: secretstores.azure.keyvault
+  version: v1
+  metadata:
+  - name: vaultName
+    value: "your-keyvault-name"
+  - name: azureTenantId
+    value: "your-tenant-id"
+  # Use managed identity in production
+```
+
+Update `appsettings.Production.json`:
+
+```json
+{
+  "DaprSecretProvider": {
+    "BaseHost": "localhost",
+    "HttpPort": "3500",
+    "SecretStoreName": "azurekeyvault",
+    "SecretNames": ["AccessKey", "AccessSecret", "XApiKey", "RsaPrivateKeyPem"]
+  }
+}
+```
+
+### AWS Secrets Manager
+
+Create a Dapr component for AWS Secrets Manager:
+
+```yaml
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: awssecretsmanager
+spec:
+  type: secretstores.aws.secretmanager
+  version: v1
+  metadata:
+  - name: region
+    value: "us-east-1"
+  # Use IAM roles in production
+```
+
+Update `appsettings.Production.json`:
+
+```json
+{
+  "DaprSecretProvider": {
+    "BaseHost": "localhost",
+    "HttpPort": "3500",
+    "SecretStoreName": "awssecretsmanager",
+    "SecretNames": ["AccessKey", "AccessSecret", "XApiKey", "RsaPrivateKeyPem"]
+  }
+}
+```
+
+**Deployment Steps:**
+
+1. Deploy Dapr components to your cluster/environment
+2. Ensure Dapr sidecar is configured in your deployment
+3. Configure managed identity or IAM roles for secret access
+4. Update application settings with correct `SecretStoreName`
+
+> **📖 Learn More:** See [Dapr Components Configuration](../src/Infrastructure/dapr/README.md) and [Secrets Adapter Documentation](../src/Adapters/emc.camus.secrets.dapr/README.md) for detailed configuration.
+
+---
+
 ## Security Checklist
 
 - [ ] Use HTTPS in production (TLS 1.2+)
-- [ ] Store secrets in Azure Key Vault or similar
+- [ ] Store secrets in Azure Key Vault or AWS Secrets Manager via Dapr
 - [ ] Enable managed identity for Azure resources
 - [ ] Configure CORS for specific origins only
 - [ ] Set `ASPNETCORE_ENVIRONMENT=Production`

@@ -94,7 +94,7 @@ src/
 
 2. **Configure secrets** (Development):
   
-   Edit `src/Adapters/emc.adapterdapr.components/secrets.json`:
+   Edit `src/Infrastructure/dapr/secrets.json`:
 
    ```json
    {

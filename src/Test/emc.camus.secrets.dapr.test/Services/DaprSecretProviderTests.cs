@@ -57,27 +57,10 @@ public class DaprSecretProviderTests
     }
 
     [Fact]
-    public void Constructor_WithUseHttpsTrue_ShouldConfigureHttpsBaseUrl()
+    public void Constructor_WithValidSettings_ShouldConfigureHttpBaseUrl()
     {
         // Arrange
         var settings = CreateDefaultSettings(new List<string>());
-        settings.UseHttps = true;
-
-        // Act
-        var provider = new DaprSecretProvider(_httpClient, _mockLogger.Object, settings);
-
-        // Assert
-        _httpClient.BaseAddress.Should().NotBeNull();
-        _httpClient.BaseAddress!.ToString().Should().StartWith("https://");
-        _httpClient.BaseAddress.ToString().Should().Contain($"{settings.BaseHost}:{settings.HttpPort}");
-    }
-
-    [Fact]
-    public void Constructor_WithUseHttpsFalse_ShouldConfigureHttpBaseUrl()
-    {
-        // Arrange
-        var settings = CreateDefaultSettings(new List<string>());
-        settings.UseHttps = false;
 
         // Act
         var provider = new DaprSecretProvider(_httpClient, _mockLogger.Object, settings);
@@ -89,32 +72,38 @@ public class DaprSecretProviderTests
     }
 
     [Fact]
-    public void GetSecret_WithInvalidOrNonExistentName_ShouldReturnNull()
+    public void GetSecret_WithNullOrEmptyName_ShouldThrowArgumentException()
     {
         // Arrange
         var settings = CreateDefaultSettings(new List<string>());
         var provider = new DaprSecretProvider(_httpClient, _mockLogger.Object, settings);
 
-        // Act & Assert - test null, empty, whitespace, and non-existent
-        provider.GetSecret(null).Should().BeNull();
-        provider.GetSecret(string.Empty).Should().BeNull();
-        provider.GetSecret("   ").Should().BeNull();
-        provider.GetSecret("non-existent-secret").Should().BeNull();
+        // Act & Assert - test null, empty, whitespace
+        var actNull = () => provider.GetSecret(null);
+        actNull.Should().Throw<ArgumentException>().WithParameterName("name");
+        
+        var actEmpty = () => provider.GetSecret(string.Empty);
+        actEmpty.Should().Throw<ArgumentException>().WithParameterName("name");
+        
+        var actWhitespace = () => provider.GetSecret("   ");
+        actWhitespace.Should().Throw<ArgumentException>().WithParameterName("name");
     }
 
     [Fact]
-    public void HasSecret_WithInvalidOrNonExistentName_ShouldReturnFalse()
+    public void GetSecret_WithNonExistentName_ShouldReturnNull()
     {
         // Arrange
         var settings = CreateDefaultSettings(new List<string>());
         var provider = new DaprSecretProvider(_httpClient, _mockLogger.Object, settings);
 
-        // Act & Assert - test null, empty, whitespace, and non-existent
-        provider.HasSecret(null).Should().BeFalse();
-        provider.HasSecret(string.Empty).Should().BeFalse();
-        provider.HasSecret("   ").Should().BeFalse();
-        provider.HasSecret("non-existent").Should().BeFalse();
+        // Act
+        var result = provider.GetSecret("non-existent-secret");
+
+        // Assert
+        result.Should().BeNull();
     }
+
+
 
     [Fact]
     public async Task LoadSecretsAsync_WithNullOrEmptyList_ShouldNotThrow()
@@ -146,10 +135,7 @@ public class DaprSecretProviderTests
         await provider.LoadSecretsAsync(new[] { secretName });
 
         // Assert
-        provider.HasSecret(secretName).Should().BeTrue();
         provider.GetSecret(secretName).Should().Be(secretValue);
-        provider.GetLoadedSecretsCount().Should().Be(1);
-        provider.GetLoadedSecretNames().Should().Contain(secretName);
     }
 
     [Fact]
@@ -206,7 +192,6 @@ public class DaprSecretProviderTests
         await provider.LoadSecretsAsync(new[] { secret1Name, secret2Name });
 
         // Assert
-        provider.GetLoadedSecretsCount().Should().Be(2);
         provider.GetSecret(secret1Name).Should().Be(secret1Value);
         provider.GetSecret(secret2Name).Should().Be(secret2Value);
     }
@@ -305,7 +290,6 @@ public class DaprSecretProviderTests
         await provider.LoadSecretsAsync(new[] { secretName, "", "  ", "\t", null });
 
         // Assert
-        provider.GetLoadedSecretsCount().Should().Be(1);
         provider.GetSecret(secretName).Should().Be(secretValue);
     }
 
@@ -324,50 +308,10 @@ public class DaprSecretProviderTests
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>();
-        provider.GetLoadedSecretsCount().Should().Be(0);
+        provider.GetSecret(secretName).Should().BeNull();
     }
 
-    [Fact]
-    public void GetLoadedSecretNames_AfterLoadingSecrets_ShouldReturnAllNames()
-    {
-        // Arrange
-        var secret1Name = "secret1";
-        var secret2Name = "secret2";
-        var secret1Value = "value1";
-        var secret2Value = "value2";
 
-        _mockHttpHandler.Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains(secret1Name)),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(new Dictionary<string, string> { { secret1Name, secret1Value } }))
-            });
-
-        _mockHttpHandler.Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains(secret2Name)),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(new Dictionary<string, string> { { secret2Name, secret2Value } }))
-            });
-
-        var settings = CreateDefaultSettings(new List<string> { secret1Name, secret2Name });
-        
-        // Act
-        var provider = new DaprSecretProvider(_httpClient, _mockLogger.Object, settings);
-        var names = provider.GetLoadedSecretNames();
-
-        // Assert
-        names.Should().HaveCount(2);
-        names.Should().Contain(new[] { secret1Name, secret2Name });
-    }
 
     [Fact]
     public async Task LoadSecretsAsync_WithTransientHttpError_ShouldRetryWithExponentialBackoff()
@@ -409,7 +353,6 @@ public class DaprSecretProviderTests
 
         // Assert
         attemptCount.Should().Be(3); // Should have retried twice and succeeded on 3rd attempt
-        provider.HasSecret(secretName).Should().BeTrue();
         provider.GetSecret(secretName).Should().Be(secretValue);
         // Verify exponential backoff: 500ms + 1000ms = 1500ms minimum
         elapsedTime.Should().BeGreaterThan(TimeSpan.FromMilliseconds(1400));
@@ -437,7 +380,7 @@ public class DaprSecretProviderTests
         // Assert - should fail and throw because secret couldn't be loaded
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Failed to load*");
-        provider.HasSecret(secretName).Should().BeFalse();
+        provider.GetSecret(secretName).Should().BeNull();
     }
 
     [Fact]
@@ -555,7 +498,10 @@ public class DaprSecretProviderTests
 
         // Assert
         maxConcurrency.Should().BeLessThanOrEqualTo(5, "semaphore should limit concurrent requests to 5");
-        provider.GetLoadedSecretsCount().Should().Be(20);
+        // Verify all secrets loaded by checking a few samples
+        provider.GetSecret("secret1").Should().Be("value-secret1");
+        provider.GetSecret("secret10").Should().Be("value-secret10");
+        provider.GetSecret("secret20").Should().Be("value-secret20");
     }
 
     [Fact]
@@ -577,7 +523,7 @@ public class DaprSecretProviderTests
         // Assert - whitespace-only values are treated as empty
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Failed to load*");
-        provider.HasSecret(secretName).Should().BeFalse();
+        provider.GetSecret(secretName).Should().BeNull();
     }
 
     [Fact]
@@ -620,7 +566,6 @@ public class DaprSecretProviderTests
         // Assert
         firstLoadedValue.Should().Be(firstValue);
         secondLoadedValue.Should().Be(secondValue);
-        provider.GetLoadedSecretsCount().Should().Be(1); // Still only one secret
         callCount.Should().Be(2); // HTTP call made twice
     }
 
@@ -826,7 +771,6 @@ public class DaprSecretProviderTests
         {
             BaseHost = "localhost",
             HttpPort = "3500",
-            UseHttps = false,
             SecretStoreName = "test-store",
             TimeoutSeconds = 5,
             SecretNames = secretNames ?? new List<string>()

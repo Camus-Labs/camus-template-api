@@ -29,6 +29,11 @@ namespace emc.camus.ratelimiting.memory.Configurations
     public class RateLimitSettings
     {
         /// <summary>
+        /// The configuration section name for rate limit settings.
+        /// </summary>
+        public const string ConfigurationSectionName = "RateLimitSettings";
+        
+        /// <summary>
         /// Number of segments per window for sliding window algorithm.
         /// Higher values provide smoother rate limiting but use more memory.
         /// This is a global setting applied to all policies.

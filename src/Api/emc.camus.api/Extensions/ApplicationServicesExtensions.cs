@@ -39,27 +39,25 @@ namespace emc.camus.api.Extensions
             });
 
             // Configure CORS policy
-            var corsSettings = builder.Configuration.GetSection("CorsSettings").Get<CorsSettings>() ?? new CorsSettings();
-            corsSettings.Validate();
-            
-            // Register settings as singleton for DI consistency
-            builder.Services.AddSingleton(corsSettings);
+            var settings = builder.Configuration.GetSection(CorsSettings.ConfigurationSectionName).Get<CorsSettings>() ?? new CorsSettings();
+            settings.Validate();
+            builder.Services.AddSingleton(settings);
 
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy(corsSettings.PolicyName, policy =>
+                options.AddPolicy(settings.PolicyName, policy =>
                 {
-                    policy.WithOrigins(corsSettings.AllowedOrigins)
-                          .WithMethods(corsSettings.AllowedMethods)
-                          .WithHeaders(corsSettings.AllowedHeaders)
-                          .WithExposedHeaders(corsSettings.ExposedHeaders);
+                    policy.WithOrigins(settings.AllowedOrigins)
+                          .WithMethods(settings.AllowedMethods)
+                          .WithHeaders(settings.AllowedHeaders)
+                          .WithExposedHeaders(settings.ExposedHeaders);
 
-                    if (corsSettings.AllowCredentials)
+                    if (settings.AllowCredentials)
                     {
                         policy.AllowCredentials();
                     }
 
-                    policy.SetPreflightMaxAge(TimeSpan.FromMinutes(corsSettings.PreflightMaxAgeMinutes));
+                    policy.SetPreflightMaxAge(TimeSpan.FromMinutes(settings.PreflightMaxAgeMinutes));
                 });
             });
 

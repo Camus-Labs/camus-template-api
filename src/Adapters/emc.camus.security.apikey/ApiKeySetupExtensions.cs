@@ -35,9 +35,9 @@ namespace emc.camus.security.apikey
             logger.LogInformation("Configuring API Key authentication services");
 
             // Load, validate, and register API Key Settings
-            var apiKeySettings = builder.Configuration.GetSection("ApiKeySettings").Get<ApiKeySettings>() ?? new ApiKeySettings();
-            apiKeySettings.Validate();
-            builder.Services.AddSingleton(apiKeySettings);
+            var settings = builder.Configuration.GetSection(ApiKeySettings.ConfigurationSectionName).Get<ApiKeySettings>() ?? new ApiKeySettings();
+            settings.Validate();
+            builder.Services.AddSingleton(settings);
 
             builder.Services.AddAuthentication()
                 .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(

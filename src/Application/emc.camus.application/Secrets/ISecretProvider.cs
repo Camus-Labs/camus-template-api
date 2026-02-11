@@ -18,24 +18,5 @@ namespace emc.camus.application.Secrets
         /// <param name="name">The name of the secret to retrieve.</param>
         /// <returns>The secret value if found; otherwise, <c>null</c>.</returns>
         string? GetSecret(string name);
-
-        /// <summary>
-        /// Gets the number of secrets currently loaded in the provider.
-        /// </summary>
-        /// <returns>The count of loaded secrets.</returns>
-        int GetLoadedSecretsCount();
-
-        /// <summary>
-        /// Determines whether a secret with the specified name is loaded.
-        /// </summary>
-        /// <param name="name">The name of the secret to check.</param>
-        /// <returns><c>true</c> if the secret is loaded; otherwise, <c>false</c>.</returns>
-        bool HasSecret(string name);
-
-        /// <summary>
-        /// Gets the names of all secrets currently loaded in the provider.
-        /// </summary>
-        /// <returns>An enumerable of loaded secret names.</returns>
-        IEnumerable<string> GetLoadedSecretNames();
     }
 }

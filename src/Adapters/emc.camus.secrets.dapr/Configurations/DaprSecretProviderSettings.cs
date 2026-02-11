@@ -6,6 +6,15 @@ namespace emc.camus.secrets.dapr.Configurations
     public class DaprSecretProviderSettings
     {
         /// <summary>
+        /// The configuration section name for Dapr secret provider settings.
+        /// </summary>
+        public const string ConfigurationSectionName = "DaprSecretProvider";
+        
+        private const int MinPort = 1;
+        private const int MaxPort = 65535;
+        private const int MaxTimeoutSeconds = 300;
+        
+        /// <summary>
         /// Gets or sets the base URL for the Dapr sidecar. Defaults to "localhost".
         /// </summary>
         public string BaseHost { get; set; } = "localhost";
@@ -14,11 +23,6 @@ namespace emc.camus.secrets.dapr.Configurations
         /// Gets or sets the HTTP port for the Dapr sidecar. Defaults to "3500".
         /// </summary>
         public string HttpPort { get; set; } = "3500";
-
-        /// <summary>
-        /// Gets or sets whether to use HTTPS for Dapr sidecar communication. Defaults to false.
-        /// </summary>
-        public bool UseHttps { get; set; } = false;
 
         /// <summary>
         /// Gets or sets the name of the Dapr secret store. Defaults to "default-secret-store".
@@ -37,8 +41,17 @@ namespace emc.camus.secrets.dapr.Configurations
 
         /// <summary>
         /// Validates the Dapr secret provider settings configuration.
-        /// Throws ArgumentException if any setting is invalid.
         /// </summary>
+        /// <exception cref="ArgumentException">
+        /// Thrown when any setting is invalid, including:
+        /// <list type="bullet">
+        /// <item><description>BaseHost is null or empty</description></item>
+        /// <item><description>HttpPort is null, empty, or outside valid port range (1-65535)</description></item>
+        /// <item><description>SecretStoreName is null or empty</description></item>
+        /// <item><description>TimeoutSeconds is not between 1 and 300</description></item>
+        /// <item><description>SecretNames is null, empty, or contains null/empty values</description></item>
+        /// </list>
+        /// </exception>
         public void Validate()
         {
             ValidateBaseHost();
@@ -59,8 +72,8 @@ namespace emc.camus.secrets.dapr.Configurations
             if (string.IsNullOrWhiteSpace(HttpPort))
                 throw new ArgumentException("HttpPort cannot be null or empty", nameof(HttpPort));
 
-            if (!int.TryParse(HttpPort, out int portNumber) || portNumber < 1 || portNumber > 65535)
-                throw new ArgumentException($"HttpPort must be a valid port number (1-65535): '{HttpPort}'", nameof(HttpPort));
+            if (!int.TryParse(HttpPort, out int portNumber) || portNumber < MinPort || portNumber > MaxPort)
+                throw new ArgumentException($"HttpPort must be a valid port number ({MinPort}-{MaxPort}): '{HttpPort}'", nameof(HttpPort));
         }
 
         private void ValidateSecretStoreName()
@@ -71,8 +84,8 @@ namespace emc.camus.secrets.dapr.Configurations
 
         private void ValidateTimeoutSeconds()
         {
-            if (TimeoutSeconds <= 0 || TimeoutSeconds > 300)
-                throw new ArgumentException("TimeoutSeconds must be between 1 and 300", nameof(TimeoutSeconds));
+            if (TimeoutSeconds <= 0 || TimeoutSeconds > MaxTimeoutSeconds)
+                throw new ArgumentException($"TimeoutSeconds must be between 1 and {MaxTimeoutSeconds}", nameof(TimeoutSeconds));
         }
 
         private void ValidateSecretNames()

@@ -6,6 +6,11 @@ namespace emc.camus.security.jwt.Configurations;
 public class JwtSettings
 {
     /// <summary>
+    /// The configuration section name for JWT settings.
+    /// </summary>
+    public const string ConfigurationSectionName = "JwtSettings";
+    
+    /// <summary>
     /// The issuer of the JWT token (usually your API's URL).
     /// </summary>
     public string Issuer { get; set; } = "https://auth.camus.com/";

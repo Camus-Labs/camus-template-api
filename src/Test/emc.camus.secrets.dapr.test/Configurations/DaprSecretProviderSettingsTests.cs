@@ -13,7 +13,6 @@ public class DaprSecretProviderSettingsTests
         {
             BaseHost = "localhost",
             HttpPort = "3500",
-            UseHttps = false,
             SecretStoreName = "my-secret-store",
             TimeoutSeconds = 30,
             SecretNames = new List<string> { "api-key", "db-connection" }

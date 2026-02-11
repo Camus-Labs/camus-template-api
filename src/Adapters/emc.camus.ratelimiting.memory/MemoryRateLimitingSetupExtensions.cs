@@ -37,11 +37,11 @@ namespace emc.camus.ratelimiting.memory
         public static WebApplicationBuilder AddMemoryRateLimiting(this WebApplicationBuilder builder, string serviceName)
         {
             // Load and validate rate limit settings
-            var rateLimitSettings = builder.Configuration.GetSection("RateLimitSettings").Get<RateLimitSettings>() ?? new RateLimitSettings();
-            rateLimitSettings.Validate();
+            var settings = builder.Configuration.GetSection(RateLimitSettings.ConfigurationSectionName).Get<RateLimitSettings>() ?? new RateLimitSettings();
+            settings.Validate();
+            builder.Services.AddSingleton(settings);
 
             // Register settings and services as singletons for DI
-            builder.Services.AddSingleton(rateLimitSettings);
             builder.Services.AddSingleton<ClientIpResolver>();
             builder.Services.AddSingleton(new RateLimitMetrics(serviceName));
 
@@ -54,7 +54,7 @@ namespace emc.camus.ratelimiting.memory
                 options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
                 {
                     // Exempt configured paths from rate limiting
-                    if (IsExemptPath(context, rateLimitSettings))
+                    if (IsExemptPath(context, settings))
                     {
                         // Store partition info for response headers
                         context.Items["RateLimit:Policy"] = "exempt";
@@ -64,16 +64,16 @@ namespace emc.camus.ratelimiting.memory
                     }
 
                     // Determine which policy to apply based on endpoint attribute
-                    var policyName = GetPolicyNameFromEndpoint(context, rateLimitSettings);
+                    var policyName = GetPolicyNameFromEndpoint(context, settings);
                     
                     // Apply IP-based rate limiting with the selected policy
-                    return CreateIpBasedPartition(context, rateLimitSettings, policyName);
+                    return CreateIpBasedPartition(context, settings, policyName);
                 });
 
                 // Configure rejection handler with logging and metrics
                 options.OnRejected = (context, cancellationToken) =>
                 {
-                    HandleRateLimitRejection(context, rateLimitSettings);
+                    HandleRateLimitRejection(context, settings);
                     return new ValueTask();
                 };
             });

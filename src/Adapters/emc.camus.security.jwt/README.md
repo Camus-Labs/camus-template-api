@@ -108,7 +108,10 @@ public class AuthController : ControllerBase
     
     private string GenerateJwtToken(string userId)
     {
-        var jwtSettings = _configuration.GetSection("JwtSettings").Get<JwtSettings>();
+        var settings = _configuration.GetSection(JwtSettings.ConfigurationSectionName).Get<JwtSettings>();
+        settings.Validate();
+        builder.Services.AddSingleton(settings);
+
         var rsaKey = await _secretProvider.GetSecretAsync("RsaPrivateKeyPem");
         
         var rsa = RSA.Create();
@@ -126,10 +129,10 @@ public class AuthController : ControllerBase
         };
         
         var token = new JwtSecurityToken(
-            issuer: jwtSettings.Issuer,
-            audience: jwtSettings.Audience,
+            issuer: settings.Issuer,
+            audience: settings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(jwtSettings.ExpirationMinutes),
+            expires: DateTime.UtcNow.AddMinutes(settings.ExpirationMinutes),
             signingCredentials: credentials
         );
         

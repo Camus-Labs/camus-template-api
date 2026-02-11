@@ -47,13 +47,12 @@ namespace emc.camus.observability.otel
             var normalizedInstanceId = string.IsNullOrWhiteSpace(instanceId) ? DefaultInstanceId : instanceId.Trim();
 
             // Parse OpenTelemetry settings once from configuration
-            var otelSettings = configuration.GetSection("OpenTelemetry").Get<OpenTelemetrySettings>() ?? new OpenTelemetrySettings();
-            
-            // Validate configuration at startup
-            otelSettings.Validate();
+            var settings = configuration.GetSection(OpenTelemetrySettings.ConfigurationSectionName).Get<OpenTelemetrySettings>() ?? new OpenTelemetrySettings();
+            settings.Validate();
+            builder.Services.AddSingleton(settings);
 
-            builder.Host.UseSerilogWithOpenTelemetry(otelSettings, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);
-            builder.Services.AddOpenTelemetryServices(otelSettings, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);
+            builder.Host.UseSerilogWithOpenTelemetry(settings, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);
+            builder.Services.AddOpenTelemetryServices(settings, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);
             
             // Register ActivitySource and wrapper for distributed tracing
             builder.Services.AddSingleton(new ActivitySource(normalizedServiceName, normalizedServiceVersion));
