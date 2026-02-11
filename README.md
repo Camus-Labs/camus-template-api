@@ -68,6 +68,7 @@ src/
     ├── emc.camus.persistence.postgresql.test/
     ├── emc.camus.observability.otel.test/
     ├── emc.camus.secrets.dapr.test/
+    ├── emc.camus.security.apikey.test/
     └── emc.camus.security.jwt.test/
 ```
 

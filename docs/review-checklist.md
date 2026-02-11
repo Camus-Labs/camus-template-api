@@ -47,7 +47,6 @@ Review the **[FEATURE_NAME]** feature implementation:
 - [ ] Interfaces with single implementation (keep in adapter if only one)
 - [ ] Abstractions "for future Redis/other adapters" (not building now)
 - [ ] Configuration for unused features
-- [ ] Metrics/logging for normal operations (not anomalies)
 - [ ] "Extensibility points" with no current use case
 
 **✅ Keep only if:**
@@ -55,12 +54,6 @@ Review the **[FEATURE_NAME]** feature implementation:
 - Used by multiple implementations RIGHT NOW
 - Fixes actual current problem
 - Required by framework/architecture rules
-
-#### Observability Inclusion (Lean Approach)
-
-- [ ] **Metrics**: Only anomalies/errors (rejections, failures, misconfigurations)
-- [ ] **Logging**: Only actionable warnings (attacks, config errors)
-- [ ] **Skip**: Success cases, validation (throws clear exceptions), high-volume normal operations
 
 ### DECISION FRAMEWORK
 
@@ -103,9 +96,18 @@ Review observability implementation for **[FEATURE_NAME]** feature:
 #### Lean Observability Principles
 
 - [ ] Metrics answer: "What's broken?" or "Who's attacking?"
-- [ ] Logging only for warnings/errors that require action
-- [ ] Success cases are NOT logged or metered
-- [ ] Validation failures already throw clear exceptions (no logging needed)
+- [ ] Logging only for warnings/errors that require action OR low-volume informational events
+- [ ] **LogInformation allowed for**:
+  - Startup/shutdown events (adapter configuration, service initialization)
+  - State transitions (circuit breaker opened/closed, cache invalidated)
+  - Administrative operations (manual cache clear, config reload, triggered by admin)
+  - Scheduled jobs (daily report started/completed, batch processing)
+  - Lifecycle events (health status changed, migration applied)
+- [ ] **LogInformation NOT allowed for**:
+  - Per-request success operations (authentication succeeded, request processed)
+  - Normal business operations (order created, email sent, file uploaded)
+  - Validation failures (already throw clear exceptions)
+- [ ] **Volume rule**: If it fires hundreds/thousands of times per minute → use LogWarning/LogError only for failures
 
 ### Observability Decision Framework
 
@@ -115,15 +117,22 @@ For each metric/log ask:
 2. Is this information already in headers, exceptions, or existing metrics?
 3. Does this signal an anomaly or just normal operation?
 4. Will this add high-volume noise?
+5. **For LogInformation**: What's the frequency/volume?
+   - Once per deployment/hour/day → OK
+   - Admin-triggered or scheduled → OK
+   - Per request/transaction → NOT OK
 
 **Rule**: If "already available" or "normal operation" → skip it.
+**Volume Rule**: If LogInformation fires >100 times/minute → remove it or change to LogWarning for failures only.
 
 ### Observability Review Output
 
 - List metrics to ADD (with justification)
 - List metrics to REMOVE (with reason)
-- List logging to ADD (with level and condition)
+- List high-volume LogInformation to REMOVE (with reason)
+- Confirm: LogInformation only for low-volume events (startup, admin actions, scheduled jobs, state changes)
 - List logging to REMOVE (with reason)
+- Confirm: No runtime success logs (no per-request LogInformation)
 - Confirm: No trace/debug logs for successful operations
 
 ---

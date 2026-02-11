@@ -90,7 +90,7 @@ Authorization: Bearer {your-token}
 
 ## API Key Authentication
 
-**Endpoint:** Any protected endpoint with `X-Api-Key` header
+API Key authentication provides simple header-based authentication for service-to-service communication.
 
 **Request Header:**
 
@@ -98,25 +98,7 @@ Authorization: Bearer {your-token}
 X-Api-Key: your-api-key-here
 ```
 
-- API Key is validated against the value from `ISecretProvider`
-- Simpler authentication for service-to-service communication
-- Use JWT for user authentication, API Key for system integration
-
-**Configuration:**
-
-The API Key is retrieved from the secret provider (Dapr secrets, Azure Key Vault, etc.):
-
-```json
-{
-  "XApiKey": "your-secure-api-key"
-}
-```
-
-**Usage:**
-
-```bash
-curl -H "X-Api-Key: your-api-key" http://localhost:5000/api/v1/products
-```
+> **📖 Complete Guide:** See [API Key Adapter README](../src/Adapters/emc.camus.security.apikey/README.md) for configuration, usage examples, and security best practices.
 
 ## Choosing Authentication Method
 

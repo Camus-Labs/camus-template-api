@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using emc.camus.application.Secrets;
 using emc.camus.secrets.dapr.Configurations;
 using emc.camus.secrets.dapr.Services;
@@ -58,7 +57,7 @@ namespace emc.camus.secrets.dapr
             // Load all configured secrets and fail fast if there are any issues
             var settings = app.Services.GetRequiredService<DaprSecretProviderSettings>();
             secretProvider.LoadSecretsAsync(settings.SecretNames).GetAwaiter().GetResult();
-            
+
             return app;
         }
     }

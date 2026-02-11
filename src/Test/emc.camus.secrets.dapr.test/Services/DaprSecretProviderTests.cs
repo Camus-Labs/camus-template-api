@@ -5,7 +5,6 @@ using emc.camus.secrets.dapr.Configurations;
 using emc.camus.secrets.dapr.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq.Protected;
 
 namespace emc.camus.secrets.dapr.test.Services;

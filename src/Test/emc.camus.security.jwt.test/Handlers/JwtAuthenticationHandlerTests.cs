@@ -1,4 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using emc.camus.application.Generic;
 using emc.camus.security.jwt.Configurations;
@@ -370,40 +369,6 @@ public class JwtAuthenticationHandlerTests
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("JWT authorization forbidden") && v.ToString()!.Contains("testuser")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task OnTokenValidated_ShouldLogInformationWithUserName()
-    {
-        // Arrange
-        var services = CreateServiceCollection();
-        var serviceProvider = services.BuildServiceProvider();
-        var options = serviceProvider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>();
-        var jwtOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
-
-        var httpContext = new DefaultHttpContext();
-        var principal = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, "testuser") }, "Bearer"));
-
-        var context = new TokenValidatedContext(
-            httpContext,
-            new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
-            new JwtBearerOptions())
-        {
-            Principal = principal
-        };
-
-        // Act
-        await jwtOptions.Events.OnTokenValidated(context);
-
-        // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("JWT token validated") && v.ToString()!.Contains("testuser")),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);

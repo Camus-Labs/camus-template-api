@@ -78,7 +78,6 @@ namespace emc.camus.api.Controllers
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfoV1", OperationType.Read, activity =>
             {
                 var apiVersion = HttpContext.GetRequestedApiVersion()?.ToString() ?? "unknown";
-                _logger.LogInformation("API info v{Version} requested.", apiVersion);
 
                 var apiInfo = new ApiInfo
                 {
@@ -99,7 +98,6 @@ namespace emc.camus.api.Controllers
                     { "features", string.Join(",", apiInfo.Features) },
                     { "status", apiInfo.Status }
                 });
-                _logger.LogInformation("API info v{Version} retrieved.", apiVersion);
                 return Task.FromResult<IActionResult>(Ok(response));
             });
         }
@@ -121,7 +119,6 @@ namespace emc.camus.api.Controllers
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfoV2ApiKey", OperationType.Read, activity =>
             {
                 var apiVersion = HttpContext.GetRequestedApiVersion()?.ToString() ?? "unknown";
-                _logger.LogInformation("API info v{Version} (API Key) requested.", apiVersion);
 
                 var apiInfo = new ApiInfo
                 {
@@ -142,7 +139,6 @@ namespace emc.camus.api.Controllers
                     { "features", string.Join(",", apiInfo.Features) },
                     { "status", apiInfo.Status }
                 });
-                _logger.LogInformation("API info v{Version} (API Key) retrieved.", apiVersion);
                 return Task.FromResult<IActionResult>(Ok(response));
             });
         }
@@ -164,7 +160,6 @@ namespace emc.camus.api.Controllers
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfoV1Jwt", OperationType.Read, activity =>
             {
                 var apiVersion = HttpContext.GetRequestedApiVersion()?.ToString() ?? "unknown";
-                _logger.LogInformation("API info v{Version} (JWT) requested.", apiVersion);
 
                 var apiInfo = new ApiInfo
                 {
@@ -185,7 +180,6 @@ namespace emc.camus.api.Controllers
                     { "features", string.Join(",", apiInfo.Features) },
                     { "status", apiInfo.Status }
                 });
-                _logger.LogInformation("API info v{Version} (JWT) retrieved.", apiVersion);
                 return Task.FromResult<IActionResult>(Ok(response));
             });
         }
@@ -212,8 +206,6 @@ namespace emc.camus.api.Controllers
                     { "accessKey", request.AccessKey }
                 });
 
-                _logger.LogInformation("Token request received for AccessKey: {AccessKey}.", request.AccessKey);
-
                 // Validate credentials (in production, validate against database)
                 var accessKeyFromVault = _secretProvider.GetSecret("AccessKey");
                 var accessSecretFromVault = _secretProvider.GetSecret("AccessSecret");
@@ -225,8 +217,6 @@ namespace emc.camus.api.Controllers
                     invalidCredsException.Data["ErrorCode"] = ErrorCodes.InvalidCredentials;
                     throw invalidCredsException;
                 }
-
-                _logger.LogInformation("Valid credentials provided. Generating JWT token.");
 
                 // Generate JWT token with roles
                 var roleClaims = new List<Claim>
@@ -253,9 +243,6 @@ namespace emc.camus.api.Controllers
                 {
                     { "expiresOn", authToken.ExpiresOn.ToString("o") }
                 });
-
-                _logger.LogInformation("JWT token generated for user: {User}, expires: {Expiration}", 
-                    request.AccessKey, result.ExpiresOn);
 
                 return Task.FromResult<IActionResult>(Ok(response));
             });

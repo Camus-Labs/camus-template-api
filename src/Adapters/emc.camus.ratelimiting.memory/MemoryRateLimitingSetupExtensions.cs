@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using System.Threading.RateLimiting;
 using emc.camus.ratelimiting.memory.Configurations;
 using emc.camus.ratelimiting.memory.Metrics;
@@ -13,6 +12,7 @@ using emc.camus.application.Exceptions;
 using emc.camus.application.RateLimiting;
 using emc.camus.application.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Logging;
 
 namespace emc.camus.ratelimiting.memory
 {

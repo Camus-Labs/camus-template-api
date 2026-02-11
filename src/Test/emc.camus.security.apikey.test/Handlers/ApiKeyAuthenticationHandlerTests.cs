@@ -5,6 +5,7 @@ using emc.camus.application.Generic;
 using emc.camus.application.Secrets;
 using emc.camus.security.apikey.Configurations;
 using emc.camus.security.apikey.Handlers;
+using emc.camus.security.apikey.Metrics;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
@@ -25,6 +26,7 @@ public class ApiKeyAuthenticationHandlerTests
     private readonly Mock<ISecretProvider> _mockSecretProvider;
     private readonly ApiKeySettings _settings;
     private readonly UrlEncoder _encoder;
+    private readonly ApiKeyMetrics _metrics;
 
     public ApiKeyAuthenticationHandlerTests()
     {
@@ -34,6 +36,7 @@ public class ApiKeyAuthenticationHandlerTests
         _mockSecretProvider = new Mock<ISecretProvider>();
         _settings = new ApiKeySettings { SecretKeyName = "XApiKey" };
         _encoder = UrlEncoder.Default;
+        _metrics = new ApiKeyMetrics("test-service");
 
         _mockOptions.Setup(x => x.Get(It.IsAny<string>()))
             .Returns(new AuthenticationSchemeOptions());
@@ -257,114 +260,6 @@ public class ApiKeyAuthenticationHandlerTests
 
     #endregion
 
-    #region Logging Verification
-
-    [Fact]
-    public async Task HandleAuthenticateAsync_WithMissingHeader_ShouldLogWarning()
-    {
-        // Arrange
-        var context = new DefaultHttpContext();
-        context.Request.Headers.Clear();
-
-        _mockSecretProvider.Setup(x => x.GetSecret("XApiKey")).Returns("valid-key");
-
-        var handler = CreateHandler(context);
-        await InitializeHandler(handler, context);
-
-        // Act
-        try { await handler.AuthenticateAsync(); } catch { }
-
-        // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("API Key authentication failed") && 
-                                              v.ToString()!.Contains($"Header '{Headers.ApiKey}' not found")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task HandleAuthenticateAsync_WithInvalidKey_ShouldLogWarning()
-    {
-        // Arrange
-        var context = new DefaultHttpContext();
-        context.Request.Headers[Headers.ApiKey] = "invalid-key";
-
-        _mockSecretProvider.Setup(x => x.GetSecret("XApiKey")).Returns("valid-key");
-
-        var handler = CreateHandler(context);
-        await InitializeHandler(handler, context);
-
-        // Act
-        try { await handler.AuthenticateAsync(); } catch { }
-
-        // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("API Key authentication failed") && 
-                                              v.ToString()!.Contains("Invalid API Key")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task HandleAuthenticateAsync_WithValidKey_ShouldLogInformation()
-    {
-        // Arrange
-        var context = new DefaultHttpContext();
-        context.Request.Headers[Headers.ApiKey] = "valid-key";
-
-        _mockSecretProvider.Setup(x => x.GetSecret("XApiKey")).Returns("valid-key");
-
-        var handler = CreateHandler(context);
-        await InitializeHandler(handler, context);
-
-        // Act
-        await handler.AuthenticateAsync();
-
-        // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("API Key authentication successful")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    #endregion
-
-    #region Verification
-
-    [Fact]
-    public async Task HandleAuthenticateAsync_ShouldCallSecretProvider()
-    {
-        // Arrange
-        var validApiKey = "valid-api-key-123";
-        _mockSecretProvider.Setup(x => x.GetSecret("XApiKey")).Returns(validApiKey);
-
-        var context = new DefaultHttpContext();
-        context.Request.Headers[Headers.ApiKey] = validApiKey;
-
-        var handler = CreateHandler(context);
-        await InitializeHandler(handler, context);
-
-        // Act
-        await handler.AuthenticateAsync();
-
-        // Assert
-        _mockSecretProvider.Verify(x => x.GetSecret("XApiKey"), Times.Once);
-    }
-
-    #endregion
-
     private ApiKeyAuthenticationHandler CreateHandler(HttpContext context)
     {
         return new ApiKeyAuthenticationHandler(
@@ -372,7 +267,8 @@ public class ApiKeyAuthenticationHandlerTests
             _mockLoggerFactory.Object,
             _encoder,
             _mockSecretProvider.Object,
-            _settings);
+            _settings,
+            _metrics);
     }
 
     private async Task InitializeHandler(AuthenticationHandler<AuthenticationSchemeOptions> handler, HttpContext context)

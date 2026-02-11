@@ -7,7 +7,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using emc.camus.security.jwt.Configurations;
 using emc.camus.application.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 namespace emc.camus.security.jwt.Handlers
 {

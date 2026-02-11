@@ -33,7 +33,7 @@ using emc.camus.security.apikey;
 builder.AddDaprSecrets();
 
 // Add API Key authentication
-builder.AddApiKeyAuthentication();
+builder.AddApiKeyAuthentication(serviceName);
 
 var app = builder.Build();
 
@@ -44,18 +44,20 @@ app.UseAuthorization();
 app.Run();
 ```
 
-### 2. Configure Settings
+### 2. Configure Settings (Optional)
 
 In `appsettings.json`:
 
 ```json
 {
   "ApiKeySettings": {
-    "HeaderName": "X-Api-Key",
-    "SecretName": "XApiKey"
+    "SecretKeyName": "XApiKey"  // Optional - defaults to "XApiKey"
   }
 }
 ```
+
+> **Note:** The `SecretKeyName` setting is optional and defaults to `"XApiKey"`. Only configure this if you need to use a different secret name.
+> **Note:** The API Key header name is fixed as `X-Api-Key` and cannot be configured.
 
 ### 3. Protect Endpoints
 
@@ -65,7 +67,7 @@ In `appsettings.json`:
 public class DataController : ControllerBase
 {
     // Require API Key authentication
-    [Authorize(AuthenticationSchemes = ApiKeyAuthenticationHandler.SchemeName)]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.ApiKey)]
     [HttpGet]
     public IActionResult GetData()
     {
@@ -73,7 +75,7 @@ public class DataController : ControllerBase
     }
     
     // Support both JWT and API Key
-    [Authorize(AuthenticationSchemes = $"{JwtBearerDefaults.AuthenticationScheme},{ApiKeyAuthenticationHandler.SchemeName}")]
+    [Authorize(AuthenticationSchemes = $"{JwtBearerDefaults.AuthenticationScheme},{AuthenticationSchemes.ApiKey}")]
     [HttpGet("flexible")]
     public IActionResult GetFlexibleData()
     {
@@ -164,19 +166,6 @@ az keyvault secret set --vault-name your-vault --name XApiKey --value "prod-key-
 
 > **📖 Secrets Management:** See [Dapr Secrets Adapter](../emc.camus.secrets.dapr/README.md) for secret provider configuration.
 
-### Custom Header Name
-
-To use a different header name:
-
-```json
-{
-  "ApiKeySettings": {
-    "HeaderName": "X-Custom-Api-Key",
-    "SecretName": "CustomApiKey"
-  }
-}
-```
-
 ---
 
 ## 🏗️ Architecture
@@ -226,9 +215,14 @@ To use a different header name:
 Support both authentication methods:
 
 ```csharp
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using emc.camus.application.Auth;
+
 // Accept either JWT or API Key
 [Authorize(AuthenticationSchemes = 
-    $"{JwtBearerDefaults.AuthenticationScheme},{ApiKeyAuthenticationHandler.SchemeName}")]
+    $"{JwtBearerDefaults.AuthenticationScheme},{AuthenticationSchemes.ApiKey}")]
 public class FlexibleController : ControllerBase
 {
     [HttpGet]
@@ -247,14 +241,38 @@ public class FlexibleController : ControllerBase
 ### Unit Tests
 
 ```csharp
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System.Text.Encodings.Web;
+using Moq;
+using Xunit;
+using emc.camus.application.Secrets;
+using emc.camus.security.apikey.Handlers;
+using emc.camus.security.apikey.Configurations;
+using emc.camus.security.apikey.Metrics;
+
 var mockSecretProvider = new Mock<ISecretProvider>();
 mockSecretProvider
-    .Setup(x => x.GetSecretAsync("XApiKey"))
-    .ReturnsAsync("test-api-key");
+    .Setup(x => x.GetSecret("XApiKey"))
+    .Returns("test-api-key");
+
+var mockMetrics = new Mock<ApiKeyMetrics>("test-service");
+var mockOptions = new Mock<IOptionsMonitor<AuthenticationSchemeOptions>>();
+mockOptions
+    .Setup(x => x.Get(It.IsAny<string>()))
+    .Returns(new AuthenticationSchemeOptions());
+var mockLogger = new Mock<ILoggerFactory>();
+var encoder = UrlEncoder.Default;
+var settings = new ApiKeySettings { SecretKeyName = "XApiKey" };
 
 var handler = new ApiKeyAuthenticationHandler(
+    mockOptions.Object,
+    mockLogger.Object,
+    encoder,
     mockSecretProvider.Object,
-    /* other dependencies */
+    settings,
+    mockMetrics.Object
 );
 
 // Test authentication logic
@@ -300,6 +318,50 @@ public async Task GetData_WithInvalidApiKey_ReturnsUnauthorized()
 - **[Authentication Guide](../../../../docs/authentication.md)** - Complete authentication overview
 - **[Secrets Adapter](../emc.camus.secrets.dapr/README.md)** - Secret management
 - **[Architecture Guide](../../../../docs/architecture.md)** - Security architecture
+
+---
+
+## 📊 Observability
+
+The adapter exports the following metrics via OpenTelemetry:
+
+### Metrics
+
+**`apikey_authentication_failures_total`**
+
+- **Type:** Counter
+- **Description:** Total number of API Key authentication failures
+- **Unit:** requests
+- **Labels:**
+  - `failure_reason`: Reason for failure (`missing_header` | `invalid_key`)
+  - `endpoint`: The request path that was attempted
+
+**Example Queries:**
+
+```promql
+# Rate of API Key authentication failures over 5 minutes
+rate(apikey_authentication_failures_total[5m])
+
+# Total failures by reason
+sum by (failure_reason) (apikey_authentication_failures_total)
+
+# Failures by endpoint
+sum by (endpoint) (apikey_authentication_failures_total)
+```
+
+**Alerting Example:**
+
+```yaml
+# Alert on high API Key authentication failure rate
+- alert: HighApiKeyAuthFailureRate
+  expr: rate(apikey_authentication_failures_total[5m]) > 10
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "High API Key authentication failure rate detected"
+    description: "More than 10 API Key auth failures per second over 5 minutes"
+```
 
 ---
 

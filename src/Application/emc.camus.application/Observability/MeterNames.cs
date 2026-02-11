@@ -16,17 +16,17 @@ namespace emc.camus.application.Observability
         public const string Application = "";
 
         /// <summary>
-        /// Rate limiting metrics (rejections, hits, quotas)
-        /// </summary>
-        public const string RateLimiting = ".ratelimiting";
-
-        /// <summary>
         /// Business domain metrics (orders, users, transactions)
         /// </summary>
         public const string Business = ".business";
 
         /// <summary>
-        /// Infrastructure metrics (database, cache, external APIs)
+        /// Security metrics (authentication, authorization, rate limiting)
+        /// </summary>
+        public const string Security = ".security";
+
+        /// <summary>
+        /// Infrastructure metrics (database, cache, external APIs, message queues)
         /// </summary>
         public const string Infrastructure = ".infrastructure";
 
@@ -40,8 +40,8 @@ namespace emc.camus.application.Observability
             return new[]
             {
                 Application,
-                RateLimiting,
                 Business,
+                Security,
                 Infrastructure
             };
         }

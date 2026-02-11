@@ -41,12 +41,12 @@ builder.AddDaprSecrets();
 
 // Step 6: Configure Authentication using Security Adapters
 builder.AddJwtAuthentication();
-builder.AddApiKeyAuthentication();
+builder.AddApiKeyAuthentication(SERVICE_NAME);
 
 // Step 7: Build App Builder
 var app = builder.Build();
 
-// Get logger for startup events (after app is built so DI is ready)
+// Get logger for startup events
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 
 startupLogger.LogInformation("Starting {ServiceName} v{ServiceVersion} in {Environment} environment", 

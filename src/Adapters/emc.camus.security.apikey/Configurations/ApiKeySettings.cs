@@ -10,6 +10,11 @@ namespace emc.camus.security.apikey.Configurations
         /// The configuration section name for API Key settings.
         /// </summary>
         public const string ConfigurationSectionName = "ApiKeySettings";
+
+        /// <summary>
+        /// Default username assigned to API Key authenticated requests.
+        /// </summary>
+        public const string DefaultUserName = "ApiKeyUser";
         
         /// <summary>
         /// Gets or sets the name of the secret key used to retrieve the API key from the secret provider.

@@ -20,7 +20,7 @@ namespace emc.camus.ratelimiting.memory.Metrics
         /// <param name="serviceName">The service name to use for the meter (should match OpenTelemetry service name).</param>
         public RateLimitMetrics(string serviceName)
         {
-            var meter = new Meter($"{serviceName}{MeterNames.RateLimiting}");
+            var meter = new Meter($"{serviceName}{MeterNames.Security}");
 
             // Counter for requests rejected due to rate limiting
             _rateLimitRejectionsCounter = meter.CreateCounter<long>(

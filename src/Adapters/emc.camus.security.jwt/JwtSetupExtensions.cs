@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
 using emc.camus.security.jwt.Configurations;
@@ -32,11 +31,6 @@ namespace emc.camus.security.jwt
         /// </remarks>
         public static WebApplicationBuilder AddJwtAuthentication(this WebApplicationBuilder builder)
         {
-            var logger = builder.Services.BuildServiceProvider().GetRequiredService<ILoggerFactory>()
-                .CreateLogger("CamusSecuritySetup");
-            
-            logger.LogInformation("Configuring Camus authentication services");
-
             // Load, validate, and register JWT Settings
             var settings = builder.Configuration.GetSection(JwtSettings.ConfigurationSectionName).Get<JwtSettings>() ?? new JwtSettings();
             settings.Validate();
@@ -51,7 +45,6 @@ namespace emc.camus.security.jwt
 
                 var rsa = RSA.Create();
                 rsa.ImportFromPem(pem.ToCharArray());
-                logger.LogInformation("RSA security key loaded successfully");
                 return new RsaSecurityKey(rsa);
             });
 
@@ -72,9 +65,6 @@ namespace emc.camus.security.jwt
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
             .AddJwtBearerWithDefaults(builder.Services, builder.Configuration);
-
-            logger.LogInformation("JWT authentication configured with scheme: {Scheme}", 
-                JwtBearerDefaults.AuthenticationScheme);
 
             return builder;
         }

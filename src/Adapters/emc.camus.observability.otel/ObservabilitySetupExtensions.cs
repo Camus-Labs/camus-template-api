@@ -60,6 +60,7 @@ namespace emc.camus.observability.otel
             
             // Ensure Serilog flushes on shutdown to avoid log loss
             builder.Services.AddHostedService<SerilogFlushHostedService>();
+
             return builder;
         }
 
@@ -73,6 +74,7 @@ namespace emc.camus.observability.otel
         public static WebApplication UseObservability(this WebApplication app)
         {
             app.UseMiddleware<ResponseTraceIdMiddleware>();
+
             return app;
         }
     }

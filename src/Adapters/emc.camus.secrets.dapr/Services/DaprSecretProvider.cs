@@ -3,7 +3,6 @@ using System.Net;
 using System.Text.Json;
 using emc.camus.application.Secrets;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using emc.camus.secrets.dapr.Configurations;
 
 namespace emc.camus.secrets.dapr.Services

@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Xunit;
 using FluentAssertions;
 using emc.camus.api.Middleware;
 using emc.camus.application.Exceptions;

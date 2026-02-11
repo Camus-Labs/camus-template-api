@@ -1,10 +1,8 @@
 using System.Security.Claims;
-using emc.camus.application.Auth;
 using emc.camus.security.jwt.Configurations;
 using emc.camus.security.jwt.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 

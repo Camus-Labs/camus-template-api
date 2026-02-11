@@ -10,6 +10,12 @@ namespace emc.camus.application.Generic
     public static class ErrorCodes
     {
         /// <summary>
+        /// Dictionary key used to store error codes in exception.Data for transport between layers.
+        /// Usage: exception.Data[ErrorCodes.ErrorCodeKey] = ErrorCodes.InvalidCredentials;
+        /// </summary>
+        public const string ErrorCodeKey = "ErrorCode";
+
+        /// <summary>
         /// Error code for 400 Bad Request responses.
         /// Indicates the request contains invalid parameters or malformed data.
         /// </summary>
