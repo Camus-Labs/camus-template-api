@@ -5,7 +5,7 @@ namespace emc.camus.domain.Generic
     /// Represents a standard API response envelope for successful operations with strongly-typed data.
     /// Use HTTP status codes (200 OK, 201 Created, etc.) to indicate success; use ProblemDetails for errors.
     /// </summary>
-    /// <typeparam name="T">The type of the data payload (e.g., ApiInfo, AuthToken, Credentials, etc.)</typeparam>
+    /// <typeparam name="T">The type of the data payload (e.g., ApiInfo, AuthenticateUserResponse, etc.)</typeparam>
     public class ApiResponse<T>
     {
         /// <summary>

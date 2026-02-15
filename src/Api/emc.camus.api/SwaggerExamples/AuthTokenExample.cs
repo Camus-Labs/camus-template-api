@@ -1,24 +1,24 @@
 using Swashbuckle.AspNetCore.Filters;
-using emc.camus.domain.Auth;
+using emc.camus.api.Models.Responses;
 using emc.camus.domain.Generic;
 
 namespace emc.camus.api.SwaggerExamples
 {
     /// <summary>
-    /// Provides example data for ApiResponse&lt;AuthToken&gt; in Swagger documentation.
+    /// Provides example data for ApiResponse&lt;AuthenticateUserResponse&gt; in Swagger documentation.
     /// </summary>
-    public class AuthTokenExample : IExamplesProvider<ApiResponse<AuthToken>>
+    public class AuthTokenExample : IExamplesProvider<ApiResponse<AuthenticateUserResponse>>
     {
         /// <summary>
-        /// Returns an example ApiResponse&lt;AuthToken&gt; object for API documentation.
+        /// Returns an example ApiResponse&lt;AuthenticateUserResponse&gt; object for API documentation.
         /// </summary>
-        /// <returns>Example auth token response with sample JWT token.</returns>
-        public ApiResponse<AuthToken> GetExamples()
+        /// <returns>Example authentication response with sample JWT token.</returns>
+        public ApiResponse<AuthenticateUserResponse> GetExamples()
         {
-            return new ApiResponse<AuthToken>
+            return new ApiResponse<AuthenticateUserResponse>
             {
-                Message = "Token generated successfully",
-                Data = new AuthToken
+                Message = "User authenticated successfully",
+                Data = new AuthenticateUserResponse
                 {
                     Token = "{{JWT_TOKEN_HERE}}",
                     ExpiresOn = DateTime.UtcNow.AddMinutes(60)

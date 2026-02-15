@@ -17,9 +17,16 @@ namespace emc.camus.observability.otel.Configurations
 
         /// <summary>
         /// Validates the console settings configuration.
-        /// Throws ArgumentException if any setting is invalid.
         /// </summary>
+        /// <exception cref="ArgumentException">
+        /// Thrown when any setting is invalid.
+        /// </exception>
         public void Validate()
+        {
+            ValidateOutputTemplate();
+        }
+
+        private void ValidateOutputTemplate()
         {
             if (string.IsNullOrWhiteSpace(OutputTemplate))
                 throw new ArgumentException("OutputTemplate cannot be null or empty", nameof(OutputTemplate));

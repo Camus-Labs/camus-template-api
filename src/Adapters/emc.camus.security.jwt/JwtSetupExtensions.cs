@@ -7,9 +7,9 @@ using System.Security.Cryptography;
 using emc.camus.security.jwt.Configurations;
 using emc.camus.security.jwt.Services;
 using emc.camus.security.jwt.Handlers;
-using emc.camus.security.jwt.Metrics;
 using emc.camus.application.Secrets;
 using emc.camus.application.Auth;
+using emc.camus.application.Common;
 using System.Diagnostics.CodeAnalysis;
 
 namespace emc.camus.security.jwt
@@ -24,14 +24,13 @@ namespace emc.camus.security.jwt
         /// Adds JWT Bearer authentication services.
         /// </summary>
         /// <param name="builder">The web application builder.</param>
-        /// <param name="serviceName">The service name for metrics instrumentation.</param>
         /// <returns>The web application builder for fluent configuration.</returns>
         /// <remarks>
         /// This method requires an <see cref="ISecretProvider"/> to be registered in the service collection
         /// before calling this method. The secret provider must provide the RSA private key in PEM format
-        /// using the secret name configured in <see cref="JwtSettings.SecretKeyName"/> (defaults to "RsaPrivateKeyPem").
+        /// using the secret name from <see cref="JwtSettings.RsaPrivateKeySecretName"/>.
         /// </remarks>
-        public static WebApplicationBuilder AddJwtAuthentication(this WebApplicationBuilder builder, string serviceName)
+        public static WebApplicationBuilder AddJwtAuthentication(this WebApplicationBuilder builder)
         {
             // Load, validate, and register JWT Settings
             var settings = builder.Configuration.GetSection(JwtSettings.ConfigurationSectionName).Get<JwtSettings>() ?? new JwtSettings();
@@ -43,8 +42,8 @@ namespace emc.camus.security.jwt
             {
                 var secretProvider = provider.GetRequiredService<ISecretProvider>();
                 var jwtSettings = provider.GetRequiredService<JwtSettings>();
-                var pem = secretProvider.GetSecret(jwtSettings.SecretKeyName)
-                    ?? throw new InvalidOperationException($"RSA private key '{jwtSettings.SecretKeyName}' not found in secrets");
+                var pem = secretProvider.GetSecret(jwtSettings.RsaPrivateKeySecretName)
+                    ?? throw new InvalidOperationException($"RSA private key '{jwtSettings.RsaPrivateKeySecretName}' not found in secrets");
 
                 var rsa = RSA.Create();
                 rsa.ImportFromPem(pem.ToCharArray());
@@ -58,11 +57,8 @@ namespace emc.camus.security.jwt
                 return new SigningCredentials(rsaKey, SecurityAlgorithms.RsaSha256);
             });
 
-            // Register JWT Token Generator
-            builder.Services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
-
-            // Register JWT Metrics
-            builder.Services.AddSingleton(new JwtMetrics(serviceName));
+            // Register JWT Token Generator (implements ITokenGenerator for Application layer)
+            builder.Services.AddSingleton<ITokenGenerator, JwtTokenGenerator>();
 
             // Configure Authentication schemes
             builder.Services.AddAuthentication(options =>

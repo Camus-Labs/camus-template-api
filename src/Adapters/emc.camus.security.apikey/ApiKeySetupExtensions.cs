@@ -4,8 +4,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using emc.camus.security.apikey.Handlers;
 using emc.camus.security.apikey.Configurations;
-using emc.camus.security.apikey.Metrics;
 using emc.camus.application.Auth;
+using emc.camus.application.Common;
 using emc.camus.application.Secrets;
 using System.Diagnostics.CodeAnalysis;
 
@@ -21,22 +21,18 @@ namespace emc.camus.security.apikey
         /// Adds API Key authentication services.
         /// </summary>
         /// <param name="builder">The web application builder.</param>
-        /// <param name="serviceName">The service name for telemetry (must match OpenTelemetry service name).</param>
         /// <returns>The web application builder for fluent configuration.</returns>
         /// <remarks>
         /// This method requires an <see cref="ISecretProvider"/> to be registered in the service collection
-        /// before calling this method. The secret provider must provide the API key as configured
-        /// in ApiKeySettings.SecretKeyName (defaults to "XApiKey").
+        /// before calling this method. The secret provider must provide the API key using the secret name
+        /// from the secret name configured in <see cref="ApiKeySettings.ApiKeySecretName"/>.
         /// </remarks>
-        public static WebApplicationBuilder AddApiKeyAuthentication(this WebApplicationBuilder builder, string serviceName)
+        public static WebApplicationBuilder AddApiKeyAuthentication(this WebApplicationBuilder builder)
         {
             // Load, validate, and register API Key Settings
             var settings = builder.Configuration.GetSection(ApiKeySettings.ConfigurationSectionName).Get<ApiKeySettings>() ?? new ApiKeySettings();
             settings.Validate();
             builder.Services.AddSingleton(settings);
-
-            // Register metrics for observability
-            builder.Services.AddSingleton(new ApiKeyMetrics(serviceName));
 
             builder.Services.AddAuthentication()
                 .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(

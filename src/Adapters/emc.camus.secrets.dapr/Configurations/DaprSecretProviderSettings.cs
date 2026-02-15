@@ -43,14 +43,7 @@ namespace emc.camus.secrets.dapr.Configurations
         /// Validates the Dapr secret provider settings configuration.
         /// </summary>
         /// <exception cref="ArgumentException">
-        /// Thrown when any setting is invalid, including:
-        /// <list type="bullet">
-        /// <item><description>BaseHost is null or empty</description></item>
-        /// <item><description>HttpPort is null, empty, or outside valid port range (1-65535)</description></item>
-        /// <item><description>SecretStoreName is null or empty</description></item>
-        /// <item><description>TimeoutSeconds is not between 1 and 300</description></item>
-        /// <item><description>SecretNames is null, empty, or contains null/empty values</description></item>
-        /// </list>
+        /// Thrown when any setting is invalid.
         /// </exception>
         public void Validate()
         {

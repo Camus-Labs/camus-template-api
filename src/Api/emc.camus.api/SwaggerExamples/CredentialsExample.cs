@@ -1,23 +1,23 @@
 using Swashbuckle.AspNetCore.Filters;
-using emc.camus.domain.Auth;
+using emc.camus.api.Models.Requests;
 
 namespace emc.camus.api.SwaggerExamples
 {
     /// <summary>
-    /// Provides example data for Credentials in Swagger documentation.
+    /// Provides example data for AuthenticateUserRequest in Swagger documentation.
     /// </summary>
-    public class CredentialsExample : IExamplesProvider<Credentials>
+    public class CredentialsExample : IExamplesProvider<AuthenticateUserRequest>
     {
         /// <summary>
-        /// Returns an example Credentials object for API documentation.
+        /// Returns an example AuthenticateUserRequest object for API documentation.
         /// </summary>
-        /// <returns>Example credentials with sample AccessKey and AccessSecret.</returns>
-        public Credentials GetExamples()
+        /// <returns>Example authentication request with sample Username and Password.</returns>
+        public AuthenticateUserRequest GetExamples()
         {
-            return new Credentials
+            return new AuthenticateUserRequest
             {
-                AccessKey = $"TEST-{Guid.NewGuid()}",
-                AccessSecret = $"SECRET-{Guid.NewGuid()}"
+                Username = $"testuser-{Guid.NewGuid()}",
+                Password = $"password-{Guid.NewGuid()}"
             };
         }
     }

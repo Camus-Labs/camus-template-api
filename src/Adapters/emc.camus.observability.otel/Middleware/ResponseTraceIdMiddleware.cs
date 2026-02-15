@@ -1,4 +1,4 @@
-using emc.camus.application.Generic;
+using emc.camus.application.Common;
 using Microsoft.AspNetCore.Http;
 using System.Diagnostics;
 
@@ -27,9 +27,11 @@ namespace emc.camus.observability.otel.Middleware
         /// </summary>
         public async Task InvokeAsync(HttpContext context)
         {
+            // Capture trace ID early to avoid issues with auto-generated TraceIdentifier
+            var traceId = Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier;
+            
             context.Response.OnStarting(() =>
             {
-                var traceId = Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier;
                 if (!string.IsNullOrWhiteSpace(traceId) && !context.Response.Headers.ContainsKey(Headers.TraceId))
                 {
                     context.Response.Headers[Headers.TraceId] = traceId;

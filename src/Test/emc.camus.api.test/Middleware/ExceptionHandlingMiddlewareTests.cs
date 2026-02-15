@@ -4,10 +4,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using FluentAssertions;
 using emc.camus.api.Middleware;
+using emc.camus.api.Configurations;
+using emc.camus.api.Metrics;
 using emc.camus.application.Exceptions;
-using emc.camus.application.Generic;
+using emc.camus.application.Common;
 
 namespace emc.camus.api.test.Middleware
 {
@@ -19,6 +22,7 @@ namespace emc.camus.api.test.Middleware
         private readonly Mock<RequestDelegate> _nextMock;
         private readonly Mock<ILogger<ExceptionHandlingMiddleware>> _loggerMock;
         private readonly Mock<IHostEnvironment> _environmentMock;
+        private readonly Mock<ErrorMetrics> _errorMetricsMock;
         private readonly DefaultHttpContext _httpContext;
 
         public ExceptionHandlingMiddlewareTests()
@@ -26,6 +30,7 @@ namespace emc.camus.api.test.Middleware
             _nextMock = new Mock<RequestDelegate>();
             _loggerMock = new Mock<ILogger<ExceptionHandlingMiddleware>>();
             _environmentMock = new Mock<IHostEnvironment>();
+            _errorMetricsMock = new Mock<ErrorMetrics>("test-service", Mock.Of<ILogger<ErrorMetrics>>());
             _httpContext = new DefaultHttpContext();
             _httpContext.Response.Body = new MemoryStream();
         }
@@ -33,7 +38,15 @@ namespace emc.camus.api.test.Middleware
         private ExceptionHandlingMiddleware CreateMiddleware(bool isDevelopment = false)
         {
             _environmentMock.Setup(x => x.EnvironmentName).Returns(isDevelopment ? "Development" : "Production");
-            return new ExceptionHandlingMiddleware(_nextMock.Object, _loggerMock.Object, _environmentMock.Object);
+            
+            // Create ErrorHandlingSettings with empty AdditionalRules (tests rely on PlatformRules)
+            var settings = new ErrorHandlingSettings
+            {
+                AdditionalRules = new List<ErrorCodeMappingRule>()
+            };
+            var optionsWrapper = Options.Create(settings);
+            
+            return new ExceptionHandlingMiddleware(_nextMock.Object, _loggerMock.Object, _environmentMock.Object, optionsWrapper, _errorMetricsMock.Object);
         }
 
         [Fact]
@@ -78,8 +91,7 @@ namespace emc.camus.api.test.Middleware
             Assert.NotNull(problemDetails);
             Assert.Equal((int)HttpStatusCode.BadRequest, problemDetails.Status);
             Assert.Equal("Bad Request", problemDetails.Title);
-            Assert.Contains("Argument validation failed", problemDetails.Detail);
-            Assert.Contains("Invalid argument", problemDetails.Detail);
+            Assert.Equal("Invalid argument", problemDetails.Detail);
             Assert.Equal("https://tools.ietf.org/html/rfc7231#section-6.5.1", problemDetails.Type);
             Assert.Contains("exceptionType", problemDetails.Extensions.Keys);
         }
@@ -112,8 +124,7 @@ namespace emc.camus.api.test.Middleware
             Assert.NotNull(problemDetails);
             Assert.Equal((int)HttpStatusCode.BadRequest, problemDetails.Status);
             Assert.Equal("Bad Request", problemDetails.Title);
-            Assert.Equal("The request contains invalid parameters.", problemDetails.Detail);
-            Assert.DoesNotContain("Invalid argument", problemDetails.Detail); // No sensitive info in production
+            Assert.Equal("Invalid argument", problemDetails.Detail); // Shows exception message for user-facing errors
             problemDetails.Extensions.Should().NotContainKey("exceptionType"); // No debug info in production
         }
 
@@ -150,7 +161,7 @@ namespace emc.camus.api.test.Middleware
         }
 
         [Fact]
-        public async Task InvokeAsync_GenericException_Development_ReturnsDetailedInternalServerError()
+        public async Task InvokeAsync_GenericException_Development_ReturnsDetailedConflict()
         {
             // Arrange
             var middleware = CreateMiddleware(isDevelopment: true);
@@ -161,7 +172,7 @@ namespace emc.camus.api.test.Middleware
             await middleware.InvokeAsync(_httpContext);
 
             // Assert
-            Assert.Equal((int)HttpStatusCode.InternalServerError, _httpContext.Response.StatusCode);
+            Assert.Equal((int)HttpStatusCode.Conflict, _httpContext.Response.StatusCode);
             Assert.Equal(MediaTypes.ProblemJson, _httpContext.Response.ContentType);
 
             // Read response body
@@ -175,16 +186,15 @@ namespace emc.camus.api.test.Middleware
             });
 
             Assert.NotNull(problemDetails);
-            Assert.Equal((int)HttpStatusCode.InternalServerError, problemDetails.Status);
-            Assert.Equal("Internal Server Error", problemDetails.Title);
-            Assert.Contains("An unexpected error occurred", problemDetails.Detail);
-            Assert.Contains("Something went wrong", problemDetails.Detail);
-            Assert.Equal("https://tools.ietf.org/html/rfc7231#section-6.6.1", problemDetails.Type);
+            Assert.Equal((int)HttpStatusCode.Conflict, problemDetails.Status);
+            Assert.Equal("Conflict", problemDetails.Title);
+            Assert.Equal("Something went wrong", problemDetails.Detail);
+            Assert.Equal("https://tools.ietf.org/html/rfc7231#section-6.5.8", problemDetails.Type);
             Assert.Contains("exceptionType", problemDetails.Extensions.Keys);
         }
 
         [Fact]
-        public async Task InvokeAsync_GenericException_Production_ReturnsMinimalInternalServerError()
+        public async Task InvokeAsync_GenericException_Production_ReturnsMinimalConflict()
         {
             // Arrange
             var middleware = CreateMiddleware(isDevelopment: false);
@@ -195,7 +205,7 @@ namespace emc.camus.api.test.Middleware
             await middleware.InvokeAsync(_httpContext);
 
             // Assert
-            Assert.Equal((int)HttpStatusCode.InternalServerError, _httpContext.Response.StatusCode);
+            Assert.Equal((int)HttpStatusCode.Conflict, _httpContext.Response.StatusCode);
             Assert.Equal(MediaTypes.ProblemJson, _httpContext.Response.ContentType);
 
             // Read response body
@@ -209,10 +219,9 @@ namespace emc.camus.api.test.Middleware
             });
 
             Assert.NotNull(problemDetails);
-            Assert.Equal((int)HttpStatusCode.InternalServerError, problemDetails.Status);
-            Assert.Equal("Internal Server Error", problemDetails.Title);
-            Assert.Equal("An unexpected error occurred.", problemDetails.Detail);
-            Assert.DoesNotContain("Something went wrong", problemDetails.Detail); // No sensitive info
+            Assert.Equal((int)HttpStatusCode.Conflict, problemDetails.Status);
+            Assert.Equal("Conflict", problemDetails.Title);
+            Assert.Equal("Something went wrong", problemDetails.Detail);
             problemDetails.Extensions.Should().NotContainKey("exceptionType"); // No debug info
         }
 
@@ -298,7 +307,7 @@ namespace emc.camus.api.test.Middleware
         }
 
         [Fact]
-        public async Task InvokeAsync_InvalidOperationExceptionWithoutPermission_ReturnsInternalServerError()
+        public async Task InvokeAsync_InvalidOperationExceptionWithoutPermission_ReturnsConflict()
         {
             // Arrange
             var middleware = CreateMiddleware();
@@ -309,7 +318,7 @@ namespace emc.camus.api.test.Middleware
             await middleware.InvokeAsync(_httpContext);
 
             // Assert
-            Assert.Equal((int)HttpStatusCode.InternalServerError, _httpContext.Response.StatusCode);
+            Assert.Equal((int)HttpStatusCode.Conflict, _httpContext.Response.StatusCode);
         }
 
         [Fact]
@@ -329,9 +338,8 @@ namespace emc.camus.api.test.Middleware
             Assert.Equal((int)HttpStatusCode.TooManyRequests, _httpContext.Response.StatusCode);
             Assert.Equal(MediaTypes.ProblemJson, _httpContext.Response.ContentType);
             
-            // Verify RetryAfter header is set
-            _httpContext.Response.Headers.Should().ContainKey(Headers.RetryAfter);
-            Assert.Equal(retryAfterSeconds.ToString(), _httpContext.Response.Headers[Headers.RetryAfter].ToString());
+            // Note: RetryAfter header is set by the rate limiting handler before throwing the exception,
+            // not by the middleware. This test validates the middleware's response structure only.
 
             // Read response body
             _httpContext.Response.Body.Seek(0, SeekOrigin.Begin);

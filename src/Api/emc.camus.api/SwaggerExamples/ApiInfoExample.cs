@@ -18,20 +18,19 @@ namespace emc.camus.api.SwaggerExamples
             return new ApiResponse<ApiInfo>
             {
                 Message = "API information retrieved successfully",
-                Data = new ApiInfo
-                {
-                    Name = "My Basic API",
-                    Version = "1.0",
-                    Status = "Running with API Versioning v1.0",
-                    Features = new List<string> 
+                Data = new ApiInfo(
+                    "1.0",
+                    null,
+                    new List<string> 
                     { 
                         "Logging", 
                         "Versioning", 
                         "Authentication", 
                         "Authorization", 
                         "Observability" 
-                    }
-                },
+                    },
+                    "My Basic API"
+                ),
                 Timestamp = DateTime.UtcNow
             };
         }

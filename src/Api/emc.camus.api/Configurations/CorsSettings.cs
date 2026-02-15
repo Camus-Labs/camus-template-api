@@ -1,4 +1,4 @@
-using emc.camus.application.Generic;
+using emc.camus.application.Common;
 using Microsoft.Net.Http.Headers;
 
 namespace emc.camus.api.Configurations
@@ -12,6 +12,10 @@ namespace emc.camus.api.Configurations
         /// The configuration section name for CORS settings.
         /// </summary>
         public const string ConfigurationSectionName = "CorsSettings";
+
+        private const int MaxPolicyNameLength = 100;
+        private const int MinPreflightMaxAgeMinutes = 1;
+        private const int MaxPreflightMaxAgeMinutes = 86400; // 24 hours
         
         /// <summary>
         /// Gets or sets the name of the CORS policy.
@@ -59,8 +63,10 @@ namespace emc.camus.api.Configurations
 
         /// <summary>
         /// Validates the CORS configuration.
-        /// Throws ArgumentException if any setting is invalid.
         /// </summary>
+        /// <exception cref="ArgumentException">
+        /// Thrown when any setting is invalid.
+        /// </exception>
         public void Validate()
         {
             ValidatePolicyName();
@@ -74,7 +80,14 @@ namespace emc.camus.api.Configurations
         private void ValidatePolicyName()
         {
             if (string.IsNullOrWhiteSpace(PolicyName))
-                throw new ArgumentException("PolicyName cannot be null or empty", nameof(PolicyName));
+            {
+                throw new ArgumentException("PolicyName cannot be null or empty.", nameof(PolicyName));
+            }
+
+            if (PolicyName.Length > MaxPolicyNameLength)
+            {
+                throw new ArgumentException($"PolicyName must not exceed {MaxPolicyNameLength} characters. Current length: {PolicyName.Length}", nameof(PolicyName));
+            }
         }
 
         private void ValidateAllowedOrigins()
@@ -131,8 +144,10 @@ namespace emc.camus.api.Configurations
 
         private void ValidatePreflightMaxAge()
         {
-            if (PreflightMaxAgeMinutes <= 0 || PreflightMaxAgeMinutes > 86400) // Max 24 hours
-                throw new ArgumentException("PreflightMaxAgeMinutes must be between 1 and 86400 (24 hours)", nameof(PreflightMaxAgeMinutes));
+            if (PreflightMaxAgeMinutes < MinPreflightMaxAgeMinutes || PreflightMaxAgeMinutes > MaxPreflightMaxAgeMinutes)
+            {
+                throw new ArgumentException($"PreflightMaxAgeMinutes must be between {MinPreflightMaxAgeMinutes} and {MaxPreflightMaxAgeMinutes} (24 hours). Current value: {PreflightMaxAgeMinutes}", nameof(PreflightMaxAgeMinutes));
+            }
         }
     }
 }

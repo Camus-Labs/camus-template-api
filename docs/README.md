@@ -67,7 +67,7 @@ Production deployment strategies including Docker, Azure Container Apps, scaling
 Detailed usage guides for infrastructure adapters:
 
 - **[Observability (OpenTelemetry)](../src/Adapters/emc.camus.observability.otel/README.md)** - Tracing, metrics, and logging configuration
-- **[Rate Limiting (Memory)](../src/Adapters/emc.camus.ratelimiting.memory/README.md)** - IP-based sliding window rate limiting
+- **[Rate Limiting (Memory)](../src/Adapters/emc.camus.ratelimiting.inmemory/README.md)** - IP-based sliding window rate limiting
 - **[Security (JWT)](../src/Adapters/emc.camus.security.jwt/README.md)** - JWT authentication setup and configuration
 - **[Security (API Key)](../src/Adapters/emc.camus.security.apikey/README.md)** - API Key authentication setup and configuration
 - **[Secrets (Dapr)](../src/Adapters/emc.camus.secrets.dapr/README.md)** - Dapr secret provider usage

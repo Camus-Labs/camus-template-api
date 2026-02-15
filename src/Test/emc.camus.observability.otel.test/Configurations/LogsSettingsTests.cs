@@ -6,11 +6,10 @@ namespace emc.camus.observability.otel.test.Configurations;
 public class LogsSettingsTests
 {
     [Theory]
-    [InlineData("none")]
-    [InlineData("console")]
-    [InlineData("otlp")]
-    [InlineData("OTLP")] // Case insensitive
-    public void Validate_WithValidExporter_DoesNotThrow(string exporter)
+    [InlineData(LogsExporter.None)]
+    [InlineData(LogsExporter.Console)]
+    [InlineData(LogsExporter.Otlp)]
+    public void Validate_WithValidExporter_DoesNotThrow(LogsExporter exporter)
     {
         // Arrange
         var settings = new LogsSettings
@@ -34,7 +33,7 @@ public class LogsSettingsTests
         var settings = new LogsSettings
         {
             Console = null,
-            Exporter = "none"
+            Exporter = LogsExporter.None
         };
 
         // Act
@@ -53,7 +52,7 @@ public class LogsSettingsTests
         var settings = new LogsSettings
         {
             Console = new ConsoleSettings { OutputTemplate = "" },
-            Exporter = "none"
+            Exporter = LogsExporter.None
         };
 
         // Act
@@ -65,47 +64,6 @@ public class LogsSettingsTests
             .And.ParamName.Should().Be("OutputTemplate");
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Validate_WithNullOrEmptyExporter_ThrowsArgumentException(string? exporter)
-    {
-        // Arrange
-        var settings = new LogsSettings
-        {
-            Console = new ConsoleSettings(),
-            Exporter = exporter!
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("Exporter cannot be null or empty*")
-            .And.ParamName.Should().Be("Exporter");
-    }
-
-    [Fact]
-    public void Validate_WithInvalidExporter_ThrowsArgumentException()
-    {
-        // Arrange
-        var settings = new LogsSettings
-        {
-            Console = new ConsoleSettings(),
-            Exporter = "invalid"
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("Invalid Exporter value 'invalid'. Valid values are: otlp, console, none*")
-            .And.ParamName.Should().Be("Exporter");
-    }
-
     [Fact]
     public void Validate_WithOtlpExporterAndNullEndpoint_ThrowsArgumentException()
     {
@@ -113,7 +71,7 @@ public class LogsSettingsTests
         var settings = new LogsSettings
         {
             Console = new ConsoleSettings(),
-            Exporter = "otlp",
+            Exporter = LogsExporter.Otlp,
             OtlpEndpoint = null
         };
 
@@ -133,7 +91,7 @@ public class LogsSettingsTests
         var settings = new LogsSettings
         {
             Console = new ConsoleSettings(),
-            Exporter = "otlp",
+            Exporter = LogsExporter.Otlp,
             OtlpEndpoint = "not-a-uri"
         };
 
@@ -153,7 +111,7 @@ public class LogsSettingsTests
         var settings = new LogsSettings
         {
             Console = new ConsoleSettings(),
-            Exporter = "otlp",
+            Exporter = LogsExporter.Otlp,
             OtlpEndpoint = "http://localhost:4317"
         };
 
@@ -171,7 +129,7 @@ public class LogsSettingsTests
         var settings = new LogsSettings
         {
             Console = new ConsoleSettings(),
-            Exporter = "console",
+            Exporter = LogsExporter.Console,
             OtlpEndpoint = "" // Invalid endpoint, but should not matter for non-OTLP exporter
         };
 

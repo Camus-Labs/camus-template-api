@@ -14,31 +14,30 @@ public class ApiInfoTests
     public void Properties_ShouldDefaultToEmptyOrNull()
     {
         // Arrange & Act
-        var apiInfo = new ApiInfo();
+        var apiInfo = new ApiInfo("1.0");
 
         // Assert
-        apiInfo.Name.Should().BeEmpty();
-        apiInfo.Version.Should().BeEmpty();
-        apiInfo.Status.Should().BeEmpty();
-        apiInfo.Features.Should().BeNull();
+        apiInfo.Name.Should().Be("My Basic API");
+        apiInfo.Version.Should().Be("1.0");
+        apiInfo.Status.Should().NotBeEmpty();
+        apiInfo.Features.Should().NotBeNull();
     }
 
     [Fact]
     public void ApiInfo_WithAllProperties_ShouldStoreCorrectly()
     {
         // Arrange & Act
-        var apiInfo = new ApiInfo
-        {
-            Name = "My API",
-            Version = "v1.0",
-            Status = "Running",
-            Features = new List<string> { "Auth", "Logging" }
-        };
+        var apiInfo = new ApiInfo(
+            "v1.0",
+            "API Key Authentication",
+            new List<string> { "Auth", "Logging" },
+            "My API"
+        );
 
         // Assert
         apiInfo.Name.Should().Be("My API");
         apiInfo.Version.Should().Be("v1.0");
-        apiInfo.Status.Should().Be("Running");
+        apiInfo.Status.Should().Be("Running with API Versioning vv1.0 (API Key Authentication)");
         apiInfo.Features.Should().HaveCount(2);
         apiInfo.Features.Should().Contain("Auth");
         apiInfo.Features.Should().Contain("Logging");

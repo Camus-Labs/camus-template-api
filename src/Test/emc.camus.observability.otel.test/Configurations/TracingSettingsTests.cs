@@ -6,11 +6,10 @@ namespace emc.camus.observability.otel.test.Configurations;
 public class TracingSettingsTests
 {
     [Theory]
-    [InlineData("none")]
-    [InlineData("console")]
-    [InlineData("otlp")]
-    [InlineData("OTLP")] // Case insensitive
-    public void Validate_WithValidExporter_DoesNotThrow(string exporter)
+    [InlineData(TracingExporter.None)]
+    [InlineData(TracingExporter.Console)]
+    [InlineData(TracingExporter.Otlp)]
+    public void Validate_WithValidExporter_DoesNotThrow(TracingExporter exporter)
     {
         // Arrange
         var settings = new TracingSettings
@@ -26,52 +25,13 @@ public class TracingSettingsTests
         act.Should().NotThrow();
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Validate_WithNullOrEmptyExporter_ThrowsArgumentException(string? exporter)
-    {
-        // Arrange
-        var settings = new TracingSettings
-        {
-            Exporter = exporter!
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("Exporter cannot be null or empty*")
-            .And.ParamName.Should().Be("Exporter");
-    }
-
-    [Fact]
-    public void Validate_WithInvalidExporter_ThrowsArgumentException()
-    {
-        // Arrange
-        var settings = new TracingSettings
-        {
-            Exporter = "invalid"
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("Invalid Exporter value 'invalid'. Valid values are: otlp, console, none*")
-            .And.ParamName.Should().Be("Exporter");
-    }
-
     [Fact]
     public void Validate_WithOtlpExporterAndNullEndpoint_ThrowsArgumentException()
     {
         // Arrange
         var settings = new TracingSettings
         {
-            Exporter = "otlp",
+            Exporter = TracingExporter.Otlp,
             OtlpEndpoint = null
         };
 
@@ -90,7 +50,7 @@ public class TracingSettingsTests
         // Arrange
         var settings = new TracingSettings
         {
-            Exporter = "otlp",
+            Exporter = TracingExporter.Otlp,
             OtlpEndpoint = "not-a-uri"
         };
 
@@ -109,7 +69,7 @@ public class TracingSettingsTests
         // Arrange
         var settings = new TracingSettings
         {
-            Exporter = "otlp",
+            Exporter = TracingExporter.Otlp,
             OtlpEndpoint = "http://localhost:4317"
         };
 
@@ -126,7 +86,7 @@ public class TracingSettingsTests
         // Arrange
         var settings = new TracingSettings
         {
-            Exporter = "console",
+            Exporter = TracingExporter.Console,
             OtlpEndpoint = "" // Invalid endpoint, but should not matter for non-OTLP exporter
         };
 

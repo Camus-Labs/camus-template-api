@@ -7,6 +7,8 @@ using emc.camus.application.RateLimiting;
 using emc.camus.application.Secrets;
 using emc.camus.domain.Auth;
 using emc.camus.domain.Generic;
+using emc.camus.api.Models.Requests;
+using emc.camus.api.Models.Responses;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,18 +24,20 @@ namespace emc.camus.api.test.Controllers;
 public class AuthControllerTests
 {
     private readonly Mock<IConfiguration> _mockConfiguration;
-    private readonly Mock<ISecretProvider> _mockSecretProvider;
     private readonly Mock<ILogger<AuthController>> _mockLogger;
     private readonly Mock<IActivitySourceWrapper> _mockActivitySource;
-    private readonly Mock<IJwtTokenGenerator> _mockTokenGenerator;
+    private readonly Mock<AuthService> _mockAuthService;
 
     public AuthControllerTests()
     {
         _mockConfiguration = new Mock<IConfiguration>();
-        _mockSecretProvider = new Mock<ISecretProvider>();
         _mockLogger = new Mock<ILogger<AuthController>>();
         _mockActivitySource = new Mock<IActivitySourceWrapper>();
-        _mockTokenGenerator = new Mock<IJwtTokenGenerator>();
+        
+        // Mock concrete AuthService (methods must be virtual)
+        var mockUserRepository = new Mock<IUserRepository>();
+        var mockTokenGenerator = new Mock<ITokenGenerator>();
+        _mockAuthService = new Mock<AuthService>(mockUserRepository.Object, mockTokenGenerator.Object);
 
         // Setup default activity source behavior
         _mockActivitySource
@@ -134,117 +138,108 @@ public class AuthControllerTests
     }
 
     [Fact]
-    public async Task GenerateToken_WithValidCredentials_ShouldReturnToken()
+    public async Task AuthenticateUser_WithValidCredentials_ShouldReturnToken()
     {
         // Arrange
         var controller = CreateController();
-        var credentials = new Credentials
+        var credentials = new AuthenticateUserRequest
         {
-            AccessKey = "testkey",
-            AccessSecret = "testsecret"
+            Username = "testuser",
+            Password = "testpassword"
         };
 
-        _mockSecretProvider.Setup(x => x.GetSecret("AccessKey")).Returns("testkey");
-        _mockSecretProvider.Setup(x => x.GetSecret("AccessSecret")).Returns("testsecret");
-
-        var expectedTokenResult = new JwtTokenResult
-        {
-            Token = "fake-jwt-token",
-            ExpiresOn = DateTime.UtcNow.AddHours(2)
-        };
-        _mockTokenGenerator
-            .Setup(x => x.GenerateToken(It.IsAny<string>(), It.IsAny<IEnumerable<Claim>>()))
-            .Returns(expectedTokenResult);
+        var expectedResult = new AuthenticateUserResult(
+            "fake-jwt-token",
+            DateTime.UtcNow.AddHours(2)
+        );
+        _mockAuthService
+            .Setup(x => x.AuthenticateAsync(It.IsAny<AuthenticateUserCommand>()))
+            .ReturnsAsync(expectedResult);
 
         // Act
-        var result = await controller.GenerateToken(credentials);
+        var result = await controller.AuthenticateUser(credentials);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
         var okResult = (OkObjectResult)result;
-        okResult.Value.Should().BeOfType<ApiResponse<AuthToken>>();
+        okResult.Value.Should().BeOfType<ApiResponse<AuthenticateUserResponse>>();
         
-        var response = (ApiResponse<AuthToken>)okResult.Value!;
-        response.Message.Should().Be("Token generated successfully");
+        var response = (ApiResponse<AuthenticateUserResponse>)okResult.Value!;
+        response.Message.Should().Be("User authenticated successfully");
         response.Data.Should().NotBeNull();
         response.Data!.Token.Should().Be("fake-jwt-token");
-        response.Data.ExpiresOn.Should().BeCloseTo(expectedTokenResult.ExpiresOn, TimeSpan.FromSeconds(1));
+        response.Data.ExpiresOn.Should().BeCloseTo(expectedResult.ExpiresOn, TimeSpan.FromSeconds(1));
 
-        _mockTokenGenerator.Verify(x => x.GenerateToken(
-            "testkey",
-            It.Is<IEnumerable<Claim>>(claims => 
-                claims.Any(c => c.Type == ClaimTypes.Role && c.Value == "User") &&
-                claims.Any(c => c.Type == ClaimTypes.Role && c.Value == "ApiClient"))),
+        _mockAuthService.Verify(x => x.AuthenticateAsync(
+            It.Is<AuthenticateUserCommand>(c => c.Username == "testuser" && c.Password == "testpassword")),
             Times.Once);
     }
 
     [Theory]
-    [InlineData(null, "testsecret", "testkey", "testsecret")] // Null AccessKey
-    [InlineData("", "testsecret", "testkey", "testsecret")] // Empty AccessKey
-    [InlineData("   ", "testsecret", "testkey", "testsecret")] // Whitespace AccessKey
-    [InlineData("wrongkey", "testsecret", "testkey", "testsecret")] // Wrong AccessKey
-    [InlineData("testkey", null, "testkey", "testsecret")] // Null AccessSecret
-    [InlineData("testkey", "", "testkey", "testsecret")] // Empty AccessSecret
-    [InlineData("testkey", "   ", "testkey", "testsecret")] // Whitespace AccessSecret
-    [InlineData("testkey", "wrongsecret", "testkey", "testsecret")] // Wrong AccessSecret
-    public async Task GenerateToken_WithInvalidCredentials_ShouldThrowUnauthorized(
-        string? accessKey, string? accessSecret, string correctKey, string correctSecret)
+    [InlineData(null, "testpassword")] // Null Username
+    [InlineData("", "testpassword")] // Empty Username
+    [InlineData("   ", "testpassword")] // Whitespace Username
+    [InlineData("testuser", null)] // Null Password
+    [InlineData("testuser", "")] // Empty Password
+    [InlineData("testuser", "   ")] // Whitespace Password
+    public async Task AuthenticateUser_WithInvalidInput_ShouldThrowArgumentException(
+        string? username, string? password)
     {
         // Arrange
         var controller = CreateController();
-        var credentials = new Credentials
+        var credentials = new AuthenticateUserRequest
         {
-            AccessKey = accessKey,
-            AccessSecret = accessSecret
+            Username = username ?? string.Empty,
+            Password = password ?? string.Empty
         };
 
-        _mockSecretProvider.Setup(x => x.GetSecret("AccessKey")).Returns(correctKey);
-        _mockSecretProvider.Setup(x => x.GetSecret("AccessSecret")).Returns(correctSecret);
+        // Act & Assert - Validation happens in mapper extension before reaching service
+        var act = async () => await controller.AuthenticateUser(credentials);
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("*required*");
+    }
+
+    [Theory]
+    [InlineData("wronguser", "testpassword")] // Wrong Username
+    [InlineData("testuser", "wrongpassword")] // Wrong Password
+    public async Task AuthenticateUser_WithInvalidCredentials_ShouldThrowUnauthorized(
+        string username, string password)
+    {
+        // Arrange
+        var controller = CreateController();
+        var credentials = new AuthenticateUserRequest
+        {
+            Username = username,
+            Password = password
+        };
+
+        _mockAuthService
+            .Setup(x => x.AuthenticateAsync(It.IsAny<AuthenticateUserCommand>()))
+            .ThrowsAsync(new UnauthorizedAccessException("The provided credentials are invalid"));
 
         // Act & Assert
-        var act = async () => await controller.GenerateToken(credentials);
+        var act = async () => await controller.AuthenticateUser(credentials);
         await act.Should().ThrowAsync<UnauthorizedAccessException>()
             .WithMessage("*The provided credentials are invalid*");
     }
 
     [Fact]
-    public async Task GenerateToken_WhenSecretProviderThrows_ShouldPropagateException()
+    public async Task AuthenticateUser_WhenAuthServiceThrows_ShouldPropagateException()
     {
         // Arrange
         var controller = CreateController();
-        var credentials = new Credentials
+        var credentials = new AuthenticateUserRequest
         {
-            AccessKey = "testkey",
-            AccessSecret = "testsecret"
+            Username = "testuser",
+            Password = "testpassword"
         };
 
-        _mockSecretProvider.Setup(x => x.GetSecret(It.IsAny<string>()))
-            .Throws<SecurityException>();
+        _mockAuthService
+            .Setup(x => x.AuthenticateAsync(It.IsAny<AuthenticateUserCommand>()))
+            .ThrowsAsync(new InvalidOperationException("Secret not found"));
 
         // Act & Assert
-        var act = async () => await controller.GenerateToken(credentials);
-        await act.Should().ThrowAsync<SecurityException>();
-    }
-
-    [Fact]
-    public async Task GenerateToken_WhenTokenGeneratorThrows_ShouldPropagateException()
-    {
-        // Arrange
-        var controller = CreateController();
-        var credentials = new Credentials
-        {
-            AccessKey = "testkey",
-            AccessSecret = "testsecret"
-        };
-
-        _mockSecretProvider.Setup(x => x.GetSecret("AccessKey")).Returns("testkey");
-        _mockSecretProvider.Setup(x => x.GetSecret("AccessSecret")).Returns("testsecret");
-        _mockTokenGenerator
-            .Setup(x => x.GenerateToken(It.IsAny<string>(), It.IsAny<IEnumerable<Claim>>()))
-            .Throws<InvalidOperationException>();
-
-        // Act & Assert
-        var act = async () => await controller.GenerateToken(credentials);
+        var act = async () => await controller.AuthenticateUser(credentials);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -276,10 +271,10 @@ public class AuthControllerTests
     }
 
     [Fact]
-    public void GenerateToken_ShouldInheritStrictRateLimitFromController()
+    public void AuthenticateUser_ShouldInheritStrictRateLimitFromController()
     {
         // Arrange & Act
-        var methodInfo = typeof(AuthController).GetMethod(nameof(AuthController.GenerateToken));
+        var methodInfo = typeof(AuthController).GetMethod(nameof(AuthController.AuthenticateUser));
         var methodAttributes = methodInfo!.GetCustomAttributes(typeof(RateLimitAttribute), true);
         
         var controllerType = typeof(AuthController);
@@ -287,7 +282,7 @@ public class AuthControllerTests
 
         // Assert
         // Method doesn't override, so it inherits from controller
-        methodAttributes.Should().BeEmpty("GenerateToken method should inherit rate limit from controller");
+        methodAttributes.Should().BeEmpty("AuthenticateUser method should inherit rate limit from controller");
         controllerAttributes.Should().NotBeEmpty("AuthController should have RateLimit attribute");
         
         var controllerRateLimit = controllerAttributes.Cast<RateLimitAttribute>().First();
@@ -315,7 +310,6 @@ public class AuthControllerTests
             _mockConfiguration.Object,
             _mockLogger.Object,
             _mockActivitySource.Object,
-            _mockSecretProvider.Object,
-            _mockTokenGenerator.Object);
+            _mockAuthService.Object);
     }
 }

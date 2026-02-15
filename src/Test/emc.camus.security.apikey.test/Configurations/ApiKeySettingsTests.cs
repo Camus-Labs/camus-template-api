@@ -12,30 +12,12 @@ public class ApiKeySettingsTests
     public void Validate_WithValidSettings_DoesNotThrow()
     {
         // Arrange
-        var settings = new ApiKeySettings { SecretKeyName = "XApiKey" };
+        var settings = new ApiKeySettings();
 
         // Act
         var act = () => settings.Validate();
 
         // Assert
         act.Should().NotThrow();
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Validate_WithNullOrEmptySecretKeyName_ThrowsArgumentException(string? secretKeyName)
-    {
-        // Arrange
-        var settings = new ApiKeySettings { SecretKeyName = secretKeyName! };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("SecretKeyName cannot be null or empty*")
-            .And.ParamName.Should().Be("SecretKeyName");
     }
 }

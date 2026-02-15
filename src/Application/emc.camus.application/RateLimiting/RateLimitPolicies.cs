@@ -27,5 +27,14 @@ namespace emc.camus.application.RateLimiting
         /// Recommended: 1000-5000 requests per minute for performance-intensive operations.
         /// </summary>
         public const string Relaxed = "relaxed";
+
+        /// <summary>
+        /// Gets all valid rate limit policy names.
+        /// </summary>
+        /// <returns>Array of all valid policy names.</returns>
+        public static string[] GetAll()
+        {
+            return new[] { Default, Strict, Relaxed };
+        }
     }
 }

@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using emc.camus.application.Generic;
+using emc.camus.application.Common;
 using emc.camus.observability.otel.Middleware;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;

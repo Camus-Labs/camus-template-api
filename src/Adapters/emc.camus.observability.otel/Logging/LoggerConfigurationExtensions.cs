@@ -74,28 +74,51 @@ namespace emc.camus.observability.otel.Logging
             var exporter = settings.Logs.Exporter;
 
             var configured = loggerConfiguration;
-            if (exporter.Equals(ExporterTypes.Otlp, StringComparison.OrdinalIgnoreCase))
+            switch (exporter)
             {
-                var endpoint = settings.Logs.OtlpEndpoint;
-                configured = configured.WriteTo.OpenTelemetry(options =>
-                {
-                    options.Endpoint = endpoint;
-                    options.Protocol = OtlpProtocol.Grpc;
-                    options.ResourceAttributes = new Dictionary<string, object>
-                    {
-                        ["service.name"] = serviceName,
-                        ["service.version"] = serviceVersion,
-                        ["deployment.environment"] = environmentName,
-                        ["service.instance.id"] = instanceId
-                    };
-                    options.IncludedData = IncludedData.MessageTemplateTextAttribute
-                                         | IncludedData.SpecRequiredResourceAttributes
-                                         | IncludedData.TraceIdField
-                                         | IncludedData.SpanIdField;
-                });
+                case LogsExporter.Otlp:
+                    configured = ConfigureOtlpExporter(configured, settings, serviceName, serviceVersion, instanceId, environmentName);
+                    break;
+
+                case LogsExporter.Console:
+                    break; // Console logging is handled separately in WriteConsoleLogging to enable independent configuration of console and OTLP logging.
+                
+                case LogsExporter.None:
+                    // No exporter configured
+                    break;
+                
+                default:
+                    throw new InvalidOperationException($"Unsupported logs exporter: {exporter}");
             }
 
             return configured;
+        }
+
+        private static LoggerConfiguration ConfigureOtlpExporter(
+            LoggerConfiguration loggerConfiguration,
+            OpenTelemetrySettings settings,
+            string serviceName,
+            string serviceVersion,
+            string instanceId,
+            string environmentName)
+        {
+            var endpoint = settings.Logs.OtlpEndpoint;
+            return loggerConfiguration.WriteTo.OpenTelemetry(options =>
+            {
+                options.Endpoint = endpoint;
+                options.Protocol = OtlpProtocol.Grpc;
+                options.ResourceAttributes = new Dictionary<string, object>
+                {
+                    ["service.name"] = serviceName,
+                    ["service.version"] = serviceVersion,
+                    ["deployment.environment"] = environmentName,
+                    ["service.instance.id"] = instanceId
+                };
+                options.IncludedData = IncludedData.MessageTemplateTextAttribute
+                                     | IncludedData.SpecRequiredResourceAttributes
+                                     | IncludedData.TraceIdField
+                                     | IncludedData.SpanIdField;
+            });
         }
     }
 }

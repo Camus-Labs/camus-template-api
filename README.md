@@ -52,7 +52,7 @@ src/
 │   ├── emc.camus.persistence.postgresql/  # Database adapter
 │   ├── emc.camus.secrets.dapr/           # Dapr secrets
 │   ├── emc.camus.observability.otel/     # OpenTelemetry
-│   ├── emc.camus.ratelimiting.memory/    # Rate limiting
+│   ├── emc.camus.ratelimiting.inmemory/    # Rate limiting
 │   ├── emc.camus.security.jwt/           # JWT authentication
 │   ├── emc.camus.security.apikey/        # API Key authentication
 │   └── emc.camus.documentation.swagger/  # Swagger/OpenAPI
@@ -180,7 +180,7 @@ public class AuthController : ControllerBase { }
 public IActionResult GetData() { }
 ```
 
-> **📖 Full Guide:** See [Rate Limiting Adapter README](src/Adapters/emc.camus.ratelimiting.memory/README.md) for configuration and deployment.
+> **📖 Full Guide:** See [Rate Limiting Adapter README](src/Adapters/emc.camus.ratelimiting.inmemory/README.md) for configuration and deployment.
 
 ---
 
@@ -349,7 +349,7 @@ public class Product
 **Adapter Documentation:**
 
 - [Observability (OpenTelemetry)](src/Adapters/emc.camus.observability.otel/README.md)
-- [Rate Limiting (Memory)](src/Adapters/emc.camus.ratelimiting.memory/README.md)
+- [Rate Limiting (Memory)](src/Adapters/emc.camus.ratelimiting.inmemory/README.md)
 - [Security (JWT)](src/Adapters/emc.camus.security.jwt/README.md)
 - [Security (API Key)](src/Adapters/emc.camus.security.apikey/README.md)
 - [Secrets (Dapr)](src/Adapters/emc.camus.secrets.dapr/README.md)

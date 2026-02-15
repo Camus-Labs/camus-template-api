@@ -13,15 +13,6 @@ namespace emc.camus.documentation.swagger.Configurations
         public const string ConfigurationSectionName = "SwaggerSettings";
         
         /// <summary>
-        /// Valid security scheme names supported by Swagger configuration (case-insensitive).
-        /// Accepts: "Bearer", or "ApiKey" in any case.
-        /// </summary>
-        private static readonly string[] ValidSecuritySchemes = 
-        { 
-            AuthenticationSchemes.JwtBearer, 
-            AuthenticationSchemes.ApiKey 
-        };
-        /// <summary>
         /// Gets or sets whether Swagger should be enabled.
         /// </summary>
         public bool Enabled { get; set; } = false;
@@ -48,8 +39,10 @@ namespace emc.camus.documentation.swagger.Configurations
 
         /// <summary>
         /// Validates the Swagger settings configuration.
-        /// Throws ArgumentException if any setting is invalid.
         /// </summary>
+        /// <exception cref="ArgumentException">
+        /// Thrown when any setting is invalid.
+        /// </exception>
         public void Validate()
         {
             ValidateVersions();
@@ -91,15 +84,16 @@ namespace emc.camus.documentation.swagger.Configurations
 
             foreach (var scheme in SecuritySchemes)
             {
-                ValidateSecurityScheme(scheme, ValidSecuritySchemes);
+                ValidateSecurityScheme(scheme);
             }
         }
 
-        private void ValidateSecurityScheme(string scheme, string[] validSchemes)
+        private void ValidateSecurityScheme(string scheme)
         {
             if (string.IsNullOrWhiteSpace(scheme))
                 throw new ArgumentException("SecuritySchemes cannot contain null or empty values", nameof(SecuritySchemes));
 
+            var validSchemes = AuthenticationSchemes.GetAll();
             if (!validSchemes.Contains(scheme, StringComparer.OrdinalIgnoreCase))
                 throw new ArgumentException(
                     $"Invalid security scheme '{scheme}'. Valid values are: {string.Join(", ", validSchemes)} (case-insensitive)",

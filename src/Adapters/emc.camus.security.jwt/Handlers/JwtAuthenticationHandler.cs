@@ -6,8 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using emc.camus.security.jwt.Configurations;
-using emc.camus.security.jwt.Metrics;
-using emc.camus.application.Generic;
+using emc.camus.application.Common;
 using Microsoft.AspNetCore.Http;
 
 namespace emc.camus.security.jwt.Handlers
@@ -38,7 +37,7 @@ namespace emc.camus.security.jwt.Handlers
 
             // Configure JWT Bearer Options with dependency injection
             services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
-                .Configure<JwtSettings, RsaSecurityKey, JwtMetrics>((options, jwtSettings, rsaKey, jwtMetrics) =>
+                .Configure<JwtSettings, RsaSecurityKey>((options, jwtSettings, rsaKey) =>
                 {
                     // Token Validation Parameters
                     options.TokenValidationParameters = new TokenValidationParameters
@@ -69,42 +68,34 @@ namespace emc.camus.security.jwt.Handlers
                             // Retrieve exception stored by OnAuthenticationFailed, if not present authentication was not provided
                             var originalException = RetrieveAuthenticationError(context.HttpContext);
                             
-                            // Determine error code based on exception type
-                            var errorCode = originalException != null
-                                ? GetAuthenticationErrorCode(originalException)
-                                : ErrorCodes.AuthenticationRequired;
-                            
-                            // Record metrics
-                            jwtMetrics.RecordAuthenticationFailure(errorCode, context.Request.Path);
-                            
-                            // Create and throw exception with error code
-                            var exception = new UnauthorizedAccessException("Unauthorized access", originalException);
-                            exception.Data[ErrorCodes.ErrorCodeKey] = errorCode;
-                            throw exception;
+                            // Throw exception - middleware will auto-detect error code from message pattern
+                            if (originalException != null)
+                            {
+                                // Create specific message based on exception type for middleware pattern matching
+                                string message = originalException switch
+                                {
+                                    SecurityTokenExpiredException => "The provided credentials are invalid. JWT token has expired.",
+                                    SecurityTokenInvalidSignatureException => "The provided credentials are invalid. JWT token has invalid signature.",
+                                    SecurityTokenInvalidIssuerException => "The provided credentials are invalid. JWT token has invalid issuer.",
+                                    SecurityTokenInvalidAudienceException => "The provided credentials are invalid. JWT token has invalid audience.",
+                                    _ => "The provided credentials are invalid. Invalid JWT token."
+                                };
+                                throw new UnauthorizedAccessException(message, originalException);
+                            }
+                            else
+                            {
+                                throw new UnauthorizedAccessException("Authentication is required to access this resource. No valid JWT token was provided.");
+                            }
                         },
                         OnForbidden = context =>
                         {
-                            jwtMetrics.RecordAuthenticationFailure(ErrorCodes.Forbidden, context.Request.Path);
-                            var exception = new InvalidOperationException("You do not have permission to access this resource");
-                            exception.Data[ErrorCodes.ErrorCodeKey] = ErrorCodes.Forbidden;
-                            throw exception;
+                            var userName = context.Principal?.Identity?.Name ?? "Unknown";
+                            throw new InvalidOperationException($"You do not have permission to access this resource. User: {userName}");
                         }
                     };
                 });
 
             return builder;
-        }
-
-        private static string GetAuthenticationErrorCode(Exception exception)
-        {
-            return exception switch
-            {
-                SecurityTokenExpiredException => ErrorCodes.Jwt.TokenExpired,
-                SecurityTokenInvalidSignatureException => ErrorCodes.Jwt.InvalidSignature,
-                SecurityTokenInvalidIssuerException => ErrorCodes.Jwt.InvalidIssuer,
-                SecurityTokenInvalidAudienceException => ErrorCodes.Jwt.InvalidAudience,
-                _ => ErrorCodes.Jwt.InvalidToken
-            };
         }
 
         private static void StoreAuthenticationError(HttpContext httpContext, Exception exception)

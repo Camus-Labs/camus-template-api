@@ -17,4 +17,13 @@ public static class AuthenticationSchemes
     /// API Key authentication scheme name.
     /// </summary>
     public const string ApiKey = "ApiKey";
+
+    /// <summary>
+    /// Gets all valid authentication scheme names.
+    /// </summary>
+    /// <returns>Array of all valid authentication scheme names.</returns>
+    public static string[] GetAll()
+    {
+        return new[] { JwtBearer, ApiKey };
+    }
 }

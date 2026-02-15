@@ -5,11 +5,14 @@ using emc.camus.domain.Generic;
 using emc.camus.application.Observability;
 using emc.camus.application.Secrets;
 using emc.camus.application.Auth;
-using emc.camus.application.Generic;
+using emc.camus.application.Common;
 using Microsoft.AspNetCore.Authorization;
 using emc.camus.domain.Auth;
 using System.Security.Claims;
 using emc.camus.application.RateLimiting;
+using emc.camus.api.Models.Requests;
+using emc.camus.api.Models.Responses;
+using emc.camus.api.Models.Extensions;
 
 namespace emc.camus.api.Controllers
 {
@@ -33,10 +36,9 @@ namespace emc.camus.api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IConfiguration _configuration;
-        private readonly ISecretProvider _secretProvider;
         private readonly ILogger<AuthController> _logger;
         private readonly IActivitySourceWrapper _activitySource;
-        private readonly IJwtTokenGenerator _tokenGenerator;
+        private readonly AuthService _authService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AuthController"/> class.
@@ -44,20 +46,17 @@ namespace emc.camus.api.Controllers
         /// <param name="configuration">Application configuration provider.</param>
         /// <param name="logger">Logger for AuthController.</param>
         /// <param name="activitySource">Activity source for OpenTelemetry tracing.</param>
-        /// <param name="secretProvider">Provider for retrieving secrets and credentials.</param>
-        /// <param name="tokenGenerator">JWT token generator service.</param>
+        /// <param name="authService">Authentication service for credential validation and token generation.</param>
         public AuthController(
             IConfiguration configuration, 
             ILogger<AuthController> logger, 
             IActivitySourceWrapper activitySource,
-            ISecretProvider secretProvider,
-            IJwtTokenGenerator tokenGenerator)
+            AuthService authService)
         {
             _logger = logger;
             _configuration = configuration;
             _activitySource = activitySource;
-            _secretProvider = secretProvider;
-            _tokenGenerator = tokenGenerator;
+            _authService = authService;
         }
 
         /// <summary>
@@ -79,13 +78,14 @@ namespace emc.camus.api.Controllers
             {
                 var apiVersion = HttpContext.GetRequestedApiVersion()?.ToString() ?? "unknown";
 
-                var apiInfo = new ApiInfo
+                var features = new List<string>
                 {
-                    Name = "My Basic API",
-                    Version = apiVersion,
-                    Status = $"Running with API Versioning v{apiVersion}",
-                    Features = new List<string> { "Logging", "Versioning", "Authentication", "Authorization", "Observability" }
+                    "Authentication",
+                    "Authorization",
+                    "Observability"
                 };
+
+                var apiInfo = new ApiInfo(apiVersion, features: features);
 
                 var response = new ApiResponse<ApiInfo>
                 {
@@ -120,13 +120,20 @@ namespace emc.camus.api.Controllers
             {
                 var apiVersion = HttpContext.GetRequestedApiVersion()?.ToString() ?? "unknown";
 
-                var apiInfo = new ApiInfo
+                var features = new List<string>
                 {
-                    Name = "My Basic API",
-                    Version = apiVersion,
-                    Status = $"Running with API Versioning v{apiVersion} (API Key)",
-                    Features = new List<string> { "Logging", "Versioning", "Authentication", "Authorization", "Observability" }
+                    "Authentication",
+                    "Authorization",
+                    "Versioning",
+                    "Observability",
+                    "Rate Limiting",
+                    "Swagger/OpenAPI",
+                    "Secret Management",
+                    "Error Handling",
+                    "CORS"
                 };
+
+                var apiInfo = new ApiInfo(apiVersion, "API Key Authentication", features: features);
 
                 var response = new ApiResponse<ApiInfo>
                 {
@@ -157,17 +164,24 @@ namespace emc.camus.api.Controllers
         [ProducesResponseType(typeof(ApiResponse<ApiInfo>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetInfoV2Jwt()
         {
-            return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfoV1Jwt", OperationType.Read, activity =>
+            return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfoV2Jwt", OperationType.Read, activity =>
             {
                 var apiVersion = HttpContext.GetRequestedApiVersion()?.ToString() ?? "unknown";
 
-                var apiInfo = new ApiInfo
+                var features = new List<string>
                 {
-                    Name = "My Basic API",
-                    Version = apiVersion,
-                    Status = $"Running with API Versioning v{apiVersion} (JWT)",
-                    Features = new List<string> { "Logging", "Versioning", "Authentication", "Authorization", "Observability" }
+                    "Authentication",
+                    "Authorization",
+                    "Versioning",
+                    "Observability",
+                    "Rate Limiting",
+                    "Swagger/OpenAPI",
+                    "Secret Management",
+                    "Error Handling",
+                    "CORS"
                 };
+
+                var apiInfo = new ApiInfo(apiVersion, "JWT Key Authentication", features: features);
 
                 var response = new ApiResponse<ApiInfo>
                 {
@@ -185,65 +199,46 @@ namespace emc.camus.api.Controllers
         }
 
         /// <summary>
-        /// Generates a JWT token for valid credentials. Available for API version >=2.0.
+        /// Authenticates a user and generates a JWT token for valid credentials. Available for API version >=2.0.
         /// Requires API Key authentication to access this endpoint.
         /// </summary>
-        /// <param name="request">The JWT token request containing AccessKey and AccessSecret.</param>
-        /// <returns>JWT token response if credentials are valid; otherwise, an error response.</returns>
-        [HttpPost("token")]
+        /// <param name="request">The authentication request containing Username and Password.</param>
+        /// <returns>Authentication response with JWT token if credentials are valid; otherwise, an error response.</returns>
+        [HttpPost("authenticate")]
         [Authorize(AuthenticationSchemes = AuthenticationSchemes.ApiKey)]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
-            Description = "Generates a JWT token for valid credentials in API version >=2.0. Requires API Key authentication."
+            Description = "Authenticates a user and generates a JWT token for valid credentials in API version >=2.0. Requires API Key authentication."
         )]
-        [ProducesResponseType(typeof(ApiResponse<AuthToken>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GenerateToken([FromBody] Credentials request)
+        [ProducesResponseType(typeof(ApiResponse<AuthenticateUserResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> AuthenticateUser([FromBody] AuthenticateUserRequest request)
         {
-            return await _activitySource.StartActivityAndRunAsync<IActionResult>("GenerateToken", OperationType.Auth, activity =>
+            return await _activitySource.StartActivityAndRunAsync<IActionResult>("AuthenticateUser", OperationType.Auth, async activity =>
             {
                 _activitySource.SetRequestTags(activity, new Dictionary<string, object?>
                 {
-                    { "accessKey", request.AccessKey }
+                    { "username", request.Username }
                 });
 
-                // Validate credentials (in production, validate against database)
-                var accessKeyFromVault = _secretProvider.GetSecret("AccessKey");
-                var accessSecretFromVault = _secretProvider.GetSecret("AccessSecret");
+                // Map API DTO to Application Command
+                var command = request.ToCommand();
 
-                if (request.AccessKey != accessKeyFromVault || request.AccessSecret != accessSecretFromVault)
+                // Call authentication service (business logic encapsulated)
+                var result = await _authService.AuthenticateAsync(command);
+
+                // Map Application Result to API Response
+                var response = new ApiResponse<AuthenticateUserResponse>
                 {
-                    var exception = new UnauthorizedAccessException("The provided credentials are invalid");
-                    exception.Data[ErrorCodes.ErrorCodeKey] = ErrorCodes.InvalidCredentials;
-                    throw exception;
-                }
-
-                // Generate JWT token with roles
-                var roleClaims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Role, "User"),
-                    new Claim(ClaimTypes.Role, "ApiClient")
-                };
-
-                var result = _tokenGenerator.GenerateToken(request.AccessKey ?? "unknown", roleClaims);
-
-                var authToken = new AuthToken
-                {
-                    Token = result.Token,
-                    ExpiresOn = result.ExpiresOn
-                };
-
-                var response = new ApiResponse<AuthToken>
-                {
-                    Message = "Token generated successfully",
-                    Data = authToken
+                    Message = "User authenticated successfully",
+                    Data = result.ToResponse()
                 };
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
-                    { "expiresOn", authToken.ExpiresOn.ToString("o") }
+                    { "expiresOn", result.ExpiresOn.ToString("o") }
                 });
 
-                return Task.FromResult<IActionResult>(Ok(response));
+                return Ok(response);
             });
         }
 

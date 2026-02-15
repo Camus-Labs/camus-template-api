@@ -20,13 +20,14 @@
   
   <ItemGroup>
     <ProjectReference Include="../../Adapters/emc.camus.persistence.postgresql/emc.camus.persistence.postgresql.csproj" />
+    <ProjectReference Include="../../Adapters/emc.camus.persistence.inmemory/emc.camus.persistence.inmemory.csproj" />
     <ProjectReference Include="../../Adapters/emc.camus.secrets.dapr/emc.camus.secrets.dapr.csproj" />
     <ProjectReference Include="../../Adapters/emc.camus.security.jwt/emc.camus.security.jwt.csproj" />
     <ProjectReference Include="../../Adapters/emc.camus.security.apikey/emc.camus.security.apikey.csproj" />
     <ProjectReference Include="../../Adapters/emc.camus.documentation.swagger/emc.camus.documentation.swagger.csproj" />
     <ProjectReference Include="../../Application/emc.camus.application/emc.camus.application.csproj" />
     <ProjectReference Include="../../Adapters/emc.camus.observability.otel/emc.camus.observability.otel.csproj" />
-    <ProjectReference Include="..\..\Adapters\emc.camus.ratelimiting.memory\emc.camus.ratelimiting.memory.csproj" />
+    <ProjectReference Include="..\..\Adapters\emc.camus.ratelimiting.inmemory\emc.camus.ratelimiting.inmemory.csproj" />
   </ItemGroup>
 
 </Project>

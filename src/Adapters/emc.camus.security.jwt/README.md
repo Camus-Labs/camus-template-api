@@ -121,9 +121,10 @@ public class AuthController : ControllerBase
             new Claim(ClaimTypes.Role, "ApiClient")
         };
         
-        var result = _tokenGenerator.GenerateToken(request.AccessKey, roleClaims);
+        var command = new GenerateTokenCommand(request.AccessKey, roleClaims);
+        var result = _tokenGenerator.GenerateToken(command);
         
-        return Ok(new AuthToken
+        return Ok(new AuthenticateUserResponse
         {
             Token = result.Token,
             ExpiresOn = result.ExpiresOn
@@ -137,7 +138,7 @@ public class AuthController : ControllerBase
 - ✅ Inject `IJwtTokenGenerator` via constructor
 - ✅ Token generation is handled by the adapter
 - ✅ Add custom claims as needed (roles, permissions, etc.)
-- ✅ Returns `JwtTokenResult` with token and expiration
+- ✅ Returns `GenerateTokenResult` with token and expiration
 
 ---
 

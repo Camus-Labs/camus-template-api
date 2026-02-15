@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using emc.camus.application.Generic;
+using emc.camus.application.Common;
 
 namespace emc.camus.documentation.swagger.Filters
 {
@@ -40,6 +40,13 @@ namespace emc.camus.documentation.swagger.Filters
                     ["detail"] = new OpenApiString("You do not have permission to access this resource."),
                     ["error"] = new OpenApiString(ErrorCodes.Forbidden)
                 },
+                [StatusCodes.Status409Conflict.ToString()] = new OpenApiObject
+                {
+                    ["status"] = new OpenApiInteger(StatusCodes.Status409Conflict),
+                    ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status409Conflict)),
+                    ["detail"] = new OpenApiString("The request conflicts with the current state of the resource."),
+                    ["error"] = new OpenApiString(ErrorCodes.Conflict)
+                },
                 [StatusCodes.Status429TooManyRequests.ToString()] = new OpenApiObject
                 {
                     ["status"] = new OpenApiInteger(StatusCodes.Status429TooManyRequests),
@@ -68,8 +75,8 @@ namespace emc.camus.documentation.swagger.Filters
                     {
                         ["status"] = new OpenApiInteger(StatusCodes.Status401Unauthorized),
                         ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status401Unauthorized)),
-                        ["detail"] = new OpenApiString("The token has expired."),
-                        ["error"] = new OpenApiString(ErrorCodes.Jwt.TokenExpired)
+                        ["detail"] = new OpenApiString("You are not authorized to access this resource."),
+                        ["error"] = new OpenApiString(ErrorCodes.JwtTokenExpired)
                     }
                 },
                 ["Invalid Token"] = new OpenApiExample
@@ -80,8 +87,8 @@ namespace emc.camus.documentation.swagger.Filters
                     {
                         ["status"] = new OpenApiInteger(StatusCodes.Status401Unauthorized),
                         ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status401Unauthorized)),
-                        ["detail"] = new OpenApiString("The token is invalid."),
-                        ["error"] = new OpenApiString(ErrorCodes.Jwt.InvalidToken)
+                        ["detail"] = new OpenApiString("You are not authorized to access this resource."),
+                        ["error"] = new OpenApiString(ErrorCodes.JwtInvalidToken)
                     }
                 },
                 ["Invalid Signature"] = new OpenApiExample
@@ -92,8 +99,8 @@ namespace emc.camus.documentation.swagger.Filters
                     {
                         ["status"] = new OpenApiInteger(StatusCodes.Status401Unauthorized),
                         ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status401Unauthorized)),
-                        ["detail"] = new OpenApiString("The token signature is invalid."),
-                        ["error"] = new OpenApiString(ErrorCodes.Jwt.InvalidSignature)
+                        ["detail"] = new OpenApiString("You are not authorized to access this resource."),
+                        ["error"] = new OpenApiString(ErrorCodes.JwtInvalidSignature)
                     }
                 },
                 ["Authentication Required"] = new OpenApiExample
@@ -104,7 +111,7 @@ namespace emc.camus.documentation.swagger.Filters
                     {
                         ["status"] = new OpenApiInteger(StatusCodes.Status401Unauthorized),
                         ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status401Unauthorized)),
-                        ["detail"] = new OpenApiString("Authentication is required to access this resource."),
+                        ["detail"] = new OpenApiString("You are not authorized to access this resource."),
                         ["error"] = new OpenApiString(ErrorCodes.AuthenticationRequired)
                     }
                 }
@@ -128,6 +135,7 @@ namespace emc.camus.documentation.swagger.Filters
             {
                 [StatusCodes.Status400BadRequest.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status400BadRequest),
                 [StatusCodes.Status403Forbidden.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status403Forbidden),
+                [StatusCodes.Status409Conflict.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status409Conflict),
                 [StatusCodes.Status429TooManyRequests.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status429TooManyRequests),
                 [StatusCodes.Status500InternalServerError.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status500InternalServerError)
             };

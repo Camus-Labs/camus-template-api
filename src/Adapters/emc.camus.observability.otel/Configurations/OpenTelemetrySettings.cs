@@ -27,22 +27,38 @@ namespace emc.camus.observability.otel.Configurations
 
         /// <summary>
         /// Validates the OpenTelemetry configuration.
-        /// Throws ArgumentException if any setting is invalid.
         /// </summary>
+        /// <exception cref="ArgumentException">
+        /// Thrown when any setting is invalid.
+        /// </exception>
         public void Validate()
+        {
+            ValidateTracing();
+            ValidateMetrics();
+            ValidateLogs();
+        }
+
+        private void ValidateTracing()
         {
             if (Tracing == null)
                 throw new ArgumentException("Tracing settings cannot be null", nameof(Tracing));
 
+            Tracing.Validate();
+        }
+
+        private void ValidateMetrics()
+        {
             if (Metrics == null)
                 throw new ArgumentException("Metrics settings cannot be null", nameof(Metrics));
 
+            Metrics.Validate();
+        }
+
+        private void ValidateLogs()
+        {
             if (Logs == null)
                 throw new ArgumentException("Logs settings cannot be null", nameof(Logs));
 
-            // Validate each subsection
-            Tracing.Validate();
-            Metrics.Validate();
             Logs.Validate();
         }
     }

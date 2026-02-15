@@ -1,4 +1,4 @@
-using emc.camus.application.Generic;
+using emc.camus.application.Common;
 using emc.camus.documentation.swagger.Filters;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;

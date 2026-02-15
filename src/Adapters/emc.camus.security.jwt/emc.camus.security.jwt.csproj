@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Reference to Application layer for ISecretProvider, IJwtTokenGenerator interfaces and JwtTokenResult -->
+    <!-- Reference to Application layer for ISecretProvider, ITokenGenerator interface and GenerateTokenResult -->
     <ProjectReference Include="..\..\Application\emc.camus.application\emc.camus.application.csproj" />
   </ItemGroup>
 </Project>

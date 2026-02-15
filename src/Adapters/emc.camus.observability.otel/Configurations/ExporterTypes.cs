@@ -1,31 +1,65 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace emc.camus.observability.otel.Configurations
 {
     /// <summary>
-    /// Defines OpenTelemetry exporter type constants and valid values.
+    /// Tracing exporter types for distributed tracing.
     /// </summary>
-    [ExcludeFromCodeCoverage]
-    public static class ExporterTypes
+    public enum TracingExporter
     {
         /// <summary>
         /// OTLP exporter (OpenTelemetry Protocol).
         /// </summary>
-        public const string Otlp = "otlp";
+        Otlp,
 
         /// <summary>
         /// Console exporter (outputs to console).
         /// </summary>
-        public const string Console = "console";
+        Console,
 
         /// <summary>
         /// No exporter (disables export).
         /// </summary>
-        public const string None = "none";
+        None
+    }
+
+    /// <summary>
+    /// Metrics exporter types for application metrics.
+    /// </summary>
+    public enum MetricsExporter
+    {
+        /// <summary>
+        /// OTLP exporter (OpenTelemetry Protocol).
+        /// </summary>
+        Otlp,
 
         /// <summary>
-        /// Array of all valid exporter types.
+        /// Console exporter (outputs to console).
         /// </summary>
-        public static readonly string[] Valid = { Otlp, Console, None };
+        Console,
+
+        /// <summary>
+        /// No exporter (disables export).
+        /// </summary>
+        None
+    }
+
+    /// <summary>
+    /// Logs exporter types for structured logging.
+    /// </summary>
+    public enum LogsExporter
+    {
+        /// <summary>
+        /// OTLP exporter (OpenTelemetry Protocol).
+        /// </summary>
+        Otlp,
+
+        /// <summary>
+        /// Console exporter (outputs to console).
+        /// </summary>
+        Console,
+
+        /// <summary>
+        /// No exporter (disables export).
+        /// </summary>
+        None
     }
 }

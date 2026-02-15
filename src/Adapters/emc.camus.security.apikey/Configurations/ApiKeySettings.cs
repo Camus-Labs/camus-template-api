@@ -1,4 +1,3 @@
-
 namespace emc.camus.security.apikey.Configurations
 {
     /// <summary>
@@ -15,21 +14,29 @@ namespace emc.camus.security.apikey.Configurations
         /// Default username assigned to API Key authenticated requests.
         /// </summary>
         public const string DefaultUserName = "ApiKeyUser";
-        
+
         /// <summary>
-        /// Gets or sets the name of the secret key used to retrieve the API key from the secret provider.
-        /// Defaults to "XApiKey".
+        /// Secret name for the API key used in authentication.
         /// </summary>
-        public string SecretKeyName { get; set; } = "XApiKey";
+        public string ApiKeySecretName { get; set; } = "XApiKey";
 
         /// <summary>
         /// Validates the API Key settings configuration.
-        /// Throws ArgumentException if any setting is invalid.
         /// </summary>
+        /// <exception cref="ArgumentException">
+        /// Thrown when any setting is invalid.
+        /// </exception>
         public void Validate()
         {
-            if (string.IsNullOrWhiteSpace(SecretKeyName))
-                throw new ArgumentException("SecretKeyName cannot be null or empty", nameof(SecretKeyName));
+            ValidateApiKeySecretName();
+        }
+
+        private void ValidateApiKeySecretName()
+        {
+            if (string.IsNullOrWhiteSpace(ApiKeySecretName))
+            {
+                throw new ArgumentException("ApiKeySecretName cannot be null or empty.", nameof(ApiKeySecretName));
+            }
         }
     }
 }

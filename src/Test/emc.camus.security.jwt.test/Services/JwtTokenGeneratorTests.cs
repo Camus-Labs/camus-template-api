@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using emc.camus.application.Auth;
 using emc.camus.security.jwt.Configurations;
 using emc.camus.security.jwt.Services;
 using FluentAssertions;
@@ -38,10 +39,11 @@ public class JwtTokenGeneratorTests
         // Arrange
         var generator = CreateGenerator();
         var subject = "testuser";
+        var command = new GenerateTokenCommand(subject);
         var expectedExpiration = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
 
         // Act
-        var result = generator.GenerateToken(subject);
+        var result = generator.GenerateToken(command);
 
         // Assert
         result.Should().NotBeNull();
@@ -73,9 +75,10 @@ public class JwtTokenGeneratorTests
             new Claim("role", "admin"),
             new Claim("department", "IT")
         };
+        var command = new GenerateTokenCommand(subject, additionalClaims);
 
         // Act
-        var result = generator.GenerateToken(subject, additionalClaims);
+        var result = generator.GenerateToken(command);
 
         // Assert
         var handler = new JwtSecurityTokenHandler();
@@ -91,9 +94,10 @@ public class JwtTokenGeneratorTests
         // Arrange
         var generator = CreateGenerator();
         var subject = "testuser";
+        var command = new GenerateTokenCommand(subject, null);
 
         // Act & Assert
-        var act = () => generator.GenerateToken(subject, null);
+        var act = () => generator.GenerateToken(command);
         act.Should().NotThrow();
     }
 
@@ -103,9 +107,10 @@ public class JwtTokenGeneratorTests
         // Arrange
         var generator = CreateGenerator();
         var subject = "testuser";
+        var command = new GenerateTokenCommand(subject, Array.Empty<Claim>());
 
         // Act & Assert
-        var act = () => generator.GenerateToken(subject, Array.Empty<Claim>());
+        var act = () => generator.GenerateToken(command);
         act.Should().NotThrow();
     }
 
@@ -115,10 +120,11 @@ public class JwtTokenGeneratorTests
         // Arrange
         var generator = CreateGenerator();
         var subject = "testuser";
+        var command = new GenerateTokenCommand(subject);
 
         // Act
-        var result1 = generator.GenerateToken(subject);
-        var result2 = generator.GenerateToken(subject);
+        var result1 = generator.GenerateToken(command);
+        var result2 = generator.GenerateToken(command);
 
         // Assert
         result1.Token.Should().NotBe(result2.Token);
@@ -141,9 +147,10 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
+        var command = new GenerateTokenCommand(subject);
 
         // Act
-        var result = generator.GenerateToken(subject);
+        var result = generator.GenerateToken(command);
 
         // Assert
         result.Should().NotBeNull();

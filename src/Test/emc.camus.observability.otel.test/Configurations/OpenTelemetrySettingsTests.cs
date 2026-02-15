@@ -11,9 +11,9 @@ public class OpenTelemetrySettingsTests
         // Arrange
         var settings = new OpenTelemetrySettings
         {
-            Tracing = new TracingSettings { Exporter = "none" },
-            Metrics = new MetricsSettings { Exporter = "none" },
-            Logs = new LogsSettings { Exporter = "none" }
+            Tracing = new TracingSettings { Exporter = TracingExporter.None },
+            Metrics = new MetricsSettings { Exporter = MetricsExporter.None },
+            Logs = new LogsSettings { Exporter = LogsExporter.None }
         };
 
         // Act
@@ -30,8 +30,8 @@ public class OpenTelemetrySettingsTests
         var settings = new OpenTelemetrySettings
         {
             Tracing = null,
-            Metrics = new MetricsSettings { Exporter = "none" },
-            Logs = new LogsSettings { Exporter = "none" }
+            Metrics = new MetricsSettings { Exporter = MetricsExporter.None },
+            Logs = new LogsSettings { Exporter = LogsExporter.None }
         };
 
         // Act
@@ -49,9 +49,9 @@ public class OpenTelemetrySettingsTests
         // Arrange
         var settings = new OpenTelemetrySettings
         {
-            Tracing = new TracingSettings { Exporter = "none" },
+            Tracing = new TracingSettings { Exporter = TracingExporter.None },
             Metrics = null,
-            Logs = new LogsSettings { Exporter = "none" }
+            Logs = new LogsSettings { Exporter = LogsExporter.None }
         };
 
         // Act
@@ -69,8 +69,8 @@ public class OpenTelemetrySettingsTests
         // Arrange
         var settings = new OpenTelemetrySettings
         {
-            Tracing = new TracingSettings { Exporter = "none" },
-            Metrics = new MetricsSettings { Exporter = "none" },
+            Tracing = new TracingSettings { Exporter = TracingExporter.None },
+            Metrics = new MetricsSettings { Exporter = MetricsExporter.None },
             Logs = null
         };
 
@@ -84,14 +84,18 @@ public class OpenTelemetrySettingsTests
     }
 
     [Fact]
-    public void Validate_WithInvalidTracingSettings_PropagatesException()
+    public void Validate_WithTracingOtlpAndNullEndpoint_PropagatesException()
     {
         // Arrange
         var settings = new OpenTelemetrySettings
         {
-            Tracing = new TracingSettings { Exporter = "invalid" },
-            Metrics = new MetricsSettings { Exporter = "none" },
-            Logs = new LogsSettings { Exporter = "none" }
+            Tracing = new TracingSettings
+            {
+                Exporter = TracingExporter.Otlp,
+                OtlpEndpoint = null
+            },
+            Metrics = new MetricsSettings { Exporter = MetricsExporter.None },
+            Logs = new LogsSettings { Exporter = LogsExporter.None }
         };
 
         // Act
@@ -99,47 +103,7 @@ public class OpenTelemetrySettingsTests
 
         // Assert
         act.Should().Throw<ArgumentException>()
-            .WithMessage("Invalid Exporter value 'invalid'*")
-            .And.ParamName.Should().Be("Exporter");
-    }
-
-    [Fact]
-    public void Validate_WithInvalidMetricsSettings_PropagatesException()
-    {
-        // Arrange
-        var settings = new OpenTelemetrySettings
-        {
-            Tracing = new TracingSettings { Exporter = "none" },
-            Metrics = new MetricsSettings { Exporter = "invalid" },
-            Logs = new LogsSettings { Exporter = "none" }
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("Invalid Exporter value 'invalid'*")
-            .And.ParamName.Should().Be("Exporter");
-    }
-
-    [Fact]
-    public void Validate_WithInvalidLogsSettings_PropagatesException()
-    {
-        // Arrange
-        var settings = new OpenTelemetrySettings
-        {
-            Tracing = new TracingSettings { Exporter = "none" },
-            Metrics = new MetricsSettings { Exporter = "none" },
-            Logs = new LogsSettings { Exporter = "invalid" }
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("Invalid Exporter value 'invalid'*")
-            .And.ParamName.Should().Be("Exporter");
+            .WithMessage("OtlpEndpoint cannot be null or empty when Exporter is 'otlp'*")
+            .And.ParamName.Should().Be("OtlpEndpoint");
     }
 }

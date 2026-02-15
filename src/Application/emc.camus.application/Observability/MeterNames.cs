@@ -21,7 +21,7 @@ namespace emc.camus.application.Observability
         public const string Business = ".business";
 
         /// <summary>
-        /// Security metrics (authentication, authorization, rate limiting)
+        /// Security metrics (rate limiting, others)
         /// </summary>
         public const string Security = ".security";
 
@@ -29,6 +29,11 @@ namespace emc.camus.application.Observability
         /// Infrastructure metrics (database, cache, external APIs, message queues)
         /// </summary>
         public const string Infrastructure = ".infrastructure";
+
+        /// <summary>
+        /// Error handling and exception tracking metrics
+        /// </summary>
+        public const string ErrorHandling = ".errorhandling";
 
         /// <summary>
         /// Returns all meter name suffixes defined in the application.
@@ -41,7 +46,8 @@ namespace emc.camus.application.Observability
                 Application,
                 Business,
                 Security,
-                Infrastructure
+                Infrastructure,
+                ErrorHandling
             };
         }
     }

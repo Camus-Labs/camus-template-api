@@ -48,33 +48,41 @@ namespace emc.camus.observability.otel.Telemetry
             this MeterProviderBuilder builder, 
             OpenTelemetrySettings settings)
         {
-            var selectedExporter = settings.Metrics.Exporter;
+            var exporter = settings.Metrics.Exporter;
 
-            switch (selectedExporter.ToLowerInvariant())
+            switch (exporter)
             {
-                case var _ when selectedExporter.Equals(ExporterTypes.Otlp, StringComparison.OrdinalIgnoreCase):
-                    builder.AddOtlpExporter(options =>
-                    {
-                        var endpoint = settings.Metrics.OtlpEndpoint;
-                        if (!string.IsNullOrWhiteSpace(endpoint))
-                        {
-                            options.Endpoint = new Uri(endpoint);
-                        }
-                        // Use OTLP over gRPC (port 4317)
-                        options.Protocol = OtlpExportProtocol.Grpc;
-                    });
+                case MetricsExporter.Otlp:
+                    ConfigureOtlpExporter(builder, settings);
                     break;
 
-                case var _ when selectedExporter.Equals(ExporterTypes.Console, StringComparison.OrdinalIgnoreCase):
+                case MetricsExporter.Console:
                     builder.AddConsoleExporter();
                     break;
 
-                default:
+                case MetricsExporter.None:
                     // No exporter configured
                     break;
+                    
+                default:
+                    throw new InvalidOperationException($"Unsupported metrics exporter: {exporter}");
             }
 
             return builder;
+        }
+
+        private static void ConfigureOtlpExporter(MeterProviderBuilder builder, OpenTelemetrySettings settings)
+        {
+            builder.AddOtlpExporter(options =>
+            {
+                var endpoint = settings.Metrics.OtlpEndpoint;
+                if (!string.IsNullOrWhiteSpace(endpoint))
+                {
+                    options.Endpoint = new Uri(endpoint);
+                }
+                // Use OTLP over gRPC (port 4317)
+                options.Protocol = OtlpExportProtocol.Grpc;
+            });
         }
     }
 }

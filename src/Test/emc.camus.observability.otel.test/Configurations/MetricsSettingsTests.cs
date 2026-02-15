@@ -6,11 +6,10 @@ namespace emc.camus.observability.otel.test.Configurations;
 public class MetricsSettingsTests
 {
     [Theory]
-    [InlineData("none")]
-    [InlineData("console")]
-    [InlineData("otlp")]
-    [InlineData("OTLP")] // Case insensitive
-    public void Validate_WithValidExporter_DoesNotThrow(string exporter)
+    [InlineData(MetricsExporter.None)]
+    [InlineData(MetricsExporter.Console)]
+    [InlineData(MetricsExporter.Otlp)]
+    public void Validate_WithValidExporter_DoesNotThrow(MetricsExporter exporter)
     {
         // Arrange
         var settings = new MetricsSettings
@@ -28,56 +27,13 @@ public class MetricsSettingsTests
         act.Should().NotThrow();
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Validate_WithNullOrEmptyExporter_ThrowsArgumentException(string? exporter)
-    {
-        // Arrange
-        var settings = new MetricsSettings
-        {
-            Exporter = exporter!,
-            DisabledMetrics = Array.Empty<string>(),
-            DisabledMeters = Array.Empty<string>()
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("Exporter cannot be null or empty*")
-            .And.ParamName.Should().Be("Exporter");
-    }
-
-    [Fact]
-    public void Validate_WithInvalidExporter_ThrowsArgumentException()
-    {
-        // Arrange
-        var settings = new MetricsSettings
-        {
-            Exporter = "invalid",
-            DisabledMetrics = Array.Empty<string>(),
-            DisabledMeters = Array.Empty<string>()
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("Invalid Exporter value 'invalid'. Valid values are: otlp, console, none*")
-            .And.ParamName.Should().Be("Exporter");
-    }
-
     [Fact]
     public void Validate_WithOtlpExporterAndNullEndpoint_ThrowsArgumentException()
     {
         // Arrange
         var settings = new MetricsSettings
         {
-            Exporter = "otlp",
+            Exporter = MetricsExporter.Otlp,
             OtlpEndpoint = null,
             DisabledMetrics = Array.Empty<string>(),
             DisabledMeters = Array.Empty<string>()
@@ -98,7 +54,7 @@ public class MetricsSettingsTests
         // Arrange
         var settings = new MetricsSettings
         {
-            Exporter = "otlp",
+            Exporter = MetricsExporter.Otlp,
             OtlpEndpoint = "not-a-uri",
             DisabledMetrics = Array.Empty<string>(),
             DisabledMeters = Array.Empty<string>()
@@ -119,7 +75,7 @@ public class MetricsSettingsTests
         // Arrange
         var settings = new MetricsSettings
         {
-            Exporter = "otlp",
+            Exporter = MetricsExporter.Otlp,
             OtlpEndpoint = "http://localhost:4317",
             DisabledMetrics = Array.Empty<string>(),
             DisabledMeters = Array.Empty<string>()
@@ -138,7 +94,7 @@ public class MetricsSettingsTests
         // Arrange
         var settings = new MetricsSettings
         {
-            Exporter = "none",
+            Exporter = MetricsExporter.None,
             DisabledMetrics = null,
             DisabledMeters = Array.Empty<string>()
         };
@@ -158,7 +114,7 @@ public class MetricsSettingsTests
         // Arrange
         var settings = new MetricsSettings
         {
-            Exporter = "none",
+            Exporter = MetricsExporter.None,
             DisabledMetrics = Array.Empty<string>(),
             DisabledMeters = null
         };
@@ -178,7 +134,7 @@ public class MetricsSettingsTests
         // Arrange
         var settings = new MetricsSettings
         {
-            Exporter = "none",
+            Exporter = MetricsExporter.None,
             DisabledMetrics = new[] { "http.server.duration", "http.client.duration" },
             DisabledMeters = new[] { ".infrastructure", ".business" }
         };
@@ -196,7 +152,7 @@ public class MetricsSettingsTests
         // Arrange
         var settings = new MetricsSettings
         {
-            Exporter = "console",
+            Exporter = MetricsExporter.Console,
             OtlpEndpoint = "", // Invalid endpoint, but should not matter for non-OTLP exporter
             DisabledMetrics = Array.Empty<string>(),
             DisabledMeters = Array.Empty<string>()

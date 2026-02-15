@@ -10,7 +10,7 @@ namespace emc.camus.security.jwt.Services;
 /// <summary>
 /// Provides JWT token generation functionality using RSA signing.
 /// </summary>
-public class JwtTokenGenerator : IJwtTokenGenerator
+public class JwtTokenGenerator : ITokenGenerator
 {
     private readonly JwtSettings _jwtSettings;
     private readonly SigningCredentials _signingCredentials;
@@ -29,21 +29,21 @@ public class JwtTokenGenerator : IJwtTokenGenerator
     }
 
     /// <inheritdoc/>
-    public JwtTokenResult GenerateToken(string subject, IEnumerable<Claim>? additionalClaims = null)
+    public GenerateTokenResult GenerateToken(GenerateTokenCommand command)
     {
         // Build claims list
         var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, subject),
-            new Claim(JwtRegisteredClaimNames.UniqueName, subject),
+            new Claim(JwtRegisteredClaimNames.Sub, command.Subject),
+            new Claim(JwtRegisteredClaimNames.UniqueName, command.Subject),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
 
         // Add additional claims if provided
-        if (additionalClaims != null)
+        if (command.AdditionalClaims != null)
         {
-            claims.AddRange(additionalClaims);
+            claims.AddRange(command.AdditionalClaims);
         }
 
         var expiresOn = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
@@ -58,10 +58,6 @@ public class JwtTokenGenerator : IJwtTokenGenerator
 
         var token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
 
-        return new JwtTokenResult
-        {
-            Token = token,
-            ExpiresOn = expiresOn
-        };
+        return new GenerateTokenResult(token, expiresOn);
     }
 }

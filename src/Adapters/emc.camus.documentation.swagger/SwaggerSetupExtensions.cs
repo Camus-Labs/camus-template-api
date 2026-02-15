@@ -1,5 +1,5 @@
 using emc.camus.application.Auth;
-using emc.camus.application.Generic;
+using emc.camus.application.Common;
 using emc.camus.documentation.swagger.Configurations;
 using emc.camus.documentation.swagger.Filters;
 using Microsoft.AspNetCore.Builder;

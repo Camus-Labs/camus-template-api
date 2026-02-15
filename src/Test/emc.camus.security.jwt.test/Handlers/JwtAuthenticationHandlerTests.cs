@@ -1,8 +1,7 @@
 using System.Security.Claims;
-using emc.camus.application.Generic;
+using emc.camus.application.Common;
 using emc.camus.security.jwt.Configurations;
 using emc.camus.security.jwt.Handlers;
-using emc.camus.security.jwt.Metrics;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -26,7 +25,6 @@ public class JwtAuthenticationHandlerTests
     private readonly JwtSettings _jwtSettings;
     private readonly RsaSecurityKey _rsaKey;
     private readonly SigningCredentials _signingCredentials;
-    private readonly JwtMetrics _metrics;
 
     public JwtAuthenticationHandlerTests()
     {
@@ -47,7 +45,6 @@ public class JwtAuthenticationHandlerTests
         var rsa = System.Security.Cryptography.RSA.Create(2048);
         _rsaKey = new RsaSecurityKey(rsa);
         _signingCredentials = new SigningCredentials(_rsaKey, SecurityAlgorithms.RsaSha256);
-        _metrics = new JwtMetrics("test-service");
     }
 
     [Fact]
@@ -58,7 +55,6 @@ public class JwtAuthenticationHandlerTests
         services.AddSingleton(_jwtSettings);
         services.AddSingleton(_rsaKey);
         services.AddSingleton(_mockLoggerFactory.Object);
-        services.AddSingleton(_metrics);
         services.AddLogging();
         
         var configuration = new ConfigurationBuilder().Build();
@@ -82,7 +78,6 @@ public class JwtAuthenticationHandlerTests
         services.AddSingleton(_jwtSettings);
         services.AddSingleton(_rsaKey);
         services.AddSingleton(_mockLoggerFactory.Object);
-        services.AddSingleton(_metrics);
         services.AddLogging();
         
         var configuration = new ConfigurationBuilder().Build();
@@ -125,13 +120,135 @@ public class JwtAuthenticationHandlerTests
         context.HttpContext.Items["AuthException"].Should().BeOfType<SecurityTokenExpiredException>();
     }
 
+    [Fact]
+    public void OnChallenge_WithTokenExpired_ShouldUseTokenExpiredErrorCode()
+    {
+        // Arrange
+        var services = CreateServiceCollection();
+        var serviceProvider = services.BuildServiceProvider();
+        var options = serviceProvider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>();
+        var jwtOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
 
+        var httpContext = new DefaultHttpContext();
+        httpContext.Items["AuthException"] = new SecurityTokenExpiredException();
 
+        var context = new JwtBearerChallengeContext(
+            httpContext,
+            new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
+            new JwtBearerOptions(),
+            new AuthenticationProperties());
 
+        // Act
+        var act = () => jwtOptions.Events.OnChallenge(context).GetAwaiter().GetResult();
 
+        // Assert
+        act.Should().Throw<UnauthorizedAccessException>()
+            .WithMessage("*expired*");
+    }
 
+    [Fact]
+    public void OnChallenge_WithInvalidSignature_ShouldUseInvalidSignatureErrorCode()
+    {
+        // Arrange
+        var services = CreateServiceCollection();
+        var serviceProvider = services.BuildServiceProvider();
+        var options = serviceProvider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>();
+        var jwtOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
 
+        var httpContext = new DefaultHttpContext();
+        httpContext.Items["AuthException"] = new SecurityTokenInvalidSignatureException();
 
+        var context = new JwtBearerChallengeContext(
+            httpContext,
+            new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
+            new JwtBearerOptions(),
+            new AuthenticationProperties());
+
+        // Act
+        var act = () => jwtOptions.Events.OnChallenge(context).GetAwaiter().GetResult();
+
+        // Assert
+        act.Should().Throw<UnauthorizedAccessException>()
+            .WithMessage("*invalid signature*");
+    }
+
+    [Fact]
+    public void OnChallenge_WithInvalidIssuer_ShouldUseInvalidIssuerErrorCode()
+    {
+        // Arrange
+        var services = CreateServiceCollection();
+        var serviceProvider = services.BuildServiceProvider();
+        var options = serviceProvider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>();
+        var jwtOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
+
+        var httpContext = new DefaultHttpContext();
+        httpContext.Items["AuthException"] = new SecurityTokenInvalidIssuerException();
+
+        var context = new JwtBearerChallengeContext(
+            httpContext,
+            new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
+            new JwtBearerOptions(),
+            new AuthenticationProperties());
+
+        // Act
+        var act = () => jwtOptions.Events.OnChallenge(context).GetAwaiter().GetResult();
+
+        // Assert
+        act.Should().Throw<UnauthorizedAccessException>()
+            .WithMessage("*invalid issuer*");
+    }
+
+    [Fact]
+    public void OnChallenge_WithInvalidAudience_ShouldUseInvalidAudienceErrorCode()
+    {
+        // Arrange
+        var services = CreateServiceCollection();
+        var serviceProvider = services.BuildServiceProvider();
+        var options = serviceProvider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>();
+        var jwtOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
+
+        var httpContext = new DefaultHttpContext();
+        httpContext.Items["AuthException"] = new SecurityTokenInvalidAudienceException();
+
+        var context = new JwtBearerChallengeContext(
+            httpContext,
+            new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
+            new JwtBearerOptions(),
+            new AuthenticationProperties());
+
+        // Act
+        var act = () => jwtOptions.Events.OnChallenge(context).GetAwaiter().GetResult();
+
+        // Assert
+        act.Should().Throw<UnauthorizedAccessException>()
+            .WithMessage("*invalid audience*");
+    }
+
+    [Fact]
+    public void OnChallenge_WithUnknownSecurityTokenException_ShouldUseInvalidTokenErrorCode()
+    {
+        // Arrange
+        var services = CreateServiceCollection();
+        var serviceProvider = services.BuildServiceProvider();
+        var options = serviceProvider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>();
+        var jwtOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
+
+        var httpContext = new DefaultHttpContext();
+        httpContext.Items["AuthException"] = new SecurityTokenException("Some other token error");
+
+        var context = new JwtBearerChallengeContext(
+            httpContext,
+            new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
+            new JwtBearerOptions(),
+            new AuthenticationProperties());
+
+        // Act
+        var act = () => jwtOptions.Events.OnChallenge(context).GetAwaiter().GetResult();
+
+        // Assert
+        act.Should().Throw<UnauthorizedAccessException>()
+            .WithMessage("*Invalid JWT token*");
+    }
 
     [Fact]
     public void OnChallenge_WithStoredError_ShouldThrowUnauthorizedWithErrorCode()
@@ -156,8 +273,7 @@ public class JwtAuthenticationHandlerTests
 
         // Assert
         act.Should().Throw<UnauthorizedAccessException>()
-            .WithMessage("*Unauthorized access*")
-            .And.Data[ErrorCodes.ErrorCodeKey].Should().NotBeNull();
+            .WithMessage("*provided credentials*invalid*");
     }
 
     [Fact]
@@ -183,8 +299,7 @@ public class JwtAuthenticationHandlerTests
 
         // Assert
         act.Should().Throw<UnauthorizedAccessException>()
-            .WithMessage("*Unauthorized access*")
-            .And.Data[ErrorCodes.ErrorCodeKey].Should().NotBeNull();
+            .WithMessage("*authentication*required*");
     }
 
     [Fact]
@@ -212,8 +327,7 @@ public class JwtAuthenticationHandlerTests
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*You do not have permission to access this resource*")
-            .And.Data[ErrorCodes.ErrorCodeKey].Should().NotBeNull();
+            .WithMessage("*You do not have permission to access this resource*");
     }
 
     [Fact]
@@ -266,8 +380,7 @@ public class JwtAuthenticationHandlerTests
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*permission*")
-            .And.Data[ErrorCodes.ErrorCodeKey].Should().NotBeNull();
+            .WithMessage("*permission*");
     }
 
     [Fact]
@@ -294,8 +407,7 @@ public class JwtAuthenticationHandlerTests
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*permission*")
-            .And.Data[ErrorCodes.ErrorCodeKey].Should().NotBeNull();
+            .WithMessage("*permission*");
     }
 
     [Fact]
@@ -324,8 +436,7 @@ public class JwtAuthenticationHandlerTests
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*permission*")
-            .And.Data[ErrorCodes.ErrorCodeKey].Should().NotBeNull();
+            .WithMessage("*permission*");
     }
 
     private ServiceCollection CreateServiceCollection()
@@ -334,7 +445,6 @@ public class JwtAuthenticationHandlerTests
         services.AddSingleton(_jwtSettings);
         services.AddSingleton(_rsaKey);
         services.AddSingleton(_mockLoggerFactory.Object);
-        services.AddSingleton(_metrics);
         services.AddLogging();
         
         var configuration = new ConfigurationBuilder().Build();

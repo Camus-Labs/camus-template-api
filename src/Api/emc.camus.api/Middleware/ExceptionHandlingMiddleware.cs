@@ -1,7 +1,12 @@
 using System.Net;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
-using emc.camus.application.Generic;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
+using emc.camus.api.Configurations;
+using emc.camus.api.Metrics;
+using emc.camus.application.Common;
 using emc.camus.application.Exceptions;
 
 namespace emc.camus.api.Middleware
@@ -14,23 +19,64 @@ namespace emc.camus.api.Middleware
     /// </summary> 
     public class ExceptionHandlingMiddleware
     {
+        /// <summary>
+        /// Platform-defined error code mapping rules that cannot be changed via configuration.
+        /// These rules map common exception types to their corresponding error codes.
+        /// Additional rules can be added via configuration (ErrorHandlingSettings.AdditionalRules).
+        /// </summary>
+        private static readonly IReadOnlyList<ErrorCodeMappingRule> PlatformRules = new List<ErrorCodeMappingRule>
+        {
+            new() { Type = nameof(RateLimitExceededException), ErrorCode = ErrorCodes.RateLimitExceeded },
+            // JWT-specific error patterns (most specific first)
+            new() { Type = nameof(UnauthorizedAccessException), Pattern = "jwt.*expired|token.*expired", ErrorCode = ErrorCodes.JwtTokenExpired },
+            new() { Type = nameof(UnauthorizedAccessException), Pattern = "invalid.*signature", ErrorCode = ErrorCodes.JwtInvalidSignature },
+            new() { Type = nameof(UnauthorizedAccessException), Pattern = "invalid.*issuer", ErrorCode = ErrorCodes.JwtInvalidIssuer },
+            new() { Type = nameof(UnauthorizedAccessException), Pattern = "invalid.*audience", ErrorCode = ErrorCodes.JwtInvalidAudience },
+            // Authentication required patterns (checked before generic invalid credentials)
+            new() { Type = nameof(UnauthorizedAccessException), Pattern = "authentication.*required.*jwt", ErrorCode = ErrorCodes.JwtAuthenticationRequired },
+            new() { Type = nameof(UnauthorizedAccessException), Pattern = "authentication.*required.*api.?key", ErrorCode = ErrorCodes.ApiKeyAuthenticationRequired },
+            new() { Type = nameof(UnauthorizedAccessException), Pattern = "authentication.*required", ErrorCode = ErrorCodes.AuthenticationRequired },
+            // Specific invalid credentials patterns (checked before generic)
+            new() { Type = nameof(UnauthorizedAccessException), Pattern = "invalid.*jwt|jwt.*invalid", ErrorCode = ErrorCodes.JwtInvalidCredentials },
+            new() { Type = nameof(UnauthorizedAccessException), Pattern = "invalid.*api.?key", ErrorCode = ErrorCodes.ApiKeyInvalidCredentials },
+            new() { Type = nameof(UnauthorizedAccessException), Pattern = "username.*password|password.*mismatch", ErrorCode = ErrorCodes.AuthInvalidCredentials },
+            new() { Type = nameof(UnauthorizedAccessException), Pattern = "invalid|credentials|incorrect", ErrorCode = ErrorCodes.InvalidCredentials },
+            new() { Type = nameof(UnauthorizedAccessException), ErrorCode = ErrorCodes.Unauthorized },
+            new() { Type = nameof(ArgumentException), ErrorCode = ErrorCodes.BadRequest },
+            new() { Type = nameof(InvalidOperationException), Pattern = "permission", ErrorCode = ErrorCodes.Forbidden },
+            new() { Pattern = "secret|configuration", ErrorCode = ErrorCodes.InternalServerError }
+        }.AsReadOnly();
+
         private readonly RequestDelegate _next;
         private readonly ILogger<ExceptionHandlingMiddleware> _logger;
         private readonly IHostEnvironment _environment;
+        private readonly IReadOnlyList<ErrorCodeMappingRule> _allRules;
+        private readonly ErrorMetrics _errorMetrics;
 
         /// <summary>
-        /// ExceptionHandlingMiddleware constructor initializes the middleware with a request delegate, logger, and host environment.
+        /// ExceptionHandlingMiddleware constructor initializes the middleware with a request delegate, logger, host environment, and error handling settings.
         /// This constructor is used to set up the middleware in the ASP.NET Core pipeline, allowing it to intercept requests and handle exceptions.
         /// The host environment is used to determine detail level for error responses (verbose in Development, minimal in Production).
         /// </summary>
         /// <param name="next">The next middleware in the pipeline to invoke after processing</param>
         /// <param name="logger">Logger instance for recording exception information</param>
         /// <param name="environment">Host environment to determine error detail level</param>
-        public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger, IHostEnvironment environment)
+        /// <param name="settings">Error handling settings containing error code mapping rules</param>
+        /// <param name="errorMetrics">Metrics service for tracking error responses</param>
+        public ExceptionHandlingMiddleware(
+            RequestDelegate next, 
+            ILogger<ExceptionHandlingMiddleware> logger, 
+            IHostEnvironment environment,
+            IOptions<ErrorHandlingSettings> settings,
+            ErrorMetrics errorMetrics)
         {
             _next = next;
             _logger = logger;
             _environment = environment;
+            _errorMetrics = errorMetrics;
+            
+            // Combine rules once at startup: AdditionalRules first (allow config overrides), then PlatformRules
+            _allRules = settings.Value.AdditionalRules.Concat(PlatformRules).ToList().AsReadOnly();
         }
 
         /// <summary>
@@ -63,14 +109,16 @@ namespace emc.camus.api.Middleware
         /// <returns>A task representing the asynchronous operation of writing the ProblemDetails response</returns>
         private Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            var isDevelopment = _environment.IsDevelopment();
-            var problemDetails = CreateProblemDetails(exception, isDevelopment);
-            
+            var problemDetails = CreateProblemDetails(exception);
+
             problemDetails.Instance = context.Request.Path;
             
             AddErrorCode(problemDetails, exception);
-            AddRetryAfterMetadata(problemDetails, exception, context);
-            AddDevelopmentInformation(problemDetails, exception, isDevelopment);
+            
+            if (_environment.IsDevelopment())
+            {
+                AddDevelopmentInformation(problemDetails, exception);
+            }
 
             _logger.LogError(exception, "Exception detected: {ErrorMessage}", exception.Message);
 
@@ -89,124 +137,161 @@ namespace emc.camus.api.Middleware
         /// <summary>
         /// Creates a ProblemDetails object based on the exception type.
         /// </summary>
-        private ProblemDetails CreateProblemDetails(Exception exception, bool isDevelopment)
+        private ProblemDetails CreateProblemDetails(Exception exception)
         {
-            return exception switch
+            var problemDetails = exception switch
             {
-                ArgumentException argEx => CreateBadRequestProblem(argEx, isDevelopment),
-                UnauthorizedAccessException => CreateUnauthorizedProblem(exception, isDevelopment),
-                RateLimitExceededException => CreateRateLimitProblem(exception),
-                InvalidOperationException invalidOpEx when invalidOpEx.Message.Contains("permission") => CreateForbiddenProblem(invalidOpEx, isDevelopment),
-                _ => CreateInternalServerErrorProblem(exception, isDevelopment)
-            };
-        }
-
-        private ProblemDetails CreateBadRequestProblem(ArgumentException exception, bool isDevelopment)
-        {
-            return new ProblemDetails
-            {
-                Status = (int)HttpStatusCode.BadRequest,
-                Title = "Bad Request",
-                Detail = isDevelopment ? $"Argument validation failed: {exception.Message}" : "The request contains invalid parameters.",
-                Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-            };
-        }
-
-        private ProblemDetails CreateUnauthorizedProblem(Exception exception, bool isDevelopment)
-        {
-            return new ProblemDetails
-            {
-                Status = (int)HttpStatusCode.Unauthorized,
-                Title = "Unauthorized",
-                Detail = isDevelopment ? exception.Message : "You are not authorized to access this resource.",
-                Type = "https://tools.ietf.org/html/rfc7235#section-3.1"
-            };
-        }
-
-        private ProblemDetails CreateRateLimitProblem(Exception exception)
-        {
-            return new ProblemDetails
-            {
-                Status = (int)HttpStatusCode.TooManyRequests,
-                Title = "Too Many Requests",
-                Detail = exception.Message,
-                Type = "https://tools.ietf.org/html/rfc6585#section-4",
-                Extensions =
+                ArgumentException => new ProblemDetails
                 {
-                    ["error"] = ErrorCodes.RateLimitExceeded
+                    Status = (int)HttpStatusCode.BadRequest,
+                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.BadRequest),
+                    Detail = exception.Message,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                },
+                UnauthorizedAccessException => new ProblemDetails
+                {
+                    Status = (int)HttpStatusCode.Unauthorized,
+                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.Unauthorized),
+                    Detail = "You are not authorized to access this resource.",
+                    Type = "https://tools.ietf.org/html/rfc7235#section-3.1"
+                },
+                RateLimitExceededException rateLimitEx => new ProblemDetails
+                {
+                    Status = (int)HttpStatusCode.TooManyRequests,
+                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.TooManyRequests),
+                    Detail = "Rate limit exceeded. Please try again later.",
+                    Type = "https://tools.ietf.org/html/rfc6585#section-4",
+                    Extensions = { ["retryAfter"] = rateLimitEx.RetryAfterSeconds }
+                },
+                InvalidOperationException when exception.Message.Contains("permission") => new ProblemDetails
+                {
+                    Status = (int)HttpStatusCode.Forbidden,
+                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.Forbidden),
+                    Detail = "You do not have permission to access this resource.",
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                },
+                InvalidOperationException => new ProblemDetails
+                {
+                    Status = (int)HttpStatusCode.Conflict,
+                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.Conflict),
+                    Detail = exception.Message,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+                },
+                _ => new ProblemDetails
+                {
+                    Status = (int)HttpStatusCode.InternalServerError,
+                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.InternalServerError),
+                    Detail = "An unexpected error occurred.",
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
                 }
             };
-        }
 
-        private ProblemDetails CreateForbiddenProblem(InvalidOperationException exception, bool isDevelopment)
-        {
-            return new ProblemDetails
-            {
-                Status = (int)HttpStatusCode.Forbidden,
-                Title = "Forbidden",
-                Detail = isDevelopment ? exception.Message : "You do not have permission to access this resource.",
-                Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
-            };
-        }
-
-        private ProblemDetails CreateInternalServerErrorProblem(Exception exception, bool isDevelopment)
-        {
-            return new ProblemDetails
-            {
-                Status = (int)HttpStatusCode.InternalServerError,
-                Title = "Internal Server Error",
-                Detail = isDevelopment ? $"An unexpected error occurred: {exception.Message}" : "An unexpected error occurred.",
-                Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
-            };
+            return problemDetails;
         }
 
         /// <summary>
         /// Adds machine-readable error code to the problem details.
+        /// Maps exception to error code using configured rules.
         /// </summary>
         private void AddErrorCode(ProblemDetails problemDetails, Exception exception)
         {
-            if (exception.Data.Contains(ErrorCodes.ErrorCodeKey))
-            {
-                problemDetails.Extensions["error"] = exception.Data[ErrorCodes.ErrorCodeKey];
-            }
-            else
-            {
-                problemDetails.Extensions["error"] = ErrorCodes.GetErrorCodeFromStatusCode(problemDetails.Status ?? 500);
-            }
+            var errorCode = ResolveErrorCode(exception);
+            problemDetails.Extensions["error"] = errorCode;
+            
+            // Record error metrics (fire-and-forget telemetry)
+            _errorMetrics.RecordError(errorCode, problemDetails.Status ?? 500, problemDetails.Instance ?? "unknown");
         }
 
         /// <summary>
-        /// Adds RetryAfter metadata if present in the exception data.
+        /// Resolves an exception to a machine-readable error code using configured rules.
+        /// Evaluates AdditionalRules (from configuration) before PlatformRules (built-in).
         /// </summary>
-        private void AddRetryAfterMetadata(ProblemDetails problemDetails, Exception exception, HttpContext context)
+        private string ResolveErrorCode(Exception exception)
         {
-            int? retryAfterSeconds = null;
-
-            // Check if it's a RateLimitExceededException
-            if (exception is RateLimitExceededException rateLimitException)
+            // First check if error code was explicitly set in exception.Data (override mechanism)
+            if (exception.Data.Contains(ErrorCodes.ErrorCodeKey) && 
+                exception.Data[ErrorCodes.ErrorCodeKey] is string explicitCode &&
+                !string.IsNullOrWhiteSpace(explicitCode))
             {
-                retryAfterSeconds = rateLimitException.RetryAfterSeconds;
+                _logger.LogWarning(
+                    "Explicit error code '{ExplicitCode}' found in exception.Data[{ErrorCodeKey}]. " +
+                    "This pattern is discouraged - error codes should be automatically detected via configuration. " +
+                    "Exception type: {ExceptionType}",
+                    explicitCode, ErrorCodes.ErrorCodeKey, exception.GetType().Name);
+                return explicitCode;
             }
 
-            if (retryAfterSeconds.HasValue)
+            // Evaluate rules in order - first match wins
+            var exceptionTypeName = exception.GetType().Name;
+            
+            foreach (var rule in _allRules)
             {
-                problemDetails.Extensions["retryAfter"] = retryAfterSeconds.Value;
-                context.Response.Headers.RetryAfter = retryAfterSeconds.Value.ToString();
+                // Check type match (if specified)
+                bool typeMatches = string.IsNullOrWhiteSpace(rule.Type) || 
+                                   exceptionTypeName.Equals(rule.Type, StringComparison.OrdinalIgnoreCase);
+
+                if (!typeMatches)
+                    continue;
+
+                // Check pattern match (if specified)
+                if (!string.IsNullOrWhiteSpace(rule.Pattern))
+                {
+                    try
+                    {
+                        if (Regex.IsMatch(exception.Message, rule.Pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100)))
+                        {
+                            return rule.ErrorCode;
+                        }
+                    }
+                    catch (RegexMatchTimeoutException)
+                    {
+                        _logger.LogWarning(
+                            "Regex pattern '{Pattern}' timed out matching exception message. Skipping rule.",
+                            rule.Pattern);
+                        continue;
+                    }
+                }
+                else
+                {
+                    // Type-only match (no pattern specified)
+                    return rule.ErrorCode;
+                }
             }
+
+            // No rules matched - return unknown error constant
+            return ErrorCodes.DefaultErrorCode;
         }
 
         /// <summary>
         /// Adds development debugging information to the problem details.
         /// </summary>
-        private void AddDevelopmentInformation(ProblemDetails problemDetails, Exception exception, bool isDevelopment)
+        private void AddDevelopmentInformation(ProblemDetails problemDetails, Exception exception)
         {
-            if (isDevelopment)
+            problemDetails.Extensions["exceptionType"] = exception.GetType().Name;
+            problemDetails.Extensions["exceptionMessage"] = exception.Message;
+            
+            // Add inner exception chain if present
+            if (exception.InnerException != null)
             {
-                problemDetails.Extensions["exceptionType"] = exception.GetType().Name;
-                if (!string.IsNullOrWhiteSpace(exception.StackTrace))
+                var innerExceptions = new List<object>();
+                var currentException = exception.InnerException;
+                
+                while (currentException != null)
                 {
-                    problemDetails.Extensions["stackTrace"] = exception.StackTrace;
+                    innerExceptions.Add(new
+                    {
+                        type = currentException.GetType().Name,
+                        message = currentException.Message
+                    });
+                    currentException = currentException.InnerException;
                 }
+                
+                problemDetails.Extensions["innerExceptions"] = innerExceptions;
+            }
+            
+            if (!string.IsNullOrWhiteSpace(exception.StackTrace))
+            {
+                problemDetails.Extensions["stackTrace"] = exception.StackTrace;
             }
         }
 

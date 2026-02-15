@@ -29,7 +29,7 @@ The Application layer serves as the **contracts layer** between API/Adapters and
 Authentication-related contracts:
 
 - **`IJwtTokenGenerator`** - Interface for JWT token generation (implemented by `emc.camus.security.jwt`)
-- **`JwtTokenResult`** - Token generation result model
+- **`GenerateTokenResult`** - Token generation result model
 - **`AuthenticationSchemes`** - Authentication scheme name constants (`Bearer`, `ApiKey`)
 
 ### `Observability/`
@@ -227,6 +227,6 @@ Tests focus on:
 
 - [Architecture Overview](../../../docs/architecture.md) - Layer responsibilities and dependency flow
 - [Main README](../../../README.md) - Project overview and quick start
-- [Rate Limiting Adapter](../../Adapters/emc.camus.ratelimiting.memory/README.md) - Rate limiting implementation
+- [Rate Limiting Adapter](../../Adapters/emc.camus.ratelimiting.inmemory/README.md) - Rate limiting implementation
 - [JWT Security Adapter](../../Adapters/emc.camus.security.jwt/README.md) - JWT authentication implementation
 - [OpenTelemetry Adapter](../../Adapters/emc.camus.observability.otel/README.md) - Observability implementation

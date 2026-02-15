@@ -7,7 +7,7 @@ using emc.camus.security.jwt;
 using emc.camus.security.apikey;
 using emc.camus.secrets.dapr;
 using emc.camus.documentation.swagger;
-using emc.camus.ratelimiting.memory;
+using emc.camus.ratelimiting.inmemory;
 using Microsoft.AspNetCore.HttpOverrides;
 
 [assembly: ExcludeFromCodeCoverage]
@@ -27,33 +27,45 @@ string ENV_NAME = builder.Environment.EnvironmentName ?? "unknown-environment";
 // Step 1: Configure logging + OpenTelemetry via adapter (with instance id and env name)
 builder.AddObservability(SERVICE_NAME, SERVICE_VERSION, INSTANCE_ID, ENV_NAME);
 
-// Step 2: Configure application services (versioning, CORS, authorization, controllers, business DI)
-builder.AddApplicationServices();
+// Step 2: Configure error handling (exception-to-error-code resolution and metrics)
+builder.AddErrorHandling(SERVICE_NAME);
 
-// Step 3: Configure rate limiting (always enabled for security)
-builder.AddMemoryRateLimiting(SERVICE_NAME);
+// Step 3: Configure API versioning
+builder.AddApiVersioning();
 
 // Step 4: Add Swagger documentation via adapter (depends on API versioning)
 builder.AddSwaggerDocumentation();
 
-// Step 5: Configure Secrets Provider using Dapr Adapter
+// Step 5: Configure CORS policy
+builder.AddCorsPolicy();
+
+// Step 6: Configure rate limiting (always enabled for security)
+builder.AddMemoryRateLimiting(SERVICE_NAME);
+
+// Step 7: Configure Secrets Provider using Dapr Adapter
 builder.AddDaprSecrets();
 
-// Step 6: Configure Authentication using Security Adapters
-builder.AddJwtAuthentication(SERVICE_NAME);
-builder.AddApiKeyAuthentication(SERVICE_NAME);
+// Step 8: Configure Authentication using Security Adapters (depends on secrets)
+builder.AddJwtAuthentication();
+builder.AddApiKeyAuthentication();
 
-// Step 7: Build App Builder
+// Step 9: Configure authorization policies and user repository (depends on authentication)
+builder.AddAuthorization();
+
+// Step 10: Configure controllers (uses all services above)
+builder.AddApplicationServices();
+
+// Step 11: Build App Builder
 var app = builder.Build();
 
-// Get logger for startup events
+// Step 12: Get logger for startup events
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 
 startupLogger.LogInformation("Starting {ServiceName} v{ServiceVersion} in {Environment} environment", 
     SERVICE_NAME, SERVICE_VERSION, ENV_NAME);
 startupLogger.LogInformation("Instance ID: {InstanceId}", INSTANCE_ID);
 
-// Step 8: Configure forwarded headers for proxy/load balancer scenarios
+// Step 13: Configure forwarded headers for proxy/load balancer scenarios
 // This ensures X-Forwarded-For and X-Real-IP headers are properly processed
 // Critical for rate limiting to work correctly behind proxies (Azure LB, nginx, CloudFlare, etc.)
 app.UseForwardedHeaders(new ForwardedHeadersOptions
@@ -64,32 +76,40 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardLimit = null // Process all X-Forwarded-For entries
 });
 
-// Step 9: Enable observability middleware (adds Trace Id header to responses)
+// Step 14: Enforce HTTPS (redirect HTTP to HTTPS)
+app.UseHttpsRedirection();
+
+// Step 15: Enable observability middleware (adds Trace Id header to responses)
 // Must be BEFORE exception handling so trace IDs are available in error logs
 app.UseObservability();
 
-// Step 10: Global exception handling middleware (catches auth, authz, and app exceptions)
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+// Step 16: Global exception handling middleware (catches auth, authz, and app exceptions)
+// Must be EARLY in pipeline to catch exceptions from rate limiting, auth, etc.
+app.UseErrorHandling();
 
-// Step 11: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
-app.UseMemoryRateLimiting();
-
-// Step 12: Enable Swagger UI in development
+// Step 17: Enable Swagger UI in development
 app.UseSwaggerDocumentation();
 
-// Step 13: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
+// Step 18: Apply CORS policy (before authentication to allow preflight requests)
+app.UseCorsPolicy();
+
+// Step 19: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
+app.UseMemoryRateLimiting();
+
+// Step 19: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
 app.UseDaprSecrets();
 
-app.UseHttpsRedirection();
-
-// Step 14: Add Authentication and Authorization
+// Step 20: Add Authentication and Authorization
 app.UseAuthentication();
-app.UseAuthorization();
 
-// Step 15: Apply application services (CORS, endpoint routing)
+// Step 17: Initialize authorization data (load users/roles)
+app.UseAuthorizationSetup();
+
+// Step 21: Apply application services (endpoint routing)
 app.UseApplicationServices();
+
 
 startupLogger.LogInformation("{ServiceName} startup complete. Ready to accept requests", SERVICE_NAME);
 
-// Step 16: Run the app
+// Step 22: Run the app
 await app.RunAsync();

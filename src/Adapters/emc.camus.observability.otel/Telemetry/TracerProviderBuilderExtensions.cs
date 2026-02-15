@@ -107,25 +107,28 @@ namespace emc.camus.observability.otel.Telemetry
             this TracerProviderBuilder builder, 
             OpenTelemetrySettings settings)
         {
-            var selectedExporter = settings.Tracing.Exporter;
+            var exporter = settings.Tracing.Exporter;
 
-            if (IsOtlpExporter(selectedExporter))
+            switch (exporter)
             {
-                ConfigureOtlpExporter(builder, settings);
-            }
-            else if (IsConsoleExporter(selectedExporter))
-            {
-                builder.AddConsoleExporter();
+                case TracingExporter.Otlp:
+                    ConfigureOtlpExporter(builder, settings);
+                    break;
+
+                case TracingExporter.Console:
+                    builder.AddConsoleExporter();
+                    break;
+
+                case TracingExporter.None:
+                    // No exporter configured
+                    break;
+                    
+                default:
+                    throw new InvalidOperationException($"Unsupported tracing exporter: {exporter}");
             }
 
             return builder;
         }
-
-        private static bool IsOtlpExporter(string exporter) 
-            => string.Equals(exporter, ExporterTypes.Otlp, StringComparison.OrdinalIgnoreCase);
-
-        private static bool IsConsoleExporter(string exporter) 
-            => string.Equals(exporter, ExporterTypes.Console, StringComparison.OrdinalIgnoreCase);
 
         private static void ConfigureOtlpExporter(TracerProviderBuilder builder, OpenTelemetrySettings settings)
         {

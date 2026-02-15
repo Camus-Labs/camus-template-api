@@ -1,5 +1,5 @@
 using emc.camus.api.Configurations;
-using emc.camus.application.Generic;
+using emc.camus.application.Common;
 using FluentAssertions;
 using Microsoft.Net.Http.Headers;
 

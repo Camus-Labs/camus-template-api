@@ -1,11 +1,10 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using emc.camus.application.Auth;
-using emc.camus.application.Generic;
+using emc.camus.application.Common;
 using emc.camus.application.Secrets;
 using emc.camus.security.apikey.Configurations;
 using emc.camus.security.apikey.Handlers;
-using emc.camus.security.apikey.Metrics;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
@@ -26,16 +25,14 @@ public class ApiKeyAuthenticationHandlerTests
     private readonly Mock<ISecretProvider> _mockSecretProvider;
     private readonly ApiKeySettings _settings;
     private readonly UrlEncoder _encoder;
-    private readonly ApiKeyMetrics _metrics;
 
     public ApiKeyAuthenticationHandlerTests()
     {
         _mockOptions = new Mock<IOptionsMonitor<AuthenticationSchemeOptions>>();
         _loggerFactory = NullLoggerFactory.Instance;
         _mockSecretProvider = new Mock<ISecretProvider>();
-        _settings = new ApiKeySettings { SecretKeyName = "XApiKey" };
+        _settings = new ApiKeySettings();
         _encoder = UrlEncoder.Default;
-        _metrics = new ApiKeyMetrics("test-service");
 
         _mockOptions.Setup(x => x.Get(It.IsAny<string>()))
             .Returns(new AuthenticationSchemeOptions());
@@ -48,7 +45,7 @@ public class ApiKeyAuthenticationHandlerTests
     {
         // Arrange
         var validApiKey = "valid-api-key-123";
-        _mockSecretProvider.Setup(x => x.GetSecret("XApiKey")).Returns(validApiKey);
+        _mockSecretProvider.Setup(x => x.GetSecret(_settings.ApiKeySecretName)).Returns(validApiKey);
 
         var context = new DefaultHttpContext();
         context.Request.Headers[Headers.ApiKey] = validApiKey;
@@ -79,7 +76,7 @@ public class ApiKeyAuthenticationHandlerTests
         var context = new DefaultHttpContext();
         context.Request.Headers[Headers.ApiKey] = longApiKey;
 
-        _mockSecretProvider.Setup(x => x.GetSecret("XApiKey")).Returns(longApiKey);
+        _mockSecretProvider.Setup(x => x.GetSecret(_settings.ApiKeySecretName)).Returns(longApiKey);
 
         var handler = CreateHandler(context);
         await InitializeHandler(handler, context);
@@ -98,7 +95,7 @@ public class ApiKeyAuthenticationHandlerTests
         var context = new DefaultHttpContext();
         context.Request.Headers[Headers.ApiKey] = new[] { "valid-key", "another-key" };
 
-        _mockSecretProvider.Setup(x => x.GetSecret("XApiKey")).Returns("valid-key");
+        _mockSecretProvider.Setup(x => x.GetSecret(_settings.ApiKeySecretName)).Returns("valid-key");
 
         var handler = CreateHandler(context);
         await InitializeHandler(handler, context);
@@ -121,18 +118,15 @@ public class ApiKeyAuthenticationHandlerTests
         var context = new DefaultHttpContext();
         context.Request.Headers.Clear(); // No API Key header
 
-        _mockSecretProvider.Setup(x => x.GetSecret("XApiKey")).Returns("valid-key");
+        _mockSecretProvider.Setup(x => x.GetSecret(_settings.ApiKeySecretName)).Returns("valid-key");
 
         var handler = CreateHandler(context);
         await InitializeHandler(handler, context);
 
         // Act & Assert
         var act = async () => await handler.AuthenticateAsync();
-        var exception = await act.Should().ThrowAsync<UnauthorizedAccessException>()
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
             .WithMessage("*authentication*required*");
-        
-        exception.Which.Data[ErrorCodes.ErrorCodeKey].Should().NotBeNull(
-            "because missing API key header should return an error code");
     }
 
     #endregion
@@ -146,18 +140,15 @@ public class ApiKeyAuthenticationHandlerTests
         var context = new DefaultHttpContext();
         context.Request.Headers[Headers.ApiKey] = "invalid-key";
 
-        _mockSecretProvider.Setup(x => x.GetSecret("XApiKey")).Returns("valid-key");
+        _mockSecretProvider.Setup(x => x.GetSecret(_settings.ApiKeySecretName)).Returns("valid-key");
 
         var handler = CreateHandler(context);
         await InitializeHandler(handler, context);
 
         // Act & Assert
         var act = async () => await handler.AuthenticateAsync();
-        var exception = await act.Should().ThrowAsync<UnauthorizedAccessException>()
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
             .WithMessage("*provided credentials*invalid*");
-        
-        exception.Which.Data[ErrorCodes.ErrorCodeKey].Should().NotBeNull(
-            "because invalid API key should return an error code");
     }
 
     [Theory]
@@ -171,7 +162,7 @@ public class ApiKeyAuthenticationHandlerTests
         if (apiKey != null)
             context.Request.Headers[Headers.ApiKey] = apiKey;
 
-        _mockSecretProvider.Setup(x => x.GetSecret("XApiKey")).Returns("valid-key");
+        _mockSecretProvider.Setup(x => x.GetSecret(_settings.ApiKeySecretName)).Returns("valid-key");
 
         var handler = CreateHandler(context);
         await InitializeHandler(handler, context);
@@ -188,7 +179,7 @@ public class ApiKeyAuthenticationHandlerTests
         var context = new DefaultHttpContext();
         context.Request.Headers[Headers.ApiKey] = "Valid-Key"; // Different case
 
-        _mockSecretProvider.Setup(x => x.GetSecret("XApiKey")).Returns("valid-key"); // lowercase
+        _mockSecretProvider.Setup(x => x.GetSecret(_settings.ApiKeySecretName)).Returns("valid-key"); // lowercase
 
         var handler = CreateHandler(context);
         await InitializeHandler(handler, context);
@@ -211,7 +202,7 @@ public class ApiKeyAuthenticationHandlerTests
         var context = new DefaultHttpContext();
         context.Request.Headers[Headers.ApiKey] = "some-key";
 
-        _mockSecretProvider.Setup(x => x.GetSecret("XApiKey")).Returns(configuredKey);
+        _mockSecretProvider.Setup(x => x.GetSecret(_settings.ApiKeySecretName)).Returns(configuredKey);
 
         var handler = CreateHandler(context);
         await InitializeHandler(handler, context);
@@ -229,7 +220,7 @@ public class ApiKeyAuthenticationHandlerTests
         context.Request.Headers[Headers.ApiKey] = "some-key";
 
         _mockSecretProvider
-            .Setup(x => x.GetSecret("XApiKey"))
+            .Setup(x => x.GetSecret(_settings.ApiKeySecretName))
             .Throws(new InvalidOperationException("Secret store unavailable"));
 
         var handler = CreateHandler(context);
@@ -250,8 +241,7 @@ public class ApiKeyAuthenticationHandlerTests
             _loggerFactory,
             _encoder,
             _mockSecretProvider.Object,
-            _settings,
-            _metrics);
+            _settings);
     }
 
     private async Task InitializeHandler(AuthenticationHandler<AuthenticationSchemeOptions> handler, HttpContext context)

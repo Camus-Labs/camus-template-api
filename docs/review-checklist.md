@@ -8,7 +8,7 @@ This checklist ensures new features follow architectural principles, avoid over-
 
 ## A. ARCHITECTURE REVIEW
 
-Review the **[FEATURE_NAME]** feature implementation:
+Find and review all classes, enums, interfaces, doc and other files related to [FEATURE_NAME] to check them against:
 
 ### Architecture Checklist
 
@@ -21,10 +21,107 @@ Review the **[FEATURE_NAME]** feature implementation:
 
 #### Layer Placement Validation
 
-- [ ] **Application**: Only shared contracts (attributes, exceptions, constants)
-- [ ] **Adapters**: Implementation details, infrastructure, HTTP/DB specifics
-- [ ] **Domain**: Business entities and rules
-- [ ] **API**: Orchestration and HTTP concerns
+##### Application Layer (Shared Contracts)
+
+**Purpose**: Defines contracts (interfaces, attributes, exceptions) that decouple API from infrastructure adapters. **NOT for business logic** - that goes in Domain.
+
+**✅ ALLOWED (DO):**
+
+- [ ] Custom attributes for cross-cutting concerns (e.g., `[RateLimit]`)
+- [ ] Custom exceptions for infrastructure failures (e.g., `RateLimitExceededException`, `AuthenticationFailedException`)
+- [ ] Port interfaces for adapters with multiple implementations (e.g., `ITokenGenerator`, `IUserRepository`, `ISecretProvider`)
+- [ ] Interfaces consumed by multiple adapters (shared contracts)
+- [ ] Constants for cross-cutting concerns (e.g., `ErrorCodes.RateLimitExceeded`, `Headers.ApiKey`, `Headers.TraceId`)
+- [ ] Application services as concrete classes (e.g., `AuthService`) - no interface needed unless multiple implementations exist
+
+**❌ FORBIDDEN (DON'T):**
+
+- [ ] HTTP runtime objects (HttpContext, HttpRequest, HttpResponse)
+- [ ] Infrastructure implementations (database, file I/O, caching, secrets)
+- [ ] Configuration classes (Settings, Options)
+- [ ] Interfaces for single-implementation application services (YAGNI - add when second implementation is needed)
+- [ ] Middleware or DI registration
+- [ ] Business/domain logic
+
+##### Domain Layer (Business Logic)
+
+**Purpose**: Pure business entities, rules, and logic. **No dependencies** on any other layer or infrastructure. This is where your business validation lives.
+
+**✅ ALLOWED (DO):**
+
+- [ ] Business entities and models (e.g., `User`, `Order`, `ApiInfo`, `Credentials`)
+- [ ] Value objects (e.g., `Email`, `Money`, `Address`)
+- [ ] Domain rules and business validation (e.g., "age >= 18", "price > 0", "email format valid")
+- [ ] Domain exceptions for business rule violations (e.g., `InvalidAgeException`, `PriceCannotBeNegativeException`)
+- [ ] Domain constants (business-related, e.g., `MinimumAge = 18`)
+- [ ] Domain events (if using event-driven patterns)
+- [ ] Extension methods for domain entities (e.g., `user.IsAdult()`, `order.CalculateTotal()`)
+
+**❌ FORBIDDEN (DON'T):**
+
+- [ ] Any infrastructure dependencies (database, HTTP, file system)
+- [ ] Any Application layer references (attributes, exceptions)
+- [ ] Framework-specific code (ASP.NET, EF Core annotations)
+
+##### API Layer (HTTP Orchestration)
+
+**Purpose**: HTTP pipeline, routing, and web infrastructure configuration. Orchestrates calls to Application interfaces.
+
+**✅ ALLOWED (DO):**
+
+- [ ] Controllers and endpoint handlers
+- [ ] DTOs for HTTP translation (request/response models)
+- [ ] Model binding attributes only (`[FromBody]`, `[FromQuery]`, `[FromRoute]`) - NO validation attributes
+- [ ] Middleware (HTTP pipeline components)
+- [ ] Action filters and exception filters (`IActionFilter`, `IExceptionFilter`)
+- [ ] Dependency injection configuration (Program.cs, Startup.cs)
+- [ ] HTTP pipeline configuration (middleware ordering, request processing)
+- [ ] Error handling and response mapping
+- [ ] Web infrastructure configuration (security policies, cross-cutting concerns)
+- [ ] Service registration orchestration (calling adapter extension methods)
+- [ ] Mapper extensions for DTO ↔ Command/Result conversion WITH validation
+
+**❌ FORBIDDEN (DON'T):**
+
+- [ ] Business/domain logic (calculations, rules, validation)
+- [ ] Infrastructure implementations (database, secrets, caching)
+- [ ] Using domain entities directly (map to DTOs in controllers)
+- [ ] Validation attributes on DTOs (`[Required]`, `[StringLength]`, `[Range]`) - validation goes in mapper extensions
+
+##### Adapters Layer (Infrastructure Implementations)
+
+**Purpose**: Implements Application interfaces using specific technologies. Each adapter is independent and swappable.
+
+**✅ ALLOWED (DO):**
+
+- [ ] Implementation of Application interfaces
+- [ ] Infrastructure-specific code (database, HTTP, file system, caching)
+- [ ] External service clients and SDKs
+- [ ] Adapter-specific interfaces (only consumed within adapter)
+- [ ] Adapter-specific configuration classes (JwtSettings, DaprSecretProviderSettings, RateLimitSettings)
+- [ ] Extension methods for service registration (AddJwtAuthentication, AddDaprSecrets)
+- [ ] Adapter-specific middleware
+- [ ] Technology-specific implementations (Dapr, Redis, JWT, etc.)
+
+**❌ FORBIDDEN (DON'T):**
+
+- [ ] Business/domain logic
+- [ ] HTTP endpoint definitions
+- [ ] Shared interfaces used by API (move to Application)
+
+##### Configuration Classes & Validation Pattern
+
+**Settings classes must follow this pattern:**
+
+- [ ] **Use enums for type-safe options** (not string constants) to prevent configuration errors
+  - **Exception**: Use validated strings when referencing framework-mandated identifiers (authentication schemes, content types) or shared application constants used in attributes/middleware. Validate against allowed values with case-insensitive comparison.
+- [ ] **Validate enum values** with `Enum.IsDefined()` to catch appsettings.json misconfigurations
+  - For string-based settings, validate against a defined list of valid values
+- [ ] **Validation logic in settings class** as private `ValidateXxx()` methods called from public `Validate()`
+- [ ] **Each property has its own validation method** (e.g., `ValidateExporter()`, `ValidateOtlpEndpoint()`)
+- [ ] **Validation constants as private const fields** - validation limits, ranges, and magic values should be declared as `private const` fields
+- [ ] **XML exception documentation** on `Validate()` method indicating exception types
+- [ ] **No separate validator classes** - keep validation with the data it validates
 
 #### Coding Best Practices - Violations to Fix
 
@@ -39,6 +136,22 @@ Review the **[FEATURE_NAME]** feature implementation:
 - [ ] Validation rules are clear and fail-fast
 - [ ] Error messages are actionable and specific
 - [ ] Code follows existing project patterns
+- [ ] **All exceptions cascade to ExceptionHandlingMiddleware**
+- [ ] Validation methods throw exceptions (never return null/false for validation failures)
+
+#### Exception handling, Validation Pattern and Requests workflow
+
+- [ ] All validation exceptions of any kind should go through ExceptionHandlingMiddleware for standard ProblemDetails output to be delivered on API calls.
+- [ ] API Input validation happens in mapper extensions (API layer) for all DTOs fields, NOT in DTOs with DataAnnotations.
+- [ ] API Input validates HTTP request format, required fields, data types, basic constraints.
+- [ ] Controller layer uses Mapper extensions (API Layer) convert from/to API Request/Response DTOs to/from Application Commands/Results records to execute Application services.
+- [ ] Application services used for interaction with API Layer are expected to validate business logic, workflow rules (e.g. "order can only be cancelled if not shipped").
+- [ ] Application services are responsible for orchestration with other adapters and repositories.
+- [ ] Domain entities use public constructors with validation on all attributes, to protect object integrity, enforce domain invariants, guarantee that entities cannot exist on invalid state.
+- [ ] Domain entities Auto-generate ID when null allows flexibility for persistence layers and follow consistent patterns among them.
+- [ ] Repository adapters should validate data constraints, uniqueness, referential integrity (Unique constraints, foreign-key existence, database-level constraints, data existence).
+- [ ] Repository adapters use interfaces referencing domain objects.
+- [ ] Validations should throw Exception messages that must be clear, actionable, and match test expectations.
 
 #### Interface Placement (Critical for Clean Architecture)
 
@@ -223,6 +336,8 @@ Review unit tests for **[FEATURE_NAME]** feature:
 - [ ] Multiple related assertions grouped logically
 - [ ] No commented-out assertions
 - [ ] Use FluentAssertions for readability where applicable
+- [ ] **Exception message assertions**: Use wildcard patterns (e.g., `"*authentication*required*"`) not exact strings
+- [ ] **Never assert on exception.Data**: Error codes are implementation details, assert on message patterns instead
 
 ### Unit Testing Decision Framework
 
