@@ -14,12 +14,12 @@ public class ApiInfoTests
     public void Properties_ShouldDefaultToEmptyOrNull()
     {
         // Arrange & Act
-        var apiInfo = new ApiInfo("1.0");
+        var apiInfo = new ApiInfo("1.0", "Available");
 
         // Assert
         apiInfo.Name.Should().Be("My Basic API");
         apiInfo.Version.Should().Be("1.0");
-        apiInfo.Status.Should().NotBeEmpty();
+        apiInfo.Status.Should().Be("Available");
         apiInfo.Features.Should().NotBeNull();
     }
 
@@ -37,9 +37,31 @@ public class ApiInfoTests
         // Assert
         apiInfo.Name.Should().Be("My API");
         apiInfo.Version.Should().Be("v1.0");
-        apiInfo.Status.Should().Be("Running with API Versioning vv1.0 (API Key Authentication)");
+        apiInfo.Status.Should().Be("API Key Authentication");
         apiInfo.Features.Should().HaveCount(2);
         apiInfo.Features.Should().Contain("Auth");
         apiInfo.Features.Should().Contain("Logging");
+    }
+
+    [Fact]
+    public void ApiInfo_WithEmptyStatus_ShouldThrowArgumentException()
+    {
+        // Arrange & Act
+        Action act = () => new ApiInfo("1.0", "");
+
+        // Assert
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*status*");
+    }
+
+    [Fact]
+    public void ApiInfo_WithWhitespaceStatus_ShouldThrowArgumentException()
+    {
+        // Arrange & Act
+        Action act = () => new ApiInfo("1.0", "   ");
+
+        // Assert
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*status*");
     }
 }

@@ -1,36 +1,41 @@
 using Swashbuckle.AspNetCore.Filters;
-using emc.camus.domain.Auth;
+using emc.camus.api.Models.Responses;
 using emc.camus.domain.Generic;
 
 namespace emc.camus.api.SwaggerExamples
 {
     /// <summary>
-    /// Provides example data for ApiResponse&lt;ApiInfo&gt; in Swagger documentation.
+    /// Provides example data for ApiResponse&lt;ApiInfoResponse&gt; in Swagger documentation.
     /// </summary>
-    public class ApiInfoExample : IExamplesProvider<ApiResponse<ApiInfo>>
+    public class ApiInfoExample : IExamplesProvider<ApiResponse<ApiInfoResponse>>
     {
         /// <summary>
-        /// Returns an example ApiResponse&lt;ApiInfo&gt; object for API documentation.
+        /// Returns an example ApiResponse&lt;ApiInfoResponse&gt; object for API documentation.
         /// </summary>
         /// <returns>Example API info response with sample data.</returns>
-        public ApiResponse<ApiInfo> GetExamples()
+        public ApiResponse<ApiInfoResponse> GetExamples()
         {
-            return new ApiResponse<ApiInfo>
+            return new ApiResponse<ApiInfoResponse>
             {
                 Message = "API information retrieved successfully",
-                Data = new ApiInfo(
-                    "1.0",
-                    null,
-                    new List<string> 
+                Data = new ApiInfoResponse
+                {
+                    Version = "2.0",
+                    Status = "JWT Authentication",
+                    Features = new List<string> 
                     { 
-                        "Logging", 
-                        "Versioning", 
-                        "Authentication", 
-                        "Authorization", 
-                        "Observability" 
-                    },
-                    "My Basic API"
-                ),
+                        "Authentication (JWT & API Key)",
+                        "Authorization (Role-based)",
+                        "API Versioning (v1.0, v2.0)",
+                        "OpenTelemetry Observability (Traces, Metrics, Logs)",
+                        "Rate Limiting (In-Memory & Redis)",
+                        "Swagger/OpenAPI Documentation",
+                        "Dapr Secret Management",
+                        "Structured Error Handling (ProblemDetails)",
+                        "CORS Policy Configuration",
+                        "Health Checks & Liveness Probes"
+                    }
+                },
                 Timestamp = DateTime.UtcNow
             };
         }

@@ -105,11 +105,16 @@ public class InMemoryUserRepository : IUserRepository
     /// <param name="username">The username to validate.</param>
     /// <param name="password">The password to validate.</param>
     /// <returns>The authenticated user with roles.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the repository has not been initialized.
+    /// </exception>
     /// <exception cref="UnauthorizedAccessException">
     /// Thrown when credentials are invalid (empty, user not found, or wrong password).
     /// </exception>
     public Task<User> ValidateCredentialsAsync(string username, string password)
     {
+        EnsureInitialized();
+
         // Validate input
         if (string.IsNullOrWhiteSpace(username) || 
             string.IsNullOrWhiteSpace(password))
@@ -139,5 +144,13 @@ public class InMemoryUserRepository : IUserRepository
         _logger.LogInformation("Authentication successful for user: {Username}", userEntry.User.Username);
 
         return Task.FromResult(userEntry.User);
+    }
+
+    private void EnsureInitialized()
+    {
+        if (!_initialized)
+        {
+            throw new InvalidOperationException("Repository not initialized. Call Initialize() first.");
+        }
     }
 }

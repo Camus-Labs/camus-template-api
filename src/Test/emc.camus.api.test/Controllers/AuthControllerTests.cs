@@ -23,14 +23,12 @@ namespace emc.camus.api.test.Controllers;
 /// </summary>
 public class AuthControllerTests
 {
-    private readonly Mock<IConfiguration> _mockConfiguration;
     private readonly Mock<ILogger<AuthController>> _mockLogger;
     private readonly Mock<IActivitySourceWrapper> _mockActivitySource;
     private readonly Mock<AuthService> _mockAuthService;
 
     public AuthControllerTests()
     {
-        _mockConfiguration = new Mock<IConfiguration>();
         _mockLogger = new Mock<ILogger<AuthController>>();
         _mockActivitySource = new Mock<IActivitySourceWrapper>();
         
@@ -47,94 +45,6 @@ public class AuthControllerTests
                 It.IsAny<Func<System.Diagnostics.Activity?, Task<IActionResult>>>()))
             .Returns<string, OperationType, Func<System.Diagnostics.Activity?, Task<IActionResult>>>(
                 async (name, type, func) => await func(null));
-    }
-
-    [Fact]
-    public async Task GetInfoV1_ShouldReturnPublicApiInfo()
-    {
-        // Arrange
-        var controller = CreateController();
-        var serviceCollection = new ServiceCollection();
-        serviceCollection.AddApiVersioning();
-        var serviceProvider = serviceCollection.BuildServiceProvider();
-        
-        var httpContext = new DefaultHttpContext
-        {
-            RequestServices = serviceProvider
-        };
-        controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
-
-        // Act
-        var result = await controller.GetInfoV1();
-
-        // Assert
-        result.Should().BeOfType<OkObjectResult>();
-        var okResult = (OkObjectResult)result;
-        okResult.Value.Should().BeOfType<ApiResponse<ApiInfo>>();
-        
-        var response = (ApiResponse<ApiInfo>)okResult.Value!;
-        response.Message.Should().Be("API information retrieved successfully");
-        response.Data.Should().NotBeNull();
-        response.Data!.Name.Should().Be("My Basic API");
-        response.Data.Features.Should().Contain("Authentication");
-        response.Data.Features.Should().Contain("Authorization");
-        response.Data.Features.Should().Contain("Observability");
-    }
-
-    [Fact]
-    public async Task GetInfoV2ApiKey_ShouldReturnApiKeyProtectedInfo()
-    {
-        // Arrange
-        var controller = CreateController();
-        var serviceCollection = new ServiceCollection();
-        serviceCollection.AddApiVersioning();
-        var serviceProvider = serviceCollection.BuildServiceProvider();
-        
-        var httpContext = new DefaultHttpContext
-        {
-            RequestServices = serviceProvider
-        };
-        controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
-
-        // Act
-        var result = await controller.GetInfoV2ApiKey();
-
-        // Assert
-        result.Should().BeOfType<OkObjectResult>();
-        var okResult = (OkObjectResult)result;
-        okResult.Value.Should().BeOfType<ApiResponse<ApiInfo>>();
-        
-        var response = (ApiResponse<ApiInfo>)okResult.Value!;
-        response.Data.Should().NotBeNull();
-        response.Data!.Status.Should().Contain("API Key");
-    }
-
-    [Fact]
-    public async Task GetInfoV2Jwt_ShouldReturnJwtProtectedInfo()
-    {
-        // Arrange
-        var controller = CreateController();
-        var serviceCollection = new ServiceCollection();
-        serviceCollection.AddApiVersioning();
-        var serviceProvider = serviceCollection.BuildServiceProvider();
-        
-        var httpContext = new DefaultHttpContext
-        {
-            RequestServices = serviceProvider
-        };
-        controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
-
-        // Act
-        var result = await controller.GetInfoV2Jwt();
-
-        // Assert
-        result.Should().BeOfType<OkObjectResult>();
-        var okResult = (OkObjectResult)result;
-        okResult.Value.Should().BeOfType<ApiResponse<ApiInfo>>();
-        
-        var response = (ApiResponse<ApiInfo>)okResult.Value!;
-        response.Data.Should().NotBeNull();
-        response.Data!.Status.Should().Contain("JWT");
     }
 
     [Fact]
@@ -289,25 +199,9 @@ public class AuthControllerTests
         controllerRateLimit.PolicyName.Should().Be(RateLimitPolicies.Strict);
     }
 
-    [Fact]
-    public void GetInfoV1_ShouldOverrideWithRelaxedRateLimit()
-    {
-        // Arrange & Act
-        var methodInfo = typeof(AuthController).GetMethod(nameof(AuthController.GetInfoV1));
-        var rateLimitAttribute = methodInfo!.GetCustomAttributes(typeof(RateLimitAttribute), false)
-            .Cast<RateLimitAttribute>()
-            .FirstOrDefault();
-
-        // Assert
-        rateLimitAttribute.Should().NotBeNull("GetInfoV1 should override controller rate limit");
-        rateLimitAttribute!.PolicyName.Should().Be(RateLimitPolicies.Relaxed, 
-            "Public info endpoint should use relaxed rate limiting");
-    }
-
     private AuthController CreateController()
     {
         return new AuthController(
-            _mockConfiguration.Object,
             _mockLogger.Object,
             _mockActivitySource.Object,
             _mockAuthService.Object);

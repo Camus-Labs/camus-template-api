@@ -52,20 +52,23 @@ builder.AddApiKeyAuthentication();
 // Step 9: Configure authorization policies and user repository (depends on authentication)
 builder.AddAuthorization();
 
-// Step 10: Configure controllers (uses all services above)
+// Step 10: Configure application data (API info, etc.)
+builder.AddAppData();
+
+// Step 11: Configure controllers (uses all services above)
 builder.AddApplicationServices();
 
-// Step 11: Build App Builder
+// Step 12: Build App Builder
 var app = builder.Build();
 
-// Step 12: Get logger for startup events
+// Step 13: Get logger for startup events
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 
 startupLogger.LogInformation("Starting {ServiceName} v{ServiceVersion} in {Environment} environment", 
     SERVICE_NAME, SERVICE_VERSION, ENV_NAME);
 startupLogger.LogInformation("Instance ID: {InstanceId}", INSTANCE_ID);
 
-// Step 13: Configure forwarded headers for proxy/load balancer scenarios
+// Step 14: Configure forwarded headers for proxy/load balancer scenarios
 // This ensures X-Forwarded-For and X-Real-IP headers are properly processed
 // Critical for rate limiting to work correctly behind proxies (Azure LB, nginx, CloudFlare, etc.)
 app.UseForwardedHeaders(new ForwardedHeadersOptions
@@ -76,40 +79,43 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardLimit = null // Process all X-Forwarded-For entries
 });
 
-// Step 14: Enforce HTTPS (redirect HTTP to HTTPS)
+// Step 15: Enforce HTTPS (redirect HTTP to HTTPS)
 app.UseHttpsRedirection();
 
-// Step 15: Enable observability middleware (adds Trace Id header to responses)
+// Step 16: Enable observability middleware (adds Trace Id header to responses)
 // Must be BEFORE exception handling so trace IDs are available in error logs
 app.UseObservability();
 
-// Step 16: Global exception handling middleware (catches auth, authz, and app exceptions)
+// Step 17: Global exception handling middleware (catches auth, authz, and app exceptions)
 // Must be EARLY in pipeline to catch exceptions from rate limiting, auth, etc.
 app.UseErrorHandling();
 
-// Step 17: Enable Swagger UI in development
+// Step 18: Enable Swagger UI in development
 app.UseSwaggerDocumentation();
 
-// Step 18: Apply CORS policy (before authentication to allow preflight requests)
+// Step 19: Apply CORS policy (before authentication to allow preflight requests)
 app.UseCorsPolicy();
 
-// Step 19: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
+// Step 20: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
 app.UseMemoryRateLimiting();
 
-// Step 19: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
+// Step 21: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
 app.UseDaprSecrets();
 
-// Step 20: Add Authentication and Authorization
+// Step 22: Add Authentication and Authorization
 app.UseAuthentication();
 
-// Step 17: Initialize authorization data (load users/roles)
+// Step 23: Initialize authorization data (load users/roles)
 app.UseAuthorizationSetup();
 
-// Step 21: Apply application services (endpoint routing)
+// Step 24: Initialize application data (load API info)
+app.UseAppDataSetup();
+
+// Step 25: Apply application services (endpoint routing)
 app.UseApplicationServices();
 
 
 startupLogger.LogInformation("{ServiceName} startup complete. Ready to accept requests", SERVICE_NAME);
 
-// Step 22: Run the app
+// Step 26: Run the app
 await app.RunAsync();

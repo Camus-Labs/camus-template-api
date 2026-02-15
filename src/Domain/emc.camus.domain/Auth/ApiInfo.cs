@@ -10,7 +10,7 @@ public class ApiInfo
     /// <summary>
     /// The name of the API.
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; set; } = DefaultApiName;
 
     /// <summary>
     /// The version of the API.
@@ -25,40 +25,31 @@ public class ApiInfo
     /// <summary>
     /// List of features available in this API version.
     /// </summary>
-    public List<string> Features { get; set; } = GetDefaultFeatures();
+    public List<string> Features { get; set; } = new List<string>();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ApiInfo"/> class.
     /// </summary>
     /// <param name="version">The API version.</param>
-    /// <param name="statusDetail">Optional status detail descriptor (e.g., "API Key", "JWT", "Basic Auth").</param>
-    /// <param name="features">Optional list of features. If not provided, returns basic features for non-implemented versions.</param>
+    /// <param name="status">The status detail descriptor (e.g., "Available", "Deprecated", "Beta").</param>
+    /// <param name="features">Optional list of features. If not provided, returns empty list.</param>
     /// <param name="name">Optional API name. If not provided, uses default name.</param>
-    /// <exception cref="ArgumentException">Thrown when version is null, empty, or whitespace.</exception>
-    public ApiInfo(string version, string? statusDetail = null, List<string>? features = null, string? name = null)
+    /// <exception cref="ArgumentException">Thrown when version or status is null, empty, or whitespace.</exception>
+    public ApiInfo(string version, string status, List<string>? features = null, string? name = null)
     {
         if (string.IsNullOrWhiteSpace(version))
         {
             throw new ArgumentException("API version is required and cannot be empty or whitespace.", nameof(version));
         }
 
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            throw new ArgumentException("API status is required and cannot be empty or whitespace.", nameof(status));
+        }
+
         Name = name ?? DefaultApiName;
         Version = version;
-        Status = FormatStatus(version, statusDetail);
-        Features = features ?? GetDefaultFeatures();
-    }
-
-    private static string FormatStatus(string version, string? statusDetail)
-    {
-        var baseStatus = $"Running with API Versioning v{version}";
-        return statusDetail != null ? $"{baseStatus} ({statusDetail})" : baseStatus;
-    }
-
-    private static List<string> GetDefaultFeatures()
-    {
-        return new List<string>
-        {
-            "Basic API"
-        };
+        Status = status;
+        Features = features ?? new List<string>();
     }
 }
