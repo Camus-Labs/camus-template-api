@@ -1,6 +1,6 @@
 # emc.camus.persistence.postgresql
 
-PostgreSQL database adapter for Camus applications using Dapper.
+PostgreSQL database adapter for Camus applications using Dapper and Npgsql.
 
 > **📖 Parent Documentation:** [Main README](../../../../README.md) | [Architecture Guide](../../../../docs/architecture.md)
 
@@ -8,7 +8,7 @@ PostgreSQL database adapter for Camus applications using Dapper.
 
 ## 📋 Overview
 
-This adapter provides PostgreSQL database access using Dapper micro-ORM, implementing the repository pattern for clean separation between data access and business logic.
+This adapter provides PostgreSQL database access using Dapper micro-ORM, implementing the repository pattern for clean separation between data access and business logic. It supports both API information and user authorization data persistence.
 
 ---
 
@@ -19,83 +19,344 @@ This adapter provides PostgreSQL database access using Dapper micro-ORM, impleme
 - 🎯 **Repository Pattern** - Abstraction for data access
 - 🔄 **Async/Await** - Non-blocking database operations
 - ⚙️ **Connection Pooling** - Built-in connection management
+- 🔐 **Secret Provider Integration** - Secure password management
 - 🧪 **Testable** - Interface-based design
 
 ---
 
-## 🚀 Usage
+## 🚀 Quick Start
 
-### 1. Register in Program.cs
+### 1. Setup Database
 
-```csharp
-using emc.camus.persistence.postgresql;
+Create a PostgreSQL database and run the schema script:
 
-builder.Services.AddPostgreSqlPersistence(builder.Configuration);
+```bash
+# Create database
+createdb camus
+
+# Run schema script
+psql -U postgres -d camus -f src/Adapters/emc.camus.persistence.postgresql/schema.sql
 ```
 
-### 2. Configure Connection String
+### 2. Configure Application Settings
 
 In `appsettings.json`:
 
 ```json
 {
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Database=camus;Username=postgres;Password=yourpassword"
+  "AppDataSettings": {
+    "Provider": "Database",
+    "Database": {
+      "Provider": "PostgreSQL",
+      "ConnectionString": "Host=localhost;Database=camus;Username=postgres;Password=yourpassword"
+    }
+  },
+  "Authorization": {
+    "Provider": "Database",
+    "Database": {
+      "Provider": "PostgreSQL",
+      "ConnectionString": "Host=localhost;Database=camus;Username=postgres;Password=yourpassword"
+    }
   }
 }
 ```
 
-**Environment Variable (Production):**
+**Environment Variables (Recommended for Production):**
 
 ```bash
-ConnectionStrings__DefaultConnection="Host=prod-db.postgres.database.azure.com;Database=camus;Username=admin;Password=***"
+AppDataSettings__Provider=Database
+AppDataSettings__Database__ConnectionString="Host=prod-db.example.com;Database=camus;Username=app_user;Password=***"
+Authorization__Provider=Database
+Authorization__Database__ConnectionString="Host=prod-db.example.com;Database=camus;Username=app_user;Password=***"
 ```
 
-### 3. Implement Repository
+### 3. Application Wiring
+
+The repositories are automatically registered when you set the provider to `Database`. The API extensions handle the dependency injection:
 
 ```csharp
-public interface IProductRepository
-{
-    Task<Product> GetByIdAsync(int id);
-    Task<IEnumerable<Product>> GetAllAsync();
-    Task<int> CreateAsync(Product product);
-    Task UpdateAsync(Product product);
-    Task DeleteAsync(int id);
-}
+// In Program.cs (already configured)
+builder.AddAppData();        // Registers PostgreSqlApiInfoRepository
+builder.AddAuthorization();  // Registers PostgreSqlUserRepository
 
-public class ProductRepository : IProductRepository
+app.UseAppDataSetup();        // Initializes and validates database
+app.UseAuthorizationSetup();  // Initializes and validates database
+```
+
+---
+
+## 🏗️ Architecture
+
+### Repository Implementations
+
+#### PostgreSqlApiInfoRepository
+
+Manages API version information:
+
+- `Initialize()` - Validates database connection and schema
+- `GetByVersionAsync(version)` - Retrieves API info by version
+- `GetAllAsync()` - Returns all API versions
+
+#### PostgreSqlUserRepository
+
+Manages user authentication and authorization:
+
+- `Initialize()` - Validates database connection and schema
+- `ValidateCredentialsAsync(username, password)` - Authenticates users and loads roles
+
+### Database Schema
+
+```text
+┌─────────────────┐      ┌─────────────────┐
+│   api_info      │      │     roles       │
+├─────────────────┤      ├─────────────────┤
+│ id (PK)         │      │ id (PK)         │
+│ name            │      │ name            │
+│ version (UQ)    │      │ description     │
+│ status          │      └────────┬────────┘
+│ features[]      │               │
+└─────────────────┘               │
+                                  │
+                      ┌───────────┴──────────┐
+                      │                      │
+         ┌────────────▼────────┐  ┌──────────▼──────────┐
+         │ role_permissions    │  │   users             │
+         ├─────────────────────┤  ├─────────────────────┤
+         │ id (PK)             │  │ id (PK)             │
+         │ role_id (FK)        │  │ username (UQ)       │
+         │ permission          │  │ password_secret_name│
+         └─────────────────────┘  └──────────┬──────────┘
+                                             │
+                                  ┌──────────▼──────────┐
+                                  │   user_roles        │
+                                  ├─────────────────────┤
+                                  │ id (PK)             │
+                                  │ user_id (FK)        │
+                                  │ role_id (FK)        │
+                                  └─────────────────────┘
+```
+
+---
+
+## 📊 Database Schema Management
+
+### Using the Provided Schema
+
+The `schema.sql` file includes:
+
+- ✅ Table creation with proper indexes
+- ✅ Foreign key constraints
+- ✅ Sample data for development
+- ✅ Verification queries
+
+```bash
+# Apply schema
+psql -U postgres -d camus -f schema.sql
+
+# Verify tables
+psql -U postgres -d camus -c "\dt"
+```
+
+### Schema Features
+
+- **UUID Primary Keys** - Using `gen_random_uuid()` for distributed systems
+- **Timestamps** - Automatic `created_at` and `updated_at` tracking
+- **Indexes** - Optimized for common query patterns
+- **Constraints** - Data integrity with foreign keys and unique constraints
+- **Array Support** - PostgreSQL arrays for features and permissions
+
+---
+
+## 🔐 Security Considerations
+
+### Password Storage
+
+- ❌ **Never** store actual passwords in the database
+- ✅ Store only secret references (`password_secret_name`)
+- ✅ Retrieve actual passwords from secret provider (Dapr, Azure Key Vault, etc.)
+
+```sql
+-- Good: Store secret reference
+INSERT INTO users (username, password_secret_name) 
+VALUES ('admin', 'camus-admin-password');
+
+-- Bad: Never do this
+-- INSERT INTO users (username, password) VALUES ('admin', 'Password123!');
+```
+
+### Connection String Security
+
+- Development: Use `appsettings.Development.json`
+- Production: Use environment variables or secret management
+- Never commit connection strings with real credentials
+
+---
+
+## ⚡ Advanced Usage
+
+### Custom Queries
+
+The repositories use Dapper for data access. Example of adding custom queries:
+
+```csharp
+public async Task<User?> GetUserByIdAsync(string userId)
 {
-    private readonly IDbConnection _connection;
+    using var connection = await _connectionFactory.CreateConnectionAsync();
     
-    public ProductRepository(IDbConnection connection)
+    const string sql = @"
+        SELECT id, username, password_secret_name
+        FROM users
+        WHERE id = @UserId";
+    
+    return await connection.QuerySingleOrDefaultAsync<User>(
+        sql, 
+        new { UserId = userId });
+}
+```
+
+### Transaction Support
+
+Dapper supports transactions for multi-statement operations:
+
+```csharp
+using var connection = await _connectionFactory.CreateConnectionAsync();
+using var transaction = connection.BeginTransaction();
+
+try
+{
+    // Multiple operations
+    await connection.ExecuteAsync(sql1, param1, transaction);
+    await connection.ExecuteAsync(sql2, param2, transaction);
+    
+    transaction.Commit();
+}
+catch
+{
+    transaction.Rollback();
+    throw;
+}
+```
+
+---
+
+## 🧪 Testing
+
+### Integration Tests
+
+For testing with PostgreSQL:
+
+```csharp
+public class PostgreSqlRepositoryTests : IDisposable
+{
+    private readonly IDbConnectionFactory _factory;
+    
+    public PostgreSqlRepositoryTests()
     {
-        _connection = connection;
+        // Use test database connection
+        var settings = new AppDataSettings
+        {
+            Database = new DatabaseSettings
+            {
+                ConnectionString = "Host=localhost;Database=camus_test;..."
+            }
+        };
+        
+        _factory = new NpgsqlConnectionFactory(settings, logger);
     }
     
-    public async Task<Product> GetByIdAsync(int id)
+    [Fact]
+    public async Task GetByVersionAsync_ValidVersion_ReturnsApiInfo()
     {
-        const string sql = "SELECT * FROM products WHERE id = @Id";
-        return await _connection.QuerySingleOrDefaultAsync<Product>(sql, new { Id = id });
-    }
-    
-    public async Task<IEnumerable<Product>> GetAllAsync()
-    {
-        const string sql = "SELECT * FROM products ORDER BY name";
-        return await _connection.QueryAsync<Product>(sql);
-    }
-    
-    public async Task<int> CreateAsync(Product product)
-    {
-        const string sql = @"
-            INSERT INTO products (name, price, description) 
-            VALUES (@Name, @Price, @Description)
-            RETURNING id";
-        return await _connection.ExecuteScalarAsync<int>(sql, product);
+        var repository = new PostgreSqlApiInfoRepository(_factory, logger);
+        repository.Initialize();
+        
+        var result = await repository.GetByVersionAsync("1.0");
+        
+        Assert.NotNull(result);
+        Assert.Equal("1.0", result.Version);
     }
 }
 ```
 
-### 4. Use in Services
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Connection Errors
+
+```text
+Failed to open database connection
+```
+
+- Verify PostgreSQL is running: `pg_isready`
+- Check connection string in settings
+- Verify network access and firewall rules
+
+#### Table Not Found
+
+```text
+Required table 'api_info' does not exist
+```
+
+- Run the schema script: `psql -d camus -f schema.sql`
+- Verify you're connecting to the correct database
+
+#### Secret Retrieval Errors
+
+```text
+Failed to retrieve password from secret 'xxx'
+```
+
+- Verify secret exists in secret provider
+- Check secret provider configuration
+- Ensure secret names match database records
+
+---
+
+## 📚 Related Documentation
+
+- [Dapper Documentation](https://github.com/DapperLib/Dapper)
+- [Npgsql Documentation](https://www.npgsql.org/doc/)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+
+---
+
+## 🤝 Contributing
+
+When adding new repositories:
+
+1. Create interface in `emc.camus.application`
+2. Implement repository in this adapter
+3. Create corresponding database tables in `schema.sql`
+4. Update README with new tables and usage
+5. Add integration tests
+
+---
+
+## 📝 License
+
+Part of Camus API Template - See main repository for license information.
+
+```csharp
+public async Task<IEnumerable<Product>> GetAllAsync()
+{
+    const string sql = "SELECT * FROM products ORDER BY name";
+    return await _connection.QueryAsync<Product>(sql);
+}
+
+public async Task<int> CreateAsync(Product product)
+{
+    const string sql = @"
+        INSERT INTO products (name, price, description) 
+        VALUES (@Name, @Price, @Description)
+        RETURNING id";
+    return await _connection.ExecuteScalarAsync<int>(sql, product);
+}
+```
+
+### 4. Use Services
 
 ```csharp
 public class ProductService
@@ -116,7 +377,7 @@ public class ProductService
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Clean Architecture
 
 ### Layer Separation
 
@@ -145,7 +406,7 @@ public class ProductService
 
 ---
 
-## 📊 Database Schema Management
+## 📊 Schema Migrations
 
 ### Migrations (Recommended)
 
@@ -184,7 +445,7 @@ CREATE INDEX idx_products_name ON products(name);
 
 ## ⚡ Advanced Patterns
 
-### Transaction Support
+### Multi-Statement Transactions
 
 ```csharp
 public class OrderService
@@ -235,7 +496,7 @@ public async Task BulkInsertAsync(IEnumerable<Product> products)
 
 ---
 
-## 🧪 Testing
+## 🧪 Test Strategies
 
 ### Unit Tests (Mock Repository)
 

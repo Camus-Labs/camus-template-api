@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -10,7 +10,19 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Version>1.0.0</Version>
     <Authors>Camus Labs</Authors>
-    <Description>PostgreSQL persistence adapter for Camus API with Entity Framework Core integration.</Description>
+    <Description>PostgreSQL persistence adapter for Camus API with Dapper and Npgsql.</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="Npgsql" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Application\emc.camus.application\emc.camus.application.csproj" />
+    <ProjectReference Include="..\..\Domain\emc.camus.domain\emc.camus.domain.csproj" />
+  </ItemGroup>
 
 </Project>

@@ -1,7 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using emc.camus.application.ApiInfo;
+using emc.camus.application.Common;
 using emc.camus.application.Configurations;
 using emc.camus.persistence.inmemory.Repositories;
+using emc.camus.persistence.postgresql.Data;
+using emc.camus.persistence.postgresql.Repositories;
 
 namespace emc.camus.api.Extensions
 {
@@ -36,8 +39,18 @@ namespace emc.camus.api.Extensions
             }
             else if (settings.Provider == AppDataProvider.Database)
             {
-                // TODO: Implement database repository
-                throw new NotImplementedException("Database application data provider is not yet implemented. Use 'InMemory' provider.");
+                // Register database settings with key
+                builder.Services.AddKeyedSingleton(ConnectionFactoryKeys.AppData, settings.Database);
+                
+                // Register database connection factory with key for AppData
+                builder.Services.AddKeyedSingleton(ConnectionFactoryKeys.AppData, (sp, key) =>
+                {
+                    var dbSettings = sp.GetRequiredKeyedService<DatabaseSettings>(key);
+                    var logger = sp.GetRequiredService<ILogger<NpgsqlConnectionFactory>>();
+                    return new NpgsqlConnectionFactory(dbSettings, logger);
+                });
+                
+                builder.Services.AddScoped<IApiInfoRepository, PostgreSqlApiInfoRepository>();
             }
 
             // Register application service for API info

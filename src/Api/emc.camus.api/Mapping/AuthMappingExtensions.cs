@@ -2,7 +2,7 @@ using emc.camus.api.Models.Requests;
 using emc.camus.api.Models.Responses;
 using emc.camus.application.Auth;
 
-namespace emc.camus.api.Models.Extensions;
+namespace emc.camus.api.Mapping;
 
 /// <summary>
 /// Extension methods for mapping between API DTOs and Application layer Commands/Results.
