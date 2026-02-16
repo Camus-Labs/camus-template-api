@@ -40,7 +40,7 @@ builder.AddSwaggerDocumentation();
 builder.AddCorsPolicy();
 
 // Step 6: Configure rate limiting (always enabled for security)
-builder.AddMemoryRateLimiting(SERVICE_NAME);
+builder.AddInMemoryRateLimiting(SERVICE_NAME);
 
 // Step 7: Configure Secrets Provider using Dapr Adapter
 builder.AddDaprSecrets();
@@ -52,11 +52,11 @@ builder.AddApiKeyAuthentication();
 // Step 9: Configure authorization policies and user repository (depends on authentication)
 builder.AddAuthorization();
 
-// Step 10: Configure application data (API info, etc.)
-builder.AddAppData();
-
-// Step 11: Configure controllers (uses all services above)
+// Step 10: Configure application services (IUserContext, etc.)
 builder.AddApplicationServices();
+
+// Step 11: Configure application data (depends on IUserContext for audit)
+builder.AddAppData();
 
 // Step 12: Build App Builder
 var app = builder.Build();
@@ -97,7 +97,7 @@ app.UseSwaggerDocumentation();
 app.UseCorsPolicy();
 
 // Step 20: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
-app.UseMemoryRateLimiting();
+app.UseInMemoryRateLimiting();
 
 // Step 21: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
 app.UseDaprSecrets();

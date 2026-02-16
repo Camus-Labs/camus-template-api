@@ -3,10 +3,8 @@ using Dapper;
 using emc.camus.application.ApiInfo;
 using emc.camus.application.Common;
 using emc.camus.domain.Auth;
-using emc.camus.persistence.postgresql.Data;
 using emc.camus.persistence.postgresql.Mapping;
 using emc.camus.persistence.postgresql.Models;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace emc.camus.persistence.postgresql.Repositories;
@@ -14,20 +12,20 @@ namespace emc.camus.persistence.postgresql.Repositories;
 /// <summary>
 /// PostgreSQL implementation of API info repository using Dapper.
 /// </summary>
-public class PostgreSqlApiInfoRepository : IApiInfoRepository
+public class PSApiInfoRepository : IApiInfoRepository
 {
-    private readonly NpgsqlConnectionFactory _connectionFactory;
-    private readonly ILogger<PostgreSqlApiInfoRepository> _logger;
+    private readonly IConnectionFactory _connectionFactory;
+    private readonly ILogger<PSApiInfoRepository> _logger;
     private bool _initialized = false;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="PostgreSqlApiInfoRepository"/> class.
+    /// Initializes a new instance of the <see cref="PSApiInfoRepository"/> class.
     /// </summary>
     /// <param name="connectionFactory">Factory for creating database connections.</param>
     /// <param name="logger">Logger for repository events.</param>
-    public PostgreSqlApiInfoRepository(
-        [FromKeyedServices(ConnectionFactoryKeys.AppData)] NpgsqlConnectionFactory connectionFactory,
-        ILogger<PostgreSqlApiInfoRepository> logger)
+    public PSApiInfoRepository(
+        IConnectionFactory connectionFactory,
+        ILogger<PSApiInfoRepository> logger)
     {
         _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -44,7 +42,7 @@ public class PostgreSqlApiInfoRepository : IApiInfoRepository
     {
         if (_initialized)
         {
-            _logger.LogWarning("PostgreSqlApiInfoRepository already initialized. Skipping.");
+            _logger.LogWarning("PSApiInfoRepository already initialized. Skipping.");
             return;
         }
 
@@ -70,11 +68,11 @@ public class PostgreSqlApiInfoRepository : IApiInfoRepository
             }
 
             _initialized = true;
-            _logger.LogInformation("PostgreSqlApiInfoRepository initialized successfully");
+            _logger.LogInformation("PSApiInfoRepository initialized successfully");
         }
         catch (Exception ex) when (ex is not InvalidOperationException)
         {
-            _logger.LogError(ex, "Failed to initialize PostgreSqlApiInfoRepository");
+            _logger.LogError(ex, "Failed to initialize PSApiInfoRepository");
             throw new InvalidOperationException(
                 "Failed to initialize API info repository. Ensure the database is accessible.", ex);
         }

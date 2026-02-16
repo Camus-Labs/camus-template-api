@@ -2,9 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using emc.camus.application.Auth;
 using emc.camus.application.Common;
 using emc.camus.application.Configurations;
-using emc.camus.persistence.inmemory.Repositories;
-using emc.camus.persistence.postgresql.Data;
-using emc.camus.persistence.postgresql.Repositories;
+using emc.camus.persistence.inmemory;
+using emc.camus.persistence.postgresql;
 
 namespace emc.camus.api.Extensions
 {
@@ -39,32 +38,23 @@ namespace emc.camus.api.Extensions
             // Register settings as singleton
             builder.Services.AddSingleton(settings);
 
-            // Register user repository based on authorization provider
+            // Delegate to appropriate persistence adapter
             if (settings.Provider == AuthorizationProvider.InMemory)
             {
-                builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
+                builder.Services.AddInMemoryPersistence(PersistenceFeatures.Auth);
             }
             else if (settings.Provider == AuthorizationProvider.Database)
             {
-                // Register database settings with key
-                builder.Services.AddKeyedSingleton(ConnectionFactoryKeys.Authorization, settings.Database);
-                
-                // Register database connection factory with key for Authorization
-                builder.Services.AddKeyedSingleton(ConnectionFactoryKeys.Authorization, (sp, key) =>
-                {
-                    var dbSettings = sp.GetRequiredKeyedService<DatabaseSettings>(key);
-                    var logger = sp.GetRequiredService<ILogger<NpgsqlConnectionFactory>>();
-                    return new NpgsqlConnectionFactory(dbSettings, logger);
-                });
-                
-                builder.Services.AddScoped<IUserRepository, PostgreSqlUserRepository>();
+                builder.Services.AddPostgreSqlPersistence(
+                    settings: settings.Database,
+                    features: PersistenceFeatures.Auth);
             }
 
             return builder;
         }
 
         /// <summary>
-        /// Initializes the user repository to load users and roles.
+        /// Initializes the auth service to load users and roles.
         /// Should be called during application startup after services are built.
         /// </summary>
         /// <param name="app">The web application instance.</param>
@@ -72,9 +62,9 @@ namespace emc.camus.api.Extensions
         public static WebApplication UseAuthorizationSetup(this WebApplication app)
         {
             app.UseAuthorization();
-            // Initialize user repository to load users/roles and validate secrets
-            var userRepository = app.Services.GetRequiredService<IUserRepository>();
-            userRepository.Initialize();
+            // Initialize auth service to load users/roles and validate secrets
+            var authService = app.Services.GetRequiredService<AuthService>();
+            authService.Initialize();
             
             return app;
         }

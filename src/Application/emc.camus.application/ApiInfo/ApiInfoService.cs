@@ -63,4 +63,13 @@ public class ApiInfoService
             apiInfo.Features
         ));
     }
+
+    /// <summary>
+    /// Initializes the API info repository to load API data.
+    /// Should be called during application startup.
+    /// </summary>
+    public virtual void Initialize()
+    {
+        _repository.Initialize();
+    }
 }

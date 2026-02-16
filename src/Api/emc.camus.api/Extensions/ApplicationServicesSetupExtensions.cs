@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
+using emc.camus.api.Infrastructure;
 using emc.camus.application.Auth;
+using emc.camus.application.Common;
 
 namespace emc.camus.api.Extensions
 {
@@ -10,12 +12,18 @@ namespace emc.camus.api.Extensions
     public static class ApplicationServicesSetupExtensions
     {
         /// <summary>
-        /// Registers ASP.NET Core MVC controllers.
+        /// Registers ASP.NET Core MVC controllers and core application services.
         /// </summary>
         /// <param name="builder">The web application builder.</param>
         /// <returns>The web application builder for method chaining.</returns>
         public static WebApplicationBuilder AddApplicationServices(this WebApplicationBuilder builder)
         {
+            // Register HTTP Context Accessor (required for accessing current user in services)
+            builder.Services.AddHttpContextAccessor();
+            
+            // Register User Context (provides access to current authenticated user)
+            builder.Services.AddScoped<IUserContext, HttpUserContext>();
+            
             // Register Authentication Service (business logic in Application layer)
             builder.Services.AddScoped<AuthService>();
             

@@ -2,6 +2,7 @@ using System.Security;
 using System.Security.Claims;
 using emc.camus.api.Controllers;
 using emc.camus.application.Auth;
+using emc.camus.application.Common;
 using emc.camus.application.Observability;
 using emc.camus.application.RateLimiting;
 using emc.camus.application.Secrets;
@@ -35,7 +36,13 @@ public class AuthControllerTests
         // Mock concrete AuthService (methods must be virtual)
         var mockUserRepository = new Mock<IUserRepository>();
         var mockTokenGenerator = new Mock<ITokenGenerator>();
-        _mockAuthService = new Mock<AuthService>(mockUserRepository.Object, mockTokenGenerator.Object);
+        var mockConnectionFactory = new Mock<IConnectionFactory>();
+        var mockAuditRepository = new Mock<IActionAuditRepository>();
+        _mockAuthService = new Mock<AuthService>(
+            mockUserRepository.Object, 
+            mockTokenGenerator.Object,
+            mockConnectionFactory.Object,
+            mockAuditRepository.Object);
 
         // Setup default activity source behavior
         _mockActivitySource

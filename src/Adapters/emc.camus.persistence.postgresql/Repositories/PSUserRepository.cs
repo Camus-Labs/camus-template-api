@@ -4,10 +4,8 @@ using Dapper;
 using emc.camus.application.Auth;
 using emc.camus.application.Common;
 using emc.camus.domain.Auth;
-using emc.camus.persistence.postgresql.Data;
 using emc.camus.persistence.postgresql.Mapping;
 using emc.camus.persistence.postgresql.Models;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace emc.camus.persistence.postgresql.Repositories;
@@ -15,20 +13,20 @@ namespace emc.camus.persistence.postgresql.Repositories;
 /// <summary>
 /// PostgreSQL implementation of user repository using Dapper and BCrypt for password hashing.
 /// </summary>
-public class PostgreSqlUserRepository : IUserRepository
+public class PSUserRepository : IUserRepository
 {
-    private readonly NpgsqlConnectionFactory _connectionFactory;
-    private readonly ILogger<PostgreSqlUserRepository> _logger;
+    private readonly IConnectionFactory _connectionFactory;
+    private readonly ILogger<PSUserRepository> _logger;
     private bool _initialized = false;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="PostgreSqlUserRepository"/> class.
+    /// Initializes a new instance of the <see cref="PSUserRepository"/> class.
     /// </summary>
     /// <param name="connectionFactory">Factory for creating database connections.</param>
     /// <param name="logger">Logger for repository events.</param>
-    public PostgreSqlUserRepository(
-        [FromKeyedServices(ConnectionFactoryKeys.Authorization)] NpgsqlConnectionFactory connectionFactory,
-        ILogger<PostgreSqlUserRepository> logger)
+    public PSUserRepository(
+        IConnectionFactory connectionFactory,
+        ILogger<PSUserRepository> logger)
     {
         _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -45,7 +43,7 @@ public class PostgreSqlUserRepository : IUserRepository
     {
         if (_initialized)
         {
-            _logger.LogWarning("PostgreSqlUserRepository already initialized. Skipping.");
+            _logger.LogWarning("PSUserRepository already initialized. Skipping.");
             return;
         }
 
@@ -90,11 +88,11 @@ public class PostgreSqlUserRepository : IUserRepository
             }
 
             _initialized = true;
-            _logger.LogInformation("PostgreSqlUserRepository initialized successfully");
+            _logger.LogInformation("PSUserRepository initialized successfully");
         }
         catch (Exception ex) when (ex is not InvalidOperationException)
         {
-            _logger.LogError(ex, "Failed to initialize PostgreSqlUserRepository");
+            _logger.LogError(ex, "Failed to initialize PSUserRepository");
             throw new InvalidOperationException(
                 "Failed to initialize user repository. Ensure the database is accessible.", ex);
         }
@@ -115,6 +113,26 @@ public class PostgreSqlUserRepository : IUserRepository
     /// </exception>
     public async Task<User> ValidateCredentialsAsync(string username, string password)
     {
+        using var connection = await _connectionFactory.CreateConnectionAsync();
+        return await ValidateCredentialsAsync(connection, username, password);
+    }
+
+    /// <summary>
+    /// Validates user credentials by looking up the username in the database and verifying 
+    /// the password against the stored bcrypt hash using an external connection (for transactions).
+    /// </summary>
+    /// <param name="connection">The database connection to use for the operation.</param>
+    /// <param name="username">The username to validate.</param>
+    /// <param name="password">The password to validate.</param>
+    /// <returns>The authenticated user with roles.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the repository has not been initialized.
+    /// </exception>
+    /// <exception cref="UnauthorizedAccessException">
+    /// Thrown when credentials are invalid (empty, user not found, or wrong password).
+    /// </exception>
+    public async Task<User> ValidateCredentialsAsync(IDbConnection connection, string username, string password)
+    {
         EnsureInitialized();
 
         // Validate input
@@ -124,8 +142,6 @@ public class PostgreSqlUserRepository : IUserRepository
             throw new UnauthorizedAccessException(
                 "The provided credentials are invalid. Username and password must be provided.");
         }
-
-        using var connection = await _connectionFactory.CreateConnectionAsync();
 
         // Get user with password hash
         const string userSql = @"
@@ -188,6 +204,23 @@ public class PostgreSqlUserRepository : IUserRepository
         _logger.LogInformation("Authentication successful for user: {Username}", username);
 
         return userModel.ToEntity(roleModels);
+    }
+
+    /// <summary>
+    /// Updates the last login timestamp for a user.
+    /// </summary>
+    /// <param name="connection">The database connection to use for the operation.</param>
+    /// <param name="userId">The ID of the user to update.</param>
+    /// <returns>Task representing the asynchronous operation.</returns>
+    public async Task UpdateLastLoginAsync(IDbConnection connection, string userId)
+    {
+        const string updateSql = @"
+            UPDATE users 
+            SET last_login = NOW() 
+            WHERE id = @UserId";
+
+        await connection.ExecuteAsync(updateSql, new { UserId = userId });
+        _logger.LogDebug("Updated last login timestamp for user: {UserId}", userId);
     }
 
     private void EnsureInitialized()

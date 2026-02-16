@@ -1,3 +1,4 @@
+using System.Data;
 using emc.camus.application.Auth;
 using emc.camus.application.Configurations;
 using emc.camus.application.Common;
@@ -11,25 +12,25 @@ namespace emc.camus.persistence.inmemory.Repositories;
 /// In-memory implementation of user repository that loads configuration from settings.
 /// This is a temporary implementation for development/testing. In production, replace with database implementation.
 /// </summary>
-public class InMemoryUserRepository : IUserRepository
+public class IMUserRepository : IUserRepository
 {
     private readonly InMemoryAuthorizationSettings _settings;
     private readonly ISecretProvider _secretProvider;
-    private readonly ILogger<InMemoryUserRepository> _logger;
+    private readonly ILogger<IMUserRepository> _logger;
     private List<Role> _roles = new();
     private Dictionary<string, (User User, string PasswordSecretName)> _usersByUsername = new();
     private bool _initialized = false;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="InMemoryUserRepository"/> class.
+    /// Initializes a new instance of the <see cref="IMUserRepository"/> class.
     /// </summary>
     /// <param name="settings">Authorization settings containing role and user definitions.</param>
     /// <param name="secretProvider">Provider for retrieving stored secrets.</param>
     /// <param name="logger">Logger for repository events.</param>
-    public InMemoryUserRepository(
+    public IMUserRepository(
         AuthorizationSettings settings,
         ISecretProvider secretProvider,
-        ILogger<InMemoryUserRepository> logger)
+        ILogger<IMUserRepository> logger)
     {
         _logger = logger;
         _settings = settings.InMemory;
@@ -48,7 +49,7 @@ public class InMemoryUserRepository : IUserRepository
     {
         if (_initialized)
         {
-            _logger.LogWarning("InMemoryUserRepository already initialized. Skipping.");
+            _logger.LogWarning("IMUserRepository already initialized. Skipping.");
             return;
         }
 
@@ -113,6 +114,25 @@ public class InMemoryUserRepository : IUserRepository
     /// </exception>
     public Task<User> ValidateCredentialsAsync(string username, string password)
     {
+        return ValidateCredentialsAsync(null!, username, password);
+    }
+
+    /// <summary>
+    /// Validates user credentials by looking up the username in the in-memory store and comparing 
+    /// the password with the value retrieved from the secret provider (connection parameter ignored).
+    /// </summary>
+    /// <param name="connection">The database connection (ignored for in-memory implementation).</param>
+    /// <param name="username">The username to validate.</param>
+    /// <param name="password">The password to validate.</param>
+    /// <returns>The authenticated user with roles.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the repository has not been initialized.
+    /// </exception>
+    /// <exception cref="UnauthorizedAccessException">
+    /// Thrown when credentials are invalid (empty, user not found, or wrong password).
+    /// </exception>
+    public Task<User> ValidateCredentialsAsync(IDbConnection connection, string username, string password)
+    {
         EnsureInitialized();
 
         // Validate input
@@ -144,6 +164,19 @@ public class InMemoryUserRepository : IUserRepository
         _logger.LogInformation("Authentication successful for user: {Username}", userEntry.User.Username);
 
         return Task.FromResult(userEntry.User);
+    }
+
+    /// <summary>
+    /// Updates the last login timestamp for a user (no-op for in-memory implementation).
+    /// </summary>
+    /// <param name="connection">The database connection (ignored for in-memory implementation).</param>
+    /// <param name="userId">The ID of the user to update.</param>
+    /// <returns>Task representing the asynchronous operation.</returns>
+    public Task UpdateLastLoginAsync(IDbConnection connection, string userId)
+    {
+        // In-memory implementation doesn't persist last login timestamp
+        _logger.LogDebug("UpdateLastLoginAsync called for user {UserId} (no-op for in-memory)", userId);
+        return Task.CompletedTask;
     }
 
     private void EnsureInitialized()

@@ -2,9 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using emc.camus.application.ApiInfo;
 using emc.camus.application.Common;
 using emc.camus.application.Configurations;
-using emc.camus.persistence.inmemory.Repositories;
-using emc.camus.persistence.postgresql.Data;
-using emc.camus.persistence.postgresql.Repositories;
+using emc.camus.persistence.inmemory;
+using emc.camus.persistence.postgresql;
 
 namespace emc.camus.api.Extensions
 {
@@ -16,7 +15,7 @@ namespace emc.camus.api.Extensions
     {
         /// <summary>
         /// Registers application data services including API info repository.
-        /// Loads AppDataSettings from configuration and validates settings.
+        /// Loads AppDataSettings from configuration and delegates to appropriate persistence adapter.
         /// </summary>
         /// <param name="builder">The web application builder.</param>
         /// <returns>The web application builder for method chaining.</returns>
@@ -32,25 +31,16 @@ namespace emc.camus.api.Extensions
             // Register settings as singleton
             builder.Services.AddSingleton(settings);
 
-            // Register API info repository based on provider
+            // Delegate to appropriate persistence adapter
             if (settings.Provider == AppDataProvider.InMemory)
             {
-                builder.Services.AddSingleton<IApiInfoRepository, InMemoryApiInfoRepository>();
+                builder.Services.AddInMemoryPersistence(PersistenceFeatures.AppData);
             }
             else if (settings.Provider == AppDataProvider.Database)
             {
-                // Register database settings with key
-                builder.Services.AddKeyedSingleton(ConnectionFactoryKeys.AppData, settings.Database);
-                
-                // Register database connection factory with key for AppData
-                builder.Services.AddKeyedSingleton(ConnectionFactoryKeys.AppData, (sp, key) =>
-                {
-                    var dbSettings = sp.GetRequiredKeyedService<DatabaseSettings>(key);
-                    var logger = sp.GetRequiredService<ILogger<NpgsqlConnectionFactory>>();
-                    return new NpgsqlConnectionFactory(dbSettings, logger);
-                });
-                
-                builder.Services.AddScoped<IApiInfoRepository, PostgreSqlApiInfoRepository>();
+                builder.Services.AddPostgreSqlPersistence(
+                    settings: settings.Database,
+                    features: PersistenceFeatures.AppData);
             }
 
             // Register application service for API info
@@ -60,16 +50,16 @@ namespace emc.camus.api.Extensions
         }
 
         /// <summary>
-        /// Initializes the API info repository to load API data.
+        /// Initializes the API info service to load API data.
         /// Should be called during application startup after services are built.
         /// </summary>
         /// <param name="app">The web application instance.</param>
         /// <returns>The web application instance for method chaining.</returns>
         public static WebApplication UseAppDataSetup(this WebApplication app)
         {
-            // Initialize API info repository to load API data
-            var apiInfoRepository = app.Services.GetRequiredService<IApiInfoRepository>();
-            apiInfoRepository.Initialize();
+            // Initialize API info service to load API data
+            var apiInfoService = app.Services.GetRequiredService<ApiInfoService>();
+            apiInfoService.Initialize();
             
             return app;
         }

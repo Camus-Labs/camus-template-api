@@ -24,7 +24,7 @@ namespace emc.camus.ratelimiting.inmemory
     /// multi-instance deployments. For production scale-out scenarios, use the Redis adapter.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public static class MemoryRateLimitingSetupExtensions
+    public static class InMemoryRateLimitingSetupExtensions
     {
         /// <summary>
         /// Registers in-memory rate limiting services with policy-based sliding window configuration.
@@ -34,7 +34,7 @@ namespace emc.camus.ratelimiting.inmemory
         /// <param name="builder">The web application builder.</param>
         /// <param name="serviceName">The service name for telemetry (must match OpenTelemetry service name).</param>
         /// <returns>The web application builder for method chaining.</returns>
-        public static WebApplicationBuilder AddMemoryRateLimiting(this WebApplicationBuilder builder, string serviceName)
+        public static WebApplicationBuilder AddInMemoryRateLimiting(this WebApplicationBuilder builder, string serviceName)
         {
             // Load and validate rate limit settings
             var settings = builder.Configuration.GetSection(RateLimitSettings.ConfigurationSectionName).Get<RateLimitSettings>() ?? new RateLimitSettings();
@@ -93,7 +93,7 @@ namespace emc.camus.ratelimiting.inmemory
         /// headers are processed correctly. Without it, all requests from the same proxy will
         /// share one rate limit. See Program.cs for configuration example.
         /// </remarks>
-        public static WebApplication UseMemoryRateLimiting(this WebApplication app)
+        public static WebApplication UseInMemoryRateLimiting(this WebApplication app)
         {
             // Apply ASP.NET Core's rate limiting middleware
             app.UseRateLimiter();

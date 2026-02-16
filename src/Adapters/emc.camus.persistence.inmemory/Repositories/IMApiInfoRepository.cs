@@ -8,21 +8,21 @@ namespace emc.camus.persistence.inmemory.Repositories;
 /// <summary>
 /// In-memory implementation of API info repository that loads configuration from settings.
 /// </summary>
-public class InMemoryApiInfoRepository : IApiInfoRepository
+public class IMApiInfoRepository : IApiInfoRepository
 {
     private readonly InMemoryAppDataSettings _settings;
-    private readonly ILogger<InMemoryApiInfoRepository> _logger;
+    private readonly ILogger<IMApiInfoRepository> _logger;
     private Dictionary<string, ApiInfo> _apiInfoByVersion = new();
     private bool _initialized = false;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="InMemoryApiInfoRepository"/> class.
+    /// Initializes a new instance of the <see cref="IMApiInfoRepository"/> class.
     /// </summary>
     /// <param name="settings">Application data settings containing API info definitions.</param>
     /// <param name="logger">Logger for repository events.</param>
-    public InMemoryApiInfoRepository(
+    public IMApiInfoRepository(
         AppDataSettings settings,
-        ILogger<InMemoryApiInfoRepository> logger)
+        ILogger<IMApiInfoRepository> logger)
     {
         _logger = logger;
         _settings = settings.InMemory;
@@ -39,7 +39,7 @@ public class InMemoryApiInfoRepository : IApiInfoRepository
     {
         if (_initialized)
         {
-            _logger.LogWarning("InMemoryApiInfoRepository already initialized. Skipping.");
+            _logger.LogWarning("IMApiInfoRepository already initialized. Skipping.");
             return;
         }
 
@@ -59,7 +59,7 @@ public class InMemoryApiInfoRepository : IApiInfoRepository
         }
 
         _initialized = true;
-        _logger.LogInformation("InMemoryApiInfoRepository initialized with {Count} API versions", _apiInfoByVersion.Count);
+        _logger.LogInformation("IMApiInfoRepository initialized with {Count} API versions", _apiInfoByVersion.Count);
     }
 
     /// <summary>

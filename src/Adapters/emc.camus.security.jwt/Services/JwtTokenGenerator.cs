@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using emc.camus.application.Auth;
+using emc.camus.domain.Auth;
 using emc.camus.security.jwt.Configurations;
 
 namespace emc.camus.security.jwt.Services;
@@ -29,21 +30,23 @@ public class JwtTokenGenerator : ITokenGenerator
     }
 
     /// <inheritdoc/>
-    public GenerateTokenResult GenerateToken(GenerateTokenCommand command)
+    public AuthToken GenerateToken(string userId, string username, IEnumerable<Claim>? additionalClaims = null)
     {
         // Build claims list
         var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, command.Subject),
-            new Claim(JwtRegisteredClaimNames.UniqueName, command.Subject),
+            new Claim(JwtRegisteredClaimNames.Sub, username),
+            new Claim(JwtRegisteredClaimNames.UniqueName, username),
+            new Claim(ClaimTypes.NameIdentifier, userId), // For HttpUserContext.GetCurrentUserId()
+            new Claim(ClaimTypes.Name, username),         // For HttpUserContext.GetCurrentUsername() via Identity.Name
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
 
         // Add additional claims if provided
-        if (command.AdditionalClaims != null)
+        if (additionalClaims != null)
         {
-            claims.AddRange(command.AdditionalClaims);
+            claims.AddRange(additionalClaims);
         }
 
         var expiresOn = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
@@ -58,6 +61,6 @@ public class JwtTokenGenerator : ITokenGenerator
 
         var token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
 
-        return new GenerateTokenResult(token, expiresOn);
+        return new AuthToken(token, expiresOn);
     }
 }

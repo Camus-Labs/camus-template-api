@@ -76,8 +76,8 @@ The repositories are automatically registered when you set the provider to `Data
 
 ```csharp
 // In Program.cs (already configured)
-builder.AddAppData();        // Registers PostgreSqlApiInfoRepository
-builder.AddAuthorization();  // Registers PostgreSqlUserRepository
+builder.AddAppData();        // Registers PSApiInfoRepository
+builder.AddAuthorization();  // Registers PSUserRepository
 
 app.UseAppDataSetup();        // Initializes and validates database
 app.UseAuthorizationSetup();  // Initializes and validates database
@@ -89,7 +89,7 @@ app.UseAuthorizationSetup();  // Initializes and validates database
 
 ### Repository Implementations
 
-#### PostgreSqlApiInfoRepository
+#### PSApiInfoRepository
 
 Manages API version information:
 
@@ -97,7 +97,7 @@ Manages API version information:
 - `GetByVersionAsync(version)` - Retrieves API info by version
 - `GetAllAsync()` - Returns all API versions
 
-#### PostgreSqlUserRepository
+#### PSUserRepository
 
 Manages user authentication and authorization:
 
@@ -267,7 +267,7 @@ public class PostgreSqlRepositoryTests : IDisposable
     [Fact]
     public async Task GetByVersionAsync_ValidVersion_ReturnsApiInfo()
     {
-        var repository = new PostgreSqlApiInfoRepository(_factory, logger);
+        var repository = new PSApiInfoRepository(_factory, logger);
         repository.Initialize();
         
         var result = await repository.GetByVersionAsync("1.0");

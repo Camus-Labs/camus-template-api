@@ -38,12 +38,12 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
-        var subject = "testuser";
-        var command = new GenerateTokenCommand(subject);
+        var userId = Guid.NewGuid().ToString();
+        var username = "testuser";
         var expectedExpiration = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
 
         // Act
-        var result = generator.GenerateToken(command);
+        var result = generator.GenerateToken(userId, username);
 
         // Assert
         result.Should().NotBeNull();
@@ -54,8 +54,10 @@ public class JwtTokenGeneratorTests
         var token = handler.ReadJwtToken(result.Token);
         
         // Verify standard claims
-        token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == subject);
-        token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.UniqueName && c.Value == subject);
+        token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == username);
+        token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.UniqueName && c.Value == username);
+        token.Claims.Should().Contain(c => c.Type == ClaimTypes.NameIdentifier && c.Value == userId);
+        token.Claims.Should().Contain(c => c.Type == ClaimTypes.Name && c.Value == username);
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Jti);
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Iat);
         
@@ -69,16 +71,16 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
-        var subject = "testuser";
+        var userId = Guid.NewGuid().ToString();
+        var username = "testuser";
         var additionalClaims = new[]
         {
             new Claim("role", "admin"),
             new Claim("department", "IT")
         };
-        var command = new GenerateTokenCommand(subject, additionalClaims);
 
         // Act
-        var result = generator.GenerateToken(command);
+        var result = generator.GenerateToken(userId, username, additionalClaims);
 
         // Assert
         var handler = new JwtSecurityTokenHandler();
@@ -93,11 +95,11 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
-        var subject = "testuser";
-        var command = new GenerateTokenCommand(subject, null);
+        var userId = Guid.NewGuid().ToString();
+        var username = "testuser";
 
         // Act & Assert
-        var act = () => generator.GenerateToken(command);
+        var act = () => generator.GenerateToken(userId, username, null);
         act.Should().NotThrow();
     }
 
@@ -106,11 +108,11 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
-        var subject = "testuser";
-        var command = new GenerateTokenCommand(subject, Array.Empty<Claim>());
+        var userId = Guid.NewGuid().ToString();
+        var username = "testuser";
 
         // Act & Assert
-        var act = () => generator.GenerateToken(command);
+        var act = () => generator.GenerateToken(userId, username, Array.Empty<Claim>());
         act.Should().NotThrow();
     }
 
@@ -119,12 +121,12 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
-        var subject = "testuser";
-        var command = new GenerateTokenCommand(subject);
+        var userId = Guid.NewGuid().ToString();
+        var username = "testuser";
 
         // Act
-        var result1 = generator.GenerateToken(command);
-        var result2 = generator.GenerateToken(command);
+        var result1 = generator.GenerateToken(userId, username);
+        var result2 = generator.GenerateToken(userId, username);
 
         // Assert
         result1.Token.Should().NotBe(result2.Token);
@@ -143,14 +145,14 @@ public class JwtTokenGeneratorTests
     [InlineData("user1")]                    // Simple alphanumeric
     [InlineData("admin@example.com")]        // Email format
     [InlineData("test-user-123")]            // With hyphens and numbers
-    public void GenerateToken_WithVariousSubjects_ShouldGenerateValidTokens(string subject)
+    public void GenerateToken_WithVariousSubjects_ShouldGenerateValidTokens(string username)
     {
         // Arrange
         var generator = CreateGenerator();
-        var command = new GenerateTokenCommand(subject);
+        var userId = Guid.NewGuid().ToString();
 
         // Act
-        var result = generator.GenerateToken(command);
+        var result = generator.GenerateToken(userId, username);
 
         // Assert
         result.Should().NotBeNull();
@@ -159,7 +161,7 @@ public class JwtTokenGeneratorTests
         var handler = new JwtSecurityTokenHandler();
         handler.CanReadToken(result.Token).Should().BeTrue();
         var token = handler.ReadJwtToken(result.Token);
-        token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == subject);
+        token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == username);
     }
 
     private JwtTokenGenerator CreateGenerator()
