@@ -19,6 +19,7 @@
   </ItemGroup>
   
   <ItemGroup>
+    <ProjectReference Include="../../Adapters/emc.camus.migrations.dbup/emc.camus.migrations.dbup.csproj" />
     <ProjectReference Include="../../Adapters/emc.camus.persistence.postgresql/emc.camus.persistence.postgresql.csproj" />
     <ProjectReference Include="../../Adapters/emc.camus.persistence.inmemory/emc.camus.persistence.inmemory.csproj" />
     <ProjectReference Include="../../Adapters/emc.camus.secrets.dapr/emc.camus.secrets.dapr.csproj" />

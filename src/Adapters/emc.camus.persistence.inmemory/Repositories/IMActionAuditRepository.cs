@@ -18,7 +18,9 @@ public class IMActionAuditRepository : IActionAuditRepository
     /// <param name="logger">Logger for repository events.</param>
     public IMActionAuditRepository(ILogger<IMActionAuditRepository> logger)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+        
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -27,6 +29,7 @@ public class IMActionAuditRepository : IActionAuditRepository
         string actionTitle,
         string? actionSummary = null)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(actionTitle);
         // Log to application logs instead of database
         _logger.LogInformation(
             "Audit Log: {ActionTitle} - {ActionSummary}",
@@ -45,6 +48,8 @@ public class IMActionAuditRepository : IActionAuditRepository
         string actionTitle,
         string? actionSummary = null)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(username);
+        ArgumentException.ThrowIfNullOrWhiteSpace(actionTitle);
         // Log to application logs instead of database
         _logger.LogInformation(
             "System Audit Log: {Username} ({UserId}) - {ActionTitle} - {ActionSummary}",

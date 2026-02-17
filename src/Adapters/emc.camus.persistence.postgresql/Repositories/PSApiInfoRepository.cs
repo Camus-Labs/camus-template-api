@@ -15,20 +15,18 @@ namespace emc.camus.persistence.postgresql.Repositories;
 public class PSApiInfoRepository : IApiInfoRepository
 {
     private readonly IConnectionFactory _connectionFactory;
-    private readonly ILogger<PSApiInfoRepository> _logger;
     private bool _initialized = false;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PSApiInfoRepository"/> class.
     /// </summary>
     /// <param name="connectionFactory">Factory for creating database connections.</param>
-    /// <param name="logger">Logger for repository events.</param>
     public PSApiInfoRepository(
-        IConnectionFactory connectionFactory,
-        ILogger<PSApiInfoRepository> logger)
+        IConnectionFactory connectionFactory)
     {
-        _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(connectionFactory);
+            
+        _connectionFactory = connectionFactory;
     }
 
     /// <summary>
@@ -42,40 +40,29 @@ public class PSApiInfoRepository : IApiInfoRepository
     {
         if (_initialized)
         {
-            _logger.LogWarning("PSApiInfoRepository already initialized. Skipping.");
-            return;
+            throw new InvalidOperationException("PSApiInfoRepository already initialized.");
         }
 
-        try
+        // Test connection and verify table exists
+        using var connection = _connectionFactory.CreateConnectionAsync().GetAwaiter().GetResult();
+        
+        const string checkTableSql = @"
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'camus' 
+                AND table_name = 'api_info'
+            )";
+        
+        var tableExists = connection.ExecuteScalar<bool>(checkTableSql);
+        
+        if (!tableExists)
         {
-            // Test connection and verify table exists
-            using var connection = _connectionFactory.CreateConnectionAsync().GetAwaiter().GetResult();
-            
-            const string checkTableSql = @"
-                SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
-                    WHERE table_schema = 'public' 
-                    AND table_name = 'api_info'
-                )";
-            
-            var tableExists = connection.ExecuteScalar<bool>(checkTableSql);
-            
-            if (!tableExists)
-            {
-                throw new InvalidOperationException(
-                    "Required table 'api_info' does not exist in the database. " +
-                    "Please run database migrations to create the schema.");
-            }
-
-            _initialized = true;
-            _logger.LogInformation("PSApiInfoRepository initialized successfully");
-        }
-        catch (Exception ex) when (ex is not InvalidOperationException)
-        {
-            _logger.LogError(ex, "Failed to initialize PSApiInfoRepository");
             throw new InvalidOperationException(
-                "Failed to initialize API info repository. Ensure the database is accessible.", ex);
+                "Required table 'api_info' does not exist in the database. " +
+                "Please run database migrations to create the schema.");
         }
+
+        _initialized = true;
     }
 
     /// <summary>
@@ -96,10 +83,7 @@ public class PSApiInfoRepository : IApiInfoRepository
     {
         EnsureInitialized();
 
-        if (string.IsNullOrWhiteSpace(version))
-        {
-            throw new ArgumentException("Version cannot be null or empty.", nameof(version));
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(version);
 
         using var connection = await _connectionFactory.CreateConnectionAsync();
 
@@ -109,7 +93,7 @@ public class PSApiInfoRepository : IApiInfoRepository
                 version,
                 status,
                 features
-            FROM api_info
+            FROM camus.api_info
             WHERE version = @Version";
 
         var result = await connection.QuerySingleOrDefaultAsync<ApiInfoModel>(
@@ -118,7 +102,6 @@ public class PSApiInfoRepository : IApiInfoRepository
 
         if (result == null)
         {
-            _logger.LogWarning("API info not found for version {Version}", version);
             throw new KeyNotFoundException($"API info not found for version '{version}'.");
         }
 
@@ -144,7 +127,7 @@ public class PSApiInfoRepository : IApiInfoRepository
                 version,
                 status,
                 features
-            FROM api_info
+            FROM camus.api_info
             ORDER BY version";
 
         var results = await connection.QueryAsync<ApiInfoModel>(sql);

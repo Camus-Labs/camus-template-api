@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using emc.camus.application.Auth;
 using emc.camus.application.Common;
 using emc.camus.application.Configurations;
@@ -19,7 +21,7 @@ namespace emc.camus.api.Extensions
         /// </summary>
         /// <param name="builder">The web application builder.</param>
         /// <returns>The web application builder for method chaining.</returns>
-        public static WebApplicationBuilder AddAuthorization(this WebApplicationBuilder builder)
+        public static WebApplicationBuilder AddAuthorizationWithData(this WebApplicationBuilder builder)
         {
             // Configure Authorization policies
             builder.Services.AddAuthorization(options =>
@@ -41,13 +43,11 @@ namespace emc.camus.api.Extensions
             // Delegate to appropriate persistence adapter
             if (settings.Provider == AuthorizationProvider.InMemory)
             {
-                builder.Services.AddInMemoryPersistence(PersistenceFeatures.Auth);
+                builder.AddInMemoryPersistence(PersistenceFeatures.Auth);
             }
             else if (settings.Provider == AuthorizationProvider.Database)
             {
-                builder.Services.AddPostgreSqlPersistence(
-                    settings: settings.Database,
-                    features: PersistenceFeatures.Auth);
+                builder.AddPostgreSqlPersistence(PersistenceFeatures.Auth);
             }
 
             return builder;
@@ -59,12 +59,17 @@ namespace emc.camus.api.Extensions
         /// </summary>
         /// <param name="app">The web application instance.</param>
         /// <returns>The web application instance for method chaining.</returns>
-        public static WebApplication UseAuthorizationSetup(this WebApplication app)
+        public static WebApplication UseAuthorizationWithData(this WebApplication app)
         {
-            app.UseAuthorization();
             // Initialize auth service to load users/roles and validate secrets
-            var authService = app.Services.GetRequiredService<AuthService>();
-            authService.Initialize();
+            // AuthService is scoped, so we need to create a scope to resolve it
+            using (var scope = app.Services.CreateScope())
+            {
+                var authService = scope.ServiceProvider.GetRequiredService<AuthService>();
+                authService.Initialize();
+            }
+            
+            app.UseAuthorization();
             
             return app;
         }

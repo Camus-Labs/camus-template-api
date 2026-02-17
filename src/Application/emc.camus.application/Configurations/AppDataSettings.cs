@@ -23,11 +23,6 @@ public class AppDataSettings
     public InMemoryAppDataSettings InMemory { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the database application data settings.
-    /// </summary>
-    public DatabaseSettings Database { get; set; } = new();
-
-    /// <summary>
     /// Validates the application data settings.
     /// </summary>
     /// <exception cref="ArgumentException">
@@ -53,10 +48,6 @@ public class AppDataSettings
         {
             case AppDataProvider.InMemory:
                 InMemory.Validate();
-                break;
-
-            case AppDataProvider.Database:
-                Database.Validate();
                 break;
 
             default:

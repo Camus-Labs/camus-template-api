@@ -151,6 +151,8 @@ Find and review all classes, enums, interfaces, doc and other files related to [
 - [ ] Domain entities Auto-generate ID when null allows flexibility for persistence layers and follow consistent patterns among them.
 - [ ] Repository adapters should validate data constraints, uniqueness, referential integrity (Unique constraints, foreign-key existence, database-level constraints, data existence).
 - [ ] Repository adapters use interfaces referencing domain objects.
+- [ ] All public methods and constructors for repositories, adapters and services should validate parameters with `ArgumentNullException.ThrowIfNull(param)` and `ArgumentException.ThrowIfNullOrWhiteSpace(param)` without redundant `nameof()`.
+- [ ] Application service methods wrap infrastructure exceptions with try-catch to add business context, but let domain exceptions (UnauthorizedAccessException, KeyNotFoundException) bubble up unchanged.
 - [ ] Validations should throw Exception messages that must be clear, actionable, and match test expectations.
 
 #### Interface Placement (Critical for Clean Architecture)

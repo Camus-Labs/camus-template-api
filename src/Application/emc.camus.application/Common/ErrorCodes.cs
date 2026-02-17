@@ -67,6 +67,12 @@ public static class ErrorCodes
         public const string Forbidden = "forbidden";
 
         /// <summary>
+        /// Error code for 404 Not Found responses.
+        /// Indicates the requested resource does not exist.
+        /// </summary>
+        public const string NotFound = "not_found";
+
+        /// <summary>
         /// Error code for 409 Conflict responses.
         /// Indicates the request conflicts with the current state of the resource.
         /// </summary>

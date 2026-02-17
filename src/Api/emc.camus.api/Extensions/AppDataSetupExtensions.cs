@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using emc.camus.application.ApiInfo;
 using emc.camus.application.Common;
 using emc.camus.application.Configurations;
@@ -34,13 +36,11 @@ namespace emc.camus.api.Extensions
             // Delegate to appropriate persistence adapter
             if (settings.Provider == AppDataProvider.InMemory)
             {
-                builder.Services.AddInMemoryPersistence(PersistenceFeatures.AppData);
+                builder.AddInMemoryPersistence(PersistenceFeatures.AppData);
             }
             else if (settings.Provider == AppDataProvider.Database)
             {
-                builder.Services.AddPostgreSqlPersistence(
-                    settings: settings.Database,
-                    features: PersistenceFeatures.AppData);
+                builder.AddPostgreSqlPersistence(PersistenceFeatures.AppData);
             }
 
             // Register application service for API info
@@ -55,11 +55,15 @@ namespace emc.camus.api.Extensions
         /// </summary>
         /// <param name="app">The web application instance.</param>
         /// <returns>The web application instance for method chaining.</returns>
-        public static WebApplication UseAppDataSetup(this WebApplication app)
+        public static WebApplication UseAppData(this WebApplication app)
         {
             // Initialize API info service to load API data
-            var apiInfoService = app.Services.GetRequiredService<ApiInfoService>();
-            apiInfoService.Initialize();
+            // ApiInfoService is scoped, so we need to create a scope to resolve it
+            using (var scope = app.Services.CreateScope())
+            {
+                var apiInfoService = scope.ServiceProvider.GetRequiredService<ApiInfoService>();
+                apiInfoService.Initialize();
+            }
             
             return app;
         }

@@ -4,13 +4,13 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>emc.camus.persistence.postgresql</RootNamespace>
-    <AssemblyName>emc.camus.persistence.postgresql</AssemblyName>
-    <PackageId>emc.camus.persistence.postgresql</PackageId>
+    <RootNamespace>emc.camus.migrations.dbup</RootNamespace>
+    <AssemblyName>emc.camus.migrations.dbup</AssemblyName>
+    <PackageId>emc.camus.migrations.dbup</PackageId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Version>1.0.0</Version>
     <Authors>Camus Labs</Authors>
-    <Description>PostgreSQL persistence adapter for Camus API with Dapper and Npgsql.</Description>
+    <Description>Database migration adapter for Camus using DbUp for PostgreSQL schema versioning.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,15 +18,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
-    <PackageReference Include="Dapper" Version="2.1.66" />
-    <PackageReference Include="Npgsql" Version="9.0.4" />
+    <!-- DB MIGRATIONS -->
+    <PackageReference Include="dbup-postgresql" Version="6.1.5" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.13" />
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Embed database migration scripts as resources -->
+    <EmbeddedResource Include="../../Infrastructure/database/migrations/*.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Application\emc.camus.application\emc.camus.application.csproj" />
-    <ProjectReference Include="..\..\Domain\emc.camus.domain\emc.camus.domain.csproj" />
   </ItemGroup>
 
 </Project>

@@ -21,7 +21,9 @@ public class ApiInfoService
     /// <param name="repository">Repository for retrieving API information.</param>
     public ApiInfoService(IApiInfoRepository repository)
     {
-        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        ArgumentNullException.ThrowIfNull(repository);
+
+        _repository = repository;
     }
 
     /// <summary>
@@ -31,45 +33,80 @@ public class ApiInfoService
     /// <returns>Result containing API information for the requested version</returns>
     /// <exception cref="KeyNotFoundException">Thrown when the requested version is not found in the repository</exception>
     /// <exception cref="ArgumentException">Thrown when version is null or empty</exception>
+    /// <exception cref="InvalidOperationException">Thrown when database operations fail</exception>
     public virtual async Task<ApiInfoResults> GetByVersionAsync(string version)
     {
-        if (string.IsNullOrWhiteSpace(version))
-            throw new ArgumentException("Version cannot be null or empty", nameof(version));
+        ArgumentException.ThrowIfNullOrWhiteSpace(version);
 
-        // Call repository to get domain entity
-        var apiInfo = await _repository.GetByVersionAsync(version);
+        try
+        {
+            // Call repository to get domain entity (KeyNotFoundException bubbles up)
+            var apiInfo = await _repository.GetByVersionAsync(version);
 
-        // Convert domain entity to application result
-        return new ApiInfoResults(
-            apiInfo.Version,
-            apiInfo.Status,
-            apiInfo.Features
-        );
+            // Convert domain entity to application result
+            return new ApiInfoResults(
+                apiInfo.Version,
+                apiInfo.Status,
+                apiInfo.Features
+            );
+        }
+        catch (Exception ex) when (ex is KeyNotFoundException)
+        {
+            // Let domain exceptions bubble up with their original context
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // Wrap infrastructure failures with business context
+            throw new InvalidOperationException(
+                $"Failed to retrieve API information for version '{version}' due to a system error.", ex);
+        }
     }
 
     /// <summary>
     /// Retrieves all available API versions and their information.
     /// </summary>
     /// <returns>Collection of results containing API information for all versions</returns>
+    /// <exception cref="InvalidOperationException">Thrown when database operations fail</exception>
     public virtual async Task<IEnumerable<ApiInfoResults>> GetAllAsync()
     {
-        // Call repository to get domain entities
-        var apiInfos = await _repository.GetAllAsync();
+        try
+        {
+            // Call repository to get domain entities
+            var apiInfos = await _repository.GetAllAsync();
 
-        // Convert domain entities to application results
-        return apiInfos.Select(apiInfo => new ApiInfoResults(
-            apiInfo.Version,
-            apiInfo.Status,
-            apiInfo.Features
-        ));
+            // Convert domain entities to application results
+            return apiInfos.Select(apiInfo => new ApiInfoResults(
+                apiInfo.Version,
+                apiInfo.Status,
+                apiInfo.Features
+            ));
+        }
+        catch (Exception ex)
+        {
+            // Wrap infrastructure failures with business context
+            throw new InvalidOperationException(
+                "Failed to retrieve API information due to a system error.", ex);
+        }
     }
 
     /// <summary>
     /// Initializes the API info repository to load API data.
     /// Should be called during application startup.
     /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when database connection fails or required tables don't exist.
+    /// </exception>
     public virtual void Initialize()
     {
-        _repository.Initialize();
+        try
+        {
+            _repository.Initialize();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                "Failed to initialize API info service. Ensure the database is accessible.", ex);
+        }
     }
 }

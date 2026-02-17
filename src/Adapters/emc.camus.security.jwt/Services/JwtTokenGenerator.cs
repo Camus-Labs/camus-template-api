@@ -25,6 +25,9 @@ public class JwtTokenGenerator : ITokenGenerator
         JwtSettings jwtSettings,
         SigningCredentials signingCredentials)
     {
+        ArgumentNullException.ThrowIfNull(jwtSettings);
+        ArgumentNullException.ThrowIfNull(signingCredentials);
+
         _jwtSettings = jwtSettings;
         _signingCredentials = signingCredentials;
     }
@@ -32,6 +35,9 @@ public class JwtTokenGenerator : ITokenGenerator
     /// <inheritdoc/>
     public AuthToken GenerateToken(string userId, string username, IEnumerable<Claim>? additionalClaims = null)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(username);
+        
         // Build claims list
         var claims = new List<Claim>
         {

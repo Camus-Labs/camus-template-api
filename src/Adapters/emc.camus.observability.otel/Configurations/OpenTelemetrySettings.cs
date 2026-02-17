@@ -8,8 +8,8 @@ namespace emc.camus.observability.otel.Configurations
         /// <summary>
         /// The configuration section name for OpenTelemetry settings.
         /// </summary>
-        public const string ConfigurationSectionName = "OpenTelemetry";
-        
+        public const string ConfigurationSectionName = "OpenTelemetrySettings";
+    
         /// <summary>
         /// Gets or sets the tracing configuration.
         /// </summary>

@@ -5,6 +5,7 @@ using emc.camus.application.ApiInfo;
 using emc.camus.application.Auth;
 using emc.camus.persistence.inmemory.Repositories;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.AspNetCore.Builder;
 
 namespace emc.camus.persistence.inmemory
 {
@@ -18,31 +19,31 @@ namespace emc.camus.persistence.inmemory
         /// Adds in-memory persistence services for selected repositories.
         /// Useful for development, testing, and scenarios where database is not required.
         /// </summary>
-        /// <param name="services">The service collection.</param>
+        /// <param name="builder">The web application builder.</param>
         /// <param name="features">Features to register. Use flags to combine multiple features.</param>
-        /// <returns>The service collection for method chaining.</returns>
+        /// <returns>The web application builder for method chaining.</returns>
         /// <remarks>
         /// Data is stored in memory and will be lost when the application restarts.
         /// </remarks>
-        public static IServiceCollection AddInMemoryPersistence(
-            this IServiceCollection services,
+        public static WebApplicationBuilder AddInMemoryPersistence(
+            this WebApplicationBuilder builder,
             PersistenceFeatures features = PersistenceFeatures.All)
         {
-            // Register audit repository (last call wins, shared across Auth and AppData)
-            services.Replace(ServiceDescriptor.Singleton<IActionAuditRepository, IMActionAuditRepository>());
+            // Register audit repository (shared across Auth and AppData)
+            builder.Services.TryAddSingleton<IActionAuditRepository, IMActionAuditRepository>();
 
             // Register repositories as singletons (to persist data during app lifetime)
             if (features.HasFlag(PersistenceFeatures.Auth))
             {
-                services.Replace(ServiceDescriptor.Singleton<IUserRepository, IMUserRepository>());
+                builder.Services.TryAddSingleton<IUserRepository, IMUserRepository>();
             }
             
             if (features.HasFlag(PersistenceFeatures.AppData))
             {
-                services.Replace(ServiceDescriptor.Singleton<IApiInfoRepository, IMApiInfoRepository>());
+                builder.Services.TryAddSingleton<IApiInfoRepository, IMApiInfoRepository>();
             }
 
-            return services;
+            return builder;
         }
     }
 }

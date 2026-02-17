@@ -21,12 +21,16 @@ namespace emc.camus.ratelimiting.inmemory.Services
         /// <param name="logger">Logger for recording IP resolution issues and proxy configuration warnings.</param>
         public ClientIpResolver(ILogger<ClientIpResolver> logger)
         {
+            ArgumentNullException.ThrowIfNull(logger);
+
             _logger = logger;
         }
 
         /// <inheritdoc/>
         public string GetClientIpAddress(HttpContext context)
         {
+            ArgumentNullException.ThrowIfNull(context);
+
             // Check X-Forwarded-For header (standard for proxies/load balancers)
             var forwardedIp = TryGetForwardedForIp(context);
             if (forwardedIp != null)
@@ -48,13 +52,11 @@ namespace emc.camus.ratelimiting.inmemory.Services
                 return remoteIp;
             }
             
-            // Unable to determine IP - fail fast (should never happen in production)
-            _logger.LogError(
-                "Unable to determine client IP address for rate limiting. Rejecting request. " +
-                "No proxy headers and no direct connection IP available. " +
-                "Path: {Path}, Method: {Method}",
-                context.Request.Path, context.Request.Method);
-            throw new InvalidOperationException("Unable to determine client IP address for rate limiting.");
+            throw new InvalidOperationException(
+                $"Unable to determine client IP address for rate limiting. " +
+                $"No proxy headers (X-Forwarded-For, X-Real-IP) and no direct connection IP available. " +
+                $"Path: {context.Request.Path}, Method: {context.Request.Method}. " +
+                $"This indicates a network configuration issue or unsupported proxy setup.");
         }
 
         private string? TryGetForwardedForIp(HttpContext context)

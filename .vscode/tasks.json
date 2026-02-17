@@ -112,6 +112,16 @@
             },
             "group": "none",
             "problemMatcher": []
+        },
+        {
+            "label": "docker-compose-down-clean-data",
+            "type": "shell",
+            "command": "docker-compose -f docker-compose.dev.yml down -v",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "none",
+            "problemMatcher": []
         }
     ]
 }

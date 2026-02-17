@@ -18,7 +18,9 @@ public class HttpUserContext : IUserContext
     /// <param name="httpContextAccessor">Accessor for the current HTTP context.</param>
     public HttpUserContext(IHttpContextAccessor httpContextAccessor)
     {
-        _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+        ArgumentNullException.ThrowIfNull(httpContextAccessor);
+
+        _httpContextAccessor = httpContextAccessor;
     }
 
     /// <inheritdoc />

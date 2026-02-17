@@ -16,20 +16,18 @@ namespace emc.camus.persistence.postgresql.Repositories;
 public class PSUserRepository : IUserRepository
 {
     private readonly IConnectionFactory _connectionFactory;
-    private readonly ILogger<PSUserRepository> _logger;
     private bool _initialized = false;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PSUserRepository"/> class.
     /// </summary>
     /// <param name="connectionFactory">Factory for creating database connections.</param>
-    /// <param name="logger">Logger for repository events.</param>
     public PSUserRepository(
-        IConnectionFactory connectionFactory,
-        ILogger<PSUserRepository> logger)
+        IConnectionFactory connectionFactory)
     {
-        _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(connectionFactory);
+            
+        _connectionFactory = connectionFactory;
     }
 
     /// <summary>
@@ -43,78 +41,48 @@ public class PSUserRepository : IUserRepository
     {
         if (_initialized)
         {
-            _logger.LogWarning("PSUserRepository already initialized. Skipping.");
-            return;
+            throw new InvalidOperationException("PSUserRepository already initialized.");
         }
 
-        try
+        // Test connection and verify tables exist
+        using var connection = _connectionFactory.CreateConnectionAsync().GetAwaiter().GetResult();
+        
+        const string checkTablesSql = @"
+            SELECT 
+                (SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'camus' AND table_name = 'users'
+                )) as users_exists,
+                (SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'camus' AND table_name = 'roles'
+                )) as roles_exists,
+                (SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'camus' AND table_name = 'user_roles'
+                )) as user_roles_exists,
+                (SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'camus' AND table_name = 'role_permissions'
+                )) as role_permissions_exists";
+        
+        var result = connection.QuerySingle<dynamic>(checkTablesSql);
+        
+        if (!result.users_exists || !result.roles_exists || 
+            !result.user_roles_exists || !result.role_permissions_exists)
         {
-            // Test connection and verify tables exist
-            using var connection = _connectionFactory.CreateConnectionAsync().GetAwaiter().GetResult();
+            var missingTables = new List<string>();
+            if (!result.users_exists) missingTables.Add("users");
+            if (!result.roles_exists) missingTables.Add("roles");
+            if (!result.user_roles_exists) missingTables.Add("user_roles");
+            if (!result.role_permissions_exists) missingTables.Add("role_permissions");
             
-            const string checkTablesSql = @"
-                SELECT 
-                    (SELECT EXISTS (
-                        SELECT FROM information_schema.tables 
-                        WHERE table_schema = 'public' AND table_name = 'users'
-                    )) as users_exists,
-                    (SELECT EXISTS (
-                        SELECT FROM information_schema.tables 
-                        WHERE table_schema = 'public' AND table_name = 'roles'
-                    )) as roles_exists,
-                    (SELECT EXISTS (
-                        SELECT FROM information_schema.tables 
-                        WHERE table_schema = 'public' AND table_name = 'user_roles'
-                    )) as user_roles_exists,
-                    (SELECT EXISTS (
-                        SELECT FROM information_schema.tables 
-                        WHERE table_schema = 'public' AND table_name = 'role_permissions'
-                    )) as role_permissions_exists";
-            
-            var result = connection.QuerySingle<dynamic>(checkTablesSql);
-            
-            if (!result.users_exists || !result.roles_exists || 
-                !result.user_roles_exists || !result.role_permissions_exists)
-            {
-                var missingTables = new List<string>();
-                if (!result.users_exists) missingTables.Add("users");
-                if (!result.roles_exists) missingTables.Add("roles");
-                if (!result.user_roles_exists) missingTables.Add("user_roles");
-                if (!result.role_permissions_exists) missingTables.Add("role_permissions");
-                
-                throw new InvalidOperationException(
-                    $"Required tables do not exist in the database: {string.Join(", ", missingTables)}. " +
-                    "Please run database migrations to create the schema.");
-            }
-
-            _initialized = true;
-            _logger.LogInformation("PSUserRepository initialized successfully");
-        }
-        catch (Exception ex) when (ex is not InvalidOperationException)
-        {
-            _logger.LogError(ex, "Failed to initialize PSUserRepository");
             throw new InvalidOperationException(
-                "Failed to initialize user repository. Ensure the database is accessible.", ex);
+                $"Required tables do not exist in the database: {string.Join(", ", missingTables)}. " +
+                "Please run database migrations to create the schema.");
         }
-    }
 
-    /// <summary>
-    /// Validates user credentials by looking up the username in the database and verifying 
-    /// the password against the stored bcrypt hash.
-    /// </summary>
-    /// <param name="username">The username to validate.</param>
-    /// <param name="password">The password to validate.</param>
-    /// <returns>The authenticated user with roles.</returns>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when the repository has not been initialized.
-    /// </exception>
-    /// <exception cref="UnauthorizedAccessException">
-    /// Thrown when credentials are invalid (empty, user not found, or wrong password).
-    /// </exception>
-    public async Task<User> ValidateCredentialsAsync(string username, string password)
-    {
-        using var connection = await _connectionFactory.CreateConnectionAsync();
-        return await ValidateCredentialsAsync(connection, username, password);
+        _initialized = true;
     }
 
     /// <summary>
@@ -135,13 +103,9 @@ public class PSUserRepository : IUserRepository
     {
         EnsureInitialized();
 
-        // Validate input
-        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-        {
-            _logger.LogWarning("Invalid credentials: Username or Password is empty");
-            throw new UnauthorizedAccessException(
-                "The provided credentials are invalid. Username and password must be provided.");
-        }
+        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentException.ThrowIfNullOrWhiteSpace(username);
+        ArgumentException.ThrowIfNullOrWhiteSpace(password);
 
         // Get user with password hash
         const string userSql = @"
@@ -149,7 +113,7 @@ public class PSUserRepository : IUserRepository
                 id,
                 username,
                 password_hash
-            FROM users
+            FROM camus.users
             WHERE username = @Username";
 
         var userModel = await connection.QuerySingleOrDefaultAsync<UserModel>(
@@ -158,7 +122,6 @@ public class PSUserRepository : IUserRepository
 
         if (userModel == null)
         {
-            _logger.LogWarning("User not found for username: {Username}", username);
             throw new UnauthorizedAccessException(
                 "The provided credentials are invalid. User not found.");
         }
@@ -171,14 +134,12 @@ public class PSUserRepository : IUserRepository
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to verify password hash for user: {Username}", username);
             throw new InvalidOperationException(
                 "Failed to verify password. The password hash may be corrupted.", ex);
         }
 
         if (!isPasswordValid)
         {
-            _logger.LogWarning("Invalid password for user: {Username}", username);
             throw new UnauthorizedAccessException(
                 "The provided credentials are invalid. Username and password mismatch.");
         }
@@ -190,9 +151,9 @@ public class PSUserRepository : IUserRepository
                 r.name,
                 r.description,
                 ARRAY_AGG(rp.permission) FILTER (WHERE rp.permission IS NOT NULL) as permissions
-            FROM roles r
-            INNER JOIN user_roles ur ON r.id = ur.role_id
-            LEFT JOIN role_permissions rp ON r.id = rp.role_id
+            FROM camus.roles r
+            INNER JOIN camus.user_roles ur ON r.id = ur.role_id
+            LEFT JOIN camus.role_permissions rp ON r.id = rp.role_id
             WHERE ur.user_id = @UserId
             GROUP BY r.id, r.name, r.description
             ORDER BY r.name";
@@ -200,8 +161,6 @@ public class PSUserRepository : IUserRepository
         var roleModels = await connection.QueryAsync<RoleModel>(
             rolesSql,
             new { UserId = userModel.Id });
-
-        _logger.LogInformation("Authentication successful for user: {Username}", username);
 
         return userModel.ToEntity(roleModels);
     }
@@ -214,13 +173,20 @@ public class PSUserRepository : IUserRepository
     /// <returns>Task representing the asynchronous operation.</returns>
     public async Task UpdateLastLoginAsync(IDbConnection connection, string userId)
     {
+        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+
         const string updateSql = @"
-            UPDATE users 
+            UPDATE camus.users 
             SET last_login = NOW() 
             WHERE id = @UserId";
 
-        await connection.ExecuteAsync(updateSql, new { UserId = userId });
-        _logger.LogDebug("Updated last login timestamp for user: {UserId}", userId);
+        var rowsAffected = await connection.ExecuteAsync(updateSql, new { UserId = userId });
+
+        if (rowsAffected == 0)
+        {
+            throw new KeyNotFoundException($"User with ID '{userId}' not found.");
+        }
     }
 
     private void EnsureInitialized()

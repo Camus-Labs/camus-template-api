@@ -10,7 +10,7 @@ public class AuthorizationSettings
     /// <summary>
     /// Gets the configuration section name for authorization settings.
     /// </summary>
-    public const string ConfigurationSectionName = "Authorization";
+    public const string ConfigurationSectionName = "AuthorizationSettings";
 
     /// <summary>
     /// Gets or sets the authorization provider type.
@@ -21,11 +21,6 @@ public class AuthorizationSettings
     /// Gets or sets the in-memory authorization settings.
     /// </summary>
     public InMemoryAuthorizationSettings InMemory { get; set; } = new();
-
-    /// <summary>
-    /// Gets or sets the database authorization settings.
-    /// </summary>
-    public DatabaseSettings Database { get; set; } = new();
 
     /// <summary>
     /// Validates the authorization settings.
@@ -49,13 +44,14 @@ public class AuthorizationSettings
 
     private void ValidateProviderSettings()
     {
-        if (Provider == AuthorizationProvider.InMemory)
+        switch (Provider)
         {
-            InMemory.Validate();
-        }
-        else if (Provider == AuthorizationProvider.Database)
-        {
-            Database.Validate();
+            case AuthorizationProvider.InMemory:
+                InMemory.Validate();
+                break;
+
+            default:
+                throw new ArgumentException($"Unsupported provider: {Provider}", nameof(Provider));
         }
     }
 }

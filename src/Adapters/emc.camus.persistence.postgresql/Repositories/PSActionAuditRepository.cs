@@ -11,20 +11,18 @@ namespace emc.camus.persistence.postgresql.Repositories;
 /// </summary>
 public class PSActionAuditRepository : IActionAuditRepository
 {
-    private readonly ILogger<PSActionAuditRepository> _logger;
     private readonly IUserContext _userContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PSActionAuditRepository"/> class.
     /// </summary>
-    /// <param name="logger">Logger for repository events.</param>
     /// <param name="userContext">User context for capturing current user information.</param>
     public PSActionAuditRepository(
-        ILogger<PSActionAuditRepository> logger,
         IUserContext userContext)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
+        ArgumentNullException.ThrowIfNull(userContext);
+        
+        _userContext = userContext;
     }
 
     /// <summary>
@@ -42,44 +40,29 @@ public class PSActionAuditRepository : IActionAuditRepository
         string actionTitle,
         string? actionSummary = null)
     {
-        if (connection == null)
-            throw new ArgumentNullException(nameof(connection));
+        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentException.ThrowIfNullOrWhiteSpace(actionTitle);
+
+        var userId = _userContext.GetCurrentUserId();
+        var username = _userContext.GetCurrentUsername();
+        var traceId = _userContext.GetCurrentTraceId();
+
+        const string sql = @"
+            INSERT INTO action_audit (user_id, user_name, trace_id, action_title, action_summary)
+            VALUES (@UserId, @Username, @TraceId, @ActionTitle, @ActionSummary)
+            RETURNING id";
+
+        var auditId = await connection.ExecuteScalarAsync<long>(sql, new
+        {
+            UserId = userId,
+            Username = username,
+            TraceId = traceId,
+            ActionTitle = actionTitle,
+            ActionSummary = actionSummary
+        });
+
+        return auditId;
         
-        if (string.IsNullOrWhiteSpace(actionTitle))
-            throw new ArgumentException("Action title cannot be empty or whitespace.", nameof(actionTitle));
-
-        try
-        {
-            var userId = _userContext.GetCurrentUserId();
-            var username = _userContext.GetCurrentUsername();
-            var traceId = _userContext.GetCurrentTraceId();
-
-            const string sql = @"
-                INSERT INTO action_audit (user_id, user_name, trace_id, action_title, action_summary)
-                VALUES (@UserId, @Username, @TraceId, @ActionTitle, @ActionSummary)
-                RETURNING id";
-
-            var auditId = await connection.ExecuteScalarAsync<long>(sql, new
-            {
-                UserId = userId,
-                Username = username,
-                TraceId = traceId,
-                ActionTitle = actionTitle,
-                ActionSummary = actionSummary
-            });
-
-            _logger.LogDebug(
-                "Audit entry created: Id={AuditId}, Action={ActionTitle}, User={Username}, TraceId={TraceId}",
-                auditId, actionTitle, username ?? "System", traceId ?? "N/A");
-
-            return auditId;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, 
-                "Failed to create audit entry for action: {ActionTitle}", actionTitle);
-            throw;
-        }
     }
 
     /// <summary>
@@ -98,44 +81,26 @@ public class PSActionAuditRepository : IActionAuditRepository
         string actionTitle,
         string? actionSummary = null)
     {
-        if (connection == null)
-            throw new ArgumentNullException(nameof(connection));
-        
-        if (string.IsNullOrWhiteSpace(actionTitle))
-            throw new ArgumentException("Action title cannot be empty or whitespace.", nameof(actionTitle));
-        
-        if (string.IsNullOrWhiteSpace(username))
-            throw new ArgumentException("Username cannot be empty or whitespace.", nameof(username));
+        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentException.ThrowIfNullOrWhiteSpace(username);
+        ArgumentException.ThrowIfNullOrWhiteSpace(actionTitle);
 
-        try
+        var traceId = _userContext.GetCurrentTraceId();
+
+        const string sql = @"
+            INSERT INTO camus.action_audit (user_id, user_name, trace_id, action_title, action_summary)
+            VALUES (@UserId, @Username, @TraceId, @ActionTitle, @ActionSummary)
+            RETURNING id";
+
+        var auditId = await connection.ExecuteScalarAsync<long>(sql, new
         {
-            var traceId = _userContext.GetCurrentTraceId();
+            UserId = userId,
+            Username = username,
+            TraceId = traceId,
+            ActionTitle = actionTitle,
+            ActionSummary = actionSummary
+        });
 
-            const string sql = @"
-                INSERT INTO action_audit (user_id, user_name, trace_id, action_title, action_summary)
-                VALUES (@UserId, @Username, @TraceId, @ActionTitle, @ActionSummary)
-                RETURNING id";
-
-            var auditId = await connection.ExecuteScalarAsync<long>(sql, new
-            {
-                UserId = userId,
-                Username = username,
-                TraceId = traceId,
-                ActionTitle = actionTitle,
-                ActionSummary = actionSummary
-            });
-
-            _logger.LogDebug(
-                "System audit entry created: Id={AuditId}, Action={ActionTitle}, User={Username}",
-                auditId, actionTitle, username);
-
-            return auditId;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, 
-                "Failed to create system audit entry for action: {ActionTitle}", actionTitle);
-            throw;
-        }
+        return auditId;
     }
 }

@@ -101,24 +101,6 @@ public class IMUserRepository : IUserRepository
 
     /// <summary>
     /// Validates user credentials by looking up the username in the in-memory store and comparing 
-    /// the password with the value retrieved from the secret provider.
-    /// </summary>
-    /// <param name="username">The username to validate.</param>
-    /// <param name="password">The password to validate.</param>
-    /// <returns>The authenticated user with roles.</returns>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when the repository has not been initialized.
-    /// </exception>
-    /// <exception cref="UnauthorizedAccessException">
-    /// Thrown when credentials are invalid (empty, user not found, or wrong password).
-    /// </exception>
-    public Task<User> ValidateCredentialsAsync(string username, string password)
-    {
-        return ValidateCredentialsAsync(null!, username, password);
-    }
-
-    /// <summary>
-    /// Validates user credentials by looking up the username in the in-memory store and comparing 
     /// the password with the value retrieved from the secret provider (connection parameter ignored).
     /// </summary>
     /// <param name="connection">The database connection (ignored for in-memory implementation).</param>
@@ -135,13 +117,8 @@ public class IMUserRepository : IUserRepository
     {
         EnsureInitialized();
 
-        // Validate input
-        if (string.IsNullOrWhiteSpace(username) || 
-            string.IsNullOrWhiteSpace(password))
-        {
-            _logger.LogWarning("Invalid credentials: Username or Password is empty");
-            throw new UnauthorizedAccessException("The provided credentials are invalid. Username and password must be provided.");
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(username);
+        ArgumentException.ThrowIfNullOrWhiteSpace(password);
 
         // Find user by username (O(1) lookup)
         if (!_usersByUsername.TryGetValue(username, out var userEntry))
@@ -175,7 +152,6 @@ public class IMUserRepository : IUserRepository
     public Task UpdateLastLoginAsync(IDbConnection connection, string userId)
     {
         // In-memory implementation doesn't persist last login timestamp
-        _logger.LogDebug("UpdateLastLoginAsync called for user {UserId} (no-op for in-memory)", userId);
         return Task.CompletedTask;
     }
 

@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using emc.camus.api.Infrastructure;
 using emc.camus.application.Auth;
+using emc.camus.application.ApiInfo;
 using emc.camus.application.Common;
 
 namespace emc.camus.api.Extensions
@@ -26,6 +27,7 @@ namespace emc.camus.api.Extensions
             
             // Register Authentication Service (business logic in Application layer)
             builder.Services.AddScoped<AuthService>();
+            builder.Services.AddScoped<ApiInfoService>();
             
             // Add controllers
             builder.Services.AddControllers();

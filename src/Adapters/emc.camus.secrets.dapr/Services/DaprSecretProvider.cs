@@ -37,10 +37,13 @@ namespace emc.camus.secrets.dapr.Services
         /// <param name="settings">The configuration settings for the Dapr secret provider.</param>
         public DaprSecretProvider(HttpClient httpClient, ILogger<DaprSecretProvider> logger, DaprSecretProviderSettings settings)
         {
-            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            
-            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            ArgumentNullException.ThrowIfNull(httpClient);
+            ArgumentNullException.ThrowIfNull(logger);
+            ArgumentNullException.ThrowIfNull(settings);
+
+            _httpClient = httpClient;
+            _logger = logger;
+            _settings = settings;
            
             var baseUrl = $"{DaprProtocol}{_settings.BaseHost}:{_settings.HttpPort}";
             
@@ -92,10 +95,9 @@ namespace emc.camus.secrets.dapr.Services
         /// <returns>The secret value if found; otherwise, <c>null</c>.</returns>
         public string? GetSecret(string name)
         {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                throw new ArgumentException("Secret name cannot be null or empty", nameof(name));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+            // Try to get the secret value from the in-memory cache 
 
             if (_secrets.TryGetValue(name, out var value))
             {

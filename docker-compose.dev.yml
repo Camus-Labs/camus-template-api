@@ -17,8 +17,6 @@ services:
       - OpenTelemetry__Metrics__OtlpEndpoint=http://otel-collector:4317
       - OpenTelemetry__Logs__Exporter=otlp
       - OpenTelemetry__Logs__OtlpEndpoint=http://otel-collector:4317
-      # Database configuration
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=camus;Username=camus;Password=camus_dev_password
     volumes:
       # Mount source code for hot reload
       - ./src:/src:cached
@@ -39,14 +37,15 @@ services:
       - "5432:5432"
     environment:
       - POSTGRES_DB=camus
-      - POSTGRES_USER=camus
-      - POSTGRES_PASSWORD=camus_dev_password
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      # DbUp migrations handle schema - no manual scripts needed
     networks:
       - camus-dev
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U camus"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5

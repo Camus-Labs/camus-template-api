@@ -4,6 +4,18 @@
     "csharp.semanticHighlighting.enabled": true,
     "[markdown]": {
         "editor.wordWrap": "off"
-    }
+    },
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "camus-db-dev",
+            "database": "camus",
+            "username": "postgres"
+        }
+    ]
 }
 

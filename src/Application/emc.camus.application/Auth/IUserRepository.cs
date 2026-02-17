@@ -18,17 +18,6 @@ public interface IUserRepository
     void Initialize();
 
     /// <summary>
-    /// Validates user credentials and retrieves user information with roles.
-    /// </summary>
-    /// <param name="username">The username to validate.</param>
-    /// <param name="password">The password to validate.</param>
-    /// <returns>A User object with roles if credentials are valid.</returns>
-    /// <exception cref="UnauthorizedAccessException">
-    /// Thrown when credentials are invalid.
-    /// </exception>
-    Task<User> ValidateCredentialsAsync(string username, string password);
-
-    /// <summary>
     /// Validates user credentials and retrieves user information with roles using an external connection (for transactions).
     /// </summary>
     /// <param name="connection">The database connection to use for the operation.</param>

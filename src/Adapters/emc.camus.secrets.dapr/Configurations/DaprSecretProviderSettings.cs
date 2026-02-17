@@ -8,7 +8,7 @@ namespace emc.camus.secrets.dapr.Configurations
         /// <summary>
         /// The configuration section name for Dapr secret provider settings.
         /// </summary>
-        public const string ConfigurationSectionName = "DaprSecretProvider";
+        public const string ConfigurationSectionName = "DaprSecretProviderSettings";
         
         private const int MinPort = 1;
         private const int MaxPort = 65535;

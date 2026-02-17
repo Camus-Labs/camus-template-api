@@ -2,6 +2,7 @@ using System.Data;
 using Dapper;
 using emc.camus.application.Common;
 using emc.camus.application.Configurations;
+using emc.camus.application.Secrets;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
@@ -11,33 +12,70 @@ namespace emc.camus.persistence.postgresql.Data;
 /// PostgreSQL implementation of database connection factory using Npgsql.
 /// Automatically sets session variables for user context to enable
 /// automatic audit field population via database triggers.
+/// Supports both static connection strings and secret-based credentials.
 /// </summary>
 public class NpgsqlConnectionFactory : IConnectionFactory
 {
     private readonly string _connectionString;
-    private readonly ILogger<NpgsqlConnectionFactory> _logger;
     private readonly IUserContext _userContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NpgsqlConnectionFactory"/> class.
     /// </summary>
     /// <param name="settings">Database settings containing connection configuration.</param>
-    /// <param name="logger">Logger for connection factory events.</param>
     /// <param name="userContext">User context for audit tracking.</param>
-    /// <exception cref="ArgumentNullException">Thrown when settings, logger, or userContext is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when connection string is invalid.</exception>
+    /// <param name="secretProvider">Secret provider for fetching credentials.</param>
+    /// <exception cref="ArgumentNullException">Thrown when settings, userContext, or secretProvider is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when secrets cannot be retrieved.</exception>
     public NpgsqlConnectionFactory(
         DatabaseSettings settings,
-        ILogger<NpgsqlConnectionFactory> logger,
-        IUserContext userContext)
+        IUserContext userContext,
+        ISecretProvider secretProvider)
     {
         ArgumentNullException.ThrowIfNull(settings);
-        ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(userContext);
+        ArgumentNullException.ThrowIfNull(secretProvider);
 
-        _logger = logger;
         _userContext = userContext;
-        _connectionString = settings.ConnectionString;
+        
+        // Build connection string from secret-based credentials
+        _connectionString = BuildConnectionString(settings, secretProvider);
+    }
+
+    /// <summary>
+    /// Builds the complete connection string using credentials from secret provider.
+    /// </summary>
+    /// <param name="settings">Database settings containing connection configuration.</param>
+    /// <param name="secretProvider">Secret provider to fetch credentials.</param>
+    /// <returns>The complete PostgreSQL connection string.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when secrets cannot be retrieved.</exception>
+    private static string BuildConnectionString(DatabaseSettings settings, ISecretProvider secretProvider)
+    {
+        // Fetch credentials from secret provider
+        var username = secretProvider.GetSecret(settings.UserSecretName);
+        var password = secretProvider.GetSecret(settings.PasswordSecretName);
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            throw new InvalidOperationException(
+                $"Database username secret '{settings.UserSecretName}' not found or empty");
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            throw new InvalidOperationException(
+                $"Database password secret '{settings.PasswordSecretName}' not found or empty");
+        }
+
+        // Build connection string from components
+        var connectionString = $"Host={settings.Host};Port={settings.Port};Database={settings.Database};Username={username};Password={password}";
+        
+        if (!string.IsNullOrWhiteSpace(settings.AdditionalParameters))
+        {
+            connectionString += $";{settings.AdditionalParameters}";
+        }
+
+        return connectionString;
     }
 
     /// <summary>
@@ -59,13 +97,10 @@ public class NpgsqlConnectionFactory : IConnectionFactory
             // Set session variables for audit triggers
             await SetSessionContextAsync(connection);
             
-            _logger.LogDebug("Database connection opened successfully");
-            
             return connection;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to open database connection");
             throw new InvalidOperationException("Failed to open database connection. Ensure the database is accessible and the connection string is correct.", ex);
         }
     }

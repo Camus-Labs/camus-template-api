@@ -8,6 +8,7 @@ using emc.camus.security.apikey;
 using emc.camus.secrets.dapr;
 using emc.camus.documentation.swagger;
 using emc.camus.ratelimiting.inmemory;
+using emc.camus.migrations.dbup;
 using Microsoft.AspNetCore.HttpOverrides;
 
 [assembly: ExcludeFromCodeCoverage]
@@ -50,7 +51,7 @@ builder.AddJwtAuthentication();
 builder.AddApiKeyAuthentication();
 
 // Step 9: Configure authorization policies and user repository (depends on authentication)
-builder.AddAuthorization();
+builder.AddAuthorizationWithData();
 
 // Step 10: Configure application services (IUserContext, etc.)
 builder.AddApplicationServices();
@@ -102,20 +103,23 @@ app.UseInMemoryRateLimiting();
 // Step 21: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
 app.UseDaprSecrets();
 
-// Step 22: Add Authentication and Authorization
+// Step 22: Run database migrations (creates schema and tables if needed)
+app.UseDatabaseMigrations(startupLogger);
+
+// Step 23: Add Authentication and Authorization
 app.UseAuthentication();
 
-// Step 23: Initialize authorization data (load users/roles)
-app.UseAuthorizationSetup();
+// Step 24: Initialize authorization data (load users/roles)
+app.UseAuthorizationWithData();
 
-// Step 24: Initialize application data (load API info)
-app.UseAppDataSetup();
+// Step 25: Initialize application data (load API info)
+app.UseAppData();
 
-// Step 25: Apply application services (endpoint routing)
+// Step 26: Apply application services (endpoint routing)
 app.UseApplicationServices();
 
 
 startupLogger.LogInformation("{ServiceName} startup complete. Ready to accept requests", SERVICE_NAME);
 
-// Step 26: Run the app
+// Step 27: Run the app
 await app.RunAsync();

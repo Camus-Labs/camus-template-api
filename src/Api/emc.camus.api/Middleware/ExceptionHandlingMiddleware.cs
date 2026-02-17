@@ -27,6 +27,7 @@ namespace emc.camus.api.Middleware
         private static readonly IReadOnlyList<ErrorCodeMappingRule> PlatformRules = new List<ErrorCodeMappingRule>
         {
             new() { Type = nameof(RateLimitExceededException), ErrorCode = ErrorCodes.RateLimitExceeded },
+            new() { Type = nameof(KeyNotFoundException), ErrorCode = ErrorCodes.NotFound },
             // JWT-specific error patterns (most specific first)
             new() { Type = nameof(UnauthorizedAccessException), Pattern = "jwt.*expired|token.*expired", ErrorCode = ErrorCodes.JwtTokenExpired },
             new() { Type = nameof(UnauthorizedAccessException), Pattern = "invalid.*signature", ErrorCode = ErrorCodes.JwtInvalidSignature },
@@ -43,6 +44,7 @@ namespace emc.camus.api.Middleware
             new() { Type = nameof(UnauthorizedAccessException), Pattern = "invalid|credentials|incorrect", ErrorCode = ErrorCodes.InvalidCredentials },
             new() { Type = nameof(UnauthorizedAccessException), ErrorCode = ErrorCodes.Unauthorized },
             new() { Type = nameof(ArgumentException), ErrorCode = ErrorCodes.BadRequest },
+            new() { Type = nameof(InvalidOperationException), Pattern = "not.?found", ErrorCode = ErrorCodes.NotFound },
             new() { Type = nameof(InvalidOperationException), Pattern = "permission", ErrorCode = ErrorCodes.Forbidden },
             new() { Pattern = "secret|configuration", ErrorCode = ErrorCodes.InternalServerError }
         }.AsReadOnly();
@@ -148,6 +150,13 @@ namespace emc.camus.api.Middleware
                     Detail = exception.Message,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
                 },
+                KeyNotFoundException => new ProblemDetails
+                {
+                    Status = (int)HttpStatusCode.NotFound,
+                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.NotFound),
+                    Detail = exception.Message,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                },
                 UnauthorizedAccessException => new ProblemDetails
                 {
                     Status = (int)HttpStatusCode.Unauthorized,
@@ -162,6 +171,13 @@ namespace emc.camus.api.Middleware
                     Detail = "Rate limit exceeded. Please try again later.",
                     Type = "https://tools.ietf.org/html/rfc6585#section-4",
                     Extensions = { ["retryAfter"] = rateLimitEx.RetryAfterSeconds }
+                },
+                InvalidOperationException when exception.Message.Contains("not found", StringComparison.OrdinalIgnoreCase) => new ProblemDetails
+                {
+                    Status = (int)HttpStatusCode.NotFound,
+                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.NotFound),
+                    Detail = exception.Message,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
                 },
                 InvalidOperationException when exception.Message.Contains("permission") => new ProblemDetails
                 {

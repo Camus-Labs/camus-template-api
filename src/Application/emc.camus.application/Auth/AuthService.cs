@@ -14,8 +14,8 @@ public class AuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly ITokenGenerator _tokenGenerator;
+    private readonly IActionAuditRepository _auditRepository;
     private readonly IConnectionFactory? _connectionFactory;
-    private readonly IActionAuditRepository? _auditRepository;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthService"/> class.
@@ -27,9 +27,13 @@ public class AuthService
     public AuthService(
         IUserRepository userRepository,
         ITokenGenerator tokenGenerator,
-        IConnectionFactory? connectionFactory = null,
-        IActionAuditRepository? auditRepository = null)
+        IActionAuditRepository auditRepository,
+        IConnectionFactory? connectionFactory = null)
     {
+        ArgumentNullException.ThrowIfNull(userRepository);
+        ArgumentNullException.ThrowIfNull(tokenGenerator);
+        ArgumentNullException.ThrowIfNull(auditRepository);
+
         _userRepository = userRepository;
         _tokenGenerator = tokenGenerator;
         _connectionFactory = connectionFactory;
@@ -44,71 +48,98 @@ public class AuthService
     /// <param name="command">The authentication command containing username and password.</param>
     /// <returns>Authentication result with token, expiration, and user information.</returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when credentials are invalid.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when token generation or database operations fail.</exception>
     public virtual async Task<AuthenticateUserResult> AuthenticateAsync(AuthenticateUserCommand command)
     {
-        User user;
-        AuthToken token;
+        ArgumentNullException.ThrowIfNull(command);
 
-        // If connection factory and audit repository are available, use transactional approach with audit logging
-        // (Both are registered together with database persistence)
-        if (_connectionFactory != null && _auditRepository != null)
+        try
         {
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var transaction = connection.BeginTransaction();
+            User user;
+            AuthToken token;
 
-            try
+            // If connection factory is available, use transactional approach
+            if (_connectionFactory != null)
             {
-                // Validate credentials via repository
-                user = await _userRepository.ValidateCredentialsAsync(connection, command.Username, command.Password);
+                using var connection = await _connectionFactory.CreateConnectionAsync();
+                using var transaction = connection.BeginTransaction();
 
-                // Update last login timestamp
-                await _userRepository.UpdateLastLoginAsync(connection, user.Id);
+                try
+                {
+                    // Validate credentials via repository (UnauthorizedAccessException bubbles up)
+                    user = await _userRepository.ValidateCredentialsAsync(connection, command.Username, command.Password);
+
+                    // Update last login timestamp
+                    await _userRepository.UpdateLastLoginAsync(connection, user.Id);
+
+                    // Generate token with user's roles
+                    var roleClaims = user.Roles.Select(role => new Claim(ClaimTypes.Role, role.Name)).ToList();
+                    token = _tokenGenerator.GenerateToken(user.Id, user.Username, roleClaims);
+
+                    // Log successful login audit
+                    await _auditRepository.LogSystemActionAsync(
+                        connection,
+                        Guid.Parse(user.Id),
+                        user.Username,
+                        "user.login.success",
+                        $"Successful login. Token expires: {token.ExpiresOn:yyyy-MM-dd HH:mm:ss} UTC");
+
+                    // Commit transaction
+                    transaction.Commit();
+                }
+                catch (Exception)
+                {
+                    // Rollback on infrastructure failures
+                    transaction.Rollback();
+                    throw;
+                }
+            }
+            else
+            {
+                // Simple validation without transaction (e.g., InMemory provider)
+                user = await _userRepository.ValidateCredentialsAsync(null!, command.Username, command.Password);
 
                 // Generate token with user's roles
                 var roleClaims = user.Roles.Select(role => new Claim(ClaimTypes.Role, role.Name)).ToList();
                 token = _tokenGenerator.GenerateToken(user.Id, user.Username, roleClaims);
-
-                // Log successful login audit
-                await _auditRepository.LogSystemActionAsync(
-                    connection,
-                    Guid.Parse(user.Id),
-                    user.Username,
-                    "user.login.success",
-                    $"Successful login. Token expires: {token.ExpiresOn:yyyy-MM-dd HH:mm:ss} UTC");
-
-                // Commit transaction
-                transaction.Commit();
             }
-            catch
-            {
-                // Rollback transaction on any other failure
-                transaction.Rollback();
-                throw;
-            }
+
+            // Return immutable result
+            return new AuthenticateUserResult(
+                token.Token,
+                token.ExpiresOn
+            );
         }
-        else
+        catch (Exception ex) when (ex is UnauthorizedAccessException or KeyNotFoundException)
         {
-            // Simple validation without transaction (e.g., InMemory provider)
-            user = await _userRepository.ValidateCredentialsAsync(command.Username, command.Password);
-            
-            // Generate token with user's roles
-            var roleClaims = user.Roles.Select(role => new Claim(ClaimTypes.Role, role.Name)).ToList();
-            token = _tokenGenerator.GenerateToken(user.Id, user.Username, roleClaims);
+            // Let domain exceptions bubble up with their original context
+            throw;
         }
-
-        // Return immutable result
-        return new AuthenticateUserResult(
-            token.Token,
-            token.ExpiresOn
-        );
+        catch (Exception ex)
+        {
+            // Wrap infrastructure failures with business context
+            throw new InvalidOperationException(
+                $"Authentication failed due to a system error. Username: {command.Username}", ex);
+        }
     }
 
     /// <summary>
     /// Initializes the user repository to load users and roles.
     /// Should be called during application startup.
     /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when database connection fails or required tables don't exist.
+    /// </exception>
     public virtual void Initialize()
     {
-        _userRepository.Initialize();
+        try
+        {
+            _userRepository.Initialize();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                "Failed to initialize authentication service. Ensure the database is accessible.", ex);
+        }
     }
 }

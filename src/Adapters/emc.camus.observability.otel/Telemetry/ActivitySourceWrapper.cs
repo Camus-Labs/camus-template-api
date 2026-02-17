@@ -26,7 +26,9 @@ namespace emc.camus.observability.otel.Telemetry
         /// <exception cref="ArgumentNullException">Thrown when activitySource is null.</exception>
         public ActivitySourceWrapper(ActivitySource activitySource)
         {
-            _activitySource = activitySource ?? throw new ArgumentNullException(nameof(activitySource));
+            ArgumentNullException.ThrowIfNull(activitySource);
+
+            _activitySource = activitySource;
         }
 
         /// <summary>

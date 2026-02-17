@@ -11,7 +11,6 @@ namespace emc.camus.persistence.inmemory.Repositories;
 public class IMApiInfoRepository : IApiInfoRepository
 {
     private readonly InMemoryAppDataSettings _settings;
-    private readonly ILogger<IMApiInfoRepository> _logger;
     private Dictionary<string, ApiInfo> _apiInfoByVersion = new();
     private bool _initialized = false;
 
@@ -19,12 +18,10 @@ public class IMApiInfoRepository : IApiInfoRepository
     /// Initializes a new instance of the <see cref="IMApiInfoRepository"/> class.
     /// </summary>
     /// <param name="settings">Application data settings containing API info definitions.</param>
-    /// <param name="logger">Logger for repository events.</param>
     public IMApiInfoRepository(
-        AppDataSettings settings,
-        ILogger<IMApiInfoRepository> logger)
+        AppDataSettings settings)
     {
-        _logger = logger;
+        ArgumentNullException.ThrowIfNull(settings);
         _settings = settings.InMemory;
     }
 
@@ -39,8 +36,7 @@ public class IMApiInfoRepository : IApiInfoRepository
     {
         if (_initialized)
         {
-            _logger.LogWarning("IMApiInfoRepository already initialized. Skipping.");
-            return;
+            throw new InvalidOperationException("IMApiInfoRepository already initialized.");
         }
 
         _apiInfoByVersion = new Dictionary<string, ApiInfo>(StringComparer.OrdinalIgnoreCase);
@@ -55,11 +51,9 @@ public class IMApiInfoRepository : IApiInfoRepository
             );
 
             _apiInfoByVersion[config.Version] = apiInfo;
-            _logger.LogInformation("Loaded API info for version {Version}", config.Version);
         }
 
         _initialized = true;
-        _logger.LogInformation("IMApiInfoRepository initialized with {Count} API versions", _apiInfoByVersion.Count);
     }
 
     /// <summary>
@@ -76,15 +70,11 @@ public class IMApiInfoRepository : IApiInfoRepository
     public Task<ApiInfo> GetByVersionAsync(string version)
     {
         EnsureInitialized();
-
-        if (string.IsNullOrWhiteSpace(version))
-        {
-            throw new ArgumentException("Version cannot be null or empty.", nameof(version));
-        }
+        
+        ArgumentException.ThrowIfNullOrWhiteSpace(version);
 
         if (!_apiInfoByVersion.TryGetValue(version, out var apiInfo))
         {
-            _logger.LogWarning("API info not found for version {Version}", version);
             throw new KeyNotFoundException($"API info not found for version '{version}'.");
         }
 

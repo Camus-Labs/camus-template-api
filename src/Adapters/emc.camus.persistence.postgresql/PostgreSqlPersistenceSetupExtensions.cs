@@ -1,6 +1,7 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Logging;
 using emc.camus.application.Common;
 using emc.camus.application.Configurations;
 using emc.camus.application.ApiInfo;
@@ -19,43 +20,45 @@ namespace emc.camus.persistence.postgresql
     {
         /// <summary>
         /// Adds PostgreSQL persistence services including connection factory and selected repositories.
-        /// Last registration wins - if called multiple times, the last settings will be used.
+        /// Loads DatabaseSettings from configuration and registers it as singleton if not already registered.
         /// </summary>
-        /// <param name="services">The service collection.</param>
-        /// <param name="settings">Database settings for PostgreSQL connection.</param>
+        /// <param name="builder">The web application builder.</param>
         /// <param name="features">Features to register. Use flags to combine multiple features.</param>
-        /// <returns>The service collection for method chaining.</returns>
+        /// <returns>The web application builder for method chaining.</returns>
         /// <remarks>
         /// Requires IUserContext to be registered before calling this method (mandatory for audit trail functionality).
         /// Automatically sets session variables (app.current_username) for database triggers.
         /// Will throw exception during service resolution if IUserContext is not registered.
         /// </remarks>
-        public static IServiceCollection AddPostgreSqlPersistence(
-            this IServiceCollection services,
-            DatabaseSettings settings,
+        public static WebApplicationBuilder AddPostgreSqlPersistence(
+            this WebApplicationBuilder builder,
             PersistenceFeatures features = PersistenceFeatures.All)
         {
-            // Register database settings (last call wins, replaces existing)
-            services.Replace(ServiceDescriptor.Singleton(settings));
+            // Load DatabaseSettings from root configuration
+            var settings = builder.Configuration.GetSection(DatabaseSettings.ConfigurationSectionName).Get<DatabaseSettings>() ?? new DatabaseSettings();
+            settings.Validate();
             
-            // Register database connection factory (last call wins, replaces existing)
-            services.Replace(ServiceDescriptor.Singleton<IConnectionFactory, NpgsqlConnectionFactory>());
+            // Register DatabaseSettings as singleton (only if not already registered)
+            builder.Services.TryAddSingleton(settings);
+            
+            // Register database connection factory
+            builder.Services.TryAddSingleton<IConnectionFactory, NpgsqlConnectionFactory>();
 
-            // Register audit repository (last call wins, shared across Auth and AppData)
-            services.Replace(ServiceDescriptor.Scoped<IActionAuditRepository, PSActionAuditRepository>());
+            // Register audit repository (shared across Auth and AppData)
+            builder.Services.TryAddScoped<IActionAuditRepository, PSActionAuditRepository>();
 
             // Register repositories based on features
             if (features.HasFlag(PersistenceFeatures.Auth))
             {
-                services.AddScoped<IUserRepository, PSUserRepository>();
+                builder.Services.TryAddScoped<IUserRepository, PSUserRepository>();
             }
             
             if (features.HasFlag(PersistenceFeatures.AppData))
             {
-                services.AddScoped<IApiInfoRepository, PSApiInfoRepository>();
+                builder.Services.TryAddScoped<IApiInfoRepository, PSApiInfoRepository>();
             }
 
-            return services;
+            return builder;
         }
     }
 }

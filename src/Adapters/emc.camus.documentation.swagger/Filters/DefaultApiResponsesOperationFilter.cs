@@ -40,6 +40,13 @@ namespace emc.camus.documentation.swagger.Filters
                     ["detail"] = new OpenApiString("You do not have permission to access this resource."),
                     ["error"] = new OpenApiString(ErrorCodes.Forbidden)
                 },
+                [StatusCodes.Status404NotFound.ToString()] = new OpenApiObject
+                {
+                    ["status"] = new OpenApiInteger(StatusCodes.Status404NotFound),
+                    ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status404NotFound)),
+                    ["detail"] = new OpenApiString("The requested resource was not found."),
+                    ["error"] = new OpenApiString(ErrorCodes.NotFound)
+                },
                 [StatusCodes.Status409Conflict.ToString()] = new OpenApiObject
                 {
                     ["status"] = new OpenApiInteger(StatusCodes.Status409Conflict),
@@ -135,6 +142,7 @@ namespace emc.camus.documentation.swagger.Filters
             {
                 [StatusCodes.Status400BadRequest.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status400BadRequest),
                 [StatusCodes.Status403Forbidden.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status403Forbidden),
+                [StatusCodes.Status404NotFound.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status404NotFound),
                 [StatusCodes.Status409Conflict.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status409Conflict),
                 [StatusCodes.Status429TooManyRequests.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status429TooManyRequests),
                 [StatusCodes.Status500InternalServerError.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status500InternalServerError)
