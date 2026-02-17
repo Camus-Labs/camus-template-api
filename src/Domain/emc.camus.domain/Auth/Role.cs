@@ -35,10 +35,7 @@ public class Role
     /// <exception cref="ArgumentException">Thrown when name is null, empty, or whitespace.</exception>
     public Role(string name, string? description = null, List<string>? permissions = null, string? id = null)
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentException("Role name is required and cannot be empty or whitespace.", nameof(name));
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
         Id = id ?? Guid.NewGuid().ToString();
         Name = name;

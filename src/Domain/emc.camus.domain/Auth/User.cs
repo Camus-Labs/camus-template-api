@@ -29,10 +29,7 @@ public class User
     /// <exception cref="ArgumentException">Thrown when username is null, empty, or whitespace.</exception>
     public User(string username, List<Role>? roles = null, string? id = null)
     {
-        if (string.IsNullOrWhiteSpace(username))
-        {
-            throw new ArgumentException("Username is required and cannot be empty or whitespace.", nameof(username));
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(username);
 
         Id = id ?? Guid.NewGuid().ToString();
         Username = username;

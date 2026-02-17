@@ -23,8 +23,7 @@ public class AuthToken
     /// <exception cref="ArgumentException">Thrown when token is null or whitespace, or expiresOn is in the past.</exception>
     public AuthToken(string token, DateTime expiresOn)
     {
-        if (string.IsNullOrWhiteSpace(token))
-            throw new ArgumentException("Token cannot be null or whitespace.", nameof(token));
+        ArgumentException.ThrowIfNullOrWhiteSpace(token);
 
         if (expiresOn <= DateTime.UtcNow)
             throw new ArgumentException("Token expiration must be in the future.", nameof(expiresOn));

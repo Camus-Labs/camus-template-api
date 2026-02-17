@@ -37,15 +37,8 @@ public class ApiInfo
     /// <exception cref="ArgumentException">Thrown when version or status is null, empty, or whitespace.</exception>
     public ApiInfo(string version, string status, List<string>? features = null, string? name = null)
     {
-        if (string.IsNullOrWhiteSpace(version))
-        {
-            throw new ArgumentException("API version is required and cannot be empty or whitespace.", nameof(version));
-        }
-
-        if (string.IsNullOrWhiteSpace(status))
-        {
-            throw new ArgumentException("API status is required and cannot be empty or whitespace.", nameof(status));
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(version);
+        ArgumentException.ThrowIfNullOrWhiteSpace(status);
 
         Name = name ?? DefaultApiName;
         Version = version;
