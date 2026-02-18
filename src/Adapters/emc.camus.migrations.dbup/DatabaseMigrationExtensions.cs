@@ -21,52 +21,66 @@ namespace emc.camus.migrations.dbup
         private const string DefaultSchemaVersionsTable = "camus_schemaversions";
 
         /// <summary>
+        /// Registers database migration configuration and validates settings.
+        /// </summary>
+        /// <param name="builder">The web application builder.</param>
+        /// <returns>The web application builder for method chaining.</returns>
+        public static WebApplicationBuilder AddDatabaseMigrations(this WebApplicationBuilder builder)
+        {
+            // Load and validate DBUpSettings
+            var migrationsSettings = builder.Configuration
+                .GetSection(DBUpSettings.ConfigurationSectionName)
+                .Get<DBUpSettings>();
+
+            if (migrationsSettings == null)
+            {
+                throw new InvalidOperationException(
+                    $"DBUpSettings configuration is missing. Ensure '{DBUpSettings.ConfigurationSectionName}' section is present in configuration.");
+            }
+
+            migrationsSettings.Validate();
+            builder.Services.AddSingleton(migrationsSettings);
+
+            // Load and validate DatabaseSettings
+            var dbSettings = builder.Configuration
+                .GetSection(DatabaseSettings.ConfigurationSectionName)
+                .Get<DatabaseSettings>();
+
+            if (dbSettings == null)
+            {
+                throw new InvalidOperationException(
+                    $"DatabaseSettings configuration is missing. Ensure '{DatabaseSettings.ConfigurationSectionName}' section is present in configuration.");
+            }
+
+            dbSettings.Validate();
+
+            return builder;
+        }
+
+        /// <summary>
         /// Runs database migrations on application startup.
-    /// Uses DatabaseSettings from root configuration for Host/Port/Database.
-    /// Uses DBUpSettings for admin credentials.
-    /// If DBUpSettings is not configured, skips migrations.
-    /// Supports both static connection strings and secret-based credentials.
-    /// Tracking table stored in public.camus_schemaversions for portability.
-    /// </summary>
-    /// <param name="app">The web application.</param>
-    /// <param name="logger">Logger instance for migration output.</param>
-    /// <returns>The web application for method chaining.</returns>
-    public static WebApplication UseDatabaseMigrations(this WebApplication app, ILogger logger)
-    {
-        // Get DBUpSettings from configuration
-        var migrationsSettings = app.Configuration
-            .GetSection(DBUpSettings.ConfigurationSectionName)
-            .Get<DBUpSettings>();
-        
-        if (migrationsSettings == null)
+        /// Uses DatabaseSettings from root configuration for Host/Port/Database.
+        /// Uses DBUpSettings for admin credentials.
+        /// Supports both static connection strings and secret-based credentials.
+        /// Tracking table stored in public.camus_schemaversions for portability.
+        /// </summary>
+        /// <param name="app">The web application.</param>
+        /// <param name="logger">Logger instance for migration output.</param>
+        /// <returns>The web application for method chaining.</returns>
+        public static WebApplication UseDatabaseMigrations(this WebApplication app, ILogger logger)
         {
-            throw new InvalidOperationException(
-                $"DBUpSettings configuration is missing. Ensure '{DBUpSettings.ConfigurationSectionName}' section is present in configuration.");
-        }
+            // Get settings from DI (registered in AddDatabaseMigrations)
+            var migrationsSettings = app.Services.GetRequiredService<DBUpSettings>();
+            var dbSettings = app.Configuration
+                .GetSection(DatabaseSettings.ConfigurationSectionName)
+                .Get<DatabaseSettings>()!;
 
-        // Validate migration settings
-        migrationsSettings.Validate();
+            try
+            {
+                logger.LogInformation("Starting database migrations...");
 
-        // Get DatabaseSettings from configuration for Host/Port/Database
-        var dbSettings = app.Configuration
-            .GetSection(DatabaseSettings.ConfigurationSectionName)
-            .Get<DatabaseSettings>();
-            
-        if (dbSettings == null)
-        {
-            throw new InvalidOperationException(
-                $"DatabaseSettings configuration is missing. Ensure '{DatabaseSettings.ConfigurationSectionName}' section is present in configuration.");
-        }
-
-        // Validate database settings
-        dbSettings.Validate();
-
-        try
-        {
-            logger.LogInformation("Starting database migrations...");
-
-            // Get secret provider for credentials
-            var secretProvider = app.Services.GetService<ISecretProvider>();
+                // Get secret provider for credentials
+                var secretProvider = app.Services.GetService<ISecretProvider>();
             if (secretProvider == null)
             {
                 throw new InvalidOperationException(

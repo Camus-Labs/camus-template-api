@@ -12,7 +12,7 @@ namespace emc.camus.api.Extensions
         /// <summary>
         /// The name of the HTTP header used to specify the API version.
         /// </summary>
-        private const string ApiVersionHeaderName = "X-Api-Version";
+        private const string ApiVersionHeaderName = "Api-Version";
 
         /// <summary>
         /// The format string for API version group names in documentation.

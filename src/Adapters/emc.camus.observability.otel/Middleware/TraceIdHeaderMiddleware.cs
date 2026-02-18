@@ -5,11 +5,11 @@ using System.Diagnostics;
 namespace emc.camus.observability.otel.Middleware
 {
     /// <summary>
-    /// Adds a Trace-Id header to every HTTP response so clients can correlate
+    /// Adds Trace-Id header to every HTTP response so clients can correlate
     /// requests with traces. Uses Activity.Current.TraceId when available, falling
     /// back to HttpContext.TraceIdentifier.
     /// </summary>
-    public sealed class ResponseTraceIdMiddleware
+    public sealed class TraceIdHeaderMiddleware
     {
         private readonly RequestDelegate _next;
 
@@ -17,7 +17,7 @@ namespace emc.camus.observability.otel.Middleware
         /// Creates the middleware.
         /// </summary>
         /// <param name="next">The next middleware in the pipeline.</param>
-        public ResponseTraceIdMiddleware(RequestDelegate next)
+        public TraceIdHeaderMiddleware(RequestDelegate next)
         {
             _next = next;
         }

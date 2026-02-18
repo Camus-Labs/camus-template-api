@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using Swashbuckle.AspNetCore.Annotations;
-using emc.camus.domain.Generic;
 using emc.camus.application.Observability;
 using emc.camus.application.Auth;
 using Microsoft.AspNetCore.Authorization;
@@ -29,7 +28,7 @@ namespace emc.camus.api.Controllers
     [Route("api/v{version:apiVersion}/[controller]")]
     [Produces("application/json")]
     [ApiController]
-    public class AuthController : ControllerBase
+    public class AuthController : ApiControllerBase
     {
         private readonly ILogger<AuthController> _logger;
         private readonly IActivitySourceWrapper _activitySource;
@@ -79,19 +78,13 @@ namespace emc.camus.api.Controllers
                 // Call authentication service (business logic encapsulated)
                 var result = await _authService.AuthenticateAsync(command);
 
-                // Map Application Result to API Response
-                var response = new ApiResponse<AuthenticateUserResponse>
-                {
-                    Message = "User authenticated successfully",
-                    Data = result.ToResponse()
-                };
-
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
                     { "expiresOn", result.ExpiresOn.ToString("o") }
                 });
 
-                return Ok(response);
+                // Use base controller helper for standardized response
+                return Success(result.ToResponse(), "User authenticated successfully");
             });
         }
 

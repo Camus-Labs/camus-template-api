@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using Swashbuckle.AspNetCore.Annotations;
-using emc.camus.domain.Generic;
 using emc.camus.application.Observability;
 using emc.camus.application.ApiInfo;
 using Microsoft.AspNetCore.Authorization;
@@ -31,7 +30,7 @@ namespace emc.camus.api.Controllers
     [Route("api/v{version:apiVersion}/[controller]")]
     [Produces("application/json")]
     [ApiController]
-    public class ApiInfoController : ControllerBase
+    public class ApiInfoController : ApiControllerBase
     {
         private readonly ILogger<ApiInfoController> _logger;
         private readonly IActivitySourceWrapper _activitySource;
@@ -75,19 +74,14 @@ namespace emc.camus.api.Controllers
                 // Call application service to retrieve API info
                 var result = await _apiInfoService.GetByVersionAsync(apiVersion);
 
-                // Map application result to API response DTO
-                var response = new ApiResponse<ApiInfoResponse>
-                {
-                    Message = "API information retrieved successfully",
-                    Data = result.ToResponse()
-                };
-
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
                     { "features", string.Join(",", result.Features) },
                     { "status", result.Status }
                 });
-                return Ok(response);
+
+                // Use base controller helper for standardized response
+                return Success(result.ToResponse(), "API information retrieved successfully");
             });
         }
 
@@ -112,19 +106,14 @@ namespace emc.camus.api.Controllers
                 // Call application service to retrieve API info
                 var result = await _apiInfoService.GetByVersionAsync(apiVersion);
 
-                // Map application result to API response DTO
-                var response = new ApiResponse<ApiInfoResponse>
-                {
-                    Message = "API information retrieved successfully",
-                    Data = result.ToResponse()
-                };
-
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
                     { "features", string.Join(",", result.Features) },
                     { "status", result.Status }
                 });
-                return Ok(response);
+
+                // Use base controller helper for standardized response
+                return Success(result.ToResponse(), "API information retrieved successfully");
             });
         }
 
@@ -149,19 +138,14 @@ namespace emc.camus.api.Controllers
                 // Call application service to retrieve API info
                 var result = await _apiInfoService.GetByVersionAsync(apiVersion);
 
-                // Map application result to API response DTO
-                var response = new ApiResponse<ApiInfoResponse>
-                {
-                    Message = "API information retrieved successfully",
-                    Data = result.ToResponse()
-                };
-
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
                     { "features", string.Join(",", result.Features) },
                     { "status", result.Status }
                 });
-                return Ok(response);
+
+                // Use base controller helper for standardized response
+                return Success(result.ToResponse(), "API information retrieved successfully");
             });
         }
     }

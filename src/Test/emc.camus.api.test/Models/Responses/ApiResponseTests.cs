@@ -1,7 +1,7 @@
-using emc.camus.domain.Generic;
+using emc.camus.api.Models.Responses;
 using FluentAssertions;
 
-namespace emc.camus.domain.test.Generic;
+namespace emc.camus.api.test.Models.Responses;
 
 /// <summary>
 /// Unit tests for ApiResponse to verify response envelope behavior.

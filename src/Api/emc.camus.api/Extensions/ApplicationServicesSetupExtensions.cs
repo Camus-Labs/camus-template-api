@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using emc.camus.api.Infrastructure;
+using emc.camus.api.Middleware;
 using emc.camus.application.Auth;
 using emc.camus.application.ApiInfo;
 using emc.camus.application.Common;
@@ -37,12 +38,20 @@ namespace emc.camus.api.Extensions
 
         /// <summary>
         /// Configures application-level middleware and endpoint routing in the request pipeline.
-        /// Maps controller endpoints.
+        /// Adds User-Id header middleware and maps controller endpoints.
         /// </summary>
         /// <param name="app">The web application instance.</param>
         /// <returns>The web application instance for method chaining.</returns>
+        /// <remarks>
+        /// This method adds User-Id header to all responses (authenticated users get their username,
+        /// anonymous requests get "anonymous") for observability and debugging purposes.
+        /// Must be called after UseAuthentication() in the pipeline.
+        /// </remarks>
         public static WebApplication UseApplicationServices(this WebApplication app)
         {
+            // Add User-Id header to responses (for observability and debugging)
+            app.UseMiddleware<UserIdHeaderMiddleware>();
+            
             // Map controller endpoints
             app.MapControllers();
             

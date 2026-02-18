@@ -3,7 +3,6 @@ using emc.camus.application.ApiInfo;
 using emc.camus.application.Auth;
 using emc.camus.application.Observability;
 using emc.camus.application.RateLimiting;
-using emc.camus.domain.Generic;
 using emc.camus.api.Models.Responses;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;

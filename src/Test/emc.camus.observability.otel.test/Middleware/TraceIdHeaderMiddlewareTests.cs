@@ -11,10 +11,10 @@ using Microsoft.Extensions.Hosting;
 namespace emc.camus.observability.otel.test.Middleware;
 
 /// <summary>
-/// Unit tests for ResponseTraceIdMiddleware to verify trace ID header functionality.
+/// Unit tests for TraceIdHeaderMiddleware to verify trace ID header functionality.
 /// Uses TestServer to properly test OnStarting callbacks in the HTTP pipeline.
 /// </summary>
-public class ResponseTraceIdMiddlewareTests
+public class TraceIdHeaderMiddlewareTests
 {
     private async Task<IHost> CreateTestHost(Action<IApplicationBuilder> configureMiddleware)
     {
@@ -36,7 +36,7 @@ public class ResponseTraceIdMiddlewareTests
         
         using var host = await CreateTestHost(app =>
         {
-            app.UseMiddleware<ResponseTraceIdMiddleware>();
+            app.UseMiddleware<TraceIdHeaderMiddleware>();
             app.Run(async context => await context.Response.WriteAsync("OK"));
         });
 
@@ -59,7 +59,7 @@ public class ResponseTraceIdMiddlewareTests
         
         using var host = await CreateTestHost(app =>
         {
-            app.UseMiddleware<ResponseTraceIdMiddleware>();
+            app.UseMiddleware<TraceIdHeaderMiddleware>();
             app.Run(context =>
             {
                 nextCalled = true;
@@ -82,7 +82,7 @@ public class ResponseTraceIdMiddlewareTests
         // Arrange
         using var host = await CreateTestHost(app =>
         {
-            app.UseMiddleware<ResponseTraceIdMiddleware>();
+            app.UseMiddleware<TraceIdHeaderMiddleware>();
             app.Run(context => throw new InvalidOperationException("Test exception"));
         });
 
@@ -99,7 +99,7 @@ public class ResponseTraceIdMiddlewareTests
     {
         // Arrange & Act
         RequestDelegate next = ctx => Task.CompletedTask;
-        var middleware = new ResponseTraceIdMiddleware(next);
+        var middleware = new TraceIdHeaderMiddleware(next);
 
         // Assert
         middleware.Should().NotBeNull();
@@ -118,7 +118,7 @@ public class ResponseTraceIdMiddlewareTests
                 context.Response.Headers[Headers.TraceId] = existingTraceId;
                 await next();
             });
-            app.UseMiddleware<ResponseTraceIdMiddleware>();
+            app.UseMiddleware<TraceIdHeaderMiddleware>();
             app.Run(async context => await context.Response.WriteAsync("OK"));
         });
 
@@ -144,7 +144,7 @@ public class ResponseTraceIdMiddlewareTests
                 context.TraceIdentifier = "";
                 await next();
             });
-            app.UseMiddleware<ResponseTraceIdMiddleware>();
+            app.UseMiddleware<TraceIdHeaderMiddleware>();
             app.Run(async context => await context.Response.WriteAsync("OK"));
         });
 
@@ -170,7 +170,7 @@ public class ResponseTraceIdMiddlewareTests
                 context.TraceIdentifier = "   ";
                 await next();
             });
-            app.UseMiddleware<ResponseTraceIdMiddleware>();
+            app.UseMiddleware<TraceIdHeaderMiddleware>();
             app.Run(async context => await context.Response.WriteAsync("OK"));
         });
 
@@ -205,7 +205,7 @@ public class ResponseTraceIdMiddlewareTests
                 Activity.Current = activity;
                 await next();
             });
-            app.UseMiddleware<ResponseTraceIdMiddleware>();
+            app.UseMiddleware<TraceIdHeaderMiddleware>();
             app.Run(async context => await context.Response.WriteAsync("OK"));
         });
 

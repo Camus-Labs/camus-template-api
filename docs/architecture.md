@@ -88,7 +88,7 @@ API → Application → Domain
 ## Security Architecture
 
 - **JWT Authentication** - RSA256 token validation
-- **API Key Authentication** - Header-based (`X-Api-Key`)
+- **API Key Authentication** - Header-based (`Api-Key`)
 - **CORS** - Configurable policies
 - **Rate Limiting** - Sliding window algorithm (memory-based, Redis-ready)
 

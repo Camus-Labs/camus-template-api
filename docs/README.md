@@ -27,7 +27,7 @@ Complete guide to the authentication system including JWT token generation, API 
 **Topics covered:**
 
 - JWT Bearer authentication with RSA256
-- API Key authentication (`X-Api-Key` header)
+- API Key authentication (`Api-Key` header)
 - Token endpoint usage and claims
 - Secret management integration
 - Security best practices

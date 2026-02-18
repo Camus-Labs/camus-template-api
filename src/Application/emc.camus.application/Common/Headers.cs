@@ -12,12 +12,17 @@ public static class Headers
     /// <summary>
     /// Header name for API Key authentication.
     /// </summary>
-    public const string ApiKey = "X-Api-Key";
+    public const string ApiKey = "Api-Key";
 
     /// <summary>
     /// Header name for distributed tracing correlation ID.
     /// </summary>
-    public const string TraceId = "X-Trace-Id";
+    public const string TraceId = "Trace-Id";
+
+    /// <summary>
+    /// Header name for authenticated user identification.
+    /// </summary>
+    public const string UserId = "User-Id";
 
     /// <summary>
     /// Header name for rate limit maximum requests allowed.
@@ -37,10 +42,10 @@ public static class Headers
     /// <summary>
     /// Header name for rate limit policy name applied.
     /// </summary>
-    public const string RateLimitPolicy = "X-RateLimit-Policy";
+    public const string RateLimitPolicy = "RateLimit-Policy";
 
     /// <summary>
     /// Header name for rate limit window duration in seconds.
     /// </summary>
-    public const string RateLimitWindow = "X-RateLimit-Window";
+    public const string RateLimitWindow = "RateLimit-Window";
 }

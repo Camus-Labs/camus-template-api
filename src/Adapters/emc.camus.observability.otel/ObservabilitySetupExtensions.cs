@@ -73,7 +73,7 @@ namespace emc.camus.observability.otel
         /// <returns>The WebApplication instance for method chaining.</returns>
         public static WebApplication UseObservability(this WebApplication app)
         {
-            app.UseMiddleware<ResponseTraceIdMiddleware>();
+            app.UseMiddleware<TraceIdHeaderMiddleware>();
 
             return app;
         }

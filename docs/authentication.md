@@ -16,7 +16,7 @@ JWT Bearer authentication provides secure token-based authentication using RSA25
 
 ```bash
 curl -X POST http://localhost:5000/api/v2/auth/token \
-  -H "X-Api-Key: your-api-key" \
+  -H "Api-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{"accessKey":"your-key","accessSecret":"your-secret"}'
 ```
@@ -71,7 +71,7 @@ API Key authentication provides simple header-based authentication for service-t
 **Request Header:**
 
 ```http
-X-Api-Key: your-api-key-here
+Api-Key: your-api-key-here
 ```
 
 > **📖 Complete Guide:** See [API Key Adapter README](../src/Adapters/emc.camus.security.apikey/README.md) for configuration, usage examples, and security best practices.

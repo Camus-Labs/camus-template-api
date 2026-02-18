@@ -276,7 +276,7 @@ The `UseObservability()` method adds middleware that includes the trace ID in re
 
 ```http
 HTTP/1.1 200 OK
-X-Trace-Id: 4bf92f3577b34da6a3ce929d0e0e4736
+Trace-Id: 4bf92f3577b34da6a3ce929d0e0e4736
 Content-Type: application/json
 ```
 

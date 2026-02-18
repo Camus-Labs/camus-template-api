@@ -1,5 +1,5 @@
 
-namespace emc.camus.domain.Generic
+namespace emc.camus.api.Models.Responses
 {
     /// <summary>
     /// Represents a standard API response envelope for successful operations with strongly-typed data.
