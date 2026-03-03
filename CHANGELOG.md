@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Features
+### Added
 
 - Clean/Hexagonal architecture with Domain, Application, API, and Adapter layers
 - Dependency inversion with port/adapter pattern
