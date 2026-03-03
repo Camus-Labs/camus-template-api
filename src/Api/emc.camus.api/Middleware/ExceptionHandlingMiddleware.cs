@@ -33,6 +33,7 @@ namespace emc.camus.api.Middleware
             new() { Type = nameof(UnauthorizedAccessException), Pattern = "invalid.*signature", ErrorCode = ErrorCodes.JwtInvalidSignature },
             new() { Type = nameof(UnauthorizedAccessException), Pattern = "invalid.*issuer", ErrorCode = ErrorCodes.JwtInvalidIssuer },
             new() { Type = nameof(UnauthorizedAccessException), Pattern = "invalid.*audience", ErrorCode = ErrorCodes.JwtInvalidAudience },
+            new() { Type = nameof(UnauthorizedAccessException), Pattern = "revoked", ErrorCode = ErrorCodes.JwtTokenRevoked },
             // Authentication required patterns (checked before generic invalid credentials)
             new() { Type = nameof(UnauthorizedAccessException), Pattern = "authentication.*required.*jwt", ErrorCode = ErrorCodes.JwtAuthenticationRequired },
             new() { Type = nameof(UnauthorizedAccessException), Pattern = "authentication.*required.*api.?key", ErrorCode = ErrorCodes.ApiKeyAuthenticationRequired },

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Security.Claims;
+using emc.camus.application.Auth;
 using emc.camus.application.Common;
 
 namespace emc.camus.api.Infrastructure;
@@ -48,6 +49,21 @@ public class HttpUserContext : IUserContext
         // If authenticated, Identity.Name should be set by the authentication handler
         // If it's null, that indicates a configuration problem that should be investigated
         return httpContext.User.Identity.Name;
+    }
+
+    /// <inheritdoc />
+    public List<string> GetCurrentPermissions()
+    {
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext?.User?.Identity?.IsAuthenticated != true)
+        {
+            return new List<string>();
+        }
+
+        return httpContext.User.Claims
+            .Where(c => c.Type == Permissions.ClaimType)
+            .Select(c => c.Value)
+            .ToList();
     }
 
     /// <inheritdoc />

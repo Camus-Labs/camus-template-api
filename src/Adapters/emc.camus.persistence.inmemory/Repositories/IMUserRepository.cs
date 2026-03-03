@@ -149,7 +149,7 @@ public class IMUserRepository : IUserRepository
     /// <param name="connection">The database connection (ignored for in-memory implementation).</param>
     /// <param name="userId">The ID of the user to update.</param>
     /// <returns>Task representing the asynchronous operation.</returns>
-    public Task UpdateLastLoginAsync(IDbConnection connection, string userId)
+    public Task UpdateLastLoginAsync(IDbConnection connection, Guid userId)
     {
         // In-memory implementation doesn't persist last login timestamp
         return Task.CompletedTask;

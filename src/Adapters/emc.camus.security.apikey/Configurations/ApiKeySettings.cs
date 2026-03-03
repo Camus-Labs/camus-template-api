@@ -13,7 +13,7 @@ namespace emc.camus.security.apikey.Configurations
         /// <summary>
         /// Default username assigned to API Key authenticated requests.
         /// </summary>
-        public const string DefaultUserName = "ApiKeyUser";
+        public const string DefaultUsername = "ApiKeyUser";
 
         /// <summary>
         /// Secret name for the API key used in authentication.

@@ -17,6 +17,6 @@ public static class UserMappingExtensions
     public static User ToEntity(this UserModel userModel, IEnumerable<RoleModel> roleModels)
     {
         var roles = roleModels.Select(r => r.ToEntity()).ToList();
-        return new User(userModel.Username, roles, userModel.Id);
+        return User.Reconstitute(userModel.Id, userModel.Username, roles);
     }
 }

@@ -58,6 +58,14 @@ namespace emc.camus.observability.otel.Telemetry
             => SetTagsWithPrefix(activity, tags, "request");
 
         /// <summary>
+        /// Sets tags on the activity, prefixing each key with 'execution.'
+        /// </summary>
+        /// <param name="activity">The activity to add execution tags to.</param>
+        /// <param name="tags">Dictionary of tag key-value pairs to add with 'execution.' prefix.</param>
+        public void SetExecutionTags(Activity? activity, IDictionary<string, object?> tags)
+            => SetTagsWithPrefix(activity, tags, "execution");
+
+        /// <summary>
         /// Sets tags on the activity, prefixing each key with 'response.'
         /// </summary>
         /// <param name="activity">The activity to add response tags to.</param>

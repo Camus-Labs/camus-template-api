@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 namespace emc.camus.api.Middleware;
 
 /// <summary>
-/// Adds User-Id header to all HTTP responses.
+/// Adds Username header to all HTTP responses.
 /// </summary>
 /// <remarks>
 /// This middleware automatically includes the user's identity in response headers:
@@ -20,7 +20,7 @@ namespace emc.camus.api.Middleware;
 /// <item>Consistent observability across all requests</item>
 /// </list>
 /// </remarks>
-public sealed class UserIdHeaderMiddleware
+public sealed class UsernameHeaderMiddleware
 {
     private readonly RequestDelegate _next;
 
@@ -28,13 +28,13 @@ public sealed class UserIdHeaderMiddleware
     /// Creates the middleware.
     /// </summary>
     /// <param name="next">The next middleware in the pipeline.</param>
-    public UserIdHeaderMiddleware(RequestDelegate next)
+    public UsernameHeaderMiddleware(RequestDelegate next)
     {
         _next = next;
     }
 
     /// <summary>
-    /// Processes the HTTP request and adds User-Id header to the response.
+    /// Processes the HTTP request and adds Username header to the response.
     /// </summary>
     /// <param name="context">The HTTP context.</param>
     public async Task InvokeAsync(HttpContext context)
@@ -47,9 +47,9 @@ public sealed class UserIdHeaderMiddleware
 
         context.Response.OnStarting(() =>
         {
-            if (!string.IsNullOrWhiteSpace(username) && !context.Response.Headers.ContainsKey(Headers.UserId))
+            if (!string.IsNullOrWhiteSpace(username) && !context.Response.Headers.ContainsKey(Headers.Username))
             {
-                context.Response.Headers[Headers.UserId] = username;
+                context.Response.Headers[Headers.Username] = username;
             }
             return Task.CompletedTask;
         });

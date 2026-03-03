@@ -1,13 +1,11 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using emc.camus.security.jwt.Configurations;
-using emc.camus.application.Common;
-using Microsoft.AspNetCore.Http;
+using emc.camus.application.Auth;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace emc.camus.security.jwt.Handlers
 {
@@ -16,19 +14,16 @@ namespace emc.camus.security.jwt.Handlers
     /// </summary>
     public static class JwtAuthenticationHandler
     {
-        private const string AuthExceptionKey = "AuthException";
 
         /// <summary>
         /// Adds JWT Bearer authentication with default configuration including event handlers for logging.
         /// </summary>
         /// <param name="builder">The authentication builder.</param>
         /// <param name="services">The service collection for dependency resolution.</param>
-        /// <param name="configuration">The application configuration.</param>
         /// <returns>The updated authentication builder for fluent configuration.</returns>
         public static AuthenticationBuilder AddJwtBearerWithDefaults(
             this AuthenticationBuilder builder,
-            IServiceCollection services,
-            IConfiguration configuration)
+            IServiceCollection services)
         {
             builder.AddJwtBearer(options =>
             {
@@ -55,18 +50,26 @@ namespace emc.camus.security.jwt.Handlers
                     // JWT Bearer Events for logging and error handling
                     options.Events = new JwtBearerEvents
                     {
-                        OnAuthenticationFailed = context =>
+                        OnTokenValidated = context =>
                         {
-                            // Store exception for OnChallenge to use
-                            StoreAuthenticationError(context.HttpContext, context.Exception);
+                            // Check if the token has been revoked via in-memory cache
+                            var revocationCache = context.HttpContext.RequestServices.GetRequiredService<ITokenRevocationCache>();
+                            var jtiClaim = (context.SecurityToken as JwtSecurityToken)?.Id;
+                            if (jtiClaim != null && Guid.TryParse(jtiClaim, out var jti) && revocationCache.IsRevoked(jti))
+                            {
+                                context.Fail(new SecurityTokenException("Token has been revoked."));
+                            }
+
                             return Task.CompletedTask;
                         },
                         OnChallenge = context =>
                         {
                             // Skip default challenge response - we'll throw to use our error handler
                             context.HandleResponse();
-                            // Retrieve exception stored by OnAuthenticationFailed, if not present authentication was not provided
-                            var originalException = RetrieveAuthenticationError(context.HttpContext);
+
+                            // AuthenticateFailure is populated by the framework from AuthenticateResult.Failure
+                            // This covers both framework validation errors and custom context.Fail() calls
+                            var originalException = context.AuthenticateFailure;
                             
                             // Throw exception - middleware will auto-detect error code from message pattern
                             if (originalException != null)
@@ -78,6 +81,8 @@ namespace emc.camus.security.jwt.Handlers
                                     SecurityTokenInvalidSignatureException => "The provided credentials are invalid. JWT token has invalid signature.",
                                     SecurityTokenInvalidIssuerException => "The provided credentials are invalid. JWT token has invalid issuer.",
                                     SecurityTokenInvalidAudienceException => "The provided credentials are invalid. JWT token has invalid audience.",
+                                    SecurityTokenException ex when ex.Message.Contains("revoked", StringComparison.OrdinalIgnoreCase) 
+                                        => "The provided credentials are invalid. JWT token has been revoked.",
                                     _ => "The provided credentials are invalid. Invalid JWT token."
                                 };
                                 throw new UnauthorizedAccessException(message, originalException);
@@ -96,16 +101,6 @@ namespace emc.camus.security.jwt.Handlers
                 });
 
             return builder;
-        }
-
-        private static void StoreAuthenticationError(HttpContext httpContext, Exception exception)
-        {
-            httpContext.Items[AuthExceptionKey] = exception;
-        }
-
-        private static Exception? RetrieveAuthenticationError(HttpContext httpContext)
-        {
-            return httpContext.Items[AuthExceptionKey] as Exception;
         }
     }
 }

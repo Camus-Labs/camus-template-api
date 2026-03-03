@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using emc.camus.application.Auth;
 using emc.camus.application.Common;
 using emc.camus.security.jwt.Configurations;
 using emc.camus.security.jwt.Handlers;
@@ -6,7 +7,6 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -57,11 +57,10 @@ public class JwtAuthenticationHandlerTests
         services.AddSingleton(_mockLoggerFactory.Object);
         services.AddLogging();
         
-        var configuration = new ConfigurationBuilder().Build();
         var authBuilder = services.AddAuthentication();
 
         // Act
-        var result = authBuilder.AddJwtBearerWithDefaults(services, configuration);
+        var result = authBuilder.AddJwtBearerWithDefaults(services);
 
         // Assert
         result.Should().NotBeNull();
@@ -80,11 +79,10 @@ public class JwtAuthenticationHandlerTests
         services.AddSingleton(_mockLoggerFactory.Object);
         services.AddLogging();
         
-        var configuration = new ConfigurationBuilder().Build();
         var authBuilder = services.AddAuthentication();
 
         // Act
-        authBuilder.AddJwtBearerWithDefaults(services, configuration);
+        authBuilder.AddJwtBearerWithDefaults(services);
 
         // Assert
         var serviceProvider = services.BuildServiceProvider();
@@ -102,25 +100,6 @@ public class JwtAuthenticationHandlerTests
     }
 
     [Fact]
-    public async Task OnAuthenticationFailed_TokenExpired_ShouldStoreException()
-    {
-        // Arrange
-        var services = CreateServiceCollection();
-        var serviceProvider = services.BuildServiceProvider();
-        var options = serviceProvider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>();
-        var jwtOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
-
-        var context = CreateAuthenticationFailedContext(new SecurityTokenExpiredException("Token expired"));
-
-        // Act
-        await jwtOptions.Events.OnAuthenticationFailed(context);
-
-        // Assert - Verify exception is stored for OnChallenge to use
-        context.HttpContext.Items.Should().ContainKey("AuthException");
-        context.HttpContext.Items["AuthException"].Should().BeOfType<SecurityTokenExpiredException>();
-    }
-
-    [Fact]
     public void OnChallenge_WithTokenExpired_ShouldUseTokenExpiredErrorCode()
     {
         // Arrange
@@ -130,13 +109,13 @@ public class JwtAuthenticationHandlerTests
         var jwtOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
 
         var httpContext = new DefaultHttpContext();
-        httpContext.Items["AuthException"] = new SecurityTokenExpiredException();
 
         var context = new JwtBearerChallengeContext(
             httpContext,
             new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
             new JwtBearerOptions(),
             new AuthenticationProperties());
+        context.AuthenticateFailure = new SecurityTokenExpiredException();
 
         // Act
         var act = () => jwtOptions.Events.OnChallenge(context).GetAwaiter().GetResult();
@@ -156,13 +135,13 @@ public class JwtAuthenticationHandlerTests
         var jwtOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
 
         var httpContext = new DefaultHttpContext();
-        httpContext.Items["AuthException"] = new SecurityTokenInvalidSignatureException();
 
         var context = new JwtBearerChallengeContext(
             httpContext,
             new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
             new JwtBearerOptions(),
             new AuthenticationProperties());
+        context.AuthenticateFailure = new SecurityTokenInvalidSignatureException();
 
         // Act
         var act = () => jwtOptions.Events.OnChallenge(context).GetAwaiter().GetResult();
@@ -182,13 +161,13 @@ public class JwtAuthenticationHandlerTests
         var jwtOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
 
         var httpContext = new DefaultHttpContext();
-        httpContext.Items["AuthException"] = new SecurityTokenInvalidIssuerException();
 
         var context = new JwtBearerChallengeContext(
             httpContext,
             new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
             new JwtBearerOptions(),
             new AuthenticationProperties());
+        context.AuthenticateFailure = new SecurityTokenInvalidIssuerException();
 
         // Act
         var act = () => jwtOptions.Events.OnChallenge(context).GetAwaiter().GetResult();
@@ -208,13 +187,13 @@ public class JwtAuthenticationHandlerTests
         var jwtOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
 
         var httpContext = new DefaultHttpContext();
-        httpContext.Items["AuthException"] = new SecurityTokenInvalidAudienceException();
 
         var context = new JwtBearerChallengeContext(
             httpContext,
             new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
             new JwtBearerOptions(),
             new AuthenticationProperties());
+        context.AuthenticateFailure = new SecurityTokenInvalidAudienceException();
 
         // Act
         var act = () => jwtOptions.Events.OnChallenge(context).GetAwaiter().GetResult();
@@ -234,13 +213,13 @@ public class JwtAuthenticationHandlerTests
         var jwtOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
 
         var httpContext = new DefaultHttpContext();
-        httpContext.Items["AuthException"] = new SecurityTokenException("Some other token error");
 
         var context = new JwtBearerChallengeContext(
             httpContext,
             new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
             new JwtBearerOptions(),
             new AuthenticationProperties());
+        context.AuthenticateFailure = new SecurityTokenException("Some other token error");
 
         // Act
         var act = () => jwtOptions.Events.OnChallenge(context).GetAwaiter().GetResult();
@@ -260,13 +239,13 @@ public class JwtAuthenticationHandlerTests
         var jwtOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
 
         var httpContext = new DefaultHttpContext();
-        httpContext.Items["AuthException"] = new SecurityTokenExpiredException();
 
         var context = new JwtBearerChallengeContext(
             httpContext,
             new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
             new JwtBearerOptions(),
             new AuthenticationProperties());
+        context.AuthenticateFailure = new SecurityTokenExpiredException();
 
         // Act
         var act = () => jwtOptions.Events.OnChallenge(context).GetAwaiter().GetResult();
@@ -340,6 +319,12 @@ public class JwtAuthenticationHandlerTests
         var jwtOptions = options.Get(JwtBearerDefaults.AuthenticationScheme);
 
         var httpContext = new DefaultHttpContext();
+        var mockRevocationCache = new Mock<ITokenRevocationCache>();
+        var requestServices = new ServiceCollection()
+            .AddSingleton(mockRevocationCache.Object)
+            .BuildServiceProvider();
+        httpContext.RequestServices = requestServices;
+
         var principal = new ClaimsPrincipal(new ClaimsIdentity());
 
         var context = new TokenValidatedContext(
@@ -350,7 +335,7 @@ public class JwtAuthenticationHandlerTests
             Principal = principal
         };
 
-        // Act & Assert - OnTokenValidated should not throw, it's just for tracking
+        // Act & Assert - OnTokenValidated should not throw when token is not revoked
         var act = async () => await jwtOptions.Events.OnTokenValidated(context);
         await act.Should().NotThrowAsync();
     }
@@ -447,24 +432,9 @@ public class JwtAuthenticationHandlerTests
         services.AddSingleton(_mockLoggerFactory.Object);
         services.AddLogging();
         
-        var configuration = new ConfigurationBuilder().Build();
         var authBuilder = services.AddAuthentication();
-        authBuilder.AddJwtBearerWithDefaults(services, configuration);
+        authBuilder.AddJwtBearerWithDefaults(services);
 
         return services;
-    }
-
-    private AuthenticationFailedContext CreateAuthenticationFailedContext(Exception exception)
-    {
-        var httpContext = new DefaultHttpContext();
-        httpContext.Request.Path = "/api/test";
-
-        return new AuthenticationFailedContext(
-            httpContext,
-            new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
-            new JwtBearerOptions())
-        {
-            Exception = exception
-        };
     }
 }

@@ -33,9 +33,17 @@ public class JwtTokenGenerator : ITokenGenerator
     }
 
     /// <inheritdoc/>
-    public AuthToken GenerateToken(string userId, string username, IEnumerable<Claim>? additionalClaims = null)
+    public AuthToken GenerateToken(Guid userId, string username, IEnumerable<Claim>? additionalClaims = null)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        var jti = Guid.NewGuid();
+        var expiresOn = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
+
+        return GenerateToken(userId, username, jti, expiresOn, additionalClaims);
+    }
+
+    /// <inheritdoc/>
+    public AuthToken GenerateToken(Guid userId, string username, Guid jti, DateTime expiresOn, IEnumerable<Claim>? additionalClaims = null)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
         
         // Build claims list
@@ -43,9 +51,9 @@ public class JwtTokenGenerator : ITokenGenerator
         {
             new Claim(JwtRegisteredClaimNames.Sub, username),
             new Claim(JwtRegisteredClaimNames.UniqueName, username),
-            new Claim(ClaimTypes.NameIdentifier, userId), // For HttpUserContext.GetCurrentUserId()
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()), // For HttpUserContext.GetCurrentUserId()
             new Claim(ClaimTypes.Name, username),         // For HttpUserContext.GetCurrentUsername() via Identity.Name
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(JwtRegisteredClaimNames.Jti, jti.ToString()),
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
 
@@ -54,8 +62,6 @@ public class JwtTokenGenerator : ITokenGenerator
         {
             claims.AddRange(additionalClaims);
         }
-
-        var expiresOn = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
 
         var jwtToken = new JwtSecurityToken(
             issuer: _jwtSettings.Issuer,

@@ -15,11 +15,10 @@ public static class RoleMappingExtensions
     /// <returns>A new Role domain entity.</returns>
     public static Role ToEntity(this RoleModel model)
     {
-        return new Role(
+        return Role.Reconstitute(
+            id: model.Id,
             name: model.Name,
             description: model.Description,
-            permissions: model.Permissions?.Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
-            id: model.Id
-        );
+            permissions: model.Permissions?.Where(p => !string.IsNullOrWhiteSpace(p)).ToList() ?? new List<string>());
     }
 }

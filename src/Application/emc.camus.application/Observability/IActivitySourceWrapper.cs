@@ -25,6 +25,13 @@ namespace emc.camus.application.Observability
         void SetRequestTags(Activity? activity, IDictionary<string, object?> tags);
 
         /// <summary>
+        /// Sets tags on the activity, prefixing each key with 'execution.'
+        /// </summary>
+        /// <param name="activity">The activity to add execution tags to.</param>
+        /// <param name="tags">Dictionary of tag key-value pairs to add with 'execution.' prefix.</param>
+        void SetExecutionTags(Activity? activity, IDictionary<string, object?> tags);
+
+        /// <summary>
         /// Sets tags on the activity, prefixing each key with 'response.'
         /// </summary>
         /// <param name="activity">The activity to add response tags to.</param>

@@ -15,11 +15,10 @@ public static class ApiInfoMappingExtensions
     /// <returns>A new ApiInfo domain entity.</returns>
     public static ApiInfo ToEntity(this ApiInfoModel model)
     {
-        return new ApiInfo(
+        return ApiInfo.Reconstitute(
+            name: !string.IsNullOrWhiteSpace(model.Name) ? model.Name : "My Basic API",
             version: model.Version,
             status: model.Status,
-            features: model.Features?.Count > 0 ? model.Features : null,
-            name: !string.IsNullOrWhiteSpace(model.Name) ? model.Name : null
-        );
+            features: model.Features?.Count > 0 ? model.Features : new List<string>());
     }
 }

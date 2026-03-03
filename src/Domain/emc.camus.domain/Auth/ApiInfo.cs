@@ -10,25 +10,25 @@ public class ApiInfo
     /// <summary>
     /// The name of the API.
     /// </summary>
-    public string Name { get; set; } = DefaultApiName;
+    public string Name { get; private set; } = DefaultApiName;
 
     /// <summary>
     /// The version of the API.
     /// </summary>
-    public string Version { get; set; } = string.Empty;
+    public string Version { get; private set; } = string.Empty;
 
     /// <summary>
     /// The current status of the API.
     /// </summary>
-    public string Status { get; set; } = string.Empty;
+    public string Status { get; private set; } = string.Empty;
 
     /// <summary>
     /// List of features available in this API version.
     /// </summary>
-    public List<string> Features { get; set; } = new List<string>();
+    public List<string> Features { get; private set; } = new List<string>();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ApiInfo"/> class.
+    /// Creates a new API info. Validates business attributes.
     /// </summary>
     /// <param name="version">The API version.</param>
     /// <param name="status">The status detail descriptor (e.g., "Available", "Deprecated", "Beta").</param>
@@ -44,5 +44,24 @@ public class ApiInfo
         Version = version;
         Status = status;
         Features = features ?? new List<string>();
+    }
+
+    /// <summary>
+    /// Private constructor for reconstitution from persistence.
+    /// </summary>
+    private ApiInfo() { }
+
+    /// <summary>
+    /// Rebuilds an API info from persistence data. Skips business validation.
+    /// </summary>
+    public static ApiInfo Reconstitute(string name, string version, string status, List<string> features)
+    {
+        return new ApiInfo
+        {
+            Name = name,
+            Version = version,
+            Status = status,
+            Features = features
+        };
     }
 }

@@ -9,7 +9,7 @@ public class UserModel
     /// <summary>
     /// Gets or sets the user's unique identifier.
     /// </summary>
-    public string Id { get; set; } = string.Empty;
+    public Guid Id { get; set; }
 
     /// <summary>
     /// Gets or sets the username for authentication.

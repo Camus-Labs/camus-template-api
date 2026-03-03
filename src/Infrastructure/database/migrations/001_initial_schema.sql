@@ -122,7 +122,7 @@ CREATE INDEX IF NOT EXISTS idx_user_roles_role_id ON camus.user_roles(role_id);
 -- Stores explicit business actions for compliance and debugging
 CREATE TABLE IF NOT EXISTS camus.action_audit (
     id BIGSERIAL PRIMARY KEY,
-    user_id UUID REFERENCES camus.users(id),
+    user_id UUID,
     user_name VARCHAR(200),
     trace_id VARCHAR(32),  -- OpenTelemetry trace ID for correlation
     action_title VARCHAR(200) NOT NULL,

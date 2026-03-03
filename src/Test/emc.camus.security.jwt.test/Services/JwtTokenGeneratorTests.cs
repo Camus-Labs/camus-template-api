@@ -38,7 +38,7 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
-        var userId = Guid.NewGuid().ToString();
+        var userId = Guid.NewGuid();
         var username = "testuser";
         var expectedExpiration = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
 
@@ -56,7 +56,7 @@ public class JwtTokenGeneratorTests
         // Verify standard claims
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == username);
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.UniqueName && c.Value == username);
-        token.Claims.Should().Contain(c => c.Type == ClaimTypes.NameIdentifier && c.Value == userId);
+        token.Claims.Should().Contain(c => c.Type == ClaimTypes.NameIdentifier && c.Value == userId.ToString());
         token.Claims.Should().Contain(c => c.Type == ClaimTypes.Name && c.Value == username);
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Jti);
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Iat);
@@ -71,7 +71,7 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
-        var userId = Guid.NewGuid().ToString();
+        var userId = Guid.NewGuid();
         var username = "testuser";
         var additionalClaims = new[]
         {
@@ -95,7 +95,7 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
-        var userId = Guid.NewGuid().ToString();
+        var userId = Guid.NewGuid();
         var username = "testuser";
 
         // Act & Assert
@@ -108,7 +108,7 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
-        var userId = Guid.NewGuid().ToString();
+        var userId = Guid.NewGuid();
         var username = "testuser";
 
         // Act & Assert
@@ -121,7 +121,7 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
-        var userId = Guid.NewGuid().ToString();
+        var userId = Guid.NewGuid();
         var username = "testuser";
 
         // Act
@@ -149,7 +149,7 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
-        var userId = Guid.NewGuid().ToString();
+        var userId = Guid.NewGuid();
 
         // Act
         var result = generator.GenerateToken(userId, username);

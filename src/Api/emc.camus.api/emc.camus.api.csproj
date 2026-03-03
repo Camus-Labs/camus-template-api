@@ -29,6 +29,7 @@
     <ProjectReference Include="../../Application/emc.camus.application/emc.camus.application.csproj" />
     <ProjectReference Include="../../Adapters/emc.camus.observability.otel/emc.camus.observability.otel.csproj" />
     <ProjectReference Include="..\..\Adapters\emc.camus.ratelimiting.inmemory\emc.camus.ratelimiting.inmemory.csproj" />
+    <ProjectReference Include="..\..\Adapters\emc.camus.cache.inmemory\emc.camus.cache.inmemory.csproj" />
   </ItemGroup>
 
 </Project>

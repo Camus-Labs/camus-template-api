@@ -152,7 +152,6 @@ The adapter logs a warning on first request if no proxy headers are detected. Re
 Exports OpenTelemetry metrics for anomaly detection:
 
 - `rate_limit_rejections_total` - Requests rejected due to rate limiting (signals attacks or misbehaving clients)
-- `rate_limit_undefined_policy_total` - Requests using undefined policy (configuration error)
 
 Tagged with: `partition`, `endpoint`, `method`, `user_or_ip`
 

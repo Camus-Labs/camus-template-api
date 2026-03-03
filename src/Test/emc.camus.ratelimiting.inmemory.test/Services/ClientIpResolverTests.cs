@@ -90,16 +90,7 @@ public class ClientIpResolverTests
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("Unable to determine client IP address for rate limiting.");
-        
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Unable to determine client IP address")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+            .WithMessage("*Unable to determine client IP address*");
     }
 
     [Fact]

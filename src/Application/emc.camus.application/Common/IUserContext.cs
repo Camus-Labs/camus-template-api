@@ -20,6 +20,12 @@ public interface IUserContext
     string? GetCurrentUsername();
 
     /// <summary>
+    /// Gets the permissions of the current authenticated user from their claims.
+    /// </summary>
+    /// <returns>A list of permission strings if authenticated, otherwise an empty list.</returns>
+    List<string> GetCurrentPermissions();
+
+    /// <summary>
     /// Gets the current trace ID from OpenTelemetry Activity context.
     /// </summary>
     /// <returns>The trace ID if available, otherwise null.</returns>

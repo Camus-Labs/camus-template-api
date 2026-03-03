@@ -66,7 +66,7 @@ namespace emc.camus.security.jwt
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddJwtBearerWithDefaults(builder.Services, builder.Configuration);
+            .AddJwtBearerWithDefaults(builder.Services);
 
             return builder;
         }

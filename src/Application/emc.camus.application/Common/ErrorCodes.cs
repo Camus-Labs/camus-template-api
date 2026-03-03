@@ -126,4 +126,9 @@ public static class ErrorCodes
         /// Error code when JWT token audience does not match expected value.
         /// </summary>
         public const string JwtInvalidAudience = "jwt_invalid_audience";
+
+        /// <summary>
+        /// Error code when JWT token has been revoked before its expiration.
+        /// </summary>
+        public const string JwtTokenRevoked = "jwt_token_revoked";
     }

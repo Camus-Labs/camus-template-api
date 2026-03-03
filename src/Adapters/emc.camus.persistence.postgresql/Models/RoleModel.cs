@@ -9,7 +9,7 @@ public class RoleModel
     /// <summary>
     /// Gets or sets the role's unique identifier.
     /// </summary>
-    public string Id { get; set; } = string.Empty;
+    public Guid Id { get; set; }
 
     /// <summary>
     /// Gets or sets the role name (e.g., "Admin", "User").

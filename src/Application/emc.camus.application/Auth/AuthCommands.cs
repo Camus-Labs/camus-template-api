@@ -7,4 +7,19 @@ namespace emc.camus.application.Auth;
 /// </summary>
 /// <param name="Username">The username for authentication.</param>
 /// <param name="Password">The password for authentication.</param>
-public record AuthenticateUserCommand(string Username, string Password);
+public record AuthenticateUserCommand(
+    string Username, 
+    string Password
+);
+
+/// <summary>
+/// Command to generate a custom token with specific permissions and expiration.
+/// </summary>
+/// <param name="UsernameSuffix">The suffix to append to the current username (up to 20 chars, alphanumeric + . - _ only).</param>
+/// <param name="ExpiresOn">The custom expiration date (UTC). Must be between 1 hour and 1 year from now.</param>
+/// <param name="Permissions">The list of permissions to grant to the token. Must be a subset of the current user's permissions.</param>
+public record GenerateTokenCommand(
+    string UsernameSuffix,
+    DateTime ExpiresOn,
+    List<string> Permissions
+);

@@ -12,10 +12,8 @@ namespace emc.camus.ratelimiting.inmemory.Metrics
     public class RateLimitMetrics
     {
         private const string MetricNameRateLimitRejections = "rate_limit_rejections_total";
-        private const string MetricNameUndefinedPolicy = "rate_limit_undefined_policy_total";
         
         private readonly Counter<long> _rateLimitRejectionsCounter;
-        private readonly Counter<long> _undefinedPolicyCounter;
 
         /// <summary>
         /// Creates a new instance of RateLimitMetrics with the specified service name.
@@ -30,12 +28,6 @@ namespace emc.camus.ratelimiting.inmemory.Metrics
                 name: MetricNameRateLimitRejections,
                 unit: "requests",
                 description: "Total number of requests rejected due to rate limiting");
-
-            // Counter for undefined policy usage (configuration issue)
-            _undefinedPolicyCounter = meter.CreateCounter<long>(
-                name: MetricNameUndefinedPolicy,
-                unit: "requests",
-                description: "Total number of requests using undefined rate limit policy (fell back to default)");
         }
 
         /// <summary>
@@ -50,17 +42,5 @@ namespace emc.camus.ratelimiting.inmemory.Metrics
                 new KeyValuePair<string, object?>("method", method));
         }
 
-        /// <summary>
-        /// Records when an endpoint uses an undefined policy name.
-        /// This indicates a configuration issue where the controller attribute references a non-existent policy.
-        /// </summary>
-        /// <param name="requestedPolicy">The policy name that was requested but not found.</param>
-        /// <param name="endpoint">The endpoint path that requested the policy.</param>
-        public void RecordUndefinedPolicy(string requestedPolicy, string endpoint)
-        {
-            _undefinedPolicyCounter.Add(1,
-                new KeyValuePair<string, object?>("requested_policy", requestedPolicy),
-                new KeyValuePair<string, object?>("endpoint", endpoint));
-        }
     }
 }

@@ -25,7 +25,7 @@ namespace emc.camus.api.Extensions
             
             // Register User Context (provides access to current authenticated user)
             builder.Services.AddScoped<IUserContext, HttpUserContext>();
-            
+
             // Register Authentication Service (business logic in Application layer)
             builder.Services.AddScoped<AuthService>();
             builder.Services.AddScoped<ApiInfoService>();
@@ -38,19 +38,19 @@ namespace emc.camus.api.Extensions
 
         /// <summary>
         /// Configures application-level middleware and endpoint routing in the request pipeline.
-        /// Adds User-Id header middleware and maps controller endpoints.
+        /// Adds Username header middleware and maps controller endpoints.
         /// </summary>
         /// <param name="app">The web application instance.</param>
         /// <returns>The web application instance for method chaining.</returns>
         /// <remarks>
-        /// This method adds User-Id header to all responses (authenticated users get their username,
+        /// This method adds Username header to all responses (authenticated users get their username,
         /// anonymous requests get "anonymous") for observability and debugging purposes.
         /// Must be called after UseAuthentication() in the pipeline.
         /// </remarks>
         public static WebApplication UseApplicationServices(this WebApplication app)
         {
-            // Add User-Id header to responses (for observability and debugging)
-            app.UseMiddleware<UserIdHeaderMiddleware>();
+            // Add Username header to responses (for observability and debugging)
+            app.UseMiddleware<UsernameHeaderMiddleware>();
             
             // Map controller endpoints
             app.MapControllers();

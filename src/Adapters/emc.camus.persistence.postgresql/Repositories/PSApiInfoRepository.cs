@@ -98,7 +98,7 @@ public class PSApiInfoRepository : IApiInfoRepository
 
         var result = await connection.QuerySingleOrDefaultAsync<ApiInfoModel>(
             sql, 
-            new { Version = version });
+            new { version });
 
         if (result == null)
         {

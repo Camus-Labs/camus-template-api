@@ -43,7 +43,7 @@ public class ApiInfoControllerTests
         // Setup default API info service behavior
         _mockApiInfoService
             .Setup(x => x.GetByVersionAsync(It.IsAny<string>()))
-            .ReturnsAsync((string version) => new ApiInfoResults(
+            .ReturnsAsync((string version) => new ApiInfoView(
                 version,
                 Status: "Available",
                 Features: new List<string> { "Authentication", "Authorization", "Observability" }

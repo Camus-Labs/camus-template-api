@@ -26,8 +26,13 @@ namespace emc.camus.api.Extensions
             // Configure Authorization policies
             builder.Services.AddAuthorization(options =>
             {
-                // Add custom authorization policies here as needed
-                // Example: options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
+                // Register a policy for each permission that validates the permission claim exists in the token.
+                // These policies are used by [RequirePermission(Permissions.XYZ)] attribute on controller endpoints.
+                foreach (var permission in Permissions.GetAll())
+                {
+                    options.AddPolicy(permission, policy =>
+                        policy.RequireClaim(Permissions.ClaimType, permission));
+                }
             });
 
             // Load and validate authorization settings

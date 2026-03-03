@@ -118,7 +118,7 @@ public class PSUserRepository : IUserRepository
 
         var userModel = await connection.QuerySingleOrDefaultAsync<UserModel>(
             userSql,
-            new { Username = username });
+            new { username });
 
         if (userModel == null)
         {
@@ -127,7 +127,7 @@ public class PSUserRepository : IUserRepository
         }
 
         // Verify password against bcrypt hash
-        bool isPasswordValid = false;
+        bool isPasswordValid;
         try
         {
             isPasswordValid = BCrypt.Net.BCrypt.Verify(password, userModel.PasswordHash);
@@ -171,17 +171,16 @@ public class PSUserRepository : IUserRepository
     /// <param name="connection">The database connection to use for the operation.</param>
     /// <param name="userId">The ID of the user to update.</param>
     /// <returns>Task representing the asynchronous operation.</returns>
-    public async Task UpdateLastLoginAsync(IDbConnection connection, string userId)
+    public async Task UpdateLastLoginAsync(IDbConnection connection, Guid userId)
     {
         ArgumentNullException.ThrowIfNull(connection);
-        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
 
         const string updateSql = @"
             UPDATE camus.users 
             SET last_login = NOW() 
             WHERE id = @UserId";
 
-        var rowsAffected = await connection.ExecuteAsync(updateSql, new { UserId = userId });
+        var rowsAffected = await connection.ExecuteAsync(updateSql, new { userId });
 
         if (rowsAffected == 0)
         {

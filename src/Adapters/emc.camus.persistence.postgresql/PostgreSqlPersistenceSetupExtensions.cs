@@ -51,6 +51,7 @@ namespace emc.camus.persistence.postgresql
             if (features.HasFlag(PersistenceFeatures.Auth))
             {
                 builder.Services.TryAddScoped<IUserRepository, PSUserRepository>();
+                builder.Services.TryAddScoped<IGeneratedTokenRepository, PSGeneratedTokenRepository>();
             }
             
             if (features.HasFlag(PersistenceFeatures.AppData))

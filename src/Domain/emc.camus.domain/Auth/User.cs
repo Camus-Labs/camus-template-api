@@ -6,34 +6,52 @@ namespace emc.camus.domain.Auth;
 public class User
 {
     /// <summary>
-    /// Gets or sets the unique identifier for the user.
+    /// Gets the unique identifier for the user.
     /// </summary>
-    public string Id { get; set; } = string.Empty;
+    public Guid Id { get; private set; }
 
     /// <summary>
-    /// Gets or sets the username or access key.
+    /// Gets the username or access key.
     /// </summary>
-    public string Username { get; set; } = string.Empty;
+    public string Username { get; private set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the list of roles assigned to the user.
+    /// Gets the list of roles assigned to the user.
     /// </summary>
-    public List<Role> Roles { get; set; } = new();
+    public List<Role> Roles { get; private set; } = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="User"/> class.
+    /// Creates a new user. Validates business attributes and auto-generates ID when null.
     /// </summary>
     /// <param name="username">The username for the user.</param>
     /// <param name="roles">Optional list of roles assigned to the user.</param>
     /// <param name="id">Optional unique identifier. If not provided, a new GUID will be generated.</param>
     /// <exception cref="ArgumentException">Thrown when username is null, empty, or whitespace.</exception>
-    public User(string username, List<Role>? roles = null, string? id = null)
+    public User(string username, List<Role>? roles = null, Guid? id = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
 
-        Id = id ?? Guid.NewGuid().ToString();
+        Id = id ?? Guid.NewGuid();
         Username = username;
         Roles = roles ?? new List<Role>();
+    }
+
+    /// <summary>
+    /// Private constructor for reconstitution from persistence.
+    /// </summary>
+    private User() { }
+
+    /// <summary>
+    /// Rebuilds a user from persistence data. Skips business validation.
+    /// </summary>
+    public static User Reconstitute(Guid id, string username, List<Role> roles)
+    {
+        return new User
+        {
+            Id = id,
+            Username = username,
+            Roles = roles
+        };
     }
 
     /// <summary>

@@ -2,6 +2,7 @@ using emc.camus.observability.otel;
 using System.Reflection;
 using System.Diagnostics.CodeAnalysis;
 using emc.camus.api.Extensions;
+using emc.camus.cache.inmemory;
 using emc.camus.security.jwt;
 using emc.camus.security.apikey;
 using emc.camus.secrets.dapr;
@@ -48,30 +49,33 @@ builder.AddDaprSecrets();
 // Step 8: Configure database migrations (depends on secrets for DB credentials)
 builder.AddDatabaseMigrations();
 
-// Step 9: Configure Authentication using Security Adapters (depends on secrets)
+// Step 9: Configure in-memory cache (token revocation denylist)
+builder.AddInMemoryCache();
+
+// Step 10: Configure Authentication using Security Adapters (depends on secrets)
 builder.AddJwtAuthentication();
 builder.AddApiKeyAuthentication();
 
-// Step 10: Configure authorization policies and user repository (depends on authentication)
+// Step 11: Configure authorization policies and user repository (depends on authentication)
 builder.AddAuthorizationWithData();
 
-// Step 11: Configure application services (IUserContext, etc.)
+// Step 12: Configure application services (IUserContext, etc.)
 builder.AddApplicationServices();
 
-// Step 12: Configure application data (depends on IUserContext for audit)
+// Step 13: Configure application data (depends on IUserContext for audit)
 builder.AddAppData();
 
-// Step 13: Build App Builder
+// Step 14: Build App Builder
 var app = builder.Build();
 
-// Step 14: Get logger for startup events
+// Step 15: Get logger for startup events
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 
 startupLogger.LogInformation("Starting {ServiceName} v{ServiceVersion} in {Environment} environment", 
     SERVICE_NAME, SERVICE_VERSION, ENV_NAME);
 startupLogger.LogInformation("Instance ID: {InstanceId}", INSTANCE_ID);
 
-// Step 15: Configure forwarded headers for proxy/load balancer scenarios
+// Step 16: Configure forwarded headers for proxy/load balancer scenarios
 // This ensures X-Forwarded-For and X-Real-IP headers are properly processed
 // Critical for rate limiting to work correctly behind proxies (Azure LB, nginx, CloudFlare, etc.)
 app.UseForwardedHeaders(new ForwardedHeadersOptions
@@ -82,42 +86,42 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardLimit = null // Process all X-Forwarded-For entries
 });
 
-// Step 16: Enforce HTTPS (redirect HTTP to HTTPS)
+// Step 17: Enforce HTTPS (redirect HTTP to HTTPS)
 app.UseHttpsRedirection();
 
-// Step 17: Enable observability middleware (adds Trace Id header to responses)
+// Step 18: Enable observability middleware (adds Trace Id header to responses)
 // Must be BEFORE exception handling so trace IDs are available in error logs
 app.UseObservability();
 
-// Step 18: Global exception handling middleware (catches auth, authz, and app exceptions)
+// Step 19: Global exception handling middleware (catches auth, authz, and app exceptions)
 // Must be EARLY in pipeline to catch exceptions from rate limiting, auth, etc.
 app.UseErrorHandling();
 
-// Step 19: Enable Swagger UI in development
+// Step 20: Enable Swagger UI in development
 app.UseSwaggerDocumentation();
 
-// Step 20: Apply CORS policy (before authentication to allow preflight requests)
+// Step 21: Apply CORS policy (before authentication to allow preflight requests)
 app.UseCorsPolicy();
 
-// Step 21: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
+// Step 22: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
 app.UseInMemoryRateLimiting();
 
-// Step 22: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
+// Step 23: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
 app.UseDaprSecrets();
 
-// Step 23: Run database migrations (creates schema and tables if needed)
+// Step 24: Run database migrations (creates schema and tables if needed)
 app.UseDatabaseMigrations(startupLogger);
 
-// Step 24: Add Authentication and Authorization
+// Step 25: Add Authentication and Authorization
 app.UseAuthentication();
 
-// Step 25: Initialize authorization data (load users/roles)
+// Step 26: Initialize authorization data (load users/roles)
 app.UseAuthorizationWithData();
 
 // Step 27: Initialize application data (load API info)
 app.UseAppData();
 
-// Step 27: Apply application services (adds User-Id header + endpoint routing)
+// Step 28: Apply application services (adds User-Id header + endpoint routing)
 app.UseApplicationServices();
 
 

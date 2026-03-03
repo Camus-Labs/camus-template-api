@@ -35,5 +35,5 @@ public interface IUserRepository
     /// <param name="connection">The database connection to use for the operation.</param>
     /// <param name="userId">The ID of the user to update.</param>
     /// <returns>Task representing the asynchronous operation.</returns>
-    Task UpdateLastLoginAsync(IDbConnection connection, string userId);
+    Task UpdateLastLoginAsync(IDbConnection connection, Guid userId);
 }

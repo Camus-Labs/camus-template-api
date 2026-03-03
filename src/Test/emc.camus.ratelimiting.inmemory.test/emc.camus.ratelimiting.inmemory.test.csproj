@@ -27,8 +27,4 @@
     <ProjectReference Include="..\..\Adapters\emc.camus.ratelimiting.inmemory\emc.camus.ratelimiting.inmemory.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Using Include="Xunit" />
-  </ItemGroup>
-
 </Project>

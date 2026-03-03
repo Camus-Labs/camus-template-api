@@ -22,7 +22,7 @@ public static class Headers
     /// <summary>
     /// Header name for authenticated user identification.
     /// </summary>
-    public const string UserId = "User-Id";
+    public const string Username = "Username";
 
     /// <summary>
     /// Header name for rate limit maximum requests allowed.

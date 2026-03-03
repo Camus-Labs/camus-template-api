@@ -54,11 +54,11 @@ public class PSActionAuditRepository : IActionAuditRepository
 
         var auditId = await connection.ExecuteScalarAsync<long>(sql, new
         {
-            UserId = userId,
-            Username = username,
-            TraceId = traceId,
-            ActionTitle = actionTitle,
-            ActionSummary = actionSummary
+            userId,
+            username,
+            traceId,
+            actionTitle,
+            actionSummary
         });
 
         return auditId;
@@ -94,11 +94,11 @@ public class PSActionAuditRepository : IActionAuditRepository
 
         var auditId = await connection.ExecuteScalarAsync<long>(sql, new
         {
-            UserId = userId,
-            Username = username,
-            TraceId = traceId,
-            ActionTitle = actionTitle,
-            ActionSummary = actionSummary
+            userId,
+            username,
+            traceId,
+            actionTitle,
+            actionSummary
         });
 
         return auditId;

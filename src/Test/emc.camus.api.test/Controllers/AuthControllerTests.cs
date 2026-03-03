@@ -8,6 +8,7 @@ using emc.camus.application.RateLimiting;
 using emc.camus.application.Secrets;
 using emc.camus.domain.Auth;
 using emc.camus.api.Models.Responses;
+using emc.camus.api.Models.Dtos;
 using emc.camus.api.Models.Requests;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -35,13 +36,21 @@ public class AuthControllerTests
         // Mock concrete AuthService (methods must be virtual)
         var mockUserRepository = new Mock<IUserRepository>();
         var mockTokenGenerator = new Mock<ITokenGenerator>();
-        var mockConnectionFactory = new Mock<IConnectionFactory>();
         var mockAuditRepository = new Mock<IActionAuditRepository>();
+        var mockGeneratedTokenRepository = new Mock<IGeneratedTokenRepository>();
+        var mockTokenRevocationCache = new Mock<ITokenRevocationCache>();
+        var mockUserContext = new Mock<IUserContext>();
+        var mockServiceActivitySource = new Mock<IActivitySourceWrapper>();
+        var mockConnectionFactory = new Mock<IConnectionFactory>();
         _mockAuthService = new Mock<AuthService>(
             mockUserRepository.Object, 
             mockTokenGenerator.Object,
-            mockConnectionFactory.Object,
-            mockAuditRepository.Object);
+            mockAuditRepository.Object,
+            mockGeneratedTokenRepository.Object,
+            mockTokenRevocationCache.Object,
+            mockUserContext.Object,
+            mockServiceActivitySource.Object,
+            mockConnectionFactory.Object);
 
         // Setup default activity source behavior
         _mockActivitySource
@@ -169,6 +178,122 @@ public class AuthControllerTests
         var act = async () => await controller.GetUnexpectedError();
         await act.Should().ThrowAsync<Exception>()
             .WithMessage("This is a demo exception for error handling.");
+    }
+
+    [Fact]
+    public async Task GetGeneratedTokens_ShouldReturnPagedResponse()
+    {
+        // Arrange
+        var controller = CreateController();
+        var query = new GetGeneratedTokensQuery { Page = 1, PageSize = 10 };
+
+        var tokenSummaries = new List<GeneratedTokenSummaryView>
+        {
+            new(Guid.NewGuid(), "user-token-1", new List<string> { "read" },
+                DateTime.UtcNow.AddDays(30), DateTime.UtcNow, false, null, true),
+            new(Guid.NewGuid(), "user-token-2", new List<string> { "read", "write" },
+                DateTime.UtcNow.AddDays(30), DateTime.UtcNow, true, DateTime.UtcNow, false)
+        };
+
+        var pagedResult = new PagedResult<GeneratedTokenSummaryView>(tokenSummaries, 2, 1, 10);
+
+        _mockAuthService
+            .Setup(x => x.GetGeneratedTokensAsync(It.IsAny<PaginationParams>(), It.IsAny<GeneratedTokenFilter>()))
+            .ReturnsAsync(pagedResult);
+
+        // Act
+        var result = await controller.GetGeneratedTokens(query);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = (OkObjectResult)result;
+        okResult.Value.Should().BeOfType<ApiResponse<PagedResponse<GeneratedTokenSummaryDto>>>();
+
+        var response = (ApiResponse<PagedResponse<GeneratedTokenSummaryDto>>)okResult.Value!;
+        response.Message.Should().Contain("2 of 2");
+        response.Data.Should().NotBeNull();
+        response.Data!.Items.Should().HaveCount(2);
+        response.Data.TotalCount.Should().Be(2);
+        response.Data.Page.Should().Be(1);
+        response.Data.PageSize.Should().Be(10);
+        response.Data.HasNextPage.Should().BeFalse();
+        response.Data.HasPreviousPage.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetGeneratedTokens_WithEmptyResult_ShouldReturnEmptyPagedResponse()
+    {
+        // Arrange
+        var controller = CreateController();
+        var query = new GetGeneratedTokensQuery { Page = 1, PageSize = 25 };
+
+        var emptyResult = PagedResult<GeneratedTokenSummaryView>.Empty(1, 25);
+
+        _mockAuthService
+            .Setup(x => x.GetGeneratedTokensAsync(It.IsAny<PaginationParams>(), It.IsAny<GeneratedTokenFilter>()))
+            .ReturnsAsync(emptyResult);
+
+        // Act
+        var result = await controller.GetGeneratedTokens(query);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = (OkObjectResult)result;
+        var response = (ApiResponse<PagedResponse<GeneratedTokenSummaryDto>>)okResult.Value!;
+        response.Data!.Items.Should().BeEmpty();
+        response.Data.TotalCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetGeneratedTokens_ShouldPassPaginationToService()
+    {
+        // Arrange
+        var controller = CreateController();
+        var query = new GetGeneratedTokensQuery { Page = 3, PageSize = 15 };
+
+        var emptyResult = PagedResult<GeneratedTokenSummaryView>.Empty(3, 15);
+
+        _mockAuthService
+            .Setup(x => x.GetGeneratedTokensAsync(It.IsAny<PaginationParams>(), It.IsAny<GeneratedTokenFilter>()))
+            .ReturnsAsync(emptyResult);
+
+        // Act
+        await controller.GetGeneratedTokens(query);
+
+        // Assert
+        _mockAuthService.Verify(x => x.GetGeneratedTokensAsync(
+            It.Is<PaginationParams>(p => p.Page == 3 && p.PageSize == 15),
+            It.IsAny<GeneratedTokenFilter>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetGeneratedTokens_WithFilters_ShouldPassFiltersToService()
+    {
+        // Arrange
+        var controller = CreateController();
+        var query = new GetGeneratedTokensQuery
+        {
+            Page = 1,
+            PageSize = 25,
+            ExcludeRevoked = true,
+            ExcludeExpired = true
+        };
+
+        var emptyResult = PagedResult<GeneratedTokenSummaryView>.Empty(1, 25);
+
+        _mockAuthService
+            .Setup(x => x.GetGeneratedTokensAsync(It.IsAny<PaginationParams>(), It.IsAny<GeneratedTokenFilter>()))
+            .ReturnsAsync(emptyResult);
+
+        // Act
+        await controller.GetGeneratedTokens(query);
+
+        // Assert
+        _mockAuthService.Verify(x => x.GetGeneratedTokensAsync(
+            It.IsAny<PaginationParams>(),
+            It.Is<GeneratedTokenFilter>(f => f.ExcludeRevoked && f.ExcludeExpired)),
+            Times.Once);
     }
 
     [Fact]

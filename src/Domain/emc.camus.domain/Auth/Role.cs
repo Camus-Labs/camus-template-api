@@ -6,40 +6,59 @@ namespace emc.camus.domain.Auth;
 public class Role
 {
     /// <summary>
-    /// Gets or sets the unique identifier for the role.
+    /// Gets the unique identifier for the role.
     /// </summary>
-    public string Id { get; set; } = string.Empty;
+    public Guid Id { get; private set; }
 
     /// <summary>
-    /// Gets or sets the name of the role.
+    /// Gets the name of the role.
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; private set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the description of the role.
+    /// Gets the description of the role.
     /// </summary>
-    public string? Description { get; set; }
+    public string? Description { get; private set; }
 
     /// <summary>
-    /// Gets or sets the list of permissions assigned to this role.
+    /// Gets the list of permissions assigned to this role.
     /// </summary>
-    public List<string> Permissions { get; set; } = new();
+    public List<string> Permissions { get; private set; } = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Role"/> class.
+    /// Creates a new role. Validates business attributes and auto-generates ID when null.
     /// </summary>
     /// <param name="name">The role name.</param>
     /// <param name="description">Optional description.</param>
     /// <param name="permissions">Optional list of permissions.</param>
     /// <param name="id">Optional unique identifier. If not provided, a new GUID will be generated.</param>
     /// <exception cref="ArgumentException">Thrown when name is null, empty, or whitespace.</exception>
-    public Role(string name, string? description = null, List<string>? permissions = null, string? id = null)
+    public Role(string name, string? description = null, List<string>? permissions = null, Guid? id = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
-        Id = id ?? Guid.NewGuid().ToString();
+        Id = id ?? Guid.NewGuid();
         Name = name;
         Description = description;
         Permissions = permissions ?? new List<string>();
+    }
+
+    /// <summary>
+    /// Private constructor for reconstitution from persistence.
+    /// </summary>
+    private Role() { }
+
+    /// <summary>
+    /// Rebuilds a role from persistence data. Skips business validation.
+    /// </summary>
+    public static Role Reconstitute(Guid id, string name, string? description, List<string> permissions)
+    {
+        return new Role
+        {
+            Id = id,
+            Name = name,
+            Description = description,
+            Permissions = permissions
+        };
     }
 }

@@ -141,16 +141,13 @@ namespace emc.camus.ratelimiting.inmemory
                             return policyName;
                         }
                         
-                        // Log warning and record metric if policy not found
+                        // Log warning if policy not found (misconfiguration)
                         var logger = context.RequestServices.GetRequiredService<ILogger<WebApplication>>();
-                        var metrics = context.RequestServices.GetRequiredService<RateLimitMetrics>();
                         
                         logger.LogWarning(
                             "Rate limit policy '{PolicyName}' not found in configuration. Falling back to '{DefaultPolicy}' policy. " +
                             "Endpoint: {Method} {Path}",
                             policyName, RateLimitPolicies.Default, context.Request.Method, context.Request.Path);
-                        
-                        metrics.RecordUndefinedPolicy(policyName, context.Request.Path);
                     }
                 }
             }

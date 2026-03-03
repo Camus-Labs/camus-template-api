@@ -9,6 +9,11 @@ namespace emc.camus.application.Auth;
 [ExcludeFromCodeCoverage]
 public static class Permissions
 {
+    /// <summary>
+    /// The claim type used for permission claims in JWT tokens.
+    /// </summary>
+    public const string ClaimType = "permission";
+
     // API Access Permissions
     
     /// <summary>
