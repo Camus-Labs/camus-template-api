@@ -1,5 +1,5 @@
 using Swashbuckle.AspNetCore.Filters;
-using emc.camus.api.Models.Requests;
+using emc.camus.api.Models.Requests.V2;
 
 namespace emc.camus.api.SwaggerExamples
 {

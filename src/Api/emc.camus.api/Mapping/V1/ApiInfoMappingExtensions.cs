@@ -1,10 +1,10 @@
 using emc.camus.application.ApiInfo;
-using emc.camus.api.Models.Responses;
+using emc.camus.api.Models.Responses.V1;
 
-namespace emc.camus.api.Mapping;
+namespace emc.camus.api.Mapping.V1;
 
 /// <summary>
-/// Extension methods for mapping between ApiInfo Application Views and API Response DTOs.
+/// Extension methods for mapping between ApiInfo Application Views and API V1 Response DTOs.
 /// </summary>
 /// <remarks>
 /// Follows the API layer pattern:
@@ -15,7 +15,7 @@ namespace emc.camus.api.Mapping;
 public static class ApiInfoMappingExtensions
 {
     /// <summary>
-    /// Converts an ApiInfoView (Application layer) to ApiInfoResponse (API layer).
+    /// Converts an ApiInfoView (Application layer) to ApiInfoResponse (API V1 layer).
     /// </summary>
     /// <param name="view">The application view to convert</param>
     /// <returns>API response DTO</returns>

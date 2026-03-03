@@ -4,6 +4,7 @@ using emc.camus.application.Auth;
 using emc.camus.application.Observability;
 using emc.camus.application.RateLimiting;
 using emc.camus.api.Models.Responses;
+using emc.camus.api.Models.Responses.V1;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

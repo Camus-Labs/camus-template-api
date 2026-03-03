@@ -1,6 +1,4 @@
-using System.ComponentModel.DataAnnotations;
-
-namespace emc.camus.api.Models.Requests;
+namespace emc.camus.api.Models.Requests.V2;
 
 /// <summary>
 /// Request model for generating a custom token with specific permissions and expiration.

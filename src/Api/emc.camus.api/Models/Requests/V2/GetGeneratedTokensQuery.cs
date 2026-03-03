@@ -1,4 +1,6 @@
-namespace emc.camus.api.Models.Requests;
+using emc.camus.api.Models.Requests;
+
+namespace emc.camus.api.Models.Requests.V2;
 
 /// <summary>
 /// Query parameters for the GET tokens endpoint with filtering and pagination.

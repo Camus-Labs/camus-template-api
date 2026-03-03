@@ -1,4 +1,4 @@
-namespace emc.camus.api.Models.Responses;
+namespace emc.camus.api.Models.Responses.V2;
 
 /// <summary>
 /// Response model containing authentication token information.

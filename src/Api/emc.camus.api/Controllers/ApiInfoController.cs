@@ -6,7 +6,8 @@ using emc.camus.application.ApiInfo;
 using Microsoft.AspNetCore.Authorization;
 using emc.camus.application.RateLimiting;
 using emc.camus.api.Models.Responses;
-using emc.camus.api.Mapping;
+using emc.camus.api.Models.Responses.V1;
+using emc.camus.api.Mapping.V1;
 using emc.camus.application.Auth;
 
 namespace emc.camus.api.Controllers

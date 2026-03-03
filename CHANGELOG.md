@@ -7,71 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Features
 
-#### Authentication & Authorization
-
+- Clean/Hexagonal architecture with Domain, Application, API, and Adapter layers
+- Dependency inversion with port/adapter pattern
+- CQRS-style type organization (Commands, Results, Filters, Views per feature)
+- API versioning with `Asp.Versioning` (v1, v2) and versioned DTO folders
 - JWT Bearer authentication with RSA256 signature validation
-- API Key authentication via X-Api-Key header
+- API Key authentication for service-to-service communication
+- Token generation, listing, and revocation endpoints
 - Dapr-based secrets management for credentials and keys
 - CORS configuration with policy-based origin control
-
-#### Rate Limiting
-
 - Rate limiting adapter with policy-based sliding window algorithm
 - IP-based rate limiting with proxy header support (X-Forwarded-For, X-Real-IP)
 - `[RateLimit]` attribute for controller/action-level policy assignment
 - RFC-compliant rate limit headers (RateLimit-Limit, RateLimit-Reset, Retry-After)
-- OpenTelemetry metrics for rate limit tracking (hits, rejections, undefined policies)
-- Rate limit configuration validation with fail-fast startup
 - Exempt paths configuration for health checks and monitoring endpoints
-
-#### Observability
-
+- Rate limiting before authentication to protect auth endpoints from brute force
+- PostgreSQL adapter with Dapper for lightweight ORM
+- Database migration scripts management
+- Connection pooling and resilience configuration
+- Entity-centric and parameter-based write patterns in repository adapters
 - OpenTelemetry integration with multiple exporters (OTLP, Jaeger, Zipkin, Console)
 - Distributed tracing with trace context propagation
+- OpenTelemetry metrics for rate limit tracking (hits, rejections, undefined policies)
 - Prometheus-compatible metrics export
 - Serilog structured logging with OTLP exporter to Loki
-- Configurable log levels per namespace
-- Trace and span IDs in log entries for correlation
-
-#### Data Persistence
-
-- PostgreSQL adapter with Dapper for lightweight ORM
-- Connection pooling and resilience configuration
-- Health checks for database connectivity
-
-#### API Features
-
-- Swagger/OpenAPI documentation with multiple API versions
-- API versioning support (v1, v2)
+- Configurable log levels per namespace with trace/span ID correlation
+- Swagger/OpenAPI documentation with versioned API definitions
 - Custom exception handling middleware with RFC 7807 Problem Details
 - Health check endpoints (/health, /ready, /alive)
 - Comprehensive XML documentation on all public APIs
-
-#### Architecture
-
-- Clean/Hexagonal architecture with clear layer separation
-- Domain, Application, and Adapter layer structure
-- Dependency inversion with port/adapter pattern
-- Comprehensive test project structure for all layers
-
-### Security
-
-- Rate limiting runs before authentication to protect auth endpoints from brute force attacks
-- IP-based limiting prevents abuse from anonymous attackers
-- JWT tokens with RSA256 asymmetric encryption
-- API Key authentication for service-to-service communication
-- Secrets never stored in code or configuration files
-- CORS policies to prevent unauthorized cross-origin requests
-- Comprehensive logging of rate limit violations for security monitoring
-
-### Infrastructure
-
+- Pre-commit review checklist optimized for AI-driven code review
 - Docker support with development and production Dockerfiles
-- Docker Compose configurations for local development
-- Hot-reload support in development containers
+- Docker Compose configurations for local development with hot-reload
 - VS Code debugging support for containerized applications
 - Observability stack (Jaeger, Prometheus, Grafana, Loki) via Docker Compose
 - .NET 9.0 target framework
-- GitHub Actions workflows for CI/CD (if configured)
+- Comprehensive test project structure with 100% coverage target across all layers

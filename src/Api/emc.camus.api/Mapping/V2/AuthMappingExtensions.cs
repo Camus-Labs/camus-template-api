@@ -1,12 +1,12 @@
-using emc.camus.api.Models.Dtos;
-using emc.camus.api.Models.Requests;
-using emc.camus.api.Models.Responses;
+using emc.camus.api.Models.Dtos.V2;
+using emc.camus.api.Models.Requests.V2;
+using emc.camus.api.Models.Responses.V2;
 using emc.camus.application.Auth;
 
-namespace emc.camus.api.Mapping;
+namespace emc.camus.api.Mapping.V2;
 
 /// <summary>
-/// Extension methods for mapping between API DTOs and Application layer Commands/Results.
+/// Extension methods for mapping between API V2 DTOs and Application layer Commands/Results/Views.
 /// </summary>
 public static class AuthMappingExtensions
 {

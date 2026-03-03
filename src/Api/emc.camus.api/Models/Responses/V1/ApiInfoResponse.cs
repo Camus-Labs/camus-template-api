@@ -1,4 +1,4 @@
-namespace emc.camus.api.Models.Responses;
+namespace emc.camus.api.Models.Responses.V1;
 
 /// <summary>
 /// API response DTO for API information.

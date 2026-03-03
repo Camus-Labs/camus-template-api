@@ -1,6 +1,8 @@
 using emc.camus.api.Mapping;
-using emc.camus.api.Models.Dtos;
+using emc.camus.api.Mapping.V2;
+using emc.camus.api.Models.Dtos.V2;
 using emc.camus.api.Models.Requests;
+using emc.camus.api.Models.Requests.V2;
 using emc.camus.api.Models.Responses;
 using emc.camus.application.Auth;
 using emc.camus.application.Common;
