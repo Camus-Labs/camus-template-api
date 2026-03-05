@@ -47,11 +47,11 @@ public class AuthControllerTests
             mockUserRepository.Object, 
             mockTokenGenerator.Object,
             mockAuditRepository.Object,
-            mockGeneratedTokenRepository.Object,
             mockTokenRevocationCache.Object,
             mockUserContext.Object,
             mockServiceActivitySource.Object,
-            mockConnectionFactory.Object);
+            mockConnectionFactory.Object,
+            mockGeneratedTokenRepository.Object);
 
         // Setup default activity source behavior
         _mockActivitySource

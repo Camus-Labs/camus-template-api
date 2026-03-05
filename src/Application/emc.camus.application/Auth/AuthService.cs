@@ -17,11 +17,11 @@ public class AuthService
     private readonly IUserRepository _userRepository;
     private readonly ITokenGenerator _tokenGenerator;
     private readonly IActionAuditRepository _auditRepository;
-    private readonly IGeneratedTokenRepository _generatedTokenRepository;
     private readonly ITokenRevocationCache _tokenRevocationCache;
     private readonly IUserContext _userContext;
     private readonly IActivitySourceWrapper _activitySource;
     private readonly IConnectionFactory? _connectionFactory;
+    private readonly IGeneratedTokenRepository? _generatedTokenRepository;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthService"/> class.
@@ -29,25 +29,24 @@ public class AuthService
     /// <param name="userRepository">Repository for user credential validation.</param>
     /// <param name="tokenGenerator">Generator for creating authentication tokens.</param>
     /// <param name="auditRepository">Repository for logging audit events.</param>
-    /// <param name="generatedTokenRepository">Repository for managing generated tokens.</param>
     /// <param name="tokenRevocationCache">Cache for tracking revoked token JTIs.</param>
     /// <param name="userContext">Context for accessing current authenticated user information.</param>
     /// <param name="activitySource">Activity source for distributed tracing telemetry.</param>
     /// <param name="connectionFactory">Optional: Factory for creating database connections (for transactional operations).</param>
+    /// <param name="generatedTokenRepository">Optional: Repository for managing generated tokens (requires connectionFactory).</param>
     public AuthService(
         IUserRepository userRepository,
         ITokenGenerator tokenGenerator,
         IActionAuditRepository auditRepository,
-        IGeneratedTokenRepository generatedTokenRepository,
         ITokenRevocationCache tokenRevocationCache,
         IUserContext userContext,
         IActivitySourceWrapper activitySource,
-        IConnectionFactory? connectionFactory = null)
+        IConnectionFactory? connectionFactory = null,
+        IGeneratedTokenRepository? generatedTokenRepository = null)
     {
         ArgumentNullException.ThrowIfNull(userRepository);
         ArgumentNullException.ThrowIfNull(tokenGenerator);
         ArgumentNullException.ThrowIfNull(auditRepository);
-        ArgumentNullException.ThrowIfNull(generatedTokenRepository);
         ArgumentNullException.ThrowIfNull(tokenRevocationCache);
         ArgumentNullException.ThrowIfNull(userContext);
         ArgumentNullException.ThrowIfNull(activitySource);
@@ -219,8 +218,8 @@ public class AuthService
                 command.ExpiresOn,
                 additionalClaims);
 
-            // If connection factory is available, use transactional approach
-            if (_connectionFactory != null)
+            // If connection factory and token repository are available, use transactional approach
+            if (_connectionFactory != null && _generatedTokenRepository != null)
             {
                 using var connection = await _connectionFactory.CreateConnectionAsync();
                 using var transaction = connection.BeginTransaction();
@@ -286,9 +285,9 @@ public class AuthService
 
         try
         {
-            if (_connectionFactory == null)
+            if (_connectionFactory == null || _generatedTokenRepository == null)
             {
-                throw new InvalidOperationException("Token retrieval requires a database connection.");
+                throw new InvalidOperationException("Token retrieval requires a database connection and token repository.");
             }
 
             using var connection = await _connectionFactory.CreateConnectionAsync();
@@ -322,9 +321,9 @@ public class AuthService
         var currentUsername = _userContext.GetCurrentUsername()
             ?? throw new InvalidOperationException("Username is not available. Ensure the user is authenticated.");
 
-        if (_connectionFactory == null)
+        if (_connectionFactory == null || _generatedTokenRepository == null)
         {
-            throw new InvalidOperationException("Token revocation requires a database connection.");
+            throw new InvalidOperationException("Token revocation requires a database connection and token repository.");
         }
 
         try

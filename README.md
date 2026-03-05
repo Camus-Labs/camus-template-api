@@ -1,8 +1,11 @@
 # Camus API Template
 
-A modern, production-ready **.NET 9.0 REST API template** built with **Hexagonal Architecture (Ports & Adapters)**. This template provides infrastructure adapters and architectural patterns for building scalable, maintainable, and secure REST APIs.
+A modern, production-ready **.NET 9.0 REST API template** built with **Hexagonal Architecture (Ports & Adapters)**. This
+template provides infrastructure adapters and architectural patterns for building scalable, maintainable, and secure
+REST APIs.
 
-> **📘 New to this project?** Start with the [Documentation Index](docs/README.md) for comprehensive guides on architecture, authentication, deployment, and debugging.
+> **📘 New to this project?** Start with the [Documentation Index](docs/README.md) for comprehensive guides on
+architecture, authentication, deployment, and debugging.
 
 ---
 
@@ -157,7 +160,8 @@ Authorization: Bearer <token>
 X-Api-Key: your-api-key
 ```
 
-> **📖 Full Guide:** See [Authentication Documentation](docs/authentication.md) for configuration, claims, and security best practices.
+> **📖 Full Guide:** See [Authentication Documentation](docs/authentication.md) for configuration, claims, and security
+best practices.
 
 ---
 
@@ -180,7 +184,8 @@ public class AuthController : ControllerBase { }
 public IActionResult GetData() { }
 ```
 
-> **📖 Full Guide:** See [Rate Limiting Adapter README](src/Adapters/emc.camus.ratelimiting.inmemory/README.md) for configuration and deployment.
+> **📖 Full Guide:** See [Rate Limiting Adapter README](src/Adapters/emc.camus.ratelimiting.inmemory/README.md) for
+configuration and deployment.
 
 ---
 
@@ -238,7 +243,8 @@ Camus follows **Hexagonal Architecture** (Ports & Adapters):
 - ✅ Testable without external dependencies
 - ✅ Clear separation of concerns
 
-> **📖 Deep Dive:** Read [Architecture Documentation](docs/architecture.md) for layer responsibilities, dependency flow, and patterns.
+> **📖 Deep Dive:** Read [Architecture Documentation](docs/architecture.md) for layer responsibilities, dependency flow,
+and patterns.
 
 ---
 

@@ -2,7 +2,6 @@
     "recommendations": [
         "aliasadidev.nugetpackagemanagergui",
         "davidanson.vscode-markdownlint",
-        "github.copilot",
         "github.copilot-chat",
         "github.vscode-github-actions",
         "hashicorp.terraform",
