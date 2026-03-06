@@ -15,47 +15,6 @@ Find and review all classes, enums, interfaces, and files related to `[FEATURE_N
 - [ ] Adapter-specific interfaces are kept inside their adapter
 - [ ] Dependency direction: API/Adapters → Application → Domain (never reverse)
 
-### Application Layer
-
-Purpose: Contracts (interfaces, attributes, exceptions) that decouple API from adapters. NOT for business logic.
-
-**DO:**
-
-- [ ] Custom attributes for cross-cutting concerns (e.g., `[RateLimit]`)
-- [ ] Custom exceptions for infrastructure failures (e.g., `RateLimitExceededException`)
-- [ ] Port interfaces for adapters with multiple implementations (e.g., `ITokenGenerator`, `IUserRepository`)
-- [ ] Interfaces consumed by API layer or multiple adapters
-- [ ] Constants for cross-cutting concerns (e.g., `ErrorCodes`, `Headers`)
-- [ ] Application services as concrete classes — no interface unless multiple implementations exist
-- [ ] CQRS-style type files per feature folder:
-  - `*Commands.cs` — positional records for write inputs
-  - `*Results.cs` — positional records for write outputs, only when no View matches the shape
-  - `*Filters.cs` — positional records with defaults for query inputs
-  - `*Views.cs` — positional records for query output projections
-- [ ] Views as default return type for both queries and commands — create a Result only when the output has a
-  genuinely different shape (e.g., `GenerateTokenResult` includes raw JWT, which no View exposes)
-- [ ] View naming describes content/shape, not query method — `GeneratedTokenSummaryView` (correct) vs
-  `GeneratedTokenByUserView` (wrong)
-- [ ] Filter naming targets the entity, not a view — `GeneratedTokenFilter` (correct) vs `GeneratedTokenSummaryFilter`
-  (wrong)
-- [ ] Common types in `Common/` folder: `PaginationParams` (constructor-validated, `get`-only), `PagedResult<T>`
-  (generic paginated container)
-- [ ] Constructor-based validation for value objects — constructor enforces invariants, no `init` setters that
-  bypass validation
-- [ ] Private mapping helpers in services (e.g., `ToSummaryView`) for entity → view conversion
-
-**DON'T:**
-
-- [ ] HTTP runtime objects (`HttpContext`, `HttpRequest`, `HttpResponse`)
-- [ ] Infrastructure implementations (database, file I/O, caching, secrets)
-- [ ] Configuration classes (`Settings`, `Options`)
-- [ ] Interfaces for single-implementation application services
-- [ ] Middleware or DI registration
-- [ ] Business/domain logic
-- [ ] Factory methods with `init` setters on value objects
-- [ ] Unbounded list queries for growing datasets without pagination — acceptable for naturally bounded datasets
-  (e.g., API versions, enum-like reference data)
-
 ### Domain Layer
 
 Purpose: Pure business entities, rules, and logic. No dependencies on any other layer.

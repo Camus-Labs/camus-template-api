@@ -1,7 +1,14 @@
 {
+    "files.associations": {
+        "**/copilot-instructions.md": "markdown",
+        "**/*.agent.md": "markdown",
+        "**/*.instructions.md": "markdown",
+        "**/*.prompt.md": "markdown"
+    },
     "workbench.colorTheme": "Default Dark Modern",
     "editor.semanticHighlighting.enabled": false,
     "csharp.semanticHighlighting.enabled": true,
+    "terminal.integrated.tabs.title": "${sequence}",
     "[markdown]": {
         "editor.wordWrap": "off"
     },

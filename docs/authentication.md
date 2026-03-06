@@ -1,12 +1,14 @@
 # Authentication Implementation
 
-Camus API supports two authentication mechanisms: **JWT Bearer tokens** and **API Key authentication**. Both are implemented using ASP.NET Core 9 with credentials retrieved from a secure `ISecretProvider`.
+Camus API supports two authentication mechanisms: **JWT Bearer tokens** and **API Key authentication**. Both are
+implemented using ASP.NET Core 9 with credentials retrieved from a secure `ISecretProvider`.
 
 ## JWT Authentication
 
 JWT Bearer authentication provides secure token-based authentication using RSA256 asymmetric signing.
 
-> **📖 Complete Configuration Guide:** See [JWT Adapter README](../src/Adapters/emc.camus.security.jwt/README.md) for detailed configuration, settings, and security best practices.
+> **📖 Complete Configuration Guide:** See [JWT Adapter README](../src/Adapters/emc.camus.security.jwt/README.md) for
+detailed configuration, settings, and security best practices.
 
 ## How to Get a Token
 
@@ -37,13 +39,15 @@ curl -H "Authorization: Bearer {your-token}" \
   http://localhost:5000/api/v2/auth/info-jwt
 ```
 
-> **📖 Complete Usage Guide:** See [JWT Adapter README](../src/Adapters/emc.camus.security.jwt/README.md) for detailed examples, token generation, endpoint protection, and testing.
+> **📖 Complete Usage Guide:** See [JWT Adapter README](../src/Adapters/emc.camus.security.jwt/README.md) for detailed
+examples, token generation, endpoint protection, and testing.
 
 ## JWT Claims
 
 JWT tokens include standard claims for user identification, roles, and token metadata.
 
-> **📖 Complete Claims Reference:** See [JWT Adapter README - JWT Claims](../src/Adapters/emc.camus.security.jwt/README.md#-jwt-claims) for detailed claims documentation and usage examples.
+> **📖 Complete Claims Reference:** See [JWT Adapter README - JWT Claims](../src/Adapters/emc.camus.security.jwt/README.md#-jwt-claims)
+for detailed claims documentation and usage examples.
 
 ## Security Notes
 
@@ -74,7 +78,8 @@ API Key authentication provides simple header-based authentication for service-t
 Api-Key: your-api-key-here
 ```
 
-> **📖 Complete Guide:** See [API Key Adapter README](../src/Adapters/emc.camus.security.apikey/README.md) for configuration, usage examples, and security best practices.
+> **📖 Complete Guide:** See [API Key Adapter README](../src/Adapters/emc.camus.security.apikey/README.md) for
+configuration, usage examples, and security best practices.
 
 ## Choosing Authentication Method
 

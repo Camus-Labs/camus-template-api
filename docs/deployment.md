@@ -214,7 +214,8 @@ Update `appsettings.Production.json`:
 3. Configure managed identity or IAM roles for secret access
 4. Update application settings with correct `SecretStoreName`
 
-> **📖 Learn More:** See [Dapr Components Configuration](../src/Infrastructure/dapr/README.md) and [Secrets Adapter Documentation](../src/Adapters/emc.camus.secrets.dapr/README.md) for detailed configuration.
+> **📖 Learn More:** See [Dapr Components Configuration](../src/Infrastructure/dapr/README.md) and
+[Secrets Adapter Documentation](../src/Adapters/emc.camus.secrets.dapr/README.md) for detailed configuration.
 
 ---
 
