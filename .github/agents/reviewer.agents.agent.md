@@ -3,7 +3,7 @@ description: 'Reviews *.agent.md files via three-model evaluation to produce a c
 argument-hint: 'Provide the path to the *.agent.md file to review'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['agent', 'codebase', 'search']
+tools: ['agent', 'search', 'codebase']
 agents: ['CodexReviewer', 'OpusReviewer', 'SonnetReviewer']
 ---
 
@@ -39,21 +39,21 @@ If the input is missing, list existing `*.agent.md` files using the `search` too
 ## Process
 
 1. Resolve `target_agent_path` using the `search` tool — confirm the file exists and ends with `.agent.md`; if missing
-   or invalid, list available `*.agent.md` files and ask the user to select one.
+  or invalid, list available `*.agent.md` files and ask the user to select one.
 
 2. Read the target file using the `codebase` tool to confirm it is readable and contains agent definition content — if
-   unreadable or if the file does not contain agent definition content, stop and report the problem.
+  unreadable or if the file does not contain agent definition content, stop and report the problem.
 
 3. Dispatch three parallel sub-agents (`CodexReviewer`, `SonnetReviewer`, `OpusReviewer`) via the `agent` tool, each
-   passing `#file:.github/prompts/review.agent.prompt.md` and the target file — collect the full review report from each
-   sub-agent.
+  passing `#file:.github/prompts/review.agent.prompt.md` and the target file — collect the full review report from each
+  sub-agent.
 
 4. Merge the three sub-agent reports into a single deduplicated findings list — a section is FAIL if any model marks it
-   FAIL; if two or more sub-agents flag the same checklist item, record it once and note which models flagged it; if
-   only one sub-agent flags an item, still include it.
+  FAIL; if two or more sub-agents flag the same checklist item, record it once and note which models flagged it; if
+  only one sub-agent flags an item, still include it.
 
 5. Produce the consolidated Agent Review Report in the output format below using the per-model results. Overall Verdict
-   is FAIL if any merged section is FAIL, otherwise PASS. Ready for Use is Yes when Verdict is PASS, No otherwise.
+  is FAIL if any merged section is FAIL, otherwise PASS. Ready for Use is Yes when Verdict is PASS, No otherwise.
 
 ## Rules
 

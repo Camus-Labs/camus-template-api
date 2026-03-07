@@ -1,4 +1,5 @@
 {
+    "editor.detectIndentation": false,
     "files.associations": {
         "**/copilot-instructions.md": "markdown",
         "**/*.agent.md": "markdown",

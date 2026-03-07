@@ -28,11 +28,11 @@ Read and internalize the conventions checklist before starting:
 ## Process
 
 1. Validate `target_agent_path` is provided, points to a readable file, and ends with `.agent.md` using the `codebase`
-   tool — if missing, unreadable, or invalid type, stop and report the problem; otherwise, proceed to step 2.
+  tool — if missing, unreadable, or invalid type, stop and report the problem; otherwise, proceed to step 2.
 2. Iterate through sections in this exact order using the `codebase` tool: `Writing Quality and Structure`,
-   `Frontmatter`, `Role`, `Goal`, `Context`, `Inputs`, `Process`, `Output Format`, `Rules`; evaluate exactly one section
-   per iteration, score `PASS` only when ALL items in that section pass — otherwise score FAIL - and record each failing
-   item as a finding; stop after 9 iterations.
+  `Frontmatter`, `Role`, `Goal`, `Context`, `Inputs`, `Process`, `Output Format`, `Rules`; evaluate exactly one section
+  per iteration, score `PASS` only when ALL items in that section pass — otherwise score FAIL - and record each failing
+  item as a finding; stop after 9 iterations.
 3. Compute the overall verdict — PASS when every section is PASS, otherwise FAIL — no tools required.
 4. Produce the report in the exact output format below using the verdict and all findings — no tools required.
 

@@ -43,17 +43,17 @@ explicit questions; never guess values.
 ## Process
 
 1. Validate inputs — confirm `feature_request` is present and `docs/stories/_user_story_template.md` exists using
-   `search`.
+  `search`.
 2. Decompose the request into stories, applying naming conventions from `Context` to derive file paths.
 3. Create story files from template at `docs/stories/[request-slug]/[story-id]-[story-slug].md` using `editFiles`.
 4. Ask field-targeted questions to fill missing `Section A` fields, batching all remaining gaps into each round and
-   iterating up to 5 rounds. Each round re-checks every `Section A` field and groups unanswered gaps into a single
-   question set. Stop when all fields are documented in a concise, efficient, and coherent way. If fields remain
-   incomplete after 5 rounds, report `BLOCKED` with the list of missing fields.
+  iterating up to 5 rounds. Each round re-checks every `Section A` field and groups unanswered gaps into a single
+  question set. Stop when all fields are documented in a concise, efficient, and coherent way. If fields remain
+  incomplete after 5 rounds, report `BLOCKED` with the list of missing fields.
 5. Populate `Section A - Product Owner Definition` in each story file using `editFiles`.
 6. Evaluate the `Product Owner Handoff Gate` for each story — set a gate item to `Yes` only when the corresponding
-   Section A field is fully populated and unambiguous; set to `No` otherwise. If any gate item is `No`, set overall
-   status to `BLOCKED`; otherwise, set overall status to `READY`.
+  Section A field is fully populated and unambiguous; set to `No` otherwise. If any gate item is `No`, set overall
+  status to `BLOCKED`; otherwise, set overall status to `READY`.
 7. Populate the gate, overall status, and sign-off line in each story file using `editFiles`.
 8. Report handoff status using the output template.
 

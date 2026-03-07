@@ -30,7 +30,7 @@ If any required input is missing, report the missing input and stop.
 
 1. Read `target` using the `codebase` tool — if unreadable, stop and report the problem.
 2. Evaluate every section and checklist item defined in the review prompt against the target content using the
-   `codebase` tool — score each item PASS or FAIL with evidence.
+  `codebase` tool — score each item PASS or FAIL with evidence.
 3. Produce the complete review report in the exact output format defined by the review prompt — no omissions.
 
 ## Rules
