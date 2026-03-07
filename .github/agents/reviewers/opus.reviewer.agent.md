@@ -1,6 +1,6 @@
 ---
 name: 'OpusReviewer'
-model: 'claude-opus'
+model: 'claude-opus-4.6'
 tools: ['codebase']
 userInvocable: false
 ---

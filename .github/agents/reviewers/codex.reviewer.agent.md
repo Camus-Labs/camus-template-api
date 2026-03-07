@@ -1,6 +1,6 @@
 ---
 name: 'CodexReviewer'
-model: 'codex'
+model: 'gpt-5.3-codex'
 tools: ['codebase']
 userInvocable: false
 ---

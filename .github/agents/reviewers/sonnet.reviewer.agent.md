@@ -1,6 +1,6 @@
 ---
 name: 'SonnetReviewer'
-model: 'claude-sonnet'
+model: 'claude-sonnet-4.6'
 tools: ['codebase']
 userInvocable: false
 ---

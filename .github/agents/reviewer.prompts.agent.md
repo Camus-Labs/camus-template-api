@@ -2,7 +2,7 @@
 description: 'Reviews *.prompt.md files via three-model evaluation to produce a consolidated report'
 argument-hint: 'Provide the path to the *.prompt.md file to review'
 mode: 'agent'
-model: 'claude-opus'
+model: 'claude-opus-4.6'
 tools: ['agent', 'codebase', 'search']
 agents: ['CodexReviewer', 'OpusReviewer', 'SonnetReviewer']
 ---
