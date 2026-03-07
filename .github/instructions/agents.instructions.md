@@ -4,6 +4,18 @@ applyTo: ".github/agents/**"
 
 # Agents Development Conventions
 
+0. Writing Quality and Structure
+
+   - [ ] Sections in canonical order: Frontmatter → Role → Goal → Context → Inputs → Proces → Rules → Output Format
+   - [ ] No extra top-level sections outside the canonical set
+   - [ ] Heading hierarchy is correct (H1 title, H2 sections, NO H3+ subsections)
+   - [ ] No over-limit 120 characters lines limit
+   - [ ] No under-utilized line width — line breaks should occur as close as possible to the 120-character limit
+   - [ ] No redundant sections
+   - [ ] Active voice, imperative mood
+   - [ ] No orphan outputs — every process step output feeds a downstream step or the final output template
+   - [ ] No cross-section contradictions — no section makes a claim that another section negates
+
 1. Frontmatter
 
    - [ ] Valid YAML `---` frontmatter present
@@ -41,7 +53,6 @@ applyTo: ".github/agents/**"
    - [ ] Inputs section exists (H2 `## Inputs`)
    - [ ] Required inputs listed with format/type
    - [ ] Optional inputs marked with defaults
-   - [ ] Missing inputs handled deterministically (infer + state, or ask — never guess)
    - [ ] No dead inputs (listed but never consumed)
    - [ ] No phantom inputs (consumed in process but never declared)
 
@@ -79,16 +90,3 @@ applyTo: ".github/agents/**"
    - [ ] At least one scope-limiting rule
    - [ ] No rule contradicts or duplicates a process step
    - [ ] No rule is unenforceable or purely aspirational
-
-9. Writing Quality
-
-   - [ ] Sections in canonical order: Frontmatter → Role → Goal → Context → Inputs → Proces → Rules → Output Format
-   - [ ] Heading hierarchy is correct (H1 title, H2 sections, NO H3+ subsections)
-   - [ ] No over-limit 120 characters lines limit
-   - [ ] No under-utilized line width — line breaks should occur as close as possible to the 120-character limit
-   - [ ] No redundant sections
-   - [ ] Consistent terminology
-   - [ ] Active voice, imperative mood
-   - [ ] No orphan outputs — every process step output feeds a downstream step or the final output template
-   - [ ] No cross-section contradictions — no section makes a claim that another
-   section negates

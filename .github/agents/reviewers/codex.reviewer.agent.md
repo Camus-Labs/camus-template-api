@@ -1,5 +1,5 @@
 ---
-name: CodexReviewer
+name: 'CodexReviewer'
 model: 'codex'
 tools: ['codebase']
 userInvocable: false

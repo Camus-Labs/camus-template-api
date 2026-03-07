@@ -1,5 +1,5 @@
 ---
-name: OpusReviewer
+name: 'OpusReviewer'
 model: 'claude-opus'
 tools: ['codebase']
 userInvocable: false

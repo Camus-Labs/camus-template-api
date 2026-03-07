@@ -1,6 +1,6 @@
 ---
-description: Review an agent file and return verdict based on best practices
-argument-hint: Outline the target agent path to review
+description: 'Review an agent file and return verdict based on best practices'
+argument-hint: 'Outline the target agent path to review'
 mode: 'agent'
 tools: ['codebase']
 ---
@@ -9,12 +9,11 @@ tools: ['codebase']
 ## Goal
 
 Produce a structured review report for a given `*.agent.md` file by evaluating it against the conventions checklist
-referenced in the Context section. The report must include a `PASS` or `FAIL` verdict per section, a finding per failed
-item with evidence and a concrete fix, and an overall `Ready for Use` determination.
+referenced in the Context section. Generate the report following the specified Process and Output Format
 
-**Success:** All sections are evaluated and the report is produced in the exact Output Format template.
+**Success:** Report covers every section and follows the exact Output Format template.
 
-**Failure:** `target_agent_path` is missing, unreadable, or does not end with `.agent.md` — stop and report the problem.
+**Failure:** `target_agent_path` is missing, unreadable, or doesn't end with `.agent.md` — stop and report the problem.
 
 ## Context
 
@@ -29,18 +28,17 @@ Read and internalize the conventions checklist before starting:
 ## Process
 
 1. Validate `target_agent_path` is provided, points to a readable file, and ends with `.agent.md` using the `codebase`
-   tool — if missing, unreadable, or invalid type, stop and report the problem.
-2. Evaluate structural sections (1–3: Frontmatter, Role, Goal) using the `codebase` tool — score `PASS` only when ALL
-   items in a section pass; record each failing item as a finding.
-3. Evaluate content sections (4–7: Context, Inputs, Process, Output Format) using the `codebase` tool — score `PASS`
-   only when ALL items in a section pass; record each failing item as a finding.
-4. Evaluate behavioral sections (8–9: Rules, Writing Quality) using the `codebase` tool — score `PASS` only when ALL
-   items in a section pass; record each failing item as a finding.
-5. Compute the overall verdict and produce the report in the exact output format below — no tools required.
+   tool — if missing, unreadable, or invalid type, stop and report the problem; otherwise, proceed to step 2.
+2. Iterate through sections in this exact order using the `codebase` tool: `Writing Quality and Structure`,
+   `Frontmatter`, `Role`, `Goal`, `Context`, `Inputs`, `Process`, `Output Format`, `Rules`; evaluate exactly one section
+   per iteration, score `PASS` only when ALL items in that section pass — otherwise score FAIL - and record each failing
+   item as a finding; stop after 9 iterations.
+3. Compute the overall verdict — PASS when every section is PASS, otherwise FAIL — no tools required.
+4. Produce the report in the exact output format below using the verdict and all findings — no tools required.
 
 ## Rules
 
-- MUST provide evidence in this exact structure for every finding
+- MUST provide evidence in the exact structure for every finding
 - MUST include a concrete fix per finding — not generic advice
 - MUST NOT rewrite the agent file unless explicitly requested
 - MUST NOT invent conventions — validate only against this checklist
@@ -59,6 +57,7 @@ Read and internalize the conventions checklist before starting:
 
 | # | Section | Result | Findings |
 |---|---------|--------|----------|
+| 0 | Writing Quality and Structure | [PASS | FAIL] | [count] |
 | 1 | Frontmatter | [PASS | FAIL] | [count] |
 | 2 | Role | [PASS | FAIL] | [count] |
 | 3 | Goal | [PASS | FAIL] | [count] |
@@ -67,17 +66,12 @@ Read and internalize the conventions checklist before starting:
 | 6 | Process | [PASS | FAIL] | [count] |
 | 7 | Output Format | [PASS | FAIL] | [count] |
 | 8 | Rules | [PASS | FAIL] | [count] |
-| 9 | Writing Quality | [PASS | FAIL] | [count] |
 
 ### Findings
 
 Section [#] — [issue]
 - Evidence:
   Heading: [exact heading text] | Quote: "[exact source text]"
-  Location: [Section: <heading path> OR Line: Lx-Ly]
+  Location: [Section:heading path OR Line: Lx-Ly]
 - Fix: [corrective action]
-
-### Summary
-
-- Ready for Use: [Yes / No]
 ```

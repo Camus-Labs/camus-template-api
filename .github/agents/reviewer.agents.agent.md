@@ -1,6 +1,6 @@
 ---
-description: Reviews *.agent.md files against a quality checklist via three-model evaluation
-argument-hint: "Provide the path to the *.agent.md file to review"
+description: 'Reviews *.agent.md files via three-model evaluation to produce a consolidated report'
+argument-hint: 'Provide the path to the *.agent.md file to review'
 mode: 'agent'
 model: 'claude-opus'
 tools: ['agent', 'codebase', 'search']
@@ -42,25 +42,24 @@ If the input is missing, list existing `*.agent.md` files using the `search` too
    or invalid, list available `*.agent.md` files and ask the user to select one.
 
 2. Read the target file using the `codebase` tool to confirm it is readable and contains agent definition content — if
-   unreadable, stop and report the problem.
+   unreadable or if the file does not contain agent definition content, stop and report the problem.
 
 3. Dispatch three parallel sub-agents (`CodexReviewer`, `SonnetReviewer`, `OpusReviewer`) via the `agent` tool, each
    passing `#file:.github/prompts/review.agent.prompt.md` and the target file — collect the full review report from each
    sub-agent.
 
-4. Merge the three sub-agent reports into a single deduplicated findings list — if two or more sub-agents flag the same
-   checklist item, record it once and note which models flagged it; if only one sub-agent flags an item, still include
-   it.
+4. Merge the three sub-agent reports into a single deduplicated findings list — a section is FAIL if any model marks it
+   FAIL; if two or more sub-agents flag the same checklist item, record it once and note which models flagged it; if
+   only one sub-agent flags an item, still include it.
 
-5. Produce the consolidated Agent Review Report in the output format below using the per-model results.
+5. Produce the consolidated Agent Review Report in the output format below using the per-model results. Overall Verdict
+   is FAIL if any merged section is FAIL, otherwise PASS. Ready for Use is Yes when Verdict is PASS, No otherwise.
 
 ## Rules
 
 - MUST NOT modify the target agent file.
 - MUST NOT invent conventions — validate only against the review checklist.
 - MUST NOT evaluate correctness of the agent's domain logic.
-- MUST include every finding from every sub-agent, even if only one model flagged it.
-- MUST deduplicate identical findings across models into a single entry.
 
 ## Output Format
 
@@ -82,6 +81,7 @@ If the input is missing, list existing `*.agent.md` files using the `search` too
 
 | Section | Codex | Sonnet | Opus | Merged |
 |---------|-------|--------|------|--------|
+| Writing Quality and Structure | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
 | Frontmatter | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
 | Role | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
 | Goal | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
@@ -90,7 +90,6 @@ If the input is missing, list existing `*.agent.md` files using the `search` too
 | Process | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
 | Output Format | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
 | Rules | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
-| Writing Quality | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
 
 ### Merged Findings
 

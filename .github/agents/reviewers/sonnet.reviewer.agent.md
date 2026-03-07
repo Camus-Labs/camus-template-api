@@ -1,5 +1,5 @@
 ---
-name: SonnetReviewer
+name: 'SonnetReviewer'
 model: 'claude-sonnet'
 tools: ['codebase']
 userInvocable: false
