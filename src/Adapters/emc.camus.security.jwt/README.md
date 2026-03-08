@@ -8,7 +8,8 @@ JWT (JSON Web Token) authentication adapter for Camus applications.
 
 ## 📋 Overview
 
-This adapter provides JWT Bearer authentication with RSA256 signing, enabling secure token-based authentication for your API. It integrates with the Application layer's `ISecretProvider` for secure key management.
+This adapter provides JWT Bearer authentication with RSA256 signing, enabling secure token-based authentication for your
+API. It integrates with the Application layer's `ISecretProvider` for secure key management.
 
 ---
 
@@ -301,7 +302,8 @@ topk(5, sum by (endpoint) (rate(jwt_authentication_failures_total{failure_reason
 
 ### Error Handling
 
-Authentication failures are handled via exceptions with error codes in `exception.Data[ErrorCodes.ErrorCodeKey]`. The global exception handler logs errors and returns RFC 7807 Problem Details responses.
+Authentication failures are handled via exceptions with error codes in `exception.Data[ErrorCodes.ErrorCodeKey]`. The
+global exception handler logs errors and returns RFC 7807 Problem Details responses.
 
 ---
 
@@ -353,7 +355,8 @@ if (response.status === 401) {
 }
 ```
 
-> **📖 Error Codes Reference:** See [ErrorCodes.cs](../../../Application/emc.camus.application/Generic/ErrorCodes.cs) for complete error code definitions.
+> **📖 Error Codes Reference:** See [ErrorCodes.cs](../../../Application/emc.camus.application/Generic/ErrorCodes.cs)
+for complete error code definitions.
 
 ---
 
