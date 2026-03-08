@@ -20,8 +20,8 @@ applyTo: "**/*.md"
     - [ ] Main README summarizes adapter capabilities in one line + links to adapter README for details
     - [ ] `docs/` guides reference adapter READMEs for configuration specifics — not the other way around
     - [ ] Adapter READMEs link back to parent documentation (`> Parent Documentation:` header pattern)
-    - [ ] No coding standards, validation rules, or architectural conventions in documentation — those live in
-      `.github/instructions/*.instructions.md`; documentation describes usage and behavior, not how to write code
+    - [ ] No coding standards, validation rules, or architectural conventions in documentation — documentation describes
+      usage and behavior, not how to write code
 
 3. Cross-Reference Integrity
 
@@ -39,6 +39,6 @@ applyTo: "**/*.md"
 
 5. Structure & Formatting
 
-    - [ ] Consistent heading hierarchy (H1 title, H2 sections, H3 subsections)
-    - [ ] Limitations and known constraints clearly stated
+    - [ ] `README.md` and `docs/*.md` files use consistent heading hierarchy (H1 title, H2 sections, H3 subsections)
+    - [ ] Limitations and known constraints documented in a dedicated section or callout block
     - [ ] No stale TODOs or placeholder content in committed documentation

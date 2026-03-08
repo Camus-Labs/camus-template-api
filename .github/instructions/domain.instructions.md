@@ -11,7 +11,6 @@ applyTo: "src/Domain/**"
     - [ ] Domain rules and business validation
     - [ ] Domain exceptions for business rule violations
     - [ ] Domain constants
-    - [ ] Domain events (if using event-driven patterns)
     - [ ] Extension methods for domain entities
 
 2. Type Conventions & Lifecycle

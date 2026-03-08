@@ -33,9 +33,7 @@ applyTo: ".github/instructions/**"
 
 4. Section Naming
 
-    - [ ] Layer instruction files use canonical sections: Scope Compliance, Type Conventions & Lifecycle, Validation &
-      Error Handling, Observability (when applicable), Boundary Violations
-    - [ ] Cross-cutting files (csharp, testing, documentation) use domain-appropriate section names
+    - [ ] Use domain-appropriate section names
     - [ ] Boundary Violations is always the last numbered section
     - [ ] Sections numbered sequentially starting at 1
 

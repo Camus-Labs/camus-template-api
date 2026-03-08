@@ -6,10 +6,10 @@ applyTo: ".github/agents/**"
 
 1. Writing Quality and Structure
 
-    - [ ] Sections in canonical order: Frontmatter → Role → Goal → Context → Inputs → Proces → Rules → Output Format
+    - [ ] Sections in canonical order: Frontmatter → Role → Goal → Context → Inputs → Process → Rules → Output Format
     - [ ] No extra top-level sections outside the canonical set
     - [ ] Heading hierarchy is correct (H1 title, H2 sections, NO H3+ subsections)
-    - [ ] No over-limit 120 characters lines limit
+    - [ ] No line exceeds 120 characters
     - [ ] No under-utilized line width — unfinished prose lines must break near 120 chars
     - [ ] No redundant sections
     - [ ] Active voice, imperative mood
@@ -71,7 +71,16 @@ applyTo: ".github/agents/**"
     - [ ] Steps that need tools name them explicitly
     - [ ] No step contradicts another step or a rule
 
-8. Output Format
+8. Rules
+
+    - [ ] Rules section exists (H2 `## Rules`)
+    - [ ] Each rule is one imperative sentence (MUST X / MUST NOT Y)
+    - [ ] Rules are falsifiable
+    - [ ] At least one scope-limiting rule
+    - [ ] No rule contradicts or duplicates a process step
+    - [ ] No rule is unenforceable or purely aspirational
+
+9. Output Format
 
     - [ ] Output Format section exists (H2 `## Output Format`)
     - [ ] Fenced code block with COMPLETE report template
@@ -80,12 +89,3 @@ applyTo: ".github/agents/**"
     - [ ] Template is copy-pasteable — no prose inside
     - [ ] Every process-computed value has a placeholder in the template
     - [ ] Sufficient for downstream handoff without re-reading source
-
-9. Rules
-
-    - [ ] Rules section exists (H2 `## Rules`)
-    - [ ] Each rule is one imperative sentence (MUST X / MUST NOT Y)
-    - [ ] Rules are falsifiable
-    - [ ] At least one scope-limiting rule
-    - [ ] No rule contradicts or duplicates a process step
-    - [ ] No rule is unenforceable or purely aspirational

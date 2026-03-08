@@ -66,7 +66,16 @@ applyTo: ".github/prompts/**"
     - [ ] Steps that need tools name them explicitly
     - [ ] No step contradicts another step or a rule
 
-7. Output Format
+7. Rules
+
+    - [ ] Rules section exists (H2 `## Rules`)
+    - [ ] Each rule is one imperative sentence (MUST X / MUST NOT Y)
+    - [ ] Rules are falsifiable (can be verified true or false)
+    - [ ] At least one scope-limiting rule
+    - [ ] No rule contradicts or duplicates a process step
+    - [ ] No rule is unenforceable or purely aspirational
+
+8. Output Format
 
     - [ ] Output Format section exists (H2 `## Output Format`)
     - [ ] Fenced code block with COMPLETE report template
@@ -75,12 +84,3 @@ applyTo: ".github/prompts/**"
     - [ ] Template is copy-pasteable — no prose inside the fence
     - [ ] Every process-computed value has a placeholder in the template
     - [ ] Sufficient for downstream handoff without re-reading source
-
-8. Rules
-
-    - [ ] Rules section exists (H2 `## Rules`)
-    - [ ] Each rule is one imperative sentence (MUST X / MUST NOT Y)
-    - [ ] Rules are falsifiable (can be verified true or false)
-    - [ ] At least one scope-limiting rule
-    - [ ] No rule contradicts or duplicates a process step
-    - [ ] No rule is unenforceable or purely aspirational

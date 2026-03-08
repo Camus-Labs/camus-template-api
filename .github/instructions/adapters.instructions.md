@@ -6,19 +6,18 @@ applyTo: "src/Adapters/**"
 
 1. Scope Compliance
 
-    - [ ] Implementation of Application interfaces (ports)
-    - [ ] Technology-specific code (database, caching, Dapr, Redis, JWT, etc.)
-    - [ ] External service clients and SDKs
-    - [ ] Adapter-specific interfaces (consumed only within the adapter)
-    - [ ] Adapter-specific configuration classes (e.g., `JwtSettings`, `RateLimitSettings`)
-    - [ ] Extension methods for service registration (e.g., `AddJwtAuthentication()`)
-    - [ ] Adapter-specific middleware
+    - [ ] File implements an Application-layer interface (port) or supports one that does
+    - [ ] Code is technology-specific (database, caching, Dapr, Redis, JWT, etc.)
+    - [ ] External service clients wrap a single SDK or service
+    - [ ] Adapter-internal interfaces are consumed only within the same adapter
+    - [ ] Configuration classes live in `Configurations/` folder
+    - [ ] Service registration uses a single setup extension method per adapter (e.g., `AddJwtAuthentication()`)
+    - [ ] Middleware is adapter-specific and not shared across adapters
 
 2. Type Conventions & Lifecycle
 
-    - [ ] Configuration classes in `Configurations/` folder with `*Settings` suffix
-    - [ ] Service implementations in `Services/` or `Handlers/` folder matching the Application interface name
-    - [ ] Single setup extension method per adapter (e.g., `JwtSetupExtensions.cs`) for DI registration
+    - [ ] Service implementations live in `Services/` or `Handlers/` folder matching the Application interface name
+    - [ ] Setup extension method lives in a single `*SetupExtensions.cs` file per adapter for DI registration
     - [ ] Each adapter is independently swappable — no cross-adapter dependencies
 
 3. Validation & Error Handling

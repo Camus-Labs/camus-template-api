@@ -10,7 +10,6 @@ applyTo: "src/Application/**"
     - [ ] Custom exceptions for infrastructure failures (e.g., `RateLimitExceededException`)
     - [ ] Port interfaces for adapters with multiple implementations or consumed directly by the API layer
     - [ ] Constants for cross-cutting concerns (e.g., `ErrorCodes`, `Headers`)
-    - [ ] Application services as concrete classes — no interface unless multiple implementations exist
     - [ ] Application services orchestrate adapters, repositories, and cross-cutting concerns
 
 2. Type Conventions & Lifecycle
@@ -19,7 +18,7 @@ applyTo: "src/Application/**"
     - [ ] `*Results.cs` — positional records for write outputs, only when no View matches the shape
     - [ ] `*Filters.cs` — positional records with defaults for query inputs
     - [ ] `*Views.cs` — positional records for query output projections
-    - [ ] Views as default return type — Result only when output has a genuinely different shape
+    - [ ] Views as default return type — Result only when output fields differ from every existing View
     - [ ] View naming describes content/shape (`GeneratedTokenSummaryView`, not `GeneratedTokenByUserView`)
     - [ ] Filter naming targets the entity (`GeneratedTokenFilter`, not `GeneratedTokenSummaryFilter`)
     - [ ] Common types in `Common/` folder: `PaginationParams`, `PagedResult<T>`
@@ -28,13 +27,13 @@ applyTo: "src/Application/**"
 3. Validation & Error Handling
 
     - [ ] Application services validate workflow rules and orchestration constraints (e.g., "order can only be
-      cancelled if not shipped") — distinct from domain invariants enforced by entities
-    - [ ] Complex multi-rule validation in `private static void Validate*(...)` helpers — throw, never return
+          cancelled if not shipped") — distinct from domain invariants enforced by entities
+    - [ ] Application-level `Validate*(...)` helpers throw on workflow violations
     - [ ] Nullable context values use null-coalescing throw (`?? throw new InvalidOperationException("...")`)
     - [ ] Two-tier catch: re-throw domain/validation exceptions unchanged, wrap infrastructure failures
           in `InvalidOperationException` preserving inner exception
     - [ ] Transactional methods: inner catch calls `Rollback()` + `throw;`, outer catch applies two-tier pattern
-    - [ ] Custom exceptions only for cross-cutting infrastructure — prefer standard .NET exception types
+    - [ ] Custom exceptions only for cross-cutting infrastructure — all other failures use standard .NET exception types
 
 4. Observability
 
@@ -47,5 +46,5 @@ applyTo: "src/Application/**"
     - [ ] No interfaces for single-implementation application services
     - [ ] No middleware or DI registration
     - [ ] No domain invariants or entity-level business rules — those belong in Domain entities
-    - [ ] No factory methods with `init` setters on value objects
+    - [ ] No factory methods in Application code that bypass Domain value-object constructors via `init` setters
     - [ ] No unbounded list queries for growing datasets without pagination
