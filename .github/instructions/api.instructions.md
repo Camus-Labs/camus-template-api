@@ -6,22 +6,20 @@ applyTo: "src/Api/**"
 
 1. Scope Compliance
 
-    - [ ] All HTTP endpoints defined as controller actions or minimal API handlers
-    - [ ] DTOs separate from Application views — versioning-ready contract boundary
-    - [ ] Model binding attributes only (`[FromBody]`, `[FromQuery]`, `[FromRoute]`)
-    - [ ] All middleware and HTTP pipeline components defined in this layer
-    - [ ] All action filters and exception filters defined in this layer
-    - [ ] DI and service registration in `Program.cs`
+    - [ ] Controllers return `Models/` types or `IActionResult` — no domain entities or Application views
+    - [ ] Controller parameters use model binding attributes only (`[FromBody]`, `[FromQuery]`, `[FromRoute]`)
+    - [ ] DI registration lives in `Extensions/` folder as one `*SetupExtensions.cs` file per concern
     - [ ] `Infrastructure/` folder for framework-dependent service implementations (e.g., `HttpUserContext`
           implementing `IUserContext`) — distinct from `Models/` (data shapes) and `Mapping/` (converters)
 
 2. Type Conventions & Lifecycle
 
-    - [ ] DTO folder conventions: `Models/Dtos/` for item DTOs, `Models/Responses/` for envelopes,
-          `Models/Requests/` for input models
+    - [ ] DTO classes in folder: `Models/Dtos/`
+    - [ ] Response envelopes in folder: `Models/Responses/`
+    - [ ] Input models in folder: `Models/Requests/`
     - [ ] Versioned types in version folders where they originate (e.g., `Models/Dtos/V1/`, `Models/Requests/V2/`)
-    - [ ] Version folder created only when a type's shape diverges — if shapes are identical, reuse the original
-          version's type
+    - [ ] Version folders exist only when a type adds, removes, or renames properties relative to the prior version —
+          identical shapes use the original version's type
     - [ ] Shared infrastructure types unversioned in parent folder (e.g., `PaginationQuery`, `ApiResponse<T>`,
           `PagedResponse<T>`)
     - [ ] Version independence — V2 types never inherit from or reference V1 types
@@ -34,20 +32,13 @@ applyTo: "src/Api/**"
 
 3. Validation & Error Handling
 
-    - [ ] Validation lives in mapper extensions — controllers call `ToCommand()` / `ToFilter()` /
-          `ToPaginationParams()` / `ToResponse()` / `ToDto()` and let mappers validate before the application
-          layer is reached
-    - [ ] Validation is structural only (format, null-checks) — no business rules
+    - [ ] Controller input validation lives in mapper extension methods (`ToCommand()` / `ToFilter()` /
+          `ToPaginationParams()` / `ToResponse()` / `ToDto()`) — structural validation before the application layer
+    - [ ] Validation is structural only (format, null-checks)
     - [ ] No try/catch in controllers — exceptions propagate to the global error-handling middleware
+    - [ ] No validation attributes on DTOs (`[Required]`, `[StringLength]`, `[Range]`) — validation in mapper extensions
 
 4. Observability
 
-    - [ ] Controllers set `SetRequestTags` (request data) and `SetResponseTags` (response data)
-
-5. Boundary Violations
-
-    - [ ] No business rules or domain logic in controllers, middleware, or filters — delegate to Application services
-    - [ ] No infrastructure implementations (database, secrets, caching)
-    - [ ] No domain entities in controllers — map to DTOs
-    - [ ] No Application views returned directly — DTOs are the API contract
-    - [ ] No validation attributes on DTOs (`[Required]`, `[StringLength]`, `[Range]`) — validation in mapper extensions
+    - [ ] Controllers call `SetRequestTags` with one or more keys
+    - [ ] Controllers call `SetResponseTags` with one or more keys

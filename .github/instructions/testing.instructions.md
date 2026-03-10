@@ -4,13 +4,14 @@ applyTo: "src/Test/**"
 
 # Testing Conventions
 
-1. Quality
+1. Frameworks & Patterns
 
     - [ ] xUnit + FluentAssertions + Moq — no other test/assertion/mocking frameworks
     - [ ] Arrange-Act-Assert (AAA) pattern with `// Arrange`, `// Act`, `// Assert` comments
     - [ ] Test names: `MethodName_Scenario_ExpectedResult` or `Given_When_Then`
     - [ ] Each test method contains one `// Act` step
-    - [ ] Tests are isolated and deterministic (no random values, no `DateTime.Now`)
+    - [ ] Tests are deterministic — no random values, no `DateTime.Now`, no `Guid.NewGuid()`
+    - [ ] Tests are isolated — no shared mutable state, no test-order dependence
     - [ ] No reflection or access to private/internal members — assert on public return values, thrown exceptions,
       or mock interactions
 
@@ -32,8 +33,8 @@ applyTo: "src/Test/**"
 
 4. Assertions
 
-    - [ ] FluentAssertions for all assertions — no raw `Assert.*`
-    - [ ] Specific assertions (no `Assert.True` for complex conditions)
+    - [ ] Specific FluentAssertions methods (e.g., `.BeEquivalentTo()`, `.ContainSingle()`) — no `.BeTrue()`/`.BeFalse()`
+          wrapping compound expressions
     - [ ] Exception messages: wildcard patterns (e.g., `"*authentication*required*"`) — not exact strings
     - [ ] Never assert on `exception.Data` — assert on message patterns instead
     - [ ] No commented-out assertions

@@ -6,30 +6,29 @@ applyTo: ".github/agents/**"
 
 1. Writing Quality and Structure
 
-    - [ ] Sections in canonical order: Frontmatter → Role → Goal → Context → Inputs → Process → Rules → Output Format
+    - [ ] Sections appear in canonical order: Frontmatter → Role → Goal → Context → Inputs → Process → Rules → Output Format
     - [ ] No extra top-level sections outside the canonical set
     - [ ] Heading hierarchy is correct (H1 title, H2 sections, NO H3+ subsections)
     - [ ] No line exceeds 120 characters
-    - [ ] No under-utilized line width — unfinished prose lines must break near 120 chars
-    - [ ] No redundant sections
-    - [ ] Active voice, imperative mood
-    - [ ] No orphan outputs — every process step output feeds a downstream step or the final output template
-    - [ ] No cross-section contradictions — no section makes a claim that another section negates
+    - [ ] No under-utilized line width — unfinished prose lines break within 100–120 characters
+    - [ ] No section duplicates information from another section
+    - [ ] All prose uses active voice, imperative mood — no passive constructions ("is generated", "should be done")
+    - [ ] Every process step output is referenced in a later step or in the output template
 
 2. Frontmatter
 
     - [ ] Valid YAML `---` frontmatter present
     - [ ] `description` — one sentence: verb + object + outcome
-    - [ ] `mode` — defines the best mode to achieve the desired goal
+    - [ ] `mode` — one of `agent` | `ask` | `edit`
     - [ ] `tools` — lists ONLY tools the process steps actually use
-    - [ ] `argument-hint` — is included describing how to use the prompt
+    - [ ] `argument-hint` — included, describes how to invoke the prompt
     - [ ] No over-privileged tools (listed but never used in steps)
     - [ ] No under-declared tools (used in steps but not listed)
 
 3. Role
 
     - [ ] Role section exists (H1 `# Role: {Name}`)
-    - [ ] Opening paragraph states persona, expertise, and single deliverable
+    - [ ] Opening paragraph states persona and expertise
     - [ ] Scoped to ONE responsibility — no mixed roles
     - [ ] No verbs that conflict with the role (reviewer that "fixes")
 
@@ -37,28 +36,29 @@ applyTo: ".github/agents/**"
 
     - [ ] Goal section exists (H2 `## Goal`)
     - [ ] Concrete outcome stated (report, file, fix, plan)
-    - [ ] Success criteria are binary-testable
-    - [ ] Failure conditions are explicit
+    - [ ] Success criteria stated as pass/fail conditions
+    - [ ] Failure conditions are listed
+    - [ ] Goal describes exactly one deliverable
 
 5. Context
 
-    - [ ] Exists if additional context is required
+    - [ ] Context section omitted only when no process step references a `#file:` or external data source
     - [ ] Lists required files using `#file:` references
-    - [ ] Minimal — only what the process steps need
-    - [ ] No stale references (every referenced file exists and is relevant)
+    - [ ] Every listed context item is consumed by at least one process step
+    - [ ] Every `#file:` reference targets an existing workspace file
 
 6. Inputs
 
     - [ ] Inputs section exists (H2 `## Inputs`)
-    - [ ] Required inputs listed with format/type
-    - [ ] Optional inputs marked with defaults
-    - [ ] No dead inputs (listed but never consumed)
+    - [ ] Required inputs listed with name, format, and type
+    - [ ] Optional inputs marked with explicit defaults
+    - [ ] No dead inputs (listed but never consumed in process or output)
     - [ ] No phantom inputs (consumed in process but never declared)
 
 7. Process
 
     - [ ] Process section exists (H2 `## Process`)
-    - [ ] Steps numbered.
+    - [ ] Steps are numbered
     - [ ] Logical dependency order (later steps use earlier outputs)
     - [ ] Each step starts with ONE action verb
     - [ ] 3–8 total steps
@@ -68,14 +68,14 @@ applyTo: ".github/agents/**"
     - [ ] Explicit stopping criterion
     - [ ] First step validates inputs; last step produces the output
     - [ ] One bounded action per step — sub-item enumeration within one target is fine; no independent evaluations
-    - [ ] Steps that need tools name them explicitly
+    - [ ] Steps that invoke tools name them explicitly
     - [ ] No step contradicts another step or a rule
 
 8. Rules
 
     - [ ] Rules section exists (H2 `## Rules`)
     - [ ] Each rule is one imperative sentence (MUST X / MUST NOT Y)
-    - [ ] Rules are falsifiable
+    - [ ] Rules are falsifiable (can be verified true or false)
     - [ ] At least one scope-limiting rule
     - [ ] No rule contradicts or duplicates a process step
     - [ ] No rule is unenforceable or purely aspirational
@@ -86,6 +86,5 @@ applyTo: ".github/agents/**"
     - [ ] Fenced code block with COMPLETE report template
     - [ ] Placeholder syntax consistent (`[value]` throughout)
     - [ ] Verdict/status labels enumerated (`PASS | FAIL`, not "a status")
-    - [ ] Template is copy-pasteable — no prose inside
+    - [ ] Template is copy-pasteable — no prose inside the fence
     - [ ] Every process-computed value has a placeholder in the template
-    - [ ] Sufficient for downstream handoff without re-reading source

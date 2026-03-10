@@ -34,7 +34,6 @@ applyTo: ".github/instructions/**"
 4. Section Naming
 
     - [ ] Use domain-appropriate section names
-    - [ ] Boundary Violations is always the last numbered section
     - [ ] Sections numbered sequentially starting at 1
 
 5. Boundary Violations

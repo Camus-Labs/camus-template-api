@@ -6,30 +6,22 @@ applyTo: "src/Domain/**"
 
 1. Scope Compliance
 
-    - [ ] Business entities with private setters on all properties
-    - [ ] Value objects (e.g., `Email`, `Money`)
-    - [ ] Domain rules and business validation
-    - [ ] Domain exceptions for business rule violations
-    - [ ] Domain constants
-    - [ ] Extension methods for domain entities
+    - [ ] All entity properties use private setters
+    - [ ] No external references, domain is independent
 
 2. Type Conventions & Lifecycle
 
-    - [ ] Public constructor for new entities — validates business attributes, sets initial state, auto-generates ID
-      when null
-    - [ ] `Reconstitute` static factory for rebuilding from persistence — accepts all fields, skips business validation
-    - [ ] Business methods for state transitions (e.g., `Revoke()`) — enforce invariants, the only way to mutate state
-      after construction
+    - [ ] Public constructor for new entities — the only way to create a new instance
+    - [ ] Public constructor validates business attributes before setting state
+    - [ ] Public constructor auto-generates `Id` when the caller passes null
+    - [ ] `Reconstitute` static factory for rebuilding from persistence — bypasses business validation
+    - [ ] `Reconstitute` accepts all fields including lifecycle/audit data
+    - [ ] Business methods for state transitions (e.g., `Revoke()`) — the only way to mutate state after construction
+    - [ ] Business methods that mutate state include guard clauses before any field assignment
     - [ ] Business methods that need timestamps accept them as parameters — callers supply the clock value
     - [ ] Lifecycle/audit fields (`CreatedAt`, `UpdatedAt`, `CreatedBy`, `UpdatedBy`) are read-only — populated only
-      via `Reconstitute`
+          via `Reconstitute`
 
 3. Validation & Error Handling
 
     - [ ] `InvalidOperationException` for business invariant violations
-
-4. Boundary Violations
-
-    - [ ] No infrastructure dependencies (database, HTTP, file system)
-    - [ ] No Application layer references or framework-specific code
-    - [ ] No `DateTime.UtcNow` or clock dependencies — timestamps are infrastructure concerns

@@ -10,18 +10,17 @@ applyTo: ".github/prompts/**"
     - [ ] Title (H1) is present and describes the prompt's purpose
     - [ ] No extra top-level sections outside the canonical set
     - [ ] Heading hierarchy is correct (H1 title, H2 sections, NO H3+ subsections)
-    - [ ] No over-limit 120 characters lines limit
-    - [ ] No under-utilized line width — unfinished prose lines must break near 120 chars
-    - [ ] No redundant sections or repeated information
-    - [ ] Active voice, imperative mood
-    - [ ] No orphan outputs — every process step output feeds a downstream step or the final output template
-    - [ ] No cross-section contradictions — no section makes a claim that another section negates
+    - [ ] No line exceeds 120 characters
+    - [ ] No under-utilized line width — unfinished prose lines break within 100–120 characters
+    - [ ] No section duplicates information from another section
+    - [ ] All prose uses active voice, imperative mood — no passive constructions ("is generated", "should be done")
+    - [ ] Every process step output is referenced in a later step or in the output template
 
 2. Frontmatter
 
     - [ ] Valid YAML `---` frontmatter present
     - [ ] `description` — one sentence: verb + object + outcome
-    - [ ] `mode` — declares the execution mode
+    - [ ] `mode` — one of `agent` | `ask` | `edit`
     - [ ] `tools` — lists ONLY tools the process steps actually use
     - [ ] `argument-hint` — included, describes how to invoke the prompt
     - [ ] No over-privileged tools (listed but never used in steps)
@@ -31,16 +30,16 @@ applyTo: ".github/prompts/**"
 
     - [ ] Goal section exists (H2 `## Goal`)
     - [ ] Concrete outcome stated (report, file, fix, plan)
-    - [ ] Success criteria are binary-testable
-    - [ ] Failure conditions are explicit
-    - [ ] Goal describes a single deliverable — not multiple unrelated outcomes
+    - [ ] Success criteria stated as pass/fail conditions
+    - [ ] Failure conditions are listed
+    - [ ] Goal describes exactly one deliverable
 
 4. Context
 
-    - [ ] Section exists if the prompt needs external references or data
+    - [ ] Context section omitted only when no process step references a `#file:` or external data source
     - [ ] Lists required files using `#file:` references
-    - [ ] Minimal — only what the process steps consume
-    - [ ] No stale references (every referenced file exists and is relevant)
+    - [ ] Every listed context item is consumed by at least one process step
+    - [ ] Every `#file:` reference targets an existing workspace file
 
 5. Inputs
 
@@ -63,7 +62,7 @@ applyTo: ".github/prompts/**"
     - [ ] Explicit stopping criterion
     - [ ] First step validates inputs; last step produces the output
     - [ ] One bounded action per step — sub-item enumeration within one target is fine; no independent evaluations
-    - [ ] Steps that need tools name them explicitly
+    - [ ] Steps that invoke tools name them explicitly
     - [ ] No step contradicts another step or a rule
 
 7. Rules
@@ -83,4 +82,3 @@ applyTo: ".github/prompts/**"
     - [ ] Verdict/status labels enumerated (`PASS | FAIL`, not "a status")
     - [ ] Template is copy-pasteable — no prose inside the fence
     - [ ] Every process-computed value has a placeholder in the template
-    - [ ] Sufficient for downstream handoff without re-reading source
