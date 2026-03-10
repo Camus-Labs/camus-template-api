@@ -46,11 +46,11 @@ clarification limit — mark unresolved fields, produce a BLOCKED handoff report
   template at `docs/stories/[request-slug]/[story-id]-[story-slug].md` using `editFiles`.
 4. Ask field-targeted questions to fill missing `Section A` fields, batching all remaining gaps into each round and
   iterating up to 5 rounds. Each round re-checks every `Section A` field and groups unanswered gaps into a single
-  question set. Stop when all Section A fields contain an explicit, non-empty value collected from the user's input.
+  question set. Stop when all Section A fields contain an explicit, non-empty value the user provided.
   If fields remain incomplete after 5 rounds, mark them as `[UNRESOLVED]` and proceed to Step 5.
 5. Populate `Section A - Product Owner Definition` in each story file using `editFiles`.
 6. Evaluate the `Product Owner Handoff Gate` for each story — set a gate item using `editFiles` to `Yes` only when the
-  corresponding Section A field is fully populated and unambiguous; set to `No` otherwise.
+  corresponding Section A field is complete and unambiguous; set to `No` otherwise.
 7. Populate the overall status and sign-off line in each story file using `editFiles` — set overall status to `BLOCKED`
   if any gate item equals `No` or any field carries the `[UNRESOLVED]` label, otherwise set overall status to `READY`.
 8. Report handoff status using the output template. If the overall status is `BLOCKED`, list the unresolved fields

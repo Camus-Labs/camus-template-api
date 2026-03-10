@@ -51,7 +51,7 @@ architectural ambiguities remain after the clarification limit — stop and repo
   blockers if the file is missing or any gate item is `No`; otherwise proceed to Step 2.
 2. Read all Context files using `search`.
 3. Ask targeted clarification questions for any architectural ambiguity found when mapping Section A to layers, batching
-  all gaps per round for up to 3 rounds; report `BLOCKED` with unresolved items if ambiguities remain after round 3;
+  all gaps per round for up to 5 rounds; report `BLOCKED` with unresolved items if ambiguities remain after round 5;
   otherwise proceed to Step 4 with all ambiguities resolved.
 4. Populate Section B prose fields (Layer Impact Matrix, Cross-Cutting Concern Decisions, Delivery and Rollout Notes,
   Layer-Based Implementation Plan, Traceability table) in the story file using `editFiles`.
