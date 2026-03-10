@@ -19,8 +19,8 @@ and merging their results.
 **Success:** Collect all three sub-agent reports, merge them into a single deduplicated report, and deliver the result
 in the output format below.
 
-**Failure:** The target file does not exist, is unreadable, does not end with `.agent.md`, or you cannot complete the
-sub-agent evaluations — stop and report the reason.
+**Failure:** The target file does not exist, is unreadable, does not end with `.agent.md`, or sub-agent evaluations
+cannot complete.
 
 ## Context
 
@@ -43,15 +43,16 @@ Read and internalize this file before starting:
 
 3. Dispatch three parallel sub-agents (`CodexReviewer`, `SonnetReviewer`, `OpusReviewer`) via the `agent` tool, each
   passing `#file:.github/prompts/review.agent.prompt.md` and the target file — collect the full review report from each
-  sub-agent.
+  sub-agent - if any sub-agent fails to return a complete report, stop and report the failure; otherwise proceed to
+  Step 4.
 
 4. Merge the three sub-agent reports into a single deduplicated findings list — mark a section FAIL if any model marks
   it FAIL; otherwise mark it PASS; if two or more sub-agents flag the same checklist item, record it once and note which
-  models flagged it; if only one sub-agent flags an item, still include it.
+  models flagged it; otherwise (single model), still include it.
 
 5. Produce the consolidated Agent Review Report in the output format below using the per-model results. Set overall
   Verdict to FAIL if any merged section is FAIL, otherwise set it to PASS. Set Ready for Use to Yes when Verdict is
-  PASS, set to No otherwise.
+  PASS, set to No otherwise — deliver the report and stop.
 
 ## Rules
 

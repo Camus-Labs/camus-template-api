@@ -18,8 +18,8 @@ applyTo: ".github/instructions/**"
 
     - [ ] Each check is one falsifiable statement — can be verified true or false against a file
     - [ ] Active voice, declarative ("No business logic" not "Should avoid business logic")
-    - [ ] Concrete — names specific patterns, types, or methods (e.g., `ArgumentNullException.ThrowIf*()`)
-    - [ ] Dash separator between rule and rationale/example when present (e.g., `rule — rationale`)
+    - [ ] Inline examples in parentheses (e.g., `rule (example)`)
+    - [ ] Rationale or contrast after em-dash (e.g., `rule — rationale`)
     - [ ] No vague qualifiers ("as needed", "consider", "optionally", "when appropriate")
     - [ ] No aspirational checks that cannot be mechanically verified
 
@@ -28,12 +28,12 @@ applyTo: ".github/instructions/**"
     - [ ] No check duplicated across instruction files — each rule has exactly one owner
     - [ ] Cross-cutting checks in `csharp.instructions.md` — layer-specific checks in layer files
     - [ ] Specialized instruction files (e.g., `adapters.persistence.instructions.md`) do not restate parent file
-      checks (`adapters.instructions.md`)
+          checks (`adapters.instructions.md`)
     - [ ] Checks reference concrete boundaries, not other instruction files
 
 4. Section Naming
 
-    - [ ] Use domain-appropriate section names
+    - [ ] Section names describe the category of checks they contain — not generic labels like "General" or "Other"
     - [ ] Sections numbered sequentially starting at 1
 
 5. Boundary Violations

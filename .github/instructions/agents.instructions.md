@@ -10,8 +10,8 @@ applyTo: ".github/agents/**"
     - [ ] No extra top-level sections outside the canonical set
     - [ ] Heading hierarchy is correct (H1 title, H2 sections, NO H3+ subsections)
     - [ ] No line exceeds 120 characters
-    - [ ] No under-utilized line width — unfinished prose lines break within 100–120 characters
-    - [ ] No section duplicates information from another section
+    - [ ] Prose lines that are not the last line of a paragraph contain at least 100 characters
+    - [ ] No two sections contain the same constraint, instruction, or definition
     - [ ] All prose uses active voice, imperative mood — no passive constructions ("is generated", "should be done")
     - [ ] Every process step output is referenced in a later step or in the output template
 
@@ -35,9 +35,9 @@ applyTo: ".github/agents/**"
 4. Goal
 
     - [ ] Goal section exists (H2 `## Goal`)
-    - [ ] Concrete outcome stated (report, file, fix, plan)
-    - [ ] Success criteria stated as pass/fail conditions
-    - [ ] Failure conditions are listed
+    - [ ] Outcome names a concrete artifact type — report, file, fix, or plan
+    - [ ] Success criteria specify pass/fail conditions
+    - [ ] Goal lists failure conditions
     - [ ] Goal describes exactly one deliverable
 
 5. Context
@@ -50,8 +50,8 @@ applyTo: ".github/agents/**"
 6. Inputs
 
     - [ ] Inputs section exists (H2 `## Inputs`)
-    - [ ] Required inputs listed with name, format, and type
-    - [ ] Optional inputs marked with explicit defaults
+    - [ ] Required inputs include name, format, and type
+    - [ ] Optional inputs carry explicit defaults
     - [ ] No dead inputs (listed but never consumed in process or output)
     - [ ] No phantom inputs (consumed in process but never declared)
 
@@ -66,10 +66,12 @@ applyTo: ".github/agents/**"
     - [ ] Conditionals have explicit ELSE or default
     - [ ] Loops have max-iteration bound
     - [ ] Explicit stopping criterion
-    - [ ] First step validates inputs; last step produces the output
+    - [ ] First step validates inputs
+    - [ ] Last step produces the output
     - [ ] One bounded action per step — sub-item enumeration within one target is fine; no independent evaluations
     - [ ] Steps that invoke tools name them explicitly
-    - [ ] No step contradicts another step or a rule
+    - [ ] No step restates, negates, or overrides another step or rule
+    - [ ] Every process-computed value has a placeholder in the template
 
 8. Rules
 
@@ -77,7 +79,7 @@ applyTo: ".github/agents/**"
     - [ ] Each rule is one imperative sentence (MUST X / MUST NOT Y)
     - [ ] Rules are falsifiable (can be verified true or false)
     - [ ] At least one scope-limiting rule
-    - [ ] No rule contradicts or duplicates a process step
+    - [ ] No rule restates, negates, or overrides another rule
     - [ ] No rule is unenforceable or purely aspirational
 
 9. Output Format
@@ -87,4 +89,3 @@ applyTo: ".github/agents/**"
     - [ ] Placeholder syntax consistent (`[value]` throughout)
     - [ ] Verdict/status labels enumerated (`PASS | FAIL`, not "a status")
     - [ ] Template is copy-pasteable — no prose inside the fence
-    - [ ] Every process-computed value has a placeholder in the template

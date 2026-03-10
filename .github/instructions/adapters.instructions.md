@@ -1,5 +1,5 @@
 ---
-applyTo: "src/Adapters/**"
+applyTo: "src/Adapters/**/*.cs"
 ---
 
 # Adapters Layer Conventions
@@ -21,6 +21,7 @@ applyTo: "src/Adapters/**"
 
 3. Validation & Error Handling
 
-    - [ ] Adapter-specific exceptions wrap underlying technology failures — include operation name and preserve inner
-          exception
-    - [ ] Infrastructure errors do not leak technology details to callers
+    - [ ] Adapter-specific exceptions preserve the inner exception when wrapping technology failures
+    - [ ] Adapter-specific exception messages include the operation name that failed
+    - [ ] No infrastructure internals exposed to domain or application layers (e.g., connection objects,
+          storage-layer data representations, hash values)

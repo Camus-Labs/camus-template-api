@@ -1,6 +1,6 @@
 ---
-description: 'Review a prompt file and return verdict based on best practices'
-argument-hint: 'Outline the target prompt path to review'
+description: 'Review a prompt file and return a verdict based on best practices'
+argument-hint: 'Provide the target prompt path to review'
 mode: 'agent'
 tools: ['codebase']
 ---
@@ -9,12 +9,11 @@ tools: ['codebase']
 ## Goal
 
 Produce a structured review report for a given `*.prompt.md` file by evaluating it against the conventions checklist
-referenced in the Context section. Generate the report following the specified Process and Output Format.
+from the Context section.
 
 **Success:** Report covers every section and follows the exact Output Format template.
 
-**Failure:** `target_prompt_path` is missing, unreadable, or doesn't end with `.prompt.md` — stop and report the
-problem.
+**Failure:** `target_prompt_path` is missing, unreadable, or doesn't end with `.prompt.md`.
 
 ## Context
 
@@ -28,20 +27,20 @@ Read and internalize the conventions checklist before starting:
 
 ## Process
 
-1. Validate `target_prompt_path` is provided, points to a readable file, and ends with `.prompt.md` using the `codebase`
-  tool — if missing, unreadable, or invalid type, stop and report the problem; otherwise, proceed to step 2.
+1. Confirm the user supplied `target_prompt_path`, points to a readable file, and ends with `.prompt.md` using the
+  `codebase` tool — if missing, unreadable, or invalid type, stop and report the problem; otherwise, proceed to step 2.
 2. Iterate through sections in this exact order using the `codebase` tool: `Writing Quality and Structure`,
   `Frontmatter`, `Goal`, `Context`, `Inputs`, `Process`, `Output Format`, `Rules`; evaluate exactly one section per
   iteration, score `PASS` only when ALL items in that section pass — otherwise score FAIL - and record each failing
   item as a finding; stop after 8 iterations.
-3. Compute the overall verdict — PASS when every section is PASS, otherwise FAIL — no tools required.
-4. Produce the report in the exact output format below using the verdict and all findings — no tools required.
+3. Compute the overall verdict — PASS when every section is PASS, otherwise FAIL — use no tools.
+4. Produce the report in the exact output format below using the verdict and all findings — use no tools.
 
 ## Rules
 
 - MUST provide evidence in the exact structure for every finding
 - MUST include a concrete fix per finding — not generic advice
-- MUST NOT rewrite the prompt file unless explicitly requested
+- MUST NOT rewrite the prompt file unless the user explicitly requests it
 - MUST NOT invent conventions — validate only against this checklist
 - MUST NOT evaluate correctness of the prompt's domain logic
 

@@ -11,9 +11,10 @@ applyTo: "src/Test/**"
     - [ ] Test names: `MethodName_Scenario_ExpectedResult` or `Given_When_Then`
     - [ ] Each test method contains one `// Act` step
     - [ ] Tests are deterministic — no random values, no `DateTime.Now`, no `Guid.NewGuid()`
-    - [ ] Tests are isolated — no shared mutable state, no test-order dependence
+    - [ ] Tests are isolated — no shared mutable state, no static mutable fields, no `IClassFixture<T>` mutation
+          across tests
     - [ ] No reflection or access to private/internal members — assert on public return values, thrown exceptions,
-      or mock interactions
+          or mock interactions
 
 2. Mocking
 
@@ -29,7 +30,8 @@ applyTo: "src/Test/**"
     - [ ] Test classes mirror production code structure (e.g., `Configurations/JwtSettingsTests.cs`)
     - [ ] Integration tests in separate test projects or `Integration/` subfolder — not mixed with unit tests
     - [ ] Shared test builders and fixtures extracted to `Helpers/` or `Fixtures/` folder
-    - [ ] Each adapter has its own test project
+    - [ ] Each adapter test project name matches its production counterpart with `.test` suffix (e.g.,
+          `emc.camus.security.jwt.test` → `emc.camus.security.jwt`)
 
 4. Assertions
 

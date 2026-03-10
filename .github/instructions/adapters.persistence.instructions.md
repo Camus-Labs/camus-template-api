@@ -1,5 +1,5 @@
 ---
-applyTo: "src/Adapters/emc.camus.persistence.postgresql/**"
+applyTo: "src/Adapters/emc.camus.persistence.postgresql/**/*.cs"
 ---
 
 # Persistence Adapter Conventions
@@ -19,13 +19,15 @@ applyTo: "src/Adapters/emc.camus.persistence.postgresql/**"
     - [ ] Write methods that accept scalar parameters operate directly on those values (e.g., `AuthenticateAsync`
           with BCrypt) — no domain entity loading or mutation
     - [ ] Read methods return domain entities via `Mapping/` extensions, not Models or DTOs
-    - [ ] Paginated queries with `PagedResult<T>`, `PaginationParams`, and SQL `LIMIT/OFFSET` — server-side only
+    - [ ] Paginated queries accept `PaginationParams` and return `PagedResult<T>`
+    - [ ] Pagination uses SQL `LIMIT/OFFSET` — no client-side filtering of full result sets
     - [ ] Dynamic `WHERE` clause construction via `DynamicParameters` from caller-supplied filters
     - [ ] No repository SQL strings containing DDL (`CHECK`, `CREATE TRIGGER`, `CREATE PROCEDURE`) that
           enforce domain invariants
-    - [ ] No infrastructure internals exposed to domain or application (e.g., password hashes)
 
 3. Validation & Error Handling
 
-    - [ ] Validate data constraints (uniqueness, referential integrity, foreign-key existence) and throw
-          `InvalidOperationException` or `KeyNotFoundException`
+    - [ ] Repositories validate data constraints (uniqueness, referential integrity, foreign-key existence)
+          before persisting
+    - [ ] Constraint violations throw `InvalidOperationException` for uniqueness/integrity or
+          `KeyNotFoundException` for missing references

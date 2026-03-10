@@ -1,5 +1,5 @@
 ---
-applyTo: "src/Api/**"
+applyTo: "src/Api/**/*.cs"
 ---
 
 # API Layer Conventions
@@ -34,9 +34,10 @@ applyTo: "src/Api/**"
 
     - [ ] Controller input validation lives in mapper extension methods (`ToCommand()` / `ToFilter()` /
           `ToPaginationParams()` / `ToResponse()` / `ToDto()`) — structural validation before the application layer
-    - [ ] Validation is structural only (format, null-checks)
+    - [ ] Validation in mapper extension methods checks null, empty, format, and type coercion only — no business
+          rules or cross-field constraints
     - [ ] No try/catch in controllers — exceptions propagate to the global error-handling middleware
-    - [ ] No validation attributes on DTOs (`[Required]`, `[StringLength]`, `[Range]`) — validation in mapper extensions
+    - [ ] No validation attributes on model classes (`[Required]`, `[StringLength]`, `[Range]`)
 
 4. Observability
 

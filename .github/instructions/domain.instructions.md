@@ -1,5 +1,5 @@
 ---
-applyTo: "src/Domain/**"
+applyTo: "src/Domain/**/*.cs"
 ---
 
 # Domain Layer Conventions
@@ -7,7 +7,8 @@ applyTo: "src/Domain/**"
 1. Scope Compliance
 
     - [ ] All entity properties use private setters
-    - [ ] No external references, domain is independent
+    - [ ] No `<ProjectReference>` elements targeting projects outside `src/Domain/`
+    - [ ] No `<PackageReference>` elements — zero NuGet dependencies
 
 2. Type Conventions & Lifecycle
 
@@ -24,4 +25,4 @@ applyTo: "src/Domain/**"
 
 3. Validation & Error Handling
 
-    - [ ] `InvalidOperationException` for business invariant violations
+    - [ ] Business invariant violations throw `InvalidOperationException`
