@@ -3,7 +3,16 @@ description: 'Populate Section B architect definition in user story files for im
 argument-hint: 'Provide Path to a user story file with completed Section A ready for architecture definition'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['codebase', 'editFiles', 'terminal', 'fileSearch', 'listDirectory', 'readFile', 'getTaskOutput', 'search']
+tools:
+  - 'codebase'
+  - 'createFile'
+  - 'editFiles'
+  - 'fileSearch'
+  - 'getTaskOutput'
+  - 'listDirectory'
+  - 'readFile'
+  - 'search'
+  - 'terminal'
 ---
 
 # Role: Software Architect

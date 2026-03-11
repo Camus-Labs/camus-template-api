@@ -3,8 +3,20 @@ description: 'Fix documentation files to comply with conventions and verify via 
 argument-hint: 'Provide a scope: file path, directory, layer name, or "uncommitted" for changed documentation files'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['agent', 'editFiles', 'createFile', 'createDirectory', 'terminal', 'fileSearch', 'listDirectory', 'readFile', 'getTaskOutput', 'search']
-agents: ['DocumentationReviewer']
+tools:
+  - 'agent'
+  - 'codebase'
+  - 'createDirectory'
+  - 'createFile'
+  - 'editFiles'
+  - 'fileSearch'
+  - 'getTaskOutput'
+  - 'listDirectory'
+  - 'readFile'
+  - 'search'
+  - 'terminal'
+agents:
+  - 'DocumentationReviewer'
 ---
 
 # Role: Technical Writer

@@ -3,8 +3,20 @@ description: 'Produce a verified fix report by applying targeted fixes to produc
 argument-hint: 'Provide a scope: file path, directory, layer name, or "uncommitted" for changed files'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['agent', 'codebase', 'editFiles', 'terminal', 'createFile', 'createDirectory', 'fileSearch', 'listDirectory', 'readFile', 'getTaskOutput', 'search']
-agents: ['CodeReviewer']
+tools:
+  - 'agent'
+  - 'codebase'
+  - 'createDirectory'
+  - 'createFile'
+  - 'editFiles'
+  - 'fileSearch'
+  - 'getTaskOutput'
+  - 'listDirectory'
+  - 'readFile'
+  - 'search'
+  - 'terminal'
+agents:
+  - 'CodeReviewer'
 ---
 
 # Role: Code Remediation Engineer

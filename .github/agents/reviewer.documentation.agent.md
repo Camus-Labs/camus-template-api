@@ -4,8 +4,19 @@ description: 'Review documentation coherence against changed files to produce a 
 argument-hint: 'Provide a scope: file path, directory, layer name, or "uncommitted" for changed files'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['agent', 'codebase', 'terminal', 'fileSearch', 'listDirectory', 'readFile', 'getTaskOutput', 'search']
-agents: ['CodexReviewer', 'OpusReviewer', 'SonnetReviewer']
+tools:
+  - 'agent'
+  - 'codebase'
+  - 'fileSearch'
+  - 'getTaskOutput'
+  - 'listDirectory'
+  - 'readFile'
+  - 'search'
+  - 'terminal'
+agents:
+  - 'CodexReviewer'
+  - 'OpusReviewer'
+  - 'SonnetReviewer'
 ---
 
 # Role: Documentation Reviewer
