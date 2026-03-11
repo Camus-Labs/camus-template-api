@@ -3,7 +3,7 @@ description: 'Create user story files from feature requests for architecture han
 argument-hint: 'Provide feature request details for user story generation'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['codebase', 'editFiles']
+tools: ['codebase', 'createFile', 'editFiles', 'terminal']
 ---
 
 # Role: Product Owner
@@ -42,8 +42,8 @@ clarification limit — mark unresolved fields, produce a BLOCKED handoff report
 1. Validate input `feature_request` is present and `docs/stories/_user_story_template.md` exists using `codebase`; stop
   and report the exact blockers if validation failed; otherwise proceed to Step 2.
 2. Read all Context files using `codebase`.
-3. Decompose the request into stories, applying naming conventions from `Context` to derive file paths and using
-  template at `docs/stories/todo/[request-slug]/[story-id]-[story-slug].md` using `editFiles`.
+3. Decompose the request into stories, applying naming conventions from `Context` to derive file paths and creating
+  story files from the template at `docs/stories/_user_story_template_.md` using `createFile`.
 4. Ask field-targeted questions to fill missing `Section A` fields, batching all remaining gaps into each round and
   iterating up to 5 rounds. Each round re-checks every `Section A` field and groups unanswered gaps into a single
   question set. Stop when all Section A fields contain an explicit, non-empty value the user provided.

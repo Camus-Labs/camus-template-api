@@ -3,7 +3,7 @@ description: 'Implement production code to pass failing tests from a user story 
 argument-hint: 'Provide the path to a user story file with completed Section C'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['agent', 'codebase', 'editFiles', 'terminal']
+tools: ['agent', 'codebase', 'editFiles', 'terminal', 'createFile', 'createDirectory']
 agents: ['CodeReviewer']
 ---
 

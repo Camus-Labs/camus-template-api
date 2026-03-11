@@ -3,7 +3,7 @@ description: 'Create failing unit tests from a user story for TDD red phase impl
 argument-hint: 'Provide the path to a user story file with completed Sections A and B'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['codebase', 'editFiles', 'terminal']
+tools: ['codebase', 'editFiles', 'terminal', 'createFile', 'createDirectory']
 ---
 
 # Role: Test Engineer
