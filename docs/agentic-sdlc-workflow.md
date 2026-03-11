@@ -10,9 +10,13 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 │                        FEATURE DEVELOPMENT PIPELINE                      │
 ├──────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
+│  PRE: CREATE BRANCH ──────── User action                                 │
+│  │  Action: git checkout main && git pull && git checkout -b feat_...     │
+│  │  Gate:   User confirms branch created from latest main                │
+│  ▼                                                                       │
 │  Phase 0: PRODUCT OWNER ──── @product_owner                              │
 │  │  Input:  Feature request (free text)                                  │
-│  │  Output: docs/stories/{slug}/US-*.md (Section A)                      │
+│  │  Output: docs/stories/todo/{slug}/US-*.md (Section A)                 │
 │  │  Gate:   Human reviews & approves stories                             │
 │  ▼                                                                       │
 │  Phase 1: ARCHITECT ──────── @architect                                  │
@@ -37,12 +41,29 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 │  │  Step 2: @documentation.fix uncommitted (fix docs until compliant)    │
 │  │  Gate:   Human reviews reports, approves final quality                │
 │  ▼                                                                       │
+│  POST: COMPLETE & COMMIT ─── User action                                 │
+│  │  Action: Move stories from todo/ to done/, commit changes             │
+│  │  Gate:   User confirms stories moved and changes committed            │
+│  ▼                                                                       │
 │  DONE ✓                                                                  │
 │                                                                          │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Phases in Detail
+
+### Pre: Create Branch — User Action
+
+Before any agent work begins, create a feature branch from the latest `main`.
+
+**Steps:**
+
+1. `git checkout main && git pull`
+2. `git checkout -b feat_<short-description>`
+
+**Your role:** Confirm the branch is created from the latest `main` and follows the `feat_` naming convention.
+
+---
 
 ### Phase 0: Product Owner — `@product_owner`
 
@@ -53,7 +74,7 @@ Example: `@product_owner I need CRUD operations for managing user profiles with 
 **What the agent does:**
 
 1. Decomposes the feature request into atomic user stories
-2. Creates story files under `docs/stories/{request-slug}/` using the template
+2. Creates story files under `docs/stories/todo/{request-slug}/` using the template
 3. Populates Section A (Product Owner Definition) — story statement, scope, FRs, NFRs, ACs
 4. Asks up to 5 rounds of clarification questions for ambiguous requirements
 5. Evaluates the Product Owner Handoff Gate per story
@@ -168,16 +189,32 @@ both show PASS. Do not merge until both steps produce a PASS verdict.
 
 ---
 
+### Post: Complete & Commit — User Action
+
+After Phase 4 produces PASS for both code and documentation reviews, finalize the feature.
+
+**Steps:**
+
+1. Move the story folder from `docs/stories/todo/{request-slug}/` to `docs/stories/done/{request-slug}/`
+2. Commit all changes to the feature branch
+
+**Your role:** Confirm stories are moved to `done/`, all changes are committed, and the feature branch is ready
+for merge. Use the story details as the PR request details.
+
+---
+
 ## Quick Reference
 
 | Phase | Agent | Input | Output |
 | ----- | ----- | ----- | ------ |
-| 0 | `@product_owner` | Feature request (free text) | Story files with Section A |
+| Pre | User | Latest `main` branch | `feat_` branch created |
+| 0 | `@product_owner` | Feature request (free text) | Story files in `todo/` with Section A |
 | 1 | `@architect` | Story file (Section A complete) | Section B populated |
 | 2 | `@tester` | Story file (Sections A + B complete) | Stub files + test files + Section C |
 | 3 | `@developer` | Story file (Section C tests in RED) | Implementation + code review approved |
 | 4a | `@reviewer.code` | `uncommitted` | Consolidated code compliance report (multi-model) |
 | 4b | `@documentation.fix` | `uncommitted`, file, or directory | Documentation fixed + compliance report |
+| Post | User | All phases PASS | Stories moved to `done/`, changes committed |
 
 ## Tips
 
@@ -194,6 +231,10 @@ both show PASS. Do not merge until both steps produce a PASS verdict.
 - **Use `@documentation.fix`** standalone to fix any documentation scope — file, directory, layer, or `uncommitted`.
 - **Use `@reviewer.code`** standalone to review any `.cs` scope — file, directory, layer, or `uncommitted`.
 - **Use `@reviewer.documentation`** standalone to validate docs without fixing (read-only review).
+- **Create the `feat_` branch first** — all agent work happens on a feature branch, never directly on `main`.
+- **Stories live in `todo/` during development** — agents create and update stories under `docs/stories/todo/`.
+- **Move stories to `done/` after final review** — once Phase 4 passes, move the story folder from `todo/` to
+  `done/` and commit.
 - **The story file is the single source of truth** — all agents reference and update it.
 - **Any agent can run standalone** — useful for reviewing existing code outside the full workflow.
 - **Meta-reviewers** (`@reviewer.agents`, `@reviewer.prompts`) maintain SDLC quality — run them when modifying agents

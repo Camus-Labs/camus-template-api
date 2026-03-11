@@ -13,8 +13,8 @@ decomposition.
 
 ## Goal
 
-Produce one or more story files under `docs/stories/[request-slug]/` using approved template and ready for architecture
-handoff.
+Produce one or more story files under `docs/stories/todo/[request-slug]/` using approved template and ready for
+architecture handoff.
 
 **Success:** Create the required story files from the template and fulfill Section A - Product Owner Definition.
 
@@ -31,7 +31,7 @@ clarification limit — mark unresolved fields, produce a BLOCKED handoff report
   - `request-slug`: lowercase kebab-case.
   - `story-id`: sequential `US-01` to `US-N`.
   - `story-slug`: lowercase kebab-case and unique within the request.
-  - Story file path: `docs/stories/[request-slug]/[story-id]-[story-slug].md`.
+  - Story file path: `docs/stories/todo/[request-slug]/[story-id]-[story-slug].md`.
 
 ## Inputs
 
@@ -43,7 +43,7 @@ clarification limit — mark unresolved fields, produce a BLOCKED handoff report
   and report the exact blockers if validation failed; otherwise proceed to Step 2.
 2. Read all Context files using `search`.
 3. Decompose the request into stories, applying naming conventions from `Context` to derive file paths and using
-  template at `docs/stories/[request-slug]/[story-id]-[story-slug].md` using `editFiles`.
+  template at `docs/stories/todo/[request-slug]/[story-id]-[story-slug].md` using `editFiles`.
 4. Ask field-targeted questions to fill missing `Section A` fields, batching all remaining gaps into each round and
   iterating up to 5 rounds. Each round re-checks every `Section A` field and groups unanswered gaps into a single
   question set. Stop when all Section A fields contain an explicit, non-empty value the user provided.
@@ -82,8 +82,8 @@ Status: [READY | BLOCKED]
 
 ### Generated User Story Files
 
-1. docs/stories/[request-slug]/[story-id]-[story-slug].md — [Complete | Incomplete: field-1, field-2]
-2. docs/stories/[request-slug]/[story-id]-[story-slug].md — [Complete | Incomplete: field-1, field-2]
+1. docs/stories/todo/[request-slug]/[story-id]-[story-slug].md — [Complete | Incomplete: field-1, field-2]
+2. docs/stories/todo/[request-slug]/[story-id]-[story-slug].md — [Complete | Incomplete: field-1, field-2]
 
 ### Handoff Gate
 

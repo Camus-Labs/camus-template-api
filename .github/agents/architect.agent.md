@@ -82,7 +82,7 @@ Status: [READY_FOR_IMPLEMENTATION | BLOCKED]
 
 ### Updated User Story File
 
-docs/stories/[request-slug]/[story-id]-[story-slug].md — [Complete | Incomplete: field-1, field-2]
+docs/stories/todo/[request-slug]/[story-id]-[story-slug].md — [Complete | Incomplete: field-1, field-2]
 
 ### Handoff Readiness
 
