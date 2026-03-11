@@ -4,15 +4,9 @@ argument-hint: 'Provide Path to a user story file with completed Section A ready
 mode: 'agent'
 model: 'claude-opus-4.6'
 tools:
-  - 'codebase'
-  - 'createFile'
-  - 'editFiles'
-  - 'fileSearch'
-  - 'getTaskOutput'
-  - 'listDirectory'
-  - 'readFile'
+  - 'read'
   - 'search'
-  - 'terminal'
+  - 'edit'
 ---
 
 # Role: Software Architect

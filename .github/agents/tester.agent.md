@@ -4,16 +4,10 @@ argument-hint: 'Provide the path to a user story file with completed Sections A 
 mode: 'agent'
 model: 'claude-opus-4.6'
 tools:
-  - 'codebase'
-  - 'createDirectory'
-  - 'createFile'
-  - 'editFiles'
-  - 'fileSearch'
-  - 'getTaskOutput'
-  - 'listDirectory'
-  - 'readFile'
+  - 'read'
   - 'search'
-  - 'terminal'
+  - 'edit'
+  - 'execute'
 ---
 
 # Role: Test Engineer

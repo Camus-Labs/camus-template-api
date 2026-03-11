@@ -4,16 +4,10 @@ argument-hint: 'Provide a scope: file path, directory, layer name, or "uncommitt
 mode: 'agent'
 model: 'claude-opus-4.6'
 tools:
-  - 'codebase'
-  - 'createDirectory'
-  - 'createFile'
-  - 'editFiles'
-  - 'fileSearch'
-  - 'getTaskOutput'
-  - 'listDirectory'
-  - 'readFile'
+  - 'read'
   - 'search'
-  - 'terminal'
+  - 'edit'
+  - 'execute'
 ---
 
 # Role: Technical Writer

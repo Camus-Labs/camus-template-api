@@ -4,15 +4,9 @@ argument-hint: 'Provide feature request details for user story generation'
 mode: 'agent'
 model: 'claude-opus-4.6'
 tools:
-  - 'codebase'
-  - 'createFile'
-  - 'editFiles'
-  - 'fileSearch'
-  - 'getTaskOutput'
-  - 'listDirectory'
-  - 'readFile'
+  - 'read'
   - 'search'
-  - 'terminal'
+  - 'edit'
 ---
 
 # Role: Product Owner

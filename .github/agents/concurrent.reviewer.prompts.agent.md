@@ -5,7 +5,7 @@ mode: 'agent'
 model: 'claude-opus-4.6'
 tools:
   - 'agent'
-  - 'codebase'
+  - 'read'
   - 'search'
 agents:
   - 'CodexReviewer'

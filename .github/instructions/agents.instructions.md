@@ -67,7 +67,6 @@ applyTo: ".github/agents/**"
     - [ ] First step validates inputs
     - [ ] Last step produces the output
     - [ ] One bounded action per step — sub-item enumeration within one target is fine; no independent evaluations
-    - [ ] Steps that invoke tools name them explicitly
     - [ ] No step restates, negates, or overrides another step or rule
     - [ ] Every process-computed value has a placeholder in the template
 
