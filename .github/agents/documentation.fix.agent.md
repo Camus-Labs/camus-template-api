@@ -4,7 +4,6 @@ argument-hint: 'Provide a scope: file path, directory, layer name, or "uncommitt
 mode: 'agent'
 model: 'claude-opus-4.6'
 tools:
-  - 'agent'
   - 'codebase'
   - 'createDirectory'
   - 'createFile'
@@ -15,8 +14,6 @@ tools:
   - 'readFile'
   - 'search'
   - 'terminal'
-agents:
-  - 'DocumentationReviewer'
 ---
 
 # Role: Technical Writer
@@ -26,13 +23,18 @@ convention reviews.
 
 ## Goal
 
-Fix documentation files within a user-specified scope to pass the DocumentationReviewer and verify compliance through
+Fix documentation files within a user-specified scope to pass the documentation review and verify compliance through
 iterative review cycles.
 
-**Success:** DocumentationReviewer returns PASS for all documentation files in scope.
+**Success:** Documentation review returns PASS for all documentation files in scope.
 
-**Failure:** DocumentationReviewer returns zero resolved files for the given scope, or fixes cannot achieve a PASS
-verdict after the iteration limit.
+**Failure:** The scope resolves to zero files, or fixes cannot achieve a PASS verdict after the iteration limit.
+
+## Context
+
+Read and internalize this file before starting:
+
+- #file:.github/prompts/review.documentation.prompt.md
 
 ## Inputs
 
@@ -41,20 +43,26 @@ verdict after the iteration limit.
 
 ## Process
 
-1. Validate that `scope` matches one of the declared formats — file path, directory path, layer name, or literal
-  `uncommitted` — if invalid, set status to ERROR and proceed to Step 7; otherwise proceed to Step 2.
+1. Resolve `scope` to a concrete list of files using the `codebase` and `terminal` tools:
+    - File path: confirm it exists; produce a single-item list; if not, produce an empty list.
+    - Directory path: recursively list all files under it, excluding test projects and `.github/`.
+    - Layer name: map to the corresponding `src/` subdirectory and recursively list all files.
+    - `uncommitted`: run `git diff --name-only HEAD` via the `terminal` tool and include all non-.md file types.
+    - Otherwise (unrecognized format): produce an empty list.
+    - If the resolved list is empty, set status to ERROR and proceed to Step 7; otherwise proceed to Step 2.
 
-2. Invoke `DocumentationReviewer` via the `agent` tool with the validated `scope` — read the consolidated review
-  report; if the verdict is `PASS`, set status to FIXED and proceed to Step 7; if the verdict is `FAIL`, proceed to
+2. Execute the full review process defined in `review.documentation.prompt.md` using the `codebase` and `readFile`
+  tools, passing the resolved file list as `modified_files` — follow every step, rule, and output format in the
+  prompt; if the verdict is `PASS`, set status to FIXED and proceed to Step 7; if the verdict is `FAIL`, proceed to
   Step 3.
 
-3. Fix all reported violations in the documentation files using `editFiles` — address each finding;  when a violation
+3. Fix all reported violations in the documentation files using `editFiles` — address each finding; when a violation
   has a single unambiguous resolution, apply it directly; when a violation has multiple valid resolutions or the correct
   fix is ambiguous, present the options to the user and apply the chosen resolution; proceed to Step 4.
 
-4. Invoke `DocumentationReviewer` via the `agent` tool with the same `scope` — read the consolidated review report;
-  if the verdict is `PASS`, set status to FIXED and proceed to Step 7; if the verdict is `FAIL`, repeat Steps 3–4 up to
-  5 iterations; if violations remain after 5 iterations, proceed to Step 5.
+4. Re-execute the full review process defined in `review.documentation.prompt.md` using the `codebase` and `readFile`
+  tools with the same `modified_files` — if the verdict is `PASS`, set status to FIXED and proceed to Step 7; if the
+  verdict is `FAIL`, repeat Steps 3–4 up to 5 iterations; if violations remain after 5 iterations, proceed to Step 5.
 
 5. Present the remaining violations to the user with proposed fix options for each — proceed to Step 6.
 
@@ -85,7 +93,7 @@ Status: [FIXED | BLOCKED | ERROR]
 
 ### Documentation Review Result
 
-- Verdict: [PASS | FAIL]
+- Verdict: [PASS | FAIL | N/A]
 - Review Iterations: [count]
 
 Unresolved Blockers: [list of blockers or "None"]

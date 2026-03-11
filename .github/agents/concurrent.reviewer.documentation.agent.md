@@ -1,5 +1,4 @@
 ---
-name: 'DocumentationReviewer'
 description: 'Review documentation coherence against changed files to produce a consolidated review report'
 argument-hint: 'Provide a scope: file path, directory, layer name, or "uncommitted" for changed files'
 mode: 'agent'
@@ -47,10 +46,10 @@ Read and internalize this file before starting:
 ## Process
 
 1. Resolve `scope` to a concrete list of files using the `codebase` and `terminal` tools:
-    - File path: confirm it exists; produce a single-item list.
+    - File path: confirm it exists and produce a single-item list; otherwise produce an empty list.
     - Directory path: recursively list all files under it, excluding test projects and `.github/`.
     - Layer name: map to the corresponding `src/` subdirectory and recursively list all files.
-    - `uncommitted`: run `git diff --name-only HEAD` via the `terminal` tool and include all file types.
+    - `uncommitted`: run `git diff --name-only HEAD` via the `terminal` tool and include all files.
     - Otherwise (unrecognized format): produce an empty list.
     - If the resolved list is empty, stop and report the reason; otherwise proceed to Step 2.
 

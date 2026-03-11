@@ -23,7 +23,6 @@ applyTo: ".github/prompts/**"
     - [ ] `mode` — one of `agent` | `ask` | `edit`
     - [ ] `tools` — lists ONLY tools the process steps actually use
     - [ ] `argument-hint` — included, describes how to invoke the prompt
-    - [ ] No over-privileged tools (listed but never used in steps)
     - [ ] No under-declared tools (used in steps but not listed)
 
 3. Goal
