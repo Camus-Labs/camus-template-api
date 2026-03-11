@@ -3,7 +3,7 @@ description: 'Produce a verified fix report by applying targeted fixes to produc
 argument-hint: 'Provide a scope: file path, directory, layer name, or "uncommitted" for changed files'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['agent', 'editFiles', 'terminal']
+tools: ['agent', 'codebase', 'editFiles', 'terminal']
 agents: ['CodeReviewer']
 ---
 

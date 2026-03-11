@@ -4,7 +4,7 @@ description: 'Review documentation coherence against changed files to produce a 
 argument-hint: 'Provide a scope: file path, directory, layer name, or "uncommitted" for changed files'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['agent', 'search', 'terminal']
+tools: ['agent', 'codebase', 'terminal']
 agents: ['CodexReviewer', 'OpusReviewer', 'SonnetReviewer']
 ---
 
@@ -35,7 +35,7 @@ Read and internalize this file before starting:
 
 ## Process
 
-1. Resolve `scope` to a concrete list of files using the `search` and `terminal` tools:
+1. Resolve `scope` to a concrete list of files using the `codebase` and `terminal` tools:
     - File path: confirm it exists; produce a single-item list.
     - Directory path: recursively list all files under it, excluding test projects and `.github/`.
     - Layer name: map to the corresponding `src/` subdirectory and recursively list all files.

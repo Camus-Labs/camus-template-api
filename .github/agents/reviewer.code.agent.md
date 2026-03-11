@@ -4,7 +4,7 @@ description: 'Review C# code via three-model evaluation to produce a consolidate
 argument-hint: 'Provide a scope: file path, directory, layer name, or "uncommitted" for changed files'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['agent', 'search', 'terminal']
+tools: ['agent', 'codebase', 'terminal']
 agents: ['CodexReviewer', 'OpusReviewer', 'SonnetReviewer']
 ---
 
@@ -33,7 +33,7 @@ Read and internalize this file before starting:
 
 ## Process
 
-1. Resolve `scope` to a concrete list of `.cs` files using the `search` and `terminal` tools:
+1. Resolve `scope` to a concrete list of `.cs` files using the `codebase` and `terminal` tools:
     - File path: confirm it exists and is a `.cs` file; produce a single-item list.
     - Directory path: recursively list all `.cs` files under it.
     - Layer name: map to the corresponding `src/` subdirectory and recursively list all `.cs` files.

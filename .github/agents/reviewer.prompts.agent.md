@@ -3,7 +3,7 @@ description: 'Review *.prompt.md files via three-model evaluation to produce a c
 argument-hint: 'Provide the path to the *.prompt.md file to review'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['agent', 'search', 'codebase']
+tools: ['agent', 'codebase']
 agents: ['CodexReviewer', 'OpusReviewer', 'SonnetReviewer']
 ---
 
@@ -32,7 +32,7 @@ Read and internalize this file before starting:
 
 ## Process
 
-1. Resolve `target_prompt_path` using the `search` tool — confirm the file exists and ends with `.prompt.md`; if
+1. Resolve `target_prompt_path` using the `codebase` tool — confirm the file exists and ends with `.prompt.md`; if
   missing or invalid, stop and report the reason; otherwise proceed to Step 2.
 
 2. Read the target file using the `codebase` tool to confirm it is readable and contains prompt definition content

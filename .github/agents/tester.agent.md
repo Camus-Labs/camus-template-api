@@ -3,7 +3,7 @@ description: 'Create failing unit tests from a user story for TDD red phase impl
 argument-hint: 'Provide the path to a user story file with completed Sections A and B'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['search', 'editFiles', 'terminal']
+tools: ['codebase', 'editFiles', 'terminal']
 ---
 
 # Role: Test Engineer
@@ -47,11 +47,11 @@ any `No` item, or stubs/tests cannot compile after creation — stop and report 
 ## Process
 
 1. Validate `story_file` exists, confirm all `Architect Handoff Readiness` gate items are `Yes`, and extract Acceptance
-  Criteria from Section A, Layer Impact Matrix from Section B, and the Traceability table using `search` — stop with
+  Criteria from Section A, Layer Impact Matrix from Section B, and the Traceability table using `codebase` — stop with
   the exact list of blockers if the file is missing or any gate item is `No`; otherwise proceed to Step 2.
 
 2. Scaffold production stubs from the Layer Impact Matrix using `editFiles` — read architecture, C# conventions, and
-  layer README Context files using `search`; for every file listed under each layer (Domain, Application, API,
+  layer README Context files using `codebase`; for every file listed under each layer (Domain, Application, API,
   Adapters) in Section B, create the corresponding production type:
     - Interfaces with method signatures matching the change summary.
     - Model objects with property declarations only.
@@ -68,7 +68,7 @@ any `No` item, or stubs/tests cannot compile after creation — stop and report 
   Step 5 only after explicit user approval.
 
 5. Create test files that map each acceptance criterion to one or more test methods using `editFiles` — read testing
-  conventions and story template Context files using `search`; determine the target test project per Rule 5; derive
+  conventions and story template Context files using `codebase`; determine the target test project per Rule 5; derive
   test class names mirroring the stubs from Step 2 and test method names per Rule 1 naming conventions; write each
   test following Rule 1 and reference the production types from Step 2 to assert the behavior each AC describes;
   proceed to Step 6.

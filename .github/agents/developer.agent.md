@@ -3,7 +3,7 @@ description: 'Implement production code to pass failing tests from a user story 
 argument-hint: 'Provide the path to a user story file with completed Section C'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['agent', 'search', 'editFiles', 'terminal']
+tools: ['agent', 'codebase', 'editFiles', 'terminal']
 agents: ['CodeReviewer']
 ---
 
@@ -50,10 +50,10 @@ cannot pass after the implementation iteration limit — stop and report the exa
 
 ## Process
 
-1. Validate `story_file` exists and all `Tester Handoff Gate` items are `Yes` using `search`; stop with the exact list
+1. Validate `story_file` exists and all `Tester Handoff Gate` items are `Yes` using `codebase`; stop with the exact list
   of blockers if validation fails; otherwise proceed to Step 2.
 
-2. Read all Context files and the story file using `search` — extract the Skeleton Inventory and Test Traceability
+2. Read all Context files and the story file using `codebase` — extract the Skeleton Inventory and Test Traceability
   from Section C; read every stub file listed in the Skeleton Inventory to understand the production skeleton (type
   signatures, method signatures, constructor parameters, and whether each is `New` or `Modified`); read every test
   file referenced in the Test Traceability table to understand the expected behaviors; proceed to Step 3.
