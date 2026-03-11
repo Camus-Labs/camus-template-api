@@ -7,7 +7,6 @@
 - Story Slug: `[story-slug]`
 - Request Date: `YYYY-MM-DD`
 - Requested By: `[name or role]`
-- Status: `DRAFT | READY_FOR_ARCHITECTURE | ARCHITECTURE_IN_PROGRESS | READY_FOR_IMPLEMENTATION | BLOCKED`
 
 ## Section A - Product Owner Definition
 
@@ -113,16 +112,6 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 
 - [NFR category]: [Design decision and implementation approach]
 
-### Layer-Based Implementation Plan (No Code)
-
-1. Domain: [Ordered work item]
-2. Application: [Ordered work item]
-3. Database Schema: [Ordered work item]
-4. API: [Ordered work item]
-5. Adapters: [Ordered work item]
-6. Tests: [Ordered work item]
-7. Validation: [Build/test/acceptance verification sequence]
-
 ### Delivery and Rollout Notes
 
 - Rollout strategy: [Phased | flagged | full rollout approach]
@@ -135,15 +124,37 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Port | contract impacts assessed: `[Yes | No]`
 - Backward compatibility decision documented: `[Yes | No]`
 - Cross-cutting concern decisions addressed: `[Yes | No]`
-- Implementation plan is ordered and actionable: `[Yes | No]`
 - Rollout and rollback strategies defined: `[Yes | No]`
 - Ready for implementation: `[Yes | No]`
 - Architect sign-off: `[Name, Date]`
 
-### Traceability
+## Section C - Implementation Tracking
 
-| User Story | Functional Requirement | Acceptance Criteria | Layer Plan Step(s) |
-| --- | --- | --- | --- |
-| US-[###] | FR-01 | AC-01 | [Step #] |
-| US-[###] | FR-02 | AC-02 | [Step #] |
-| US-[###] | FR-03 | AC-03 | [Step #] |
+### Test Traceability
+
+| AC | Test Class | Test Method | Layer | Change |
+| --- | --- | --- | --- | --- |
+| AC-01 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
+| AC-02 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
+| AC-03 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
+
+### Skeleton Inventory
+
+| Layer | Stub File | Change | Types | Members |
+| --- | --- | --- | --- | --- |
+| [Domain, Application, Api, Adapter] | [src/.../FileName.cs] | [New, Modified] | [class, interface, record] | [method signatures, properties] |
+
+### Tester Handoff Gate
+
+- Every acceptance criterion has at least one test method: `[Yes | No]`
+- Skeleton inventory complete and user-approved: `[Yes | No]`
+- Tests compile and fail for the right reason (TDD red): `[Yes | No]`
+- Ready for implementation: `[Yes | No]`
+- Tester sign-off: `[Name, Date]`
+
+### Developer Handoff Gate
+
+- All tests pass (TDD green): `[Yes | No]`
+- Build succeeds with zero warnings: `[Yes | No]`
+- Ready for code review: `[Yes | No]`
+- Developer sign-off: `[Name, Date]`

@@ -46,7 +46,7 @@ Read and internalize the conventions checklist before starting:
 
 ## Output Format
 
-```markdown
+````markdown
 ## Agent Review Report
 
 **Target:** [target_agent_path]
@@ -74,4 +74,4 @@ Section [#] — [issue]
   Heading: [exact heading text] | Quote: "[exact source text]"
   Location: [Section:heading path OR Line: Lx-Ly]
 - Fix: [corrective action]
-```
+````

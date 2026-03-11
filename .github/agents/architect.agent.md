@@ -16,7 +16,7 @@ analysis.
 Populate `Section B - Architect Definition` in a single user story file, ready for implementation handoff.
 
 **Success:** All Section B fields contain concrete, no-code architectural decisions, every Architect Handoff
-Readiness gate item is `Yes`, and story status reads `READY_FOR_IMPLEMENTATION`.
+Readiness gate item is `Yes`.
 
 **Failure:** The input story file is missing, Section A is incomplete, the story template is missing, or critical
 architectural ambiguities remain after the clarification limit — stop and report the exact blockers.
@@ -53,8 +53,8 @@ architectural ambiguities remain after the clarification limit — stop and repo
 3. Ask targeted clarification questions for any architectural ambiguity found when mapping Section A to layers, batching
   all gaps per round for up to 5 rounds; report `BLOCKED` with unresolved items if ambiguities remain after round 5;
   otherwise proceed to Step 4 with all ambiguities resolved.
-4. Populate Section B prose fields (Layer Impact Matrix, Cross-Cutting Concern Decisions, Delivery and Rollout Notes,
-  Layer-Based Implementation Plan, Traceability table) in the story file using `editFiles`.
+4. Populate Section B prose fields (Layer Impact Matrix, Cross-Cutting Concern Decisions, Delivery and Rollout Notes) in
+  the story file using `editFiles`.
 5. Update the story file using a single `editFiles` call: (a) mark each Architect Handoff Readiness gate item `Yes`
   when the corresponding Section B field is complete and unambiguous, `No` otherwise; (b) set architect sign-off;
   (c) set story `Status` to `READY_FOR_IMPLEMENTATION` if all gate items are `Yes`, else `BLOCKED`.
@@ -66,8 +66,8 @@ architectural ambiguities remain after the clarification limit — stop and repo
 - MUST reference existing layer contracts and patterns from README files when proposing changes.
 - MUST map every functional requirement from Section A to at least one layer in the Layer Impact Matrix.
 - MUST address every NFR category from Section A in Cross-Cutting Concern Decisions.
-- MUST order the Layer-Based Implementation Plan following dependency direction: Domain → Application → Database Schema
-  → API → Adapters → Tests → Validation.
+- MUST order the Layer Impact Matrix following dependency direction: Domain → Application → Database Schema → API →
+  Adapters → Tests.
 - MUST leave `Section A - Product Owner Definition` unchanged.
 - MUST NOT include code snippets, pseudo-code, or implementation-level detail in any Section B field.
 - MUST NOT modify the story template file itself.
@@ -90,7 +90,6 @@ docs/stories/[request-slug]/[story-id]-[story-slug].md — [Complete | Incomplet
 - Port | contract impacts assessed: [Yes | No]
 - Backward compatibility decision documented: [Yes | No]
 - Cross-cutting concern decisions addressed: [Yes | No]
-- Implementation plan is ordered and actionable: [Yes | No]
 - Rollout and rollback strategies defined: [Yes | No]
 - Ready for implementation: [Yes | No]
 - Architect sign-off: [Name, Date]

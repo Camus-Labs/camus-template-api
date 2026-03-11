@@ -46,7 +46,7 @@ Read and internalize the conventions checklist before starting:
 
 ## Output Format
 
-```markdown
+````markdown
 ## Prompt Review Report
 
 **Target:** [target_prompt_path]
@@ -73,4 +73,4 @@ Section [#] — [issue]
   Heading: [exact heading text] | Quote: "[exact source text]"
   Location: [Section:heading path OR Line: Lx-Ly]
 - Fix: [corrective action]
-```
+````

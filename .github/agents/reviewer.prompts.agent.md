@@ -13,11 +13,9 @@ You are an expert Prompt Definition Reviewer who orchestrates multi-model evalua
 
 ## Goal
 
-Produce a consolidated review report for a target `*.prompt.md` file by dispatching three parallel sub-agent evaluations
-and merging their results.
+Produce a consolidated review report for a target `*.prompt.md` file.
 
-**Success:** Collect all three sub-agent reports, merge them into a single deduplicated report, and deliver the result
-in the output format below.
+**Success:** A single deduplicated review report exists in the output format below, combining all sub-agent evaluations.
 
 **Failure:** The target file does not exist, is unreadable, does not end with `.prompt.md`, or sub-agent evaluations
 cannot complete.
@@ -43,12 +41,14 @@ Read and internalize this file before starting:
 
 3. Dispatch three parallel sub-agents (`CodexReviewer`, `SonnetReviewer`, `OpusReviewer`) via the `agent` tool, each
   passing `#file:.github/prompts/review.prompt.prompt.md` and the target file — collect the full review report from
-  each sub-agent - if any sub-agent fails to return a complete report, stop and report the failure; otherwise proceed to
-  Step 4.
+  each sub-agent; if all three sub-agents fail to return a complete report, stop and report the failure; if one or two
+  fail, log each failure and proceed to Step 4 with the successful reports only; if all three succeed, proceed to Step 4
+  with all reports.
 
-4. Merge the three sub-agent reports into a single deduplicated findings list — mark a section FAIL if any model marks
-  it FAIL; otherwise mark it PASS; if two or more sub-agents flag the same checklist item, record it once and note which
-  models flagged it; otherwise (single model), still include it.
+4. Merge the successful sub-agent reports into a single deduplicated findings list — mark a section FAIL if any
+  successful model marks it FAIL; otherwise mark it PASS; if two or more sub-agents flag the same checklist item,
+  record it once and note which models flagged it; otherwise (single model), still include it; mark columns of failed
+  sub-agents as N/A in the Checklist Results table.
 
 5. Produce the consolidated Prompt Review Report in the output format below using the per-model results. Set overall
   Verdict to FAIL if any merged section is FAIL, otherwise set it to PASS. Set Ready for Use to Yes when Verdict is
@@ -80,14 +80,14 @@ Read and internalize this file before starting:
 
 | Section | Codex | Sonnet | Opus | Merged |
 |---------|-------|--------|------|--------|
-| Writing Quality and Structure | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
-| Frontmatter | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
-| Goal | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
-| Context | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
-| Inputs | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
-| Process | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
-| Output Format | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
-| Rules | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] | [PASS | FAIL] |
+| Writing Quality and Structure | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL] |
+| Frontmatter | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL] |
+| Goal | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL] |
+| Context | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL] |
+| Inputs | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL] |
+| Process | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL] |
+| Output Format | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL] |
+| Rules | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL] |
 
 ### Merged Findings
 

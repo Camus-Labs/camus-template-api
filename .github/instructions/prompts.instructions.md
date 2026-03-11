@@ -10,7 +10,7 @@ applyTo: ".github/prompts/**"
     - [ ] Title (H1) is present and starts with a verb or a domain noun
     - [ ] No extra top-level sections outside the canonical set
     - [ ] Heading hierarchy is correct (H1 title, H2 sections, NO H3+ subsections)
-    - [ ] No line exceeds 120 characters
+    - [ ] No line exceeds 120 characters — markdown table rows are exempt
     - [ ] Prose lines that are not the last line of a paragraph contain at least 100 characters
     - [ ] No two sections contain the same constraint, instruction, or definition
     - [ ] All prose uses active voice, imperative mood — no passive constructions ("is generated", "should be done")

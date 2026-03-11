@@ -10,50 +10,32 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 │                        FEATURE DEVELOPMENT PIPELINE                      │
 ├──────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
+│  Phase 0: PRODUCT OWNER ──── @product_owner                              │
+│  │  Input:  Feature request (free text)                                  │
+│  │  Output: docs/stories/{slug}/US-*.md (Section A)                      │
+│  │  Gate:   Human reviews & approves stories                             │
+│  ▼                                                                       │
 │  Phase 1: ARCHITECT ──────── @architect                                  │
-│  │  Input:  Feature requirement (free text)                              │
-│  │  Output: docs/features/{name}.md (stories + file plan + diagram)      │
-│  │  Gate:   Human reviews & approves plan                                │
+│  │  Input:  Story file with completed Section A                          │
+│  │  Output: Section B populated (architecture + implementation plan)     │
+│  │  Gate:   Human reviews & approves architecture                        │
 │  ▼                                                                       │
-│  ┌──── Per Story (TDD Cycle) ─────────────────────────────────────┐      │
-│  │                                                                 │      │
-│  │  Phase 2a: TESTER ────────── @tester                            │      │
-│  │  │  Input:  Feature doc + story number                          │      │
-│  │  │  Output: Unit test files (red phase — tests fail)            │      │
-│  │  │  Gate:   Human reviews test design                           │      │
-│  │  ▼                                                              │      │
-│  │  Phase 2b: TEST REVIEW ───── @reviewer.tests                    │      │
-│  │  │  Input:  Feature doc + story number                          │      │
-│  │  │  Output: Test quality verdict (PASS / PASS WITH NOTES / FAIL)│      │
-│  │  │  Gate:   Human reviews verdict                               │      │
-│  │  ▼                                                              │      │
-│  │  Phase 3: DEVELOPER ──────── @developer                         │      │
-│  │  │  Input:  Feature doc + story number + failing tests          │      │
-│  │  │  Output: Implementation code (green phase — tests pass)      │      │
-│  │  │  Gate:   Human reviews implementation                        │      │
-│  │                                                                 │      │
-│  └──── Repeat for each story ─────────────────────────────────────┘      │
+│  Phase 2: TESTER ─────────── @tester                                     │
+│  │  Input:  Story file with completed Sections A + B                     │
+│  │  Output: Stubs + test files (TDD red) + Section C                     │
+│  │  Gate:   Human reviews test design + production skeleton              │
 │  ▼                                                                       │
-│  Phase 4: REVIEW ──────────── Run independently / concurrently           │
-│  │                                                                       │
-│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ │
-│  │  │ @reviewer.  │ │ @reviewer.   │ │ @reviewer.  │ │ @reviewer.   │ │
-│  │  │ domain      │ │ application  │ │ api         │ │ adapters     │ │
-│  │  └──────┬──────┘ └──────┬───────┘ └──────┬──────┘ └──────┬───────┘ │
-│  │  ┌──────┴──────┐ ┌──────┴────────┐ ┌─────┴────────┐                │
-│  │  │ @reviewer.  │ │ @reviewer.    │ │ @reviewer.   │                │
-│  │  │ cross-      │ │ observability │ │ documentation│                │
-│  │  │ cutting     │ │               │ │              │                │
-│  │  └──────┬──────┘ └──────┬────────┘ └──────┬───────┘                │
-│  │         └───────────┬───┴─────────────────┘                        │
-│  │                     ▼                                              │
-│  │          @reviewer.report                                          │
-│  │  Gate:   Human reviews consolidated report                            │
+│  Phase 3: DEVELOPER ──────── @developer                                  │
+│  │  Input:  Story file with Section C tests in RED                       │
+│  │  Output: Implementation (TDD green) + code review approved            │
+│  │  Sub:    @reviewer.code (multi-model, invoked automatically)          │
+│  │  Gate:   Human reviews implementation                                 │
 │  ▼                                                                       │
-│  Phase 5: FIX ────────────── @developer (reuse)                          │
-│  │  Input:  Review report violations                                     │
-│  │  Output: Fixed code                                                   │
-│  │  Gate:   Re-run affected reviewers until clean                        │
+│  Phase 4: REVIEW ─────────── @reviewer.code + @documentation.fix        │
+│  │  Input:  Uncommitted files from previous phases                       │
+│  │  Step 1: @reviewer.code uncommitted (final code compliance check)     │
+│  │  Step 2: @documentation.fix uncommitted (fix docs until compliant)    │
+│  │  Gate:   Human reviews reports, approves final quality                │
 │  ▼                                                                       │
 │  DONE ✓                                                                  │
 │                                                                          │
@@ -62,140 +44,127 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 
 ## Phases in Detail
 
+### Phase 0: Product Owner — `@product_owner`
+
+**Invoke:** `@product_owner` → describe the feature request in free text.
+
+Example: `@product_owner I need CRUD operations for managing user profiles with email validation`
+
+**What the agent does:**
+
+1. Decomposes the feature request into atomic user stories
+2. Creates story files under `docs/stories/{request-slug}/` using the template
+3. Populates Section A (Product Owner Definition) — story statement, scope, FRs, NFRs, ACs
+4. Asks up to 5 rounds of clarification questions for ambiguous requirements
+5. Evaluates the Product Owner Handoff Gate per story
+
+**Deliverable:** Story files with completed Section A, handoff gate evaluated, status set.
+
+**Your role:** Review stories. Verify scope boundaries, acceptance criteria completeness,
+and NFR coverage. Approve or request changes before handing to the architect.
+
+---
+
 ### Phase 1: Architect — `@architect`
 
-**Invoke:** Open Copilot Chat → type `@architect` → describe the feature requirement.
+**Invoke:** `@architect` → provide the path to a story file with completed Section A.
+
+Example: `@architect #file:docs/stories/user-profiles/US-01-create-profile.md`
 
 **What the agent does:**
 
-1. Analyzes the feature requirement against the current codebase
-2. Identifies which layers are affected (Domain, Application, API, Adapters)
-3. Creates a **File Plan** — tables per layer with Action (Create/Modify/Remove), Path, and Purpose
-4. Creates a **Mermaid Object Diagram** showing entities, services, and their relationships
-5. Breaks the feature into atomic, well-defined user stories with file references
-6. Creates `docs/features/{feature-name}.md` from the template
+1. Validates the Product Owner Handoff Gate is fully passing
+2. Maps functional requirements to layers (Domain, Application, API, Adapters)
+3. Populates Section B — Layer Impact Matrix, Cross-Cutting Concern Decisions,
+   Layer-Based Implementation Plan, Traceability table
+4. Asks up to 5 rounds of clarification for architectural ambiguities
+5. Evaluates the Architect Handoff Readiness gate
 
-**Deliverable:** Feature plan document with file plan, object diagram, numbered user stories,
-each containing acceptance criteria, affected layers, files from file plan, and dependencies.
+**Deliverable:** Story file with completed Section B, implementation plan ordered by
+dependency direction, and status set to `READY_FOR_IMPLEMENTATION`.
 
-**Your role:** Review the plan. Verify the file plan follows naming conventions, stories are
-atomic, correctly layered, and properly ordered. Approve or request changes before proceeding.
+**Your role:** Review architecture. Verify layer boundaries, implementation plan order,
+and cross-cutting decisions. Approve before proceeding to testing.
 
 ---
 
-### Phase 2a: Tester — `@tester`
+### Phase 2: Tester — `@tester`
 
-**Invoke:** `@tester` → reference the feature doc and specify the story number.
+**Invoke:** `@tester` → provide the path to a story file with completed Sections A and B.
 
-Example: `@tester Implement tests for Story 1 from #file:docs/features/user-management.md`
-
-**What the agent does:**
-
-1. Reads the specific story's acceptance criteria, file plan, and object diagram
-2. Identifies the correct test project based on affected layers
-3. Creates test classes following project conventions:
-   - xUnit + FluentAssertions + Moq
-   - `MethodName_Scenario_ExpectedResult` naming
-   - AAA pattern with comments
-   - Wildcard exception assertions
-4. Creates minimal stubs so tests compile but **fail** (TDD red phase)
-5. Runs `dotnet build` to verify compilation
-
-**Deliverable:** Test files in the appropriate `src/Test/` project(s). Report listing
-all test methods created and what each validates.
-
-**Your role:** Review test design. Verify coverage of acceptance criteria, proper naming,
-and that tests are behavioral (not implementation-detail tests).
-
----
-
-### Phase 2b: Test Review — `@reviewer.tests`
-
-**Invoke:** `@reviewer.tests` → reference the feature doc and specify the story number.
-
-Example: `@reviewer.tests Review tests for Story 1 from #file:docs/features/user-management.md`
+Example: `@tester #file:docs/stories/user-profiles/US-01-create-profile.md`
 
 **What the agent does:**
 
-1. Reads all test files for the story
-2. Validates naming conventions, assertion patterns, mocking strategy
-3. Checks test coverage against acceptance criteria
-4. Produces a verdict: **PASS**, **PASS WITH NOTES**, or **FAIL**
+1. Validates the Architect Handoff Readiness gate is fully passing
+2. Reads context files and extracts Acceptance Criteria (Section A) and Layer Impact Matrix (Section B)
+3. Scaffolds production stubs from the Layer Impact Matrix (interfaces, models, empty bodies)
+4. Builds to verify stubs compile, fixing compilation errors up to 5 times
+5. Presents the production skeleton for user review (up to 5 review cycles)
+6. Creates test classes mapping each AC to test methods (xUnit + FluentAssertions + Moq, AAA pattern)
+7. Verifies tests compile and fail for the right reason (TDD red), redesigning tests up to 5 times if a stub
+   accidentally satisfies one
+8. Populates Section C — Skeleton Inventory table, Test Traceability table, and evaluates the Tester Handoff Gate
 
-**Deliverable:** Test review report with verdict and any issues found.
+**Deliverable:** Stub files, test files, Section C populated (Skeleton Inventory + Test Traceability),
+Tester Handoff Report.
 
-**Your role:** Review verdict. If FAIL, go back to `@tester` for fixes. If PASS, proceed to development.
+**Your role:** Review the production skeleton and test design. Verify coverage of every AC, proper
+naming, behavioral assertions. Approve before handing to the developer.
 
 ---
 
 ### Phase 3: Developer — `@developer`
 
-**Invoke:** `@developer` → reference the feature doc and specify the story number.
+**Invoke:** `@developer` → provide the path to a story file with Section C tests in RED.
 
-Example: `@developer Implement Story 1 from #file:docs/features/user-management.md`
+Example: `@developer #file:docs/stories/user-profiles/US-01-create-profile.md`
 
 **What the agent does:**
 
-1. Reads the story, file plan, object diagram, and existing failing tests
-2. Implements production code following all conventions:
-   - Hexagonal architecture boundaries
-   - Entity patterns (private set, Reconstitute, business methods)
-   - CQRS types (Commands, Results, Filters, Views)
-   - Controller patterns (ApiControllerBase, activity source wrapping)
-   - DTO separation, versioned mapping extensions
-   - Argument validation on all public members
-3. Runs tests to verify they pass (TDD green phase)
-4. Updates the feature doc progress table
+1. Validates the Tester Handoff Gate is fully passing
+2. Reads the Skeleton Inventory and Test Traceability from Section C, plus all stub and test files
+3. Implements production code following dependency order (Domain → Application → Database Schema → API → Adapters)
+4. Builds, fixing compilation errors up to 5 times
+5. Invokes `@reviewer.code` on implemented files — fixes violations up to 5 iterations; if violations remain, reports
+   to user for up to 5 user-guided iterations
+6. Runs tests up to 5 iterations, fixing production code until all tests pass (TDD green phase)
+7. Populates the Developer Handoff Gate in the story file
+8. Evaluates the Developer Handoff Gate
 
-**Deliverable:** Implementation files across affected layers. Report listing all files
-created/modified and what each does.
+**Deliverable:** Implementation files, Section C updated, code review approved, Developer Handoff Report.
 
 **Your role:** Review implementation quality, architecture compliance, and test results.
-Approve before moving to the next story or review phase.
+Approve before moving to final review.
 
 ---
 
-### Phase 4: Review — Layer-Specific Agents
+### Phase 4: Review — `@reviewer.code` + `@documentation.fix`
 
-Run one, several, or all review agents. Each is independent and can run in separate
-Copilot Chat sessions concurrently.
+Both steps are **required** before commit. Code changes frequently affect documentation — new adapters need READMEs,
+API endpoint changes require architecture and authentication doc updates, and new configuration keys must appear in the
+relevant adapter README. Skipping Step 2 causes documentation drift.
 
-| Agent | Scope | Focus |
-| ----- | ----- | ----- |
-| `@reviewer.domain` | Domain layer | Entity pattern, purity, value objects, business rules |
-| `@reviewer.application` | Application layer | CQRS types, services, contracts, DON'T violations |
-| `@reviewer.api` | API layer | Controllers, DTOs, mapping, versioning |
-| `@reviewer.adapters` | Adapter layer | Implementations, repositories, settings, DI |
-| `@reviewer.cross-cutting` | All layers | Validation flow, constants, interfaces, hexagonal compliance |
-| `@reviewer.observability` | All layers | Tracing, metrics, logging |
-| `@reviewer.documentation` | All layers | XML docs, SSOT, accuracy, Swagger |
+**Step 1 — Code review:** `@reviewer.code` → pass the keyword `uncommitted`.
 
-**Invoke:** `@reviewer.domain` → specify the feature name.
+Example: `@reviewer.code uncommitted`
 
-Example: `@reviewer.domain Review the user-management feature`
+`@reviewer.code` resolves all uncommitted `.cs` files via `git diff`, matches each file to its instruction checklists,
+dispatches three sub-agents (Codex, Opus, Sonnet), and produces a consolidated compliance report.
 
-**Each agent:**
+**Step 2 — Documentation fix:** `@documentation.fix` → pass the keyword `uncommitted`.
 
-1. Finds all files related to the feature within its scope
-2. Checks against its specific section of `docs/review-checklist.md`
-3. Reports only definite violations (not suggestions)
-4. Outputs structured report with file:line references
+Example: `@documentation.fix uncommitted`
 
-**Consolidation:** After running the reviewers you want, use `@reviewer.report`
-and paste or reference the individual reports to get a single prioritized action list.
+`@documentation.fix` resolves all uncommitted `.md` files via `git diff`, evaluates them against the documentation
+conventions checklist, applies fixes, then invokes `@reviewer.documentation` to verify compliance — iterating up to
+5 automatic fix cycles plus 5 user-guided cycles until the reviewer returns PASS. Run this step even when no `.md`
+files were explicitly changed — the agent detects whether new or modified code requires documentation updates
+to adapter READMEs, `docs/architecture.md`, or `docs/authentication.md`.
 
-**Your role:** Review each report. Decide which violations to fix now vs. defer.
-
----
-
-### Phase 5: Fix — Reuse `@developer`
-
-**Invoke:** `@developer` → paste the review violations to fix.
-
-Example: `@developer Fix the following review violations: [paste report]`
-
-The developer agent will apply fixes and re-run tests. After fixing, re-run
-the affected reviewer(s) to verify compliance.
+**Your role:** Review both reports. For the code review, fix any FAIL findings using `@code.fix` and re-run.
+For documentation, `@documentation.fix` handles fixes automatically — review its final report and approve when
+both show PASS. Do not merge until both steps produce a PASS verdict.
 
 ---
 
@@ -203,57 +172,29 @@ the affected reviewer(s) to verify compliance.
 
 | Phase | Agent | Input | Output |
 | ----- | ----- | ----- | ------ |
-| 1 | `@architect` | Feature requirement text | `docs/features/{name}.md` |
-| 2a | `@tester` | Feature doc + story # | Test files in `src/Test/` |
-| 2b | `@reviewer.tests` | Feature doc + story # | Test quality verdict |
-| 3 | `@developer` | Feature doc + story # | Implementation files |
-| 4 | `@reviewer.domain` | Feature name | Domain violations report |
-| 4 | `@reviewer.application` | Feature name | Application violations report |
-| 4 | `@reviewer.api` | Feature name | API violations report |
-| 4 | `@reviewer.adapters` | Feature name | Adapter violations report |
-| 4 | `@reviewer.cross-cutting` | Feature name | Cross-cutting violations report |
-| 4 | `@reviewer.observability` | Feature name | Observability violations report |
-| 4 | `@reviewer.documentation` | Feature name | Documentation violations report |
-| 4 | `@reviewer.report` | Individual reports | Consolidated action list |
-| 5 | `@developer` | Review violations | Fixed code |
-
-## File Structure
-
-``` text
-.github/
-  copilot-instructions.md               ← Global rules (already exists)
-  agents/
-    architect.agent.md                   ← Phase 1: Feature → Stories + File Plan + Diagram
-    tester.agent.md                      ← Phase 2a: Story → Tests (TDD red)
-    reviewer.tests.agent.md              ← Phase 2b: Test quality gate
-    developer.agent.md                   ← Phase 3: Story → Implementation (TDD green)
-    reviewer.domain.agent.md             ← Phase 4: Domain layer review
-    reviewer.application.agent.md        ← Phase 4: Application layer review
-    reviewer.api.agent.md                ← Phase 4: API layer review
-    reviewer.adapters.agent.md           ← Phase 4: Adapter layer review
-    reviewer.cross-cutting.agent.md      ← Phase 4: Cross-cutting concerns review
-    reviewer.observability.agent.md      ← Phase 4: Observability review
-    reviewer.documentation.agent.md      ← Phase 4: Documentation review
-    reviewer.report.agent.md             ← Phase 4: Consolidate reports
-  instructions/
-    domain.instructions.md               ← Auto-attaches for src/Domain/**
-    application.instructions.md          ← Auto-attaches for src/Application/**
-    api.instructions.md                  ← Auto-attaches for src/Api/**
-    adapters.instructions.md             ← Auto-attaches for src/Adapters/**
-    testing.instructions.md              ← Auto-attaches for src/Test/**
-docs/
-  features/
-    _template.md                         ← Feature plan template
-    {feature-name}.md                    ← Created per feature
-  workflow.md                            ← This file
-```
+| 0 | `@product_owner` | Feature request (free text) | Story files with Section A |
+| 1 | `@architect` | Story file (Section A complete) | Section B populated |
+| 2 | `@tester` | Story file (Sections A + B complete) | Stub files + test files + Section C |
+| 3 | `@developer` | Story file (Section C tests in RED) | Implementation + code review approved |
+| 4a | `@reviewer.code` | `uncommitted` | Consolidated code compliance report (multi-model) |
+| 4b | `@documentation.fix` | `uncommitted`, file, or directory | Documentation fixed + compliance report |
 
 ## Tips
 
 - **Start a new chat session** for each agent invocation to keep context clean.
 - **Reference files** with `#file:path` syntax in Copilot Chat for precise context.
-- **Run reviews concurrently** by opening multiple chat sessions, one per reviewer.
-- **Iterate TDD per story**: Phases 2a + 2b + 3 repeat for each story before moving to review.
-- **Re-run reviewers** after fixes to verify compliance — they are idempotent.
-- **Feature doc is the single source of truth** — all agents reference it.
+- **Section C is the TDD tracker** — the tester populates it (Skeleton Inventory + Test Traceability), the developer
+  updates it, the code reviewer verifies against it.
+- **Phase 4 is mandatory** — both `@reviewer.code uncommitted` and `@documentation.fix uncommitted` must produce
+  PASS before merging. Run them sequentially: code review first, documentation fix second.
+- **`@documentation.fix` handles the fix loop automatically** — it invokes `@reviewer.documentation` internally and
+  iterates until the reviewer returns PASS or the iteration limit is reached. Run it even when you did not edit `.md`
+  files — code changes often require documentation updates.
+- **Use `@code.fix`** for ad-hoc code fixes outside the story workflow (bugs, tech debt).
+- **Use `@documentation.fix`** standalone to fix any documentation scope — file, directory, layer, or `uncommitted`.
+- **Use `@reviewer.code`** standalone to review any `.cs` scope — file, directory, layer, or `uncommitted`.
+- **Use `@reviewer.documentation`** standalone to validate docs without fixing (read-only review).
+- **The story file is the single source of truth** — all agents reference and update it.
 - **Any agent can run standalone** — useful for reviewing existing code outside the full workflow.
+- **Meta-reviewers** (`@reviewer.agents`, `@reviewer.prompts`) maintain SDLC quality — run them when modifying agents
+  or prompts, not during feature development.
