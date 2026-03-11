@@ -3,7 +3,7 @@ description: 'Review *.agent.md files via three-model evaluation to produce a co
 argument-hint: 'Provide the path to the *.agent.md file to review'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['agent', 'codebase']
+tools: ['agent', 'codebase', 'search']
 agents: ['CodexReviewer', 'OpusReviewer', 'SonnetReviewer']
 ---
 

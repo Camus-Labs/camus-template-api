@@ -4,7 +4,7 @@ description: 'Review C# code via three-model evaluation to produce a consolidate
 argument-hint: 'Provide a scope: file path, directory, layer name, or "uncommitted" for changed files'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['agent', 'codebase', 'terminal']
+tools: ['agent', 'codebase', 'terminal', 'fileSearch', 'listDirectory', 'readFile', 'getTaskOutput', 'search']
 agents: ['CodexReviewer', 'OpusReviewer', 'SonnetReviewer']
 ---
 

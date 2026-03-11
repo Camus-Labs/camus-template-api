@@ -3,7 +3,7 @@ description: 'Create user story files from feature requests for architecture han
 argument-hint: 'Provide feature request details for user story generation'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['codebase', 'createFile', 'editFiles', 'terminal']
+tools: ['codebase', 'createFile', 'editFiles', 'terminal', 'fileSearch', 'listDirectory', 'readFile', 'getTaskOutput', 'search']
 ---
 
 # Role: Product Owner
