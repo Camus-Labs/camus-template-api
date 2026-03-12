@@ -7,6 +7,8 @@ tools:
   - 'agent'
   - 'read'
   - 'search'
+  - 'edit'
+  - 'execute'
 agents:
   - 'CodexReviewer'
   - 'OpusReviewer'
@@ -38,11 +40,11 @@ Read and internalize this file before starting:
 
 ## Process
 
-1. Resolve `scope` to a concrete list of `.cs` files using the `codebase` and `terminal` tools:
+1. Resolve `scope` to a concrete list of `.cs` files:
     - File path: confirm it exists and is a `.cs` file and produce a single-item list; otherwise produce an empty list.
     - Directory path: recursively list all `.cs` files under it.
     - Layer name: map to the corresponding `src/` subdirectory and recursively list all `.cs` files.
-    - `uncommitted`: run `git diff --name-only HEAD` via the `terminal` tool and filter to `.cs` files.
+    - `uncommitted`: run `git diff --name-only HEAD` and filter to `.cs` files.
     - Otherwise (unrecognized format): produce an empty list.
     - If the resolved list is empty, stop and report the reason; otherwise proceed to Step 2.
 

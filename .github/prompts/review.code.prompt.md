@@ -2,7 +2,7 @@
 description: 'Review C# source files against their matching instruction checklists and return a verdict'
 argument-hint: 'Provide the list of modified .cs files to review'
 mode: 'agent'
-tools: ['codebase']
+tools: ['search']
 ---
 
 # Review Code
@@ -35,11 +35,11 @@ Read and internalize the instruction checklists before starting:
 
 ## Process
 
-1. Confirm the caller supplied at least one `modified_files` entry using the `codebase` tool — if the list is empty,
-  stop and report the problem; otherwise proceed to Step 2.
+1. Confirm the caller supplied at least one `modified_files` entry — if the list is empty, stop and report the problem;
+  otherwise proceed to Step 2.
 
-2. Read every file in `modified_files` using the `codebase` tool — if any file is unreadable or is not a `.cs` file,
-  stop and report the problem; otherwise proceed to Step 3.
+2. Read every file in `modified_files` — if any file is unreadable or is not a `.cs` file, stop and report the problem;
+  otherwise proceed to Step 3.
 
 3. Match each file to its applicable instruction checklists by evaluating the `applyTo` glob patterns declared in the
   instruction file frontmatter — apply these rules in order:
@@ -55,11 +55,11 @@ Read and internalize the instruction checklists before starting:
 
 4. Iterate through the combined section list (max 30 sections); evaluate exactly one section per iteration across ALL
   matched files, score `PASS` only when ALL checklist items in that section pass for ALL applicable files — otherwise
-  score `FAIL` — and record each failing item as a finding; stop after evaluating all sections — use no tools.
+  score `FAIL` — and record each failing item as a finding; stop after evaluating all sections.
 
-5. Compute the overall verdict — PASS when every section is PASS, otherwise FAIL — use no tools.
+5. Compute the overall verdict — PASS when every section is PASS, otherwise FAIL.
 
-6. Produce the report in the exact output format below using the verdict and all findings — use no tools.
+6. Produce the report in the exact output format below using the verdict and all findings.
 
 ## Rules
 

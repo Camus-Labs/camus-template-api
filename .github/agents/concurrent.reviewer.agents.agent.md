@@ -7,6 +7,7 @@ tools:
   - 'agent'
   - 'read'
   - 'search'
+  - 'edit'
 agents:
   - 'CodexReviewer'
   - 'OpusReviewer'
@@ -23,8 +24,8 @@ Produce a consolidated review report for a target `*.agent.md` file.
 
 **Success:** A single deduplicated review report exists in the output format below, combining all sub-agent evaluations.
 
-**Failure:** The target file does not exist, is unreadable, does not end with `.agent.md`, or sub-agent evaluations
-cannot complete.
+**Failure:** The target file does not exist, is unreadable, does not contain agent definition content, does not end
+with `.agent.md`, or sub-agent evaluations cannot complete.
 
 ## Context
 
@@ -38,12 +39,11 @@ Read and internalize this file before starting:
 
 ## Process
 
-1. Resolve `target_agent_path` using the `codebase` tool — confirm the file exists and ends with `.agent.md`; if
-  missing or invalid, stop and report the reason; otherwise proceed to Step 2.
+1. Resolve `target_agent_path` — confirm the file exists and ends with `.agent.md`; if missing or invalid, stop and
+  report the reason; otherwise proceed to Step 2.
 
-2. Read the target file using the `codebase` tool to confirm it is readable and contains agent definition content — if
-  unreadable or if the file does not contain agent definition content, stop and report the problem; otherwise proceed
-  to Step 3.
+2. Read the target file to confirm it is readable and contains agent definition content — if unreadable or if the file
+  does not contain agent definition content, stop and report the problem; otherwise proceed to Step 3.
 
 3. Dispatch three parallel sub-agents (`CodexReviewer`, `SonnetReviewer`, `OpusReviewer`) via the `agent` tool, each
   passing `#file:.github/prompts/review.agent.prompt.md` and the target file — collect the full review report from each
