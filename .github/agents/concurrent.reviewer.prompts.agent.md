@@ -3,8 +3,15 @@ description: 'Review *.prompt.md files via three-model evaluation to produce a c
 argument-hint: 'Provide the path to the *.prompt.md file to review'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['agent', 'search', 'codebase']
-agents: ['CodexReviewer', 'OpusReviewer', 'SonnetReviewer']
+tools:
+  - 'agent'
+  - 'read'
+  - 'search'
+  - 'edit'
+agents:
+  - 'CodexReviewer'
+  - 'OpusReviewer'
+  - 'SonnetReviewer'
 ---
 
 # Role: Prompt Reviewer
@@ -17,8 +24,8 @@ Produce a consolidated review report for a target `*.prompt.md` file.
 
 **Success:** A single deduplicated review report exists in the output format below, combining all sub-agent evaluations.
 
-**Failure:** The target file does not exist, is unreadable, does not end with `.prompt.md`, or sub-agent evaluations
-cannot complete.
+**Failure:** The target file does not exist, is unreadable, does not contain prompt definition content, does not end
+with `.prompt.md`, or sub-agent evaluations cannot complete.
 
 ## Context
 
@@ -32,12 +39,11 @@ Read and internalize this file before starting:
 
 ## Process
 
-1. Resolve `target_prompt_path` using the `search` tool — confirm the file exists and ends with `.prompt.md`; if
-  missing or invalid, stop and report the reason; otherwise proceed to Step 2.
+1. Resolve `target_prompt_path` — confirm the file exists and ends with `.prompt.md`; if missing or invalid, stop and
+  report the reason; otherwise proceed to Step 2.
 
-2. Read the target file using the `codebase` tool to confirm it is readable and contains prompt definition content
-  — if unreadable or if the file does not contain prompt definition content, stop and report the problem; otherwise
-  proceed to Step 3.
+2. Read the target file to confirm it is readable and contains prompt definition content — if unreadable or if the file
+  does not contain prompt definition content, stop and report the problem; otherwise proceed to Step 3.
 
 3. Dispatch three parallel sub-agents (`CodexReviewer`, `SonnetReviewer`, `OpusReviewer`) via the `agent` tool, each
   passing `#file:.github/prompts/review.prompt.prompt.md` and the target file — collect the full review report from
@@ -48,7 +54,7 @@ Read and internalize this file before starting:
 4. Merge the successful sub-agent reports into a single deduplicated findings list — mark a section FAIL if any
   successful model marks it FAIL; otherwise mark it PASS; if two or more sub-agents flag the same checklist item,
   record it once and note which models flagged it; otherwise (single model), still include it; mark columns of failed
-  sub-agents as N/A in the Checklist Results table.
+  sub-agents as N/A in the Checklist Results table. Proceed to Step 5.
 
 5. Produce the consolidated Prompt Review Report in the output format below using the per-model results. Set overall
   Verdict to FAIL if any merged section is FAIL, otherwise set it to PASS. Set Ready for Use to Yes when Verdict is

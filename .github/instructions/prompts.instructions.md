@@ -21,9 +21,7 @@ applyTo: ".github/prompts/**"
     - [ ] Valid YAML `---` frontmatter present
     - [ ] `description` — one sentence: verb + object + outcome
     - [ ] `mode` — one of `agent` | `ask` | `edit`
-    - [ ] `tools` — lists ONLY tools the process steps actually use
     - [ ] `argument-hint` — included, describes how to invoke the prompt
-    - [ ] No over-privileged tools (listed but never used in steps)
     - [ ] No under-declared tools (used in steps but not listed)
 
 3. Goal
@@ -63,7 +61,6 @@ applyTo: ".github/prompts/**"
     - [ ] First step validates inputs
     - [ ] Last step produces the output
     - [ ] One bounded action per step — sub-item enumeration within one target is fine; no independent evaluations
-    - [ ] Steps that invoke tools name them explicitly
     - [ ] No step restates, negates, or overrides another step or rule
     - [ ] Every process-computed value has a placeholder in the template
 

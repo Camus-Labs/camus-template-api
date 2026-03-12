@@ -3,7 +3,10 @@ description: 'Create user story files from feature requests for architecture han
 argument-hint: 'Provide feature request details for user story generation'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['search', 'editFiles']
+tools:
+  - 'read'
+  - 'search'
+  - 'edit'
 ---
 
 # Role: Product Owner
@@ -39,19 +42,19 @@ clarification limit — mark unresolved fields, produce a BLOCKED handoff report
 
 ## Process
 
-1. Validate input `feature_request` is present and `docs/stories/_user_story_template.md` exists using `search`; stop
-  and report the exact blockers if validation failed; otherwise proceed to Step 2.
-2. Read all Context files using `search`.
-3. Decompose the request into stories, applying naming conventions from `Context` to derive file paths and using
-  template at `docs/stories/todo/[request-slug]/[story-id]-[story-slug].md` using `editFiles`.
+1. Validate input `feature_request` is present and `docs/stories/_user_story_template.md` exists; stop and report the
+  exact blockers if validation failed; otherwise proceed to Step 2.
+2. Read all Context files.
+3. Decompose the request into stories, applying naming conventions from `Context` to derive file paths and creating
+  story files from the template at `docs/stories/_user_story_template.md`.
 4. Ask field-targeted questions to fill missing `Section A` fields, batching all remaining gaps into each round and
   iterating up to 5 rounds. Each round re-checks every `Section A` field and groups unanswered gaps into a single
   question set. Stop when all Section A fields contain an explicit, non-empty value the user provided.
   If fields remain incomplete after 5 rounds, mark them as `[UNRESOLVED]` and proceed to Step 5.
-5. Populate `Section A - Product Owner Definition` in each story file using `editFiles`.
-6. Evaluate the `Product Owner Handoff Gate` for each story — set a gate item using `editFiles` to `Yes` only when the
-  corresponding Section A field is complete and unambiguous; set to `No` otherwise.
-7. Populate the overall status and sign-off line in each story file using `editFiles` — set overall status to `BLOCKED`
+5. Populate `Section A - Product Owner Definition` in each story file.
+6. Evaluate the `Product Owner Handoff Gate` for each story — set a gate item to `Yes` only when the corresponding
+  Section A field is complete and unambiguous; set to `No` otherwise.
+7. Populate the overall status and sign-off line in each story file — set overall status to `BLOCKED`
   if any gate item equals `No` or any field carries the `[UNRESOLVED]` label, otherwise set overall status to `READY`.
 8. Report handoff status using the output template. If the overall status is `BLOCKED`, list the unresolved fields
   and failed gate items under `Unresolved Blockers`; otherwise, set Unresolved Blockers to None.

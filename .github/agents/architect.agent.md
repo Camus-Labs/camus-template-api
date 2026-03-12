@@ -3,7 +3,10 @@ description: 'Populate Section B architect definition in user story files for im
 argument-hint: 'Provide Path to a user story file with completed Section A ready for architecture definition'
 mode: 'agent'
 model: 'claude-opus-4.6'
-tools: ['search', 'editFiles']
+tools:
+  - 'read'
+  - 'search'
+  - 'edit'
 ---
 
 # Role: Software Architect
@@ -47,17 +50,17 @@ architectural ambiguities remain after the clarification limit — stop and repo
 
 ## Process
 
-1. Validate `story_file` exists and all `Product Owner Handoff Gate` items using `search`; stop with the exact list of
-  blockers if the file is missing or any gate item is `No`; otherwise proceed to Step 2.
-2. Read all Context files using `search`.
+1. Validate `story_file` exists and all `Product Owner Handoff Gate` items; stop with the exact list of blockers if the
+  file is missing or any gate item is `No`; otherwise proceed to Step 2.
+2. Read all Context files.
 3. Ask targeted clarification questions for any architectural ambiguity found when mapping Section A to layers, batching
   all gaps per round for up to 5 rounds; report `BLOCKED` with unresolved items if ambiguities remain after round 5;
   otherwise proceed to Step 4 with all ambiguities resolved.
 4. Populate Section B prose fields (Layer Impact Matrix, Cross-Cutting Concern Decisions, Delivery and Rollout Notes) in
-  the story file using `editFiles`.
-5. Update the story file using a single `editFiles` call: (a) mark each Architect Handoff Readiness gate item `Yes`
-  when the corresponding Section B field is complete and unambiguous, `No` otherwise; (b) set architect sign-off;
-  (c) set story `Status` to `READY_FOR_IMPLEMENTATION` if all gate items are `Yes`, else `BLOCKED`.
+  the story file.
+5. Update the story file: (a) mark each Architect Handoff Readiness gate item `Yes` when the corresponding Section B
+  field is complete and unambiguous, `No` otherwise; (b) set architect sign-off; (c) set story `Status` to
+  `READY_FOR_IMPLEMENTATION` if all gate items are `Yes`, else `BLOCKED`.
 6. Report handoff status using the output template.
 
 ## Rules

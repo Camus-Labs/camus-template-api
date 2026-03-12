@@ -2,7 +2,7 @@
 description: 'Review an agent file and return a verdict based on best practices'
 argument-hint: 'Provide the target agent path to review'
 mode: 'agent'
-tools: ['codebase']
+tools: ['search']
 ---
 # Review Agent Prompt
 
@@ -27,14 +27,14 @@ Read and internalize the conventions checklist before starting:
 
 ## Process
 
-1. Confirm the user supplied `target_agent_path`, points to a readable file, and ends with `.agent.md` using the
-  `codebase` tool — if missing, unreadable, or invalid type, stop and report the problem; otherwise, proceed to step 2.
-2. Iterate through sections in this exact order using the `codebase` tool: `Writing Quality and Structure`,
-  `Frontmatter`, `Role`, `Goal`, `Context`, `Inputs`, `Process`, `Output Format`, `Rules`; evaluate exactly one section
-  per iteration, score `PASS` only when ALL items in that section pass — otherwise score FAIL — and record each failing
-  item as a finding; stop after 9 iterations.
-3. Compute the overall verdict — PASS when every section is PASS, otherwise FAIL — use no tools.
-4. Produce the report in the exact output format below using the verdict and all findings — use no tools.
+1. Confirm the user supplied `target_agent_path`, points to a readable file, and ends with `.agent.md` — if missing,
+  unreadable, or invalid type, stop and report the problem; otherwise, proceed to step 2.
+2. Iterate through sections in this exact order: `Writing Quality and Structure`, `Frontmatter`, `Role`, `Goal`,
+  `Context`, `Inputs`, `Process`, `Output Format`, `Rules`; evaluate exactly one section per iteration, score `PASS`
+  only when ALL items in that section pass — otherwise score FAIL — and record each failing item as a finding; stop
+  after 9 iterations.
+3. Compute the overall verdict — PASS when every section is PASS, otherwise FAIL.
+4. Produce the report in the exact output format below using the verdict and all findings.
 
 ## Rules
 
