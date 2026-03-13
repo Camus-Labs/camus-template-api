@@ -75,7 +75,8 @@ src/
     └── emc.camus.security.jwt.test/
 ```
 
-> **📖 Learn More:** See [Architecture Guide](docs/architecture.md) for detailed layer responsibilities and dependency flow.
+> **📖 Learn More:** See [Architecture Guide](docs/architecture.md) for detailed layer responsibilities
+and dependency flow.
 
 ---
 
@@ -130,7 +131,8 @@ docker-compose -f docker-compose.dev.yml up --build
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
-> **📖 Detailed Guide:** See [Debugging Documentation](docs/debugging.md) for Docker development workflow with VS Code debugging.
+> **📖 Detailed Guide:** See [Debugging Documentation](docs/debugging.md) for Docker development workflow
+with VS Code debugging.
 
 ---
 
@@ -140,7 +142,9 @@ The template includes two authentication mechanisms ready to use:
 
 ### JWT Bearer Tokens
 
-Send a POST request to `/api/v2/auth/token` with `accessKey` and `accessSecret` credentials to receive a Bearer token. Include the token in the `Authorization: Bearer <token>` header for subsequent requests to protected endpoints.
+Send a POST request to `/api/v2/auth/token` with `accessKey` and `accessSecret` credentials to receive a
+Bearer token. Include the token in the `Authorization: Bearer <token>` header for subsequent requests to
+protected endpoints.
 
 ### API Key
 
@@ -162,7 +166,9 @@ Built-in IP-based rate limiting with sliding window algorithm:
 
 **Apply to endpoints:**
 
-Apply `[RateLimit(RateLimitPolicies.Strict)]` or `[RateLimit(RateLimitPolicies.Relaxed)]` attributes to controllers or actions. See `RateLimitPolicies` in `src/Application/emc.camus.application/RateLimiting/` for available policies.
+Apply `[RateLimit(RateLimitPolicies.Strict)]` or `[RateLimit(RateLimitPolicies.Relaxed)]` attributes to
+controllers or actions. See `RateLimitPolicies` in `src/Application/emc.camus.application/RateLimiting/`
+for available policies.
 
 > **📖 Full Guide:** See [Rate Limiting Adapter README](src/Adapters/emc.camus.ratelimiting.inmemory/README.md) for
 configuration and deployment.
@@ -190,7 +196,8 @@ Built-in OpenTelemetry integration with multiple exporter options:
 }
 ```
 
-The template includes Docker Compose configurations for a complete observability stack (Jaeger, Prometheus, Grafana, Loki).
+The template includes Docker Compose configurations for a complete observability stack
+(Jaeger, Prometheus, Grafana, Loki).
 
 **📖 Learn More:**
 
@@ -276,7 +283,8 @@ az containerapp create \
   --ingress external
 ```
 
-> **📖 Complete Guide:** See [Deployment Documentation](docs/deployment.md) for production setup, scaling, and cloud deployment.
+> **📖 Complete Guide:** See [Deployment Documentation](docs/deployment.md) for production setup, scaling,
+and cloud deployment.
 
 ---
 
@@ -284,11 +292,14 @@ az containerapp create \
 
 ### Add Business Controllers
 
-Create versioned API controllers in `src/Api/emc.camus.api/Controllers/`. Apply `[ApiController]`, `[ApiVersion]`, and version-based route attributes. See existing controllers in that folder for the pattern.
+Create versioned API controllers in `src/Api/emc.camus.api/Controllers/`. Apply `[ApiController]`,
+`[ApiVersion]`, and version-based route attributes. See existing controllers in that folder for the
+pattern.
 
 ### Implement Use Cases
 
-Add application service interfaces in `src/Application/emc.camus.application/`. See existing interfaces like `IApiInfoRepository` and `IUserRepository` for the contract pattern.
+Add application service interfaces in `src/Application/emc.camus.application/`. See existing interfaces
+like `IApiInfoRepository` and `IUserRepository` for the contract pattern.
 
 ### Create Domain Entities
 

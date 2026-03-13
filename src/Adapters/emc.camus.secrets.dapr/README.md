@@ -8,7 +8,9 @@ Dapr secret provider adapter for Camus applications.
 
 ## 📋 Overview
 
-This adapter implements the `ISecretProvider` interface from the Application layer using Dapr's secret management capabilities. It enables secure retrieval of secrets from various secret stores (local files, Azure Key Vault, AWS Secrets Manager, etc.) without code changes.
+This adapter implements the `ISecretProvider` interface from the Application layer using Dapr's
+secret management capabilities. It enables secure retrieval of secrets from various secret stores
+(local files, Azure Key Vault, AWS Secrets Manager, etc.) without code changes.
 
 ---
 
@@ -26,7 +28,8 @@ This adapter implements the `ISecretProvider` interface from the Application lay
 
 ### 1. Register in Program.cs
 
-Call `builder.AddDaprSecrets()` to register the Dapr secret provider in DI, then call `app.UseDaprSecrets()` to force secret initialization at startup (fail-fast pattern).
+Call `builder.AddDaprSecrets()` to register the Dapr secret provider in DI, then call
+`app.UseDaprSecrets()` to force secret initialization at startup (fail-fast pattern).
 
 See `DaprSecretsSetupExtensions` in this adapter for the full registration API.
 
@@ -47,7 +50,8 @@ In `appsettings.json`:
 
 ### 3. Use in Your Code
 
-Inject `ISecretProvider` from the Application layer via constructor injection. Call `GetSecretAsync(secretName)` to retrieve a secret value at runtime.
+Inject `ISecretProvider` from the Application layer via constructor injection. Call
+`GetSecretAsync(secretName)` to retrieve a secret value at runtime.
 
 See `ISecretProvider` in `src/Application/emc.camus.application/Secrets/` for the interface contract.
 
@@ -61,7 +65,9 @@ For development, configure a local file-based secret store:
 
 **1. Dapr Component** (`src/Infrastructure/dapr/dapr-secret-component.yml`):
 
-Configure a local file-based secret store component. See [Dapr Components README](../../../Infrastructure/dapr/README.md) for the component file format and examples.
+Configure a local file-based secret store component.
+See [Dapr Components README](../../Infrastructure/dapr/README.md) for the component file format
+and examples.
 
 **2. Secrets File** (`src/Infrastructure/dapr/secrets.json`):
 
@@ -76,15 +82,19 @@ Configure a local file-based secret store component. See [Dapr Components README
 
 **3. Run Dapr Sidecar**:
 
-Start the Dapr sidecar from the `src/Infrastructure/dapr` directory using `dapr run` with the `--resources-path .` flag, specifying the app ID, HTTP port (3500), and gRPC port (50001). See [Dapr Components README](../../../Infrastructure/dapr/README.md) for the complete run command.
+Start the Dapr sidecar from the `src/Infrastructure/dapr` directory using `dapr run` with the
+`--resources-path .` flag, specifying the app ID, HTTP port (3500), and gRPC port (50001).
+See [Dapr Components README](../../Infrastructure/dapr/README.md) for the complete run command.
 
-> **📖 Full Guide:** See [Dapr Components README](../../../Infrastructure/dapr/README.md) for detailed Dapr setup.
+> **📖 Full Guide:** See [Dapr Components README](../../Infrastructure/dapr/README.md) for detailed Dapr setup.
 
 ### Production
 
 For production deployments, configure Dapr to use proper secret stores like Azure Key Vault or AWS Secrets Manager.
 
-> **📖 Production Configuration:** See [Dapr Components README](../../../Infrastructure/dapr/README.md#production-configuration) for complete production secret store configurations (Azure Key Vault, AWS Secrets Manager, etc.).
+> **📖 Production Configuration:** See
+[Dapr Components README](../../Infrastructure/dapr/README.md#production-configuration) for complete
+production secret store configurations (Azure Key Vault, AWS Secrets Manager, etc.).
 
 Update your production settings to reference the appropriate secret store:
 
@@ -135,7 +145,8 @@ Update your production settings to reference the appropriate secret store:
 
 ## 🧪 Testing
 
-Mock the `ISecretProvider` interface in unit tests to return predetermined secret values without requiring a running Dapr sidecar.
+Mock the `ISecretProvider` interface in unit tests to return predetermined secret values without
+requiring a running Dapr sidecar.
 
 ---
 
@@ -143,8 +154,10 @@ Mock the `ISecretProvider` interface in unit tests to return predetermined secre
 
 The adapter registers the Dapr secret provider via two extension methods in `DaprSecretsSetupExtensions.cs`:
 
-1. **`builder.AddDaprSecrets()`** — Reads `DaprSecretProvider` settings from configuration and registers `DaprSecretProvider` as the `ISecretProvider` singleton.
-2. **`app.UseDaprSecrets()`** — Resolves `ISecretProvider` from DI and calls `Initialize()` to fetch all configured secrets at startup (fail-fast pattern).
+1. **`builder.AddDaprSecrets()`** — Reads `DaprSecretProvider` settings from configuration and
+   registers `DaprSecretProvider` as the `ISecretProvider` singleton.
+2. **`app.UseDaprSecrets()`** — Resolves `ISecretProvider` from DI and calls `Initialize()` to
+   fetch all configured secrets at startup (fail-fast pattern).
 
 Call `AddDaprSecrets()` before any adapter that depends on `ISecretProvider` (e.g., JWT, API Key, migrations).
 
@@ -164,10 +177,11 @@ Call `AddDaprSecrets()` before any adapter that depends on `ISecretProvider` (e.
 
 ## 🔗 Related Documentation
 
-- **[Application Secrets Interface](../../../Application/emc.camus.application/Secrets/)** - `ISecretProvider` definition
-- **[Dapr Components Configuration](../../../Infrastructure/dapr/README.md)** - Dapr setup and configuration
-- **[Architecture Guide](../../../../docs/architecture.md)** - Secrets management architecture
-- **[Deployment Guide](../../../../docs/deployment.md)** - Production secret management
+- **[Application Secrets Interface](../../Application/emc.camus.application/Secrets/)** -
+  `ISecretProvider` definition
+- **[Dapr Components Configuration](../../Infrastructure/dapr/README.md)** - Dapr setup and configuration
+- **[Architecture Guide](../../../docs/architecture.md)** - Secrets management architecture
+- **[Deployment Guide](../../../docs/deployment.md)** - Production secret management
 
 ---
 

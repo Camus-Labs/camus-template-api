@@ -2,7 +2,8 @@
 
 Component configuration files for Dapr integration in the Camus API.
 
-> **📖 Parent Documentation:** See [Main README](../../../README.md) and [Architecture Guide](../../../docs/architecture.md) for context.
+> **📖 Parent Documentation:** See [Main README](../../../README.md) and
+[Architecture Guide](../../../docs/architecture.md) for context.
 
 ---
 
@@ -33,7 +34,8 @@ spec:
 
 **Usage in Application:**
 
-The [emc.camus.secrets.dapr](../../Adapters/emc.camus.secrets.dapr/README.md) adapter uses this component to retrieve secrets at runtime.
+The [emc.camus.secrets.dapr](../../Adapters/emc.camus.secrets.dapr/README.md) adapter uses this
+component to retrieve secrets at runtime.
 
 ---
 
@@ -135,13 +137,15 @@ spec:
     value: "your-secret-key"
 ```
 
-> **📖 Learn More:** See [Dapr Secret Store Documentation](https://docs.dapr.io/reference/components-reference/supported-secret-stores/)
+> **📖 Learn More:** See
+[Dapr Secret Store Documentation](https://docs.dapr.io/reference/components-reference/supported-secret-stores/)
 
 ---
 
 ## 🔗 Related Documentation
 
-- **[Secrets Adapter README](../../Adapters/emc.camus.secrets.dapr/README.md)** - How the application consumes secrets
+- **[Secrets Adapter README](../../Adapters/emc.camus.secrets.dapr/README.md)** - How the
+  application consumes secrets
 - **[Architecture Guide](../../../docs/architecture.md)** - Dapr's role in the system architecture
 - **[Deployment Guide](../../../docs/deployment.md)** - Production Dapr configuration
 

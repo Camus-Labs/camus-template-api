@@ -86,10 +86,12 @@ Once running, navigate to:
 
 ### XML Documentation Comments
 
-XML documentation generation is enabled centrally in `src/Directory.Build.props` — no per-project configuration is needed.
+XML documentation generation is enabled centrally in `src/Directory.Build.props` — no per-project
+configuration is needed.
 
-Document endpoints using standard XML summary, param, returns, and response tags, along with `[ProducesResponseType]`
-attributes. See controller source files in `src/Api/emc.camus.api/Controllers/` for examples.
+Document endpoints using standard XML summary, param, returns, and response tags, along with
+`[ProducesResponseType]` attributes. See controller source files in
+`src/Api/emc.camus.api/Controllers/` for examples.
 
 ### Swagger Annotations
 
@@ -234,8 +236,8 @@ Call these in `Program.cs` after other service registrations and before `app.Run
 
 ## 🔗 Related Documentation
 
-- **[Architecture Guide](../../../../docs/architecture.md)** - API layer architecture
-- **[Authentication Guide](../../../../docs/authentication.md)** - Authentication configuration
+- **[Architecture Guide](../../../docs/architecture.md)** - API layer architecture
+- **[Authentication Guide](../../../docs/authentication.md)** - Authentication configuration
 - **[OpenAPI Specification](https://swagger.io/specification/)** - Official OpenAPI docs
 - **[Swashbuckle Documentation](https://github.com/domaindrivendev/Swashbuckle.AspNetCore)** - Swagger for ASP.NET Core
 

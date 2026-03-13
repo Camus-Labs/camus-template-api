@@ -8,8 +8,9 @@ PostgreSQL database adapter for Camus applications using Dapper and Npgsql.
 
 ## 📋 Overview
 
-This adapter provides PostgreSQL database access using Dapper micro-ORM, implementing the repository pattern for clean
-separation between data access and business logic. It supports both API information and user authorization data persistence.
+This adapter provides PostgreSQL database access using Dapper micro-ORM, implementing the repository
+pattern for clean separation between data access and business logic. It supports both API information
+and user authorization data persistence.
 
 ---
 
@@ -81,7 +82,8 @@ dependency injection:
 - `app.UseAppDataSetup()` initializes and validates the database
 - `app.UseAuthorizationSetup()` initializes and validates the database
 
-See `AppDataSetupExtensions` and `AuthorizationSetupExtensions` in `src/Api/emc.camus.api/Extensions/` for the wiring details.
+See `AppDataSetupExtensions` and `AuthorizationSetupExtensions` in
+`src/Api/emc.camus.api/Extensions/` for the wiring details.
 
 ---
 
@@ -190,11 +192,14 @@ actual credentials from the secret provider at runtime.
 
 ### Custom Queries
 
-The repositories use Dapper for data access. Add custom queries using Dapper’s `QueryAsync`, `QuerySingleOrDefaultAsync`, and `ExecuteAsync` extension methods on `IDbConnection`. See the existing repository implementations in this adapter for query patterns.
+The repositories use Dapper for data access. Add custom queries using Dapper's `QueryAsync`,
+`QuerySingleOrDefaultAsync`, and `ExecuteAsync` extension methods on `IDbConnection`. See the
+existing repository implementations in this adapter for query patterns.
 
 ### Transaction Support
 
-Dapper supports transactions for multi-statement operations. Open a connection, begin a transaction, pass it to each `Execute`/`Query` call, and commit or rollback as appropriate.
+Dapper supports transactions for multi-statement operations. Open a connection, begin a transaction,
+pass it to each `Execute`/`Query` call, and commit or rollback as appropriate.
 
 ---
 
@@ -202,7 +207,8 @@ Dapper supports transactions for multi-statement operations. Open a connection, 
 
 ### Integration Tests
 
-For testing with PostgreSQL, create a test database and use the adapter’s connection factory pointed at that database. Initialize the repository, then assert on query results.
+For testing with PostgreSQL, create a test database and use the adapter's connection factory pointed
+at that database. Initialize the repository, then assert on query results.
 
 See test projects in `src/Test/` for integration test patterns.
 
@@ -217,7 +223,8 @@ This adapter integrates through extension methods defined in the API layer:
 - `app.UseAppDataSetup()` — initializes and validates the database connection at startup
 - `app.UseAuthorizationSetup()` — initializes and validates the database connection at startup
 
-See `AppDataSetupExtensions` and `AuthorizationSetupExtensions` in `src/Api/emc.camus.api/Extensions/` for the full wiring details.
+See `AppDataSetupExtensions` and `AuthorizationSetupExtensions` in
+`src/Api/emc.camus.api/Extensions/` for the full wiring details.
 
 ---
 

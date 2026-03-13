@@ -46,8 +46,9 @@ examples, token generation, endpoint protection, and testing.
 
 JWT tokens include standard claims for user identification, roles, and token metadata.
 
-> **📖 Complete Claims Reference:** See [JWT Adapter README - JWT Claims](../src/Adapters/emc.camus.security.jwt/README.md#-jwt-claims)
-for detailed claims documentation and usage examples.
+> **📖 Complete Claims Reference:** See
+[JWT Adapter README - JWT Claims](../src/Adapters/emc.camus.security.jwt/README.md#-jwt-claims) for
+detailed claims documentation and usage examples.
 
 ## Security Notes
 

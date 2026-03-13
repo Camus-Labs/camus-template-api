@@ -1,6 +1,8 @@
 # Application Layer - Shared Contracts
 
-The Application layer defines **shared contracts** (interfaces, attributes, exceptions, and constants) consumed by the API layer and infrastructure adapters. This layer contains **zero implementations** - only abstractions that enable clean architecture and dependency inversion.
+The Application layer defines **shared contracts** (interfaces, attributes, exceptions, and constants)
+consumed by the API layer and infrastructure adapters. This layer contains **zero implementations** -
+only abstractions that enable clean architecture and dependency inversion.
 
 ---
 
@@ -57,8 +59,10 @@ Secret management contracts:
 
 Application-wide constants:
 
-- **`ErrorCodes`** - Standardized error codes for API responses (`bad_request`, `unauthorized`, `rate_limit_exceeded`, etc.)
-- **`Headers`** - Custom HTTP header name constants (`X-Api-Key`, `X-Trace-Id`, rate limit headers)
+- **`ErrorCodes`** - Standardized error codes for API responses (`bad_request`, `unauthorized`,
+  `rate_limit_exceeded`, etc.)
+- **`Headers`** - Custom HTTP header name constants (`X-Api-Key`, `X-Trace-Id`, rate limit
+  headers)
 - **`MediaTypes`** - Custom media type constants (`application/problem+json`)
 
 ### `Exceptions/`
@@ -98,7 +102,8 @@ The Application layer has **minimal dependencies**:
 </ItemGroup>
 ```
 
-**Dependency Rule:** Application layer must **never depend on infrastructure packages** (database, HTTP, logging frameworks).
+**Dependency Rule:** Application layer must **never depend on infrastructure packages** (database,
+HTTP, logging frameworks).
 
 ---
 
@@ -124,15 +129,21 @@ See individual adapter READMEs for implementation details:
 
 ### Using RateLimit Attribute
 
-Apply `[RateLimit(RateLimitPolicies.Strict)]` to controllers for sensitive endpoints or `[RateLimit(RateLimitPolicies.Relaxed)]` for high-throughput operations. See `RateLimitAttribute` and `RateLimitPolicies` in the `RateLimiting` namespace for available options.
+Apply `[RateLimit(RateLimitPolicies.Strict)]` to controllers for sensitive endpoints or
+`[RateLimit(RateLimitPolicies.Relaxed)]` for high-throughput operations. See `RateLimitAttribute`
+and `RateLimitPolicies` in the `RateLimiting` namespace for available options.
 
 ### Using Error Codes
 
-Set `exception.Data[ErrorCodes.ErrorCodeKey]` to a constant from `ErrorCodes` (e.g., `ErrorCodes.InvalidCredentials`) to surface machine-readable error codes in API responses. See `ErrorCodes.cs` in the `Generic` namespace.
+Set `exception.Data[ErrorCodes.ErrorCodeKey]` to a constant from `ErrorCodes`
+(e.g., `ErrorCodes.InvalidCredentials`) to surface machine-readable error codes in API responses.
+See `ErrorCodes.cs` in the `Generic` namespace.
 
 ### Using Authentication Schemes
 
-Apply `[Authorize(AuthenticationSchemes = AuthenticationSchemes.JwtBearer)]` to controllers or actions requiring JWT authentication. See `AuthenticationSchemes` in the `Auth` namespace for available scheme constants.
+Apply `[Authorize(AuthenticationSchemes = AuthenticationSchemes.JwtBearer)]` to controllers or
+actions requiring JWT authentication. See `AuthenticationSchemes` in the `Auth` namespace for
+available scheme constants.
 
 ---
 
@@ -178,13 +189,19 @@ See [RateLimitPolicies.cs](RateLimiting/RateLimitPolicies.cs) for complete polic
 
 ## Configuration
 
-The Application layer defines contracts and constants only — it has no runtime configuration of its own. Adapter projects that implement these interfaces provide their own configuration (e.g., connection strings, secret store settings). See individual adapter READMEs for configuration details.
+The Application layer defines contracts and constants only — it has no runtime configuration of its
+own. Adapter projects that implement these interfaces provide their own configuration (e.g.,
+connection strings, secret store settings). See individual adapter READMEs for configuration
+details.
 
 ---
 
 ## Integration
 
-Consuming projects reference `emc.camus.application` to access interface contracts, attributes, constants, and exception types. The API layer wires concrete adapter implementations to these interfaces at startup via dependency injection. See the extension methods in `src/Api/emc.camus.api/Extensions/` for the registration patterns.
+Consuming projects reference `emc.camus.application` to access interface contracts, attributes,
+constants, and exception types. The API layer wires concrete adapter implementations to these
+interfaces at startup via dependency injection. See the extension methods in
+`src/Api/emc.camus.api/Extensions/` for the registration patterns.
 
 ---
 

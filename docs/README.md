@@ -23,7 +23,8 @@ Domain, Application, and Adapter layers interact.
 
 ### [Authentication](authentication.md)
 
-Complete guide to the authentication system including JWT token generation, API Key authentication, and security configuration.
+Complete guide to the authentication system including JWT token generation, API Key authentication,
+and security configuration.
 
 **Topics covered:**
 
@@ -84,7 +85,8 @@ Detailed usage guides for infrastructure adapters:
 - **[Rate Limiting (Memory)](../src/Adapters/emc.camus.ratelimiting.inmemory/README.md)** - IP-based sliding window rate
   limiting
 - **[Security (JWT)](../src/Adapters/emc.camus.security.jwt/README.md)** - JWT authentication setup and configuration
-- **[Security (API Key)](../src/Adapters/emc.camus.security.apikey/README.md)** - API Key authentication setup and configuration
+- **[Security (API Key)](../src/Adapters/emc.camus.security.apikey/README.md)** - API Key authentication
+  setup and configuration
 - **[Secrets (Dapr)](../src/Adapters/emc.camus.secrets.dapr/README.md)** - Dapr secret provider usage
 - **[Persistence (PostgreSQL)](../src/Adapters/emc.camus.persistence.postgresql/README.md)** - Database adapter and
   repository pattern
@@ -92,7 +94,8 @@ Detailed usage guides for infrastructure adapters:
 - **[Cache (Memory)](../src/Adapters/emc.camus.cache.inmemory/README.md)** - Token revocation caching
 - **[Persistence (Memory)](../src/Adapters/emc.camus.persistence.inmemory/README.md)** - In-memory repositories for
   development and testing
-- **[Documentation (Swagger)](../src/Adapters/emc.camus.documentation.swagger/README.md)** - OpenAPI/Swagger configuration
+- **[Documentation (Swagger)](../src/Adapters/emc.camus.documentation.swagger/README.md)** -
+  OpenAPI/Swagger configuration
 
 ---
 

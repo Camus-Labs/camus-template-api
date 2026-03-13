@@ -8,7 +8,9 @@ OpenTelemetry-based observability adapter for Camus applications.
 
 ## 📋 Overview
 
-This adapter provides comprehensive observability through OpenTelemetry, including distributed tracing, metrics collection, and structured logging with Serilog. It integrates seamlessly with the OpenTelemetry Collector for flexible telemetry routing.
+This adapter provides comprehensive observability through OpenTelemetry, including distributed tracing,
+metrics collection, and structured logging with Serilog. It integrates seamlessly with the OpenTelemetry
+Collector for flexible telemetry routing.
 
 ---
 
@@ -27,9 +29,12 @@ This adapter provides comprehensive observability through OpenTelemetry, includi
 
 ### 1. Register in Program.cs
 
-Call `builder.AddObservability(serviceName, serviceVersion, instanceId, environmentName)` to register tracing, metrics, and structured logging. Then call `app.UseObservability()` to add the response trace-ID middleware.
+Call `builder.AddObservability(serviceName, serviceVersion, instanceId, environmentName)` to register
+tracing, metrics, and structured logging. Then call `app.UseObservability()` to add the response
+trace-ID middleware.
 
-See `ObservabilitySetupExtensions` in this adapter for the full registration API and `Program.cs` for the wiring example.
+See `ObservabilitySetupExtensions` in this adapter for the full registration API and `Program.cs`
+for the wiring example.
 
 ### 2. Configure Settings
 
@@ -99,7 +104,9 @@ In `appsettings.json`:
 | OTLP     | `"Otlp"`     | Recommended - sends to OpenTelemetry Collector   |
 | Console  | `"Console"`  | Development debugging                            |
 
-> **💡 Recommendation:** Use OTLP exporter to send all telemetry to the OpenTelemetry Collector, which handles routing to Jaeger, Prometheus, Loki, etc. This provides maximum flexibility without code changes.
+> **💡 Recommendation:** Use OTLP exporter to send all telemetry to the OpenTelemetry Collector,
+which handles routing to Jaeger, Prometheus, Loki, etc. This provides maximum flexibility without
+code changes.
 
 ---
 
@@ -126,7 +133,9 @@ Your Application (with this adapter)
              (Visualization)
 ```
 
-> **📖 Stack Configuration:** See [Observability Components README](../../../Infrastructure/observability/README.md) for setting up the observability stack.
+> **📖 Stack Configuration:** See
+[Observability Components README](../../Infrastructure/observability/README.md) for setting up the
+observability stack.
 
 ---
 
@@ -178,15 +187,20 @@ Your Application (with this adapter)
 
 ## 🎯 Manual Instrumentation
 
-Inject `IActivitySourceWrapper` to create custom spans for business-critical operations. Call `StartActivity(name, kind)` to open a span, set tags for context, and set error status on failures. The wrapper is disposed automatically at the end of the `using` block.
+Inject `IActivitySourceWrapper` to create custom spans for business-critical operations. Call
+`StartActivity(name, kind)` to open a span, set tags for context, and set error status on failures.
+The wrapper is disposed automatically at the end of the `using` block.
 
-See `IActivitySourceWrapper` in the Application layer for the interface contract, and `ObservabilitySetupExtensions.cs` for registration details.
+See `IActivitySourceWrapper` in the Application layer for the interface contract, and
+`ObservabilitySetupExtensions.cs` for registration details.
 
 ---
 
 ## 📝 Structured Logging
 
-The adapter configures Serilog for structured logging. Logs are automatically enriched with trace context (trace ID and span ID). Use Serilog’s message template syntax with named placeholders for structured properties.
+The adapter configures Serilog for structured logging. Logs are automatically enriched with trace
+context (trace ID and span ID). Use Serilog's message template syntax with named placeholders for
+structured properties.
 
 ### Log Levels
 
@@ -229,11 +243,14 @@ Content-Type: application/json
 
 ### Sampling
 
-Implement sampling to reduce overhead in high-traffic scenarios. Configure a `TraceIdRatioBasedSampler` (e.g., 0.1 for 10% of traces) via the OpenTelemetry tracing builder.
+Implement sampling to reduce overhead in high-traffic scenarios. Configure a
+`TraceIdRatioBasedSampler` (e.g., 0.1 for 10% of traces) via the OpenTelemetry tracing builder.
 
 ### Resource Attributes
 
-Enrich telemetry with environment information by passing service name, version, instance ID, and environment name to `AddObservability()`. See `ObservabilitySetupExtensions.cs` for parameter details.
+Enrich telemetry with environment information by passing service name, version, instance ID, and
+environment name to `AddObservability()`. See `ObservabilitySetupExtensions.cs` for parameter
+details.
 
 ---
 
@@ -241,8 +258,12 @@ Enrich telemetry with environment information by passing service name, version, 
 
 The adapter registers all observability services via two extension methods in `ObservabilitySetupExtensions.cs`:
 
-1. **`builder.AddObservability(serviceName, serviceVersion, instanceId, environmentName)`** — Configures OpenTelemetry tracing, metrics, and Serilog structured logging based on `appsettings.json`. Registers the selected exporters and enriches telemetry with service resource attributes.
-2. **`app.UseObservability()`** — Adds middleware that copies the current trace ID into the `Trace-Id` response header for request correlation.
+1. **`builder.AddObservability(serviceName, serviceVersion, instanceId, environmentName)`** —
+   Configures OpenTelemetry tracing, metrics, and Serilog structured logging based on
+   `appsettings.json`. Registers the selected exporters and enriches telemetry with service
+   resource attributes.
+2. **`app.UseObservability()`** — Adds middleware that copies the current trace ID into the
+   `Trace-Id` response header for request correlation.
 
 Call these in `Program.cs` early in the pipeline, before authentication and routing middleware.
 
@@ -262,10 +283,12 @@ Call these in `Program.cs` early in the pipeline, before authentication and rout
 
 ## 🔗 Related Documentation
 
-- **[Observability Stack README](../../../Infrastructure/observability/README.md)** - Infrastructure setup (Jaeger, Prometheus, Grafana)
-- **[Architecture Guide](../../../../docs/architecture.md)** - Observability architecture overview
-- **[Debugging Guide](../../../../docs/debugging.md)** - Using observability in development
-- **[OpenTelemetry Documentation](https://opentelemetry.io/docs/instrumentation/net/)** - Official .NET instrumentation guide
+- **[Observability Stack README](../../Infrastructure/observability/README.md)** - Infrastructure
+  setup (Jaeger, Prometheus, Grafana)
+- **[Architecture Guide](../../../docs/architecture.md)** - Observability architecture overview
+- **[Debugging Guide](../../../docs/debugging.md)** - Using observability in development
+- **[OpenTelemetry Documentation](https://opentelemetry.io/docs/instrumentation/net/)** - Official
+  .NET instrumentation guide
 
 ---
 

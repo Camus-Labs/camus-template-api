@@ -67,7 +67,8 @@ Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventions:
 Before submitting a pull request:
 
 1. **Tests pass** — Run `dotnet test src/CamusApp.sln` and confirm all tests pass
-2. **Version bumped** — Update `src/Directory.Build.props` and [`CHANGELOG.md`](CHANGELOG.md) (see [Versioning Standard](#versioning-standard))
+2. **Version bumped** — Update `src/Directory.Build.props` and [`CHANGELOG.md`](CHANGELOG.md)
+   (see [Versioning Standard](#versioning-standard))
 3. **Documentation updated** — Update relevant documentation for any behavioral changes
 4. **Code reviewed** — Ensure code follows the project conventions
 

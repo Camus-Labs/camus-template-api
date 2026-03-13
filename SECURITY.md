@@ -62,4 +62,5 @@ We will notify users of security updates through:
 
 ## Attribution
 
-We appreciate responsible disclosure and will acknowledge security researchers who report vulnerabilities (with their permission).
+We appreciate responsible disclosure and will acknowledge security researchers who report
+vulnerabilities (with their permission).

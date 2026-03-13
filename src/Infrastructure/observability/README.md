@@ -2,7 +2,8 @@
 
 Configuration files for the OpenTelemetry-based observability stack used in Camus development.
 
-> **📖 Parent Documentation:** See [Main README](../../../README.md) and [Architecture Guide](../../../docs/architecture.md) for context.
+> **📖 Parent Documentation:** See [Main README](../../../README.md) and
+[Architecture Guide](../../../docs/architecture.md) for context.
 
 ---
 
@@ -20,7 +21,8 @@ Configuration files for the OpenTelemetry-based observability stack used in Camu
 
 ### OpenTelemetry Collector
 
-Central telemetry pipeline that receives traces, metrics, and logs from your application via OTLP (OpenTelemetry Protocol).
+Central telemetry pipeline that receives traces, metrics, and logs from your application via OTLP
+(OpenTelemetry Protocol).
 
 **Key Features:**
 
@@ -31,7 +33,8 @@ Central telemetry pipeline that receives traces, metrics, and logs from your app
 
 **Usage in Application:**
 
-The [emc.camus.observability.otel](../../Adapters/emc.camus.observability.otel/README.md) adapter sends telemetry to the collector.
+The [emc.camus.observability.otel](../../Adapters/emc.camus.observability.otel/README.md) adapter
+sends telemetry to the collector.
 
 ### Prometheus
 
@@ -200,7 +203,8 @@ var app = builder.Build();
 app.UseObservability();
 ```
 
-For complete configuration details, see [emc.camus.observability.otel README](../../Adapters/emc.camus.observability.otel/README.md).
+For complete configuration details,
+see [emc.camus.observability.otel README](../../Adapters/emc.camus.observability.otel/README.md).
 
 ---
 
@@ -281,6 +285,7 @@ See [Deployment Guide](../../../docs/deployment.md) for details.
 
 ## 📚 Related Documentation
 
-- **[emc.camus.observability.otel Adapter](../../Adapters/emc.camus.observability.otel/README.md)** - Application-side observability configuration
+- **[emc.camus.observability.otel Adapter](../../Adapters/emc.camus.observability.otel/README.md)**
+  \- Application-side observability configuration
 - **[Architecture Guide](../../../docs/architecture.md)** - Observability stack architecture
 - **[Debugging Guide](../../../docs/debugging.md)** - Using observability for debugging

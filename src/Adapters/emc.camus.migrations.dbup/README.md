@@ -114,8 +114,11 @@ API (Program.cs)
 
 The adapter registers migration services via two extension methods in `DatabaseMigrationExtensions.cs`:
 
-1. **`builder.AddDatabaseMigrations()`** — Validates that `DBUpSettings` and `DatabaseSettings` sections exist in configuration and registers migration services.
-2. **`app.UseDatabaseMigrations(logger)`** — Resolves `ISecretProvider` to fetch admin credentials, builds the connection string, and runs DbUp against embedded SQL scripts. Logs each applied migration.
+1. **`builder.AddDatabaseMigrations()`** — Validates that `DBUpSettings` and `DatabaseSettings`
+   sections exist in configuration and registers migration services.
+2. **`app.UseDatabaseMigrations(logger)`** — Resolves `ISecretProvider` to fetch admin credentials,
+   builds the connection string, and runs DbUp against embedded SQL scripts. Logs each applied
+   migration.
 
 Call `AddDaprSecrets()` and `UseDaprSecrets()` before `UseDatabaseMigrations()` so credentials are available.
 
@@ -136,7 +139,7 @@ Call `AddDaprSecrets()` and `UseDaprSecrets()` before `UseDatabaseMigrations()` 
 
 - **[Dapr Secrets Adapter](../emc.camus.secrets.dapr/README.md)** — `ISecretProvider` implementation
 - **[PostgreSQL Persistence Adapter](../emc.camus.persistence.postgresql/README.md)** — Runtime DB access
-- **[Architecture Guide](../../../../docs/architecture.md)** — Hexagonal architecture overview
+- **[Architecture Guide](../../../docs/architecture.md)** — Hexagonal architecture overview
 - **[DbUp Documentation](https://dbup.readthedocs.io/)** — DbUp reference
 
 ---
