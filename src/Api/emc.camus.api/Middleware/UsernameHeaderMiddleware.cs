@@ -30,6 +30,8 @@ public sealed class UsernameHeaderMiddleware
     /// <param name="next">The next middleware in the pipeline.</param>
     public UsernameHeaderMiddleware(RequestDelegate next)
     {
+        ArgumentNullException.ThrowIfNull(next);
+
         _next = next;
     }
 
@@ -41,8 +43,8 @@ public sealed class UsernameHeaderMiddleware
     {
         // Capture username early to avoid issues with null Identity
         // Use "anonymous" for unauthenticated requests to maintain consistent observability
-        var username = context.User?.Identity?.IsAuthenticated == true 
-            ? context.User.Identity.Name 
+        var username = context.User?.Identity?.IsAuthenticated == true
+            ? context.User.Identity.Name
             : "anonymous";
 
         context.Response.OnStarting(() =>

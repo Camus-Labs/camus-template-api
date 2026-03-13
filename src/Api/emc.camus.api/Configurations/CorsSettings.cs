@@ -13,9 +13,12 @@ namespace emc.camus.api.Configurations
         /// </summary>
         public const string ConfigurationSectionName = "CorsSettings";
 
+        private const string WildcardOrigin = "*";
+        private const int DefaultPreflightMaxAgeMinutes = 60;
         private const int MaxPolicyNameLength = 100;
         private const int MinPreflightMaxAgeMinutes = 1;
         private const int MaxPreflightMaxAgeMinutes = 86400; // 24 hours
+        private static readonly string[] DefaultAllowedMethods = new[] { "GET", "POST" };
         
         /// <summary>
         /// Gets or sets the name of the CORS policy.
@@ -30,7 +33,7 @@ namespace emc.camus.api.Configurations
         /// <summary>
         /// Gets or sets the allowed HTTP methods for CORS requests.
         /// </summary>
-        public string[] AllowedMethods { get; set; } = new[] { "GET", "POST" };
+        public string[] AllowedMethods { get; set; } = DefaultAllowedMethods;
 
         /// <summary>
         /// Gets or sets the allowed headers for CORS requests.
@@ -59,7 +62,7 @@ namespace emc.camus.api.Configurations
         /// <summary>
         /// Gets or sets the preflight cache duration in minutes.
         /// </summary>
-        public int PreflightMaxAgeMinutes { get; set; } = 60;
+        public int PreflightMaxAgeMinutes { get; set; } = DefaultPreflightMaxAgeMinutes;
 
         /// <summary>
         /// Validates the CORS configuration.
@@ -75,6 +78,7 @@ namespace emc.camus.api.Configurations
             ValidateAllowedHeaders();
             ValidateExposedHeaders();
             ValidatePreflightMaxAge();
+            ValidateAllowCredentials();
         }
 
         private void ValidatePolicyName()
@@ -101,20 +105,18 @@ namespace emc.camus.api.Configurations
             foreach (var origin in AllowedOrigins)
             {
                 if (string.IsNullOrWhiteSpace(origin))
-                    throw new ArgumentException("AllowedOrigins cannot contain null or empty values", nameof(AllowedOrigins));
+                    throw new ArgumentException($"AllowedOrigins contains a null or empty value: '{origin}'.", nameof(AllowedOrigins));
 
-                if (origin != "*" && !Uri.TryCreate(origin, UriKind.Absolute, out _))
-                    throw new ArgumentException($"Invalid origin URL: '{origin}'. Must be a valid absolute URL or '*'", nameof(AllowedOrigins));
+                if (origin != WildcardOrigin && !Uri.TryCreate(origin, UriKind.Absolute, out _))
+                    throw new ArgumentException($"Invalid origin URL: '{origin}'. Must be a valid absolute URL or '{WildcardOrigin}'.", nameof(AllowedOrigins));
             }
-
-            ValidateCredentialsWithWildcard();
         }
 
-        private void ValidateCredentialsWithWildcard()
+        private void ValidateAllowCredentials()
         {
-            if (AllowCredentials && AllowedOrigins.Any(o => o == "*"))
+            if (AllowCredentials && AllowedOrigins.Any(o => o == WildcardOrigin))
                 throw new ArgumentException(
-                    "AllowCredentials cannot be true when AllowedOrigins contains '*'. Specify explicit origins instead.",
+                    $"AllowCredentials cannot be true when AllowedOrigins contains '{WildcardOrigin}'. Specify explicit origins instead.",
                     nameof(AllowCredentials));
         }
 
@@ -126,7 +128,7 @@ namespace emc.camus.api.Configurations
             foreach (var method in AllowedMethods)
             {
                 if (string.IsNullOrWhiteSpace(method))
-                    throw new ArgumentException("AllowedMethods cannot contain null or empty values", nameof(AllowedMethods));
+                    throw new ArgumentException($"AllowedMethods contains a null or empty value: '{method}'.", nameof(AllowedMethods));
             }
         }
 

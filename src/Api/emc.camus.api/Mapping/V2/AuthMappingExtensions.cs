@@ -19,16 +19,8 @@ public static class AuthMappingExtensions
     public static AuthenticateUserCommand ToCommand(this AuthenticateUserRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        
-        if (string.IsNullOrWhiteSpace(request.Username))
-        {
-            throw new ArgumentException("Username is required and cannot be empty or whitespace.", nameof(request.Username));
-        }
-        
-        if (string.IsNullOrWhiteSpace(request.Password))
-        {
-            throw new ArgumentException("Password is required and cannot be empty or whitespace.", nameof(request.Password));
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Username);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Password);
         
         return new AuthenticateUserCommand(
             request.Username,
@@ -61,15 +53,12 @@ public static class AuthMappingExtensions
     public static GenerateTokenCommand ToCommand(this GenerateTokenRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        
-        if (string.IsNullOrWhiteSpace(request.UsernameSuffix))
-        {
-            throw new ArgumentException("Username suffix is required and cannot be empty or whitespace.", nameof(request.UsernameSuffix));
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.UsernameSuffix);
+        ArgumentNullException.ThrowIfNull(request.Permissions);
 
-        if (request.Permissions == null || request.Permissions.Count == 0)
+        if (request.Permissions.Count == 0)
         {
-            throw new ArgumentException("At least one permission is required.", nameof(request.Permissions));
+            throw new ArgumentException($"At least one permission is required. Got: {request.Permissions.Count} permission(s).", nameof(request.Permissions));
         }
         
         return new GenerateTokenCommand(
@@ -130,5 +119,21 @@ public static class AuthMappingExtensions
             ExcludeRevoked: query.ExcludeRevoked,
             ExcludeExpired: query.ExcludeExpired
         );
+    }
+
+    /// <summary>
+    /// Validates a JTI and creates a <see cref="RevokeTokenCommand"/>.
+    /// </summary>
+    /// <param name="jti">The JWT ID from the route.</param>
+    /// <returns>A revoke token command for the application layer.</returns>
+    /// <exception cref="ArgumentException">Thrown when JTI is <see cref="Guid.Empty"/>.</exception>
+    public static RevokeTokenCommand ToRevokeTokenCommand(Guid jti)
+    {
+        if (jti == Guid.Empty)
+        {
+            throw new ArgumentException($"Token JTI cannot be empty: '{jti}'.", nameof(jti));
+        }
+
+        return new RevokeTokenCommand(jti);
     }
 }

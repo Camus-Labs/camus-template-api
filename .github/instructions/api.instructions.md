@@ -6,6 +6,12 @@ applyTo: "src/Api/**/*.cs"
 
 1. Scope Compliance
 
+    - [ ] Controllers call application services with Application-layer types only (`*Command`, `*Filter`,
+          `PaginationParams`) — never raw primitives or API models
+    - [ ] `[FromBody]` / `[FromQuery]` parameters converted via extension methods on the request type (`ToCommand()`,
+          `ToFilter()`, `ToPaginationParams()`)
+    - [ ] Primitive route parameters converted via static mapper methods (e.g.,
+          `AuthMappingExtensions.ToRevokeTokenCommand(jti)`) — never extension methods on built-in types
     - [ ] Controllers return `Models/` types or `IActionResult` — no domain entities or Application views
     - [ ] Controller parameters use model binding attributes only (`[FromBody]`, `[FromQuery]`, `[FromRoute]`)
     - [ ] DI registration lives in `Extensions/` folder as one `*SetupExtensions.cs` file per concern
@@ -27,15 +33,17 @@ applyTo: "src/Api/**/*.cs"
           `Mapping/V2/AuthMappingExtensions`)
     - [ ] Reusable mappers unversioned (`Mapping/CommonMappingExtensions` — `ToPaginationParams()`,
           `ToPagedResponse()`)
+    - [ ] Every `[FromBody]` request type and every `[ProducesResponseType]` response type has a corresponding
+          `IExamplesProvider<T>` class in `SwaggerExamples/V{n}/`
+    - [ ] `IExamplesProvider<T>.GetExamples()` sets every public property of `T` — added or renamed properties in the
+          model require a matching update in the example class
     - [ ] `[ProducesResponseType]` for success responses only (200, 201, 204) with typed payloads — never for error
           responses (`DefaultApiResponsesOperationFilter` adds these globally)
 
 3. Validation & Error Handling
 
-    - [ ] Controller input validation lives in mapper extension methods (`ToCommand()` / `ToFilter()` /
-          `ToPaginationParams()` / `ToResponse()` / `ToDto()`) — structural validation before the application layer
-    - [ ] Validation in mapper extension methods checks null, empty, format, and type coercion only — no business
-          rules or cross-field constraints
+    - [ ] Mapper methods are pure structural transformers — they convert shapes, never validate
+    - [ ] Controllers contain zero validation logic
     - [ ] No try/catch in controllers — exceptions propagate to the global error-handling middleware
     - [ ] No validation attributes on model classes (`[Required]`, `[StringLength]`, `[Range]`)
 

@@ -20,6 +20,8 @@ namespace emc.camus.api.Extensions
         /// <returns>The web application builder for method chaining.</returns>
         public static WebApplicationBuilder AddApplicationServices(this WebApplicationBuilder builder)
         {
+            ArgumentNullException.ThrowIfNull(builder);
+
             // Register HTTP Context Accessor (required for accessing current user in services)
             builder.Services.AddHttpContextAccessor();
             
@@ -49,6 +51,8 @@ namespace emc.camus.api.Extensions
         /// </remarks>
         public static WebApplication UseApplicationServices(this WebApplication app)
         {
+            ArgumentNullException.ThrowIfNull(app);
+
             // Add Username header to responses (for observability and debugging)
             app.UseMiddleware<UsernameHeaderMiddleware>();
             

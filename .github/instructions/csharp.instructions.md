@@ -6,8 +6,11 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
 
 1. Code Quality
 
-    - [ ] Numeric literals other than 0, 1, -1 and string literals other than string.Empty appear as named const or
-          static readonly fields
+    - [ ] Numeric literals other than 0, 1, -1 appear as named const or static readonly fields
+    - [ ] String literals other than string.Empty appear as named const or static readonly fields when used more than
+          once, represent an external contract (configuration keys, HTTP header names, public API response field
+          names), or appear at a call site without a self-documenting named parameter — except (even when repeated):
+          dictionary initializer keys, activity/span names, and structured log template parameters
     - [ ] XML documentation on all public types and members
 
 2. Validation & Error Handling

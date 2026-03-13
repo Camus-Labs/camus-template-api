@@ -103,6 +103,7 @@ Detailed usage guides for infrastructure adapters:
 
 Core layer architecture and contracts:
 
+- **[API Layer](../src/Api/emc.camus.api/README.md)** - Controllers, middleware, pipeline wiring, and response models
 - **[Application Layer](../src/Application/emc.camus.application/README.md)** - Shared contracts, interfaces,
   attributes, and constants
 

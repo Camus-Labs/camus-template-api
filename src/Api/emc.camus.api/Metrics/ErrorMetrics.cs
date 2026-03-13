@@ -14,7 +14,6 @@ namespace emc.camus.api.Metrics
     public class ErrorMetrics
     {
         private const string MetricNameErrorResponses = "error_responses_total";
-        
         private readonly Counter<long> _errorResponsesCounter;
         private readonly ILogger<ErrorMetrics> _logger;
 
@@ -25,6 +24,9 @@ namespace emc.camus.api.Metrics
         /// <param name="logger">Logger for recording telemetry failures.</param>
         public ErrorMetrics(string serviceName, ILogger<ErrorMetrics> logger)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+            ArgumentNullException.ThrowIfNull(logger);
+
             var meter = new Meter($"{serviceName}{MeterNames.ErrorHandling}");
 
             // Counter for all error responses
@@ -45,6 +47,9 @@ namespace emc.camus.api.Metrics
         /// <param name="path">The endpoint path that generated the error.</param>
         public void RecordError(string errorCode, int httpStatus, string path)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(errorCode);
+            ArgumentException.ThrowIfNullOrWhiteSpace(path);
+
             try
             {
                 _errorResponsesCounter.Add(1,

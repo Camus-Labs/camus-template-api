@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using Swashbuckle.AspNetCore.Annotations;
@@ -21,7 +22,7 @@ namespace emc.camus.api.Controllers
     /// <remarks>
     /// Provides endpoints for user authentication and token generation.
     /// Integrates with OpenTelemetry for activity tracing.
-    /// 
+    ///
     /// Rate Limiting: Uses strict policy (lower limits) to protect authentication endpoints from brute force attacks.
     /// Configure rate limit policies in appsettings.json under RateLimitSettings.Policies.
     /// </remarks>
@@ -30,7 +31,7 @@ namespace emc.camus.api.Controllers
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
-    [Produces("application/json")]
+    [Produces(MediaTypeNames.Application.Json)]
     [ApiController]
     public class AuthController : ApiControllerBase
     {
@@ -45,10 +46,14 @@ namespace emc.camus.api.Controllers
         /// <param name="activitySource">Activity source for OpenTelemetry tracing.</param>
         /// <param name="authService">Authentication service for credential validation and token generation.</param>
         public AuthController(
-            ILogger<AuthController> logger, 
+            ILogger<AuthController> logger,
             IActivitySourceWrapper activitySource,
             AuthService authService)
         {
+            ArgumentNullException.ThrowIfNull(logger);
+            ArgumentNullException.ThrowIfNull(activitySource);
+            ArgumentNullException.ThrowIfNull(authService);
+
             _logger = logger;
             _activitySource = activitySource;
             _authService = authService;
@@ -203,7 +208,9 @@ namespace emc.camus.api.Controllers
                     { "jti", jti }
                 });
 
-                var result = await _authService.RevokeTokenAsync(jti);
+                // Map route inputs to Application Command
+                var command = AuthMappingExtensions.ToRevokeTokenCommand(jti);
+                var result = await _authService.RevokeTokenAsync(command);
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
@@ -235,7 +242,12 @@ namespace emc.camus.api.Controllers
                     { "demoKey", "demoValue" }
                 });
 
-                _logger.LogWarning("This is a demo warning for error handling.");
+                _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
+                {
+                    { "error_type", "demo_exception" }
+                });
+
+                _logger.LogDebug("This is a demo warning for error handling.");
                 throw new Exception("This is a demo exception for error handling.", new Exception("Inner exception for demo purposes."));
             });
         }

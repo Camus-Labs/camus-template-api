@@ -23,6 +23,8 @@ namespace emc.camus.api.Extensions
         /// <returns>The web application builder for method chaining.</returns>
         public static WebApplicationBuilder AddAppData(this WebApplicationBuilder builder)
         {
+            ArgumentNullException.ThrowIfNull(builder);
+
             // Load and validate application data settings
             var settings = builder.Configuration
                 .GetSection(AppDataSettings.ConfigurationSectionName)
@@ -57,6 +59,8 @@ namespace emc.camus.api.Extensions
         /// <returns>The web application instance for method chaining.</returns>
         public static WebApplication UseAppData(this WebApplication app)
         {
+            ArgumentNullException.ThrowIfNull(app);
+
             // Initialize API info service to load API data
             // ApiInfoService is scoped, so we need to create a scope to resolve it
             using (var scope = app.Services.CreateScope())

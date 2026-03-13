@@ -17,6 +17,8 @@ namespace emc.camus.api.Extensions
         /// <returns>The web application builder for method chaining.</returns>
         public static WebApplicationBuilder AddCorsPolicy(this WebApplicationBuilder builder)
         {
+            ArgumentNullException.ThrowIfNull(builder);
+
             // Load and validate CORS settings
             var settings = builder.Configuration
                 .GetSection(CorsSettings.ConfigurationSectionName)
@@ -57,6 +59,8 @@ namespace emc.camus.api.Extensions
         /// <returns>The web application instance for method chaining.</returns>
         public static WebApplication UseCorsPolicy(this WebApplication app)
         {
+            ArgumentNullException.ThrowIfNull(app);
+
             // Load CORS settings from DI and apply policy
             var settings = app.Services.GetRequiredService<CorsSettings>();
             app.UseCors(settings.PolicyName);

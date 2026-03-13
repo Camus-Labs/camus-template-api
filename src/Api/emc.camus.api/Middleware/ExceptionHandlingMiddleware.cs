@@ -19,6 +19,8 @@ namespace emc.camus.api.Middleware
     /// </summary> 
     public class ExceptionHandlingMiddleware
     {
+        private const int RegexTimeoutMilliseconds = 100;
+
         /// <summary>
         /// Platform-defined error code mapping rules that cannot be changed via configuration.
         /// These rules map common exception types to their corresponding error codes.
@@ -73,6 +75,12 @@ namespace emc.camus.api.Middleware
             IOptions<ErrorHandlingSettings> settings,
             ErrorMetrics errorMetrics)
         {
+            ArgumentNullException.ThrowIfNull(next);
+            ArgumentNullException.ThrowIfNull(logger);
+            ArgumentNullException.ThrowIfNull(environment);
+            ArgumentNullException.ThrowIfNull(settings);
+            ArgumentNullException.ThrowIfNull(errorMetrics);
+
             _next = next;
             _logger = logger;
             _environment = environment;
@@ -116,7 +124,7 @@ namespace emc.camus.api.Middleware
 
             problemDetails.Instance = context.Request.Path;
             
-            AddErrorCode(problemDetails, exception);
+            AddErrorCode(context, problemDetails, exception);
             
             if (_environment.IsDevelopment())
             {
@@ -125,7 +133,7 @@ namespace emc.camus.api.Middleware
 
             _logger.LogError(exception, "Exception detected: {ErrorMessage}", exception.Message);
 
-            context.Response.StatusCode = problemDetails.Status ?? 500;
+            context.Response.StatusCode = problemDetails.Status ?? (int)HttpStatusCode.InternalServerError;
             context.Response.ContentType = MediaTypes.ProblemJson;
             
             var json = JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions
@@ -210,13 +218,19 @@ namespace emc.camus.api.Middleware
         /// Adds machine-readable error code to the problem details.
         /// Maps exception to error code using configured rules.
         /// </summary>
-        private void AddErrorCode(ProblemDetails problemDetails, Exception exception)
+        private void AddErrorCode(HttpContext context, ProblemDetails problemDetails, Exception exception)
         {
             var errorCode = ResolveErrorCode(exception);
             problemDetails.Extensions["error"] = errorCode;
             
+            // Normalize path to route template to ensure low-cardinality metric labels
+            var endpoint = context.GetEndpoint();
+            var routePattern = (endpoint as Microsoft.AspNetCore.Routing.RouteEndpoint)?.RoutePattern?.RawText
+                ?? problemDetails.Instance
+                ?? "unknown";
+            
             // Record error metrics (fire-and-forget telemetry)
-            _errorMetrics.RecordError(errorCode, problemDetails.Status ?? 500, problemDetails.Instance ?? "unknown");
+            _errorMetrics.RecordError(errorCode, problemDetails.Status ?? (int)HttpStatusCode.InternalServerError, routePattern);
         }
 
         /// <summary>
@@ -255,7 +269,7 @@ namespace emc.camus.api.Middleware
                 {
                     try
                     {
-                        if (Regex.IsMatch(exception.Message, rule.Pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100)))
+                        if (Regex.IsMatch(exception.Message, rule.Pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(RegexTimeoutMilliseconds)))
                         {
                             return rule.ErrorCode;
                         }

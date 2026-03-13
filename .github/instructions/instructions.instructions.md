@@ -18,7 +18,7 @@ applyTo: ".github/instructions/**"
 
     - [ ] Each check is one falsifiable statement — can be verified true or false against a file
     - [ ] Active voice, declarative ("No business logic" not "Should avoid business logic")
-    - [ ] Inline examples in parentheses (e.g., `rule (example)`)
+    - [ ] Inline examples, when present, appear in parentheses (e.g., `rule (example)`)
     - [ ] Rationale or contrast after em-dash (e.g., `rule — rationale`)
     - [ ] No vague qualifiers ("as needed", "consider", "optionally", "when appropriate")
     - [ ] No aspirational checks that cannot be mechanically verified

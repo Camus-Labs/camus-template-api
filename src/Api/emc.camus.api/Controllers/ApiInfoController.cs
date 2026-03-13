@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
 using Swashbuckle.AspNetCore.Annotations;
@@ -20,16 +21,16 @@ namespace emc.camus.api.Controllers
     /// - Public endpoint (no auth)
     /// - API Key protected
     /// - JWT protected
-    /// 
+    ///
     /// Integrates with OpenTelemetry for activity tracing and logs API version for observability.
-    /// 
+    ///
     /// Rate Limiting: Uses relaxed policy for public endpoints, default for authenticated endpoints.
     /// Configure rate limit policies in appsettings.json under RateLimitSettings.Policies.
     /// </remarks>
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
-    [Produces("application/json")]
+    [Produces(MediaTypeNames.Application.Json)]
     [ApiController]
     public class ApiInfoController : ApiControllerBase
     {
@@ -44,10 +45,14 @@ namespace emc.camus.api.Controllers
         /// <param name="activitySource">Activity source for OpenTelemetry tracing.</param>
         /// <param name="apiInfoService">Application service for retrieving API information.</param>
         public ApiInfoController(
-            ILogger<ApiInfoController> logger, 
+            ILogger<ApiInfoController> logger,
             IActivitySourceWrapper activitySource,
             ApiInfoService apiInfoService)
         {
+            ArgumentNullException.ThrowIfNull(logger);
+            ArgumentNullException.ThrowIfNull(activitySource);
+            ArgumentNullException.ThrowIfNull(apiInfoService);
+
             _logger = logger;
             _activitySource = activitySource;
             _apiInfoService = apiInfoService;
@@ -71,6 +76,11 @@ namespace emc.camus.api.Controllers
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfo", OperationType.Read, async activity =>
             {
                 var apiVersion = HttpContext.GetRequestedApiVersion()?.ToString() ?? "unknown";
+
+                _activitySource.SetRequestTags(activity, new Dictionary<string, object?>
+                {
+                    { "api_version", apiVersion }
+                });
 
                 // Call application service to retrieve API info
                 var result = await _apiInfoService.GetByVersionAsync(apiVersion);
@@ -104,6 +114,11 @@ namespace emc.camus.api.Controllers
             {
                 var apiVersion = HttpContext.GetRequestedApiVersion()?.ToString() ?? "unknown";
 
+                _activitySource.SetRequestTags(activity, new Dictionary<string, object?>
+                {
+                    { "api_version", apiVersion }
+                });
+
                 // Call application service to retrieve API info
                 var result = await _apiInfoService.GetByVersionAsync(apiVersion);
 
@@ -135,6 +150,11 @@ namespace emc.camus.api.Controllers
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfoJwt", OperationType.Read, async activity =>
             {
                 var apiVersion = HttpContext.GetRequestedApiVersion()?.ToString() ?? "unknown";
+
+                _activitySource.SetRequestTags(activity, new Dictionary<string, object?>
+                {
+                    { "api_version", apiVersion }
+                });
 
                 // Call application service to retrieve API info
                 var result = await _apiInfoService.GetByVersionAsync(apiVersion);

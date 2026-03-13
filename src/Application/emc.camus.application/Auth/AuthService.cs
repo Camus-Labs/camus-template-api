@@ -148,7 +148,7 @@ public class AuthService
         }
     }
 
-    /// <summary>    
+    /// <summary>
     /// /// Generates a custom token with specified permissions and expiration for an authenticated user.
     /// Validates and restricts permissions to those possessed by the current user.
     /// Stores the generated token metadata in the database for audit and tracking.
@@ -310,12 +310,15 @@ public class AuthService
     /// Uses the entity-centric pattern: load → mutate → save.
     /// Updates the in-memory revocation cache so the token is immediately rejected.
     /// </summary>
-    /// <param name="jti">The JWT ID of the token to revoke.</param>
+    /// <param name="command">The revoke token command containing the JTI.</param>
     /// <exception cref="InvalidOperationException">Thrown when user context is unavailable or database operations fail.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when the token is not found.</exception>
     /// <exception cref="UnauthorizedAccessException">Thrown when the user is not the creator of the token.</exception>
-    public virtual async Task<GeneratedTokenSummaryView> RevokeTokenAsync(Guid jti)
+    public virtual async Task<GeneratedTokenSummaryView> RevokeTokenAsync(RevokeTokenCommand command)
     {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var jti = command.Jti;
         var currentUserId = _userContext.GetCurrentUserId()
             ?? throw new InvalidOperationException("User ID is not available. Ensure the user is authenticated.");
         var currentUsername = _userContext.GetCurrentUsername()
@@ -404,9 +407,6 @@ public class AuthService
         }
     }
 
-    /// <summary>
-    /// Validates the username suffix format.
-    /// </summary>
     private static void ValidateUsernameSuffix(string suffix)
     {
         if (string.IsNullOrWhiteSpace(suffix))
@@ -429,9 +429,6 @@ public class AuthService
         }
     }
 
-    /// <summary>
-    /// Validates the expiration date is within acceptable range.
-    /// </summary>
     private static void ValidateExpirationDate(DateTime expiresOn)
     {
         var now = DateTime.UtcNow;
@@ -453,10 +450,6 @@ public class AuthService
         }
     }
 
-    /// <summary>
-    /// Validates that requested permissions are a subset of current user's permissions
-    /// and are all valid system permissions.
-    /// </summary>
     private static void ValidatePermissions(List<string> requestedPermissions, List<string> currentUserPermissions)
     {
         if (requestedPermissions == null || requestedPermissions.Count == 0)
@@ -485,6 +478,7 @@ public class AuthService
                 nameof(requestedPermissions));
         }
     }
+
     private static GeneratedTokenSummaryView ToSummaryView(GeneratedToken token)
     {
         return new GeneratedTokenSummaryView(

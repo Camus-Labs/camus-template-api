@@ -23,6 +23,8 @@ namespace emc.camus.api.Extensions
         /// <returns>The web application builder for method chaining.</returns>
         public static WebApplicationBuilder AddAuthorizationWithData(this WebApplicationBuilder builder)
         {
+            ArgumentNullException.ThrowIfNull(builder);
+
             // Configure Authorization policies
             builder.Services.AddAuthorization(options =>
             {
@@ -66,6 +68,8 @@ namespace emc.camus.api.Extensions
         /// <returns>The web application instance for method chaining.</returns>
         public static WebApplication UseAuthorizationWithData(this WebApplication app)
         {
+            ArgumentNullException.ThrowIfNull(app);
+
             // Initialize auth service to load users/roles and validate secrets
             // AuthService is scoped, so we need to create a scope to resolve it
             using (var scope = app.Services.CreateScope())

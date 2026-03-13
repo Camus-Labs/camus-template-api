@@ -71,7 +71,7 @@ var app = builder.Build();
 // Step 15: Get logger for startup events
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 
-startupLogger.LogInformation("Starting {ServiceName} v{ServiceVersion} in {Environment} environment", 
+startupLogger.LogInformation("Starting {ServiceName} v{ServiceVersion} in {Environment} environment",
     SERVICE_NAME, SERVICE_VERSION, ENV_NAME);
 startupLogger.LogInformation("Instance ID: {InstanceId}", INSTANCE_ID);
 

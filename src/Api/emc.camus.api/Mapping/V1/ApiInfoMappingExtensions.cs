@@ -21,6 +21,8 @@ public static class ApiInfoMappingExtensions
     /// <returns>API response DTO</returns>
     public static ApiInfoResponse ToResponse(this ApiInfoView view)
     {
+        ArgumentNullException.ThrowIfNull(view);
+
         return new ApiInfoResponse
         {
             Version = view.Version,

@@ -17,14 +17,21 @@ applyTo: "src/Application/**/*.cs"
     - [ ] `*Results.cs` — positional records for write outputs, only when no View matches the shape
     - [ ] `*Filters.cs` — positional records with defaults for query inputs
     - [ ] `*Views.cs` — positional records for query output projections
+    - [ ] Service methods accept Application-layer types only (`*Command`, `*Filter`, `PaginationParams`) — never
+          raw primitives or API models
     - [ ] Service methods return View types — Result types only when output fields differ from every existing View
-    - [ ] View naming describes content/shape (`GeneratedTokenSummaryView`, not `GeneratedTokenByUserView`)
+    - [ ] View names contain the entity and a content/shape qualifier — never a filter-dimension qualifier
+          (`GeneratedTokenSummaryView`, not `GeneratedTokenByUserView`)
     - [ ] Filter naming targets the entity (`GeneratedTokenFilter`, not `GeneratedTokenSummaryFilter`)
     - [ ] Common types in `Common/` folder: `PaginationParams`, `PagedResult<T>`
     - [ ] List query methods accept `PaginationParams` and return `PagedResult<T>`
 
 3. Validation & Error Handling
 
+    - [ ] Contract constructors (`*Command`, `*Filter`, `*Results`, `*Views`) are the authoritative validation gate —
+          an instance that exists is guaranteed valid ("parse, don't validate")
+    - [ ] Constructor validation checks null, empty, format, range, and type coercion — no business rules
+          (those belong in Domain entities)
     - [ ] Service methods wrap port calls in try-catch
     - [ ] Catch blocks add business operation context to exceptions (e.g., `"Failed to cancel order {orderId}"`)
     - [ ] Domain and validation exceptions re-thrown unchanged

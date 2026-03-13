@@ -23,3 +23,11 @@ public record GenerateTokenCommand(
     DateTime ExpiresOn,
     List<string> Permissions
 );
+
+/// <summary>
+/// Command to revoke a generated token by its JTI (JWT ID).
+/// </summary>
+/// <param name="Jti">The JWT ID of the token to revoke.</param>
+public record RevokeTokenCommand(
+    Guid Jti
+);
