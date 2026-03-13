@@ -1,0 +1,119 @@
+name: Build Version Check
+
+# Validate that version is consistent across Directory.Build.props and CHANGELOG.md
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  version-check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v4
+
+    - name: Validate version consistency
+      run: |
+        echo "========================================"
+        echo "Validating version consistency..."
+        echo "========================================"
+
+        # Extract version from Directory.Build.props
+        PROPS_VERSION=$(grep -oP '<Version>\K[0-9]+\.[0-9]+\.[0-9]+' src/Directory.Build.props || echo "")
+
+        # Check if version was extracted
+        if [[ -z "$PROPS_VERSION" ]]; then
+          echo "❌ ERROR: Could not extract version from src/Directory.Build.props!"
+          echo ""
+          echo "Please ensure Directory.Build.props has a valid <Version>X.X.X</Version> element."
+          exit 1
+        fi
+
+        echo "📦 Directory.Build.props version: $PROPS_VERSION"
+
+        # Extract latest released version from CHANGELOG.md
+        # Looking for pattern: ## [X.X.X] (with optional date suffix)
+        CHANGELOG_VERSION=$(grep -oP '## \[\K[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | head -1 || echo "")
+
+        # Check if changelog version was found
+        if [[ -z "$CHANGELOG_VERSION" ]]; then
+          echo "❌ ERROR: No released version found in CHANGELOG.md!"
+          echo ""
+          echo "Expected pattern in CHANGELOG.md:"
+          echo "  ## [X.X.X] - YYYY-MM-DD"
+          echo ""
+          echo "Please add a version entry matching Directory.Build.props ($PROPS_VERSION)."
+          exit 1
+        fi
+
+        echo "📝 CHANGELOG.md version: $CHANGELOG_VERSION"
+
+        # Compare versions
+        if [[ "$CHANGELOG_VERSION" != "$PROPS_VERSION" ]]; then
+          echo ""
+          echo "❌ ERROR: Version mismatch!"
+          echo "   Directory.Build.props: $PROPS_VERSION"
+          echo "   CHANGELOG.md:          $CHANGELOG_VERSION"
+          echo ""
+          echo "Please update CHANGELOG.md to include a ## [$PROPS_VERSION] entry,"
+          echo "or update Directory.Build.props <Version> to match."
+          exit 1
+        fi
+
+        echo ""
+        echo "✅ SUCCESS: All versions are consistent!"
+        echo "   Directory.Build.props: $PROPS_VERSION"
+        echo "   CHANGELOG.md:          $CHANGELOG_VERSION"
+
+    - name: Validate version was bumped (PR only)
+      if: github.event_name == 'pull_request'
+      run: |
+        echo "========================================"
+        echo "Validating version was bumped..."
+        echo "========================================"
+
+        # Fetch main branch for comparison
+        git fetch origin main:main
+
+        # Extract version from PR branch (current checkout)
+        PR_VERSION=$(grep -oP '<Version>\K[0-9]+\.[0-9]+\.[0-9]+' src/Directory.Build.props || echo "")
+
+        # Check if version was found in PR branch
+        if [[ -z "$PR_VERSION" ]]; then
+          echo "❌ ERROR: Version not found in PR branch src/Directory.Build.props!"
+          echo ""
+          echo "Please ensure Directory.Build.props has a valid <Version>X.X.X</Version> element."
+          exit 1
+        fi
+
+        echo "🔄 PR branch version: $PR_VERSION"
+
+        # Extract version from main branch
+        MAIN_VERSION=$(git show main:src/Directory.Build.props | grep -oP '<Version>\K[0-9]+\.[0-9]+\.[0-9]+' || echo "")
+
+        # Check if version was found on main branch
+        if [[ -z "$MAIN_VERSION" ]]; then
+          echo "❌ ERROR: Version not found on main branch!"
+          echo ""
+          echo "This indicates src/Directory.Build.props on main may have been modified incorrectly."
+          echo "Please investigate the main branch before merging."
+          exit 1
+        fi
+
+        echo "🌿 main branch version: $MAIN_VERSION"
+
+        # Compare versions - they should be different
+        if [[ "$PR_VERSION" == "$MAIN_VERSION" ]]; then
+          echo ""
+          echo "❌ ERROR: Version was not bumped!"
+          echo "   main branch: $MAIN_VERSION"
+          echo "   PR branch:   $PR_VERSION"
+          echo ""
+          echo "Please increment the <Version> in src/Directory.Build.props"
+          echo "and add a matching ## [$PR_VERSION] entry in CHANGELOG.md."
+          exit 1
+        else
+          echo ""
+          echo "✅ SUCCESS: Version was bumped from $MAIN_VERSION to $PR_VERSION"
+        fi
