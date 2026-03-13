@@ -12,35 +12,11 @@ detailed configuration, settings, and security best practices.
 
 ## How to Get a Token
 
-**Endpoint:** `POST /api/v2/Auth/token`
+Post credentials to `POST /api/v2/Auth/token` to receive a JWT token, then include it in the `Authorization: Bearer`
+header on subsequent requests. See the Swagger UI at `/swagger` for the complete request/response specification.
 
-**Request:**
-
-```bash
-curl -X POST http://localhost:5000/api/v2/auth/token \
-  -H "Api-Key: your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{"accessKey":"your-key","accessSecret":"your-secret"}'
-```
-
-**Response:**
-
-```json
-{
-  "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expiresOn": "2026-01-15T23:55:05.123Z"
-}
-```
-
-## Using the Token
-
-```bash
-curl -H "Authorization: Bearer {your-token}" \
-  http://localhost:5000/api/v2/auth/info-jwt
-```
-
-> **📖 Complete Usage Guide:** See [JWT Adapter README](../src/Adapters/emc.camus.security.jwt/README.md) for detailed
-examples, token generation, endpoint protection, and testing.
+> **📖 Complete Usage Guide:** See [JWT Adapter README](../src/Adapters/emc.camus.security.jwt/README.md) for
+token generation, endpoint protection, and testing.
 
 ## JWT Claims
 

@@ -205,36 +205,6 @@ require JWT authentication.
 
 ---
 
-## Error Codes
-
-The adapter surfaces machine-readable error codes in HTTP responses for client error handling:
-
-### JWT Error Codes
-
-| Error Code | HTTP Status | Description | Client Action |
-| ---------- | ----------- | ----------- | ------------- |
-| `token_expired` | 401 | JWT token has expired | Refresh token or redirect to login |
-| `invalid_token` | 401 | Token is malformed or cannot be parsed | Request new token |
-| `invalid_signature` | 401 | Token signature validation failed | Token may be tampered, request new token |
-| `invalid_issuer` | 401 | Token issuer doesn't match expected value | Check token source |
-| `invalid_audience` | 401 | Token audience doesn't match expected value | Token not intended for this API |
-| `authentication_required` | 401 | No authentication credentials provided | Provide JWT token in Authorization header |
-| `invalid_credentials` | 401 | Credentials are incorrect | Check access key and secret |
-| `forbidden` | 403 | Valid authentication but insufficient permissions | Request elevated access or different endpoint |
-
-**Error Response Example:**
-
-```json
-{
-  "type": "https://tools.ietf.org/html/rfc7235#section-3.1",
-  "title": "Unauthorized",
-  "status": 401,
-  "detail": "You are not authorized to access this resource.",
-  "instance": "/api/v2/protected",
-  "error": "token_expired"
-}
-```
-
 **Client Implementation:**
 
 Handle JWT error codes on the client side: refresh the token on `token_expired`, and clear credentials and

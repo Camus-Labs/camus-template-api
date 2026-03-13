@@ -99,16 +99,8 @@ and dependency flow.
 
 2. **Configure secrets** (Development):
   
-   Edit `src/Infrastructure/dapr/secrets.json`:
-
-   ```json
-   {
-     "AccessKey": "dev-access-key",
-     "AccessSecret": "dev-access-secret",
-     "XApiKey": "dev-api-key-12345",
-     "RsaPrivateKeyPem": "<your-rsa-private-key>"
-   }
-   ```
+   Edit `src/Infrastructure/dapr/secrets.json` with your development credentials. See
+   [Dapr Components README](src/Infrastructure/dapr/README.md) for the secrets file format and examples.
 
 3. **Run the API**:
 
@@ -182,19 +174,6 @@ Built-in OpenTelemetry integration with multiple exporter options:
 - **Tracing**: OTLP, Jaeger, Zipkin, Console
 - **Metrics**: OTLP, Prometheus, Console
 - **Logging**: Serilog with OTLP exporter to Loki
-
-**Quick Setup:**
-
-```json
-{
-  "OpenTelemetry": {
-    "Tracing": {
-      "Exporter": "Otlp",
-      "OtlpEndpoint": "http://localhost:4317"
-    }
-  }
-}
-```
 
 The template includes Docker Compose configurations for a complete observability stack (Jaeger, Prometheus,
 Grafana, Loki).

@@ -163,18 +163,9 @@ spec:
   # Use managed identity in production
 ```
 
-Update `appsettings.Production.json`:
-
-```json
-{
-  "DaprSecretProvider": {
-    "BaseHost": "localhost",
-    "HttpPort": "3500",
-    "SecretStoreName": "azurekeyvault",
-    "SecretNames": ["AccessKey", "AccessSecret", "XApiKey", "RsaPrivateKeyPem"]
-  }
-}
-```
+Update `appsettings.Production.json` with the `DaprSecretProvider` settings — set `SecretStoreName` to
+`"azurekeyvault"`. See [Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md) for the
+complete configuration structure.
 
 ### AWS Secrets Manager
 
@@ -194,18 +185,9 @@ spec:
   # Use IAM roles in production
 ```
 
-Update `appsettings.Production.json`:
-
-```json
-{
-  "DaprSecretProvider": {
-    "BaseHost": "localhost",
-    "HttpPort": "3500",
-    "SecretStoreName": "awssecretsmanager",
-    "SecretNames": ["AccessKey", "AccessSecret", "XApiKey", "RsaPrivateKeyPem"]
-  }
-}
-```
+Update `appsettings.Production.json` with the `DaprSecretProvider` settings — set `SecretStoreName` to
+`"awssecretsmanager"`. See [Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md) for the
+complete configuration structure.
 
 **Deployment Steps:**
 

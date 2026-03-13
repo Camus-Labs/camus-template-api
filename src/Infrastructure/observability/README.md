@@ -168,26 +168,8 @@ Once running, access the observability tools:
 
 ### Configure Application
 
-In `appsettings.json` of your API project:
-
-```json
-{
-  "OpenTelemetry": {
-    "Tracing": {
-      "Exporter": "Otlp",
-      "OtlpEndpoint": "http://localhost:4317"
-    },
-    "Metrics": {
-      "Exporter": "Otlp",
-      "OtlpEndpoint": "http://localhost:4317"
-    },
-    "Logs": {
-      "Exporter": "Otlp",
-      "OtlpEndpoint": "http://localhost:4317"
-    }
-  }
-}
-```
+Add `OpenTelemetry` settings to `appsettings.json` with OTLP exporter endpoints for tracing, metrics, and logs.
+See [Observability Adapter README][obs-adapter-readme] for the complete configuration structure and exporter options.
 
 ### Register in Program.cs
 
