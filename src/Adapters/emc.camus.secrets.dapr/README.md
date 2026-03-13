@@ -70,8 +70,8 @@ for the component file format and examples.
 
 **2. Secrets File** (`src/Infrastructure/dapr/secrets.json`):
 
-Populate the secrets file with your development credentials. See [Dapr Components README](../../Infrastructure/dapr/README.md)
-for the file format and example values.
+Populate the secrets file with your development credentials.
+See [Dapr Components README](../../Infrastructure/dapr/README.md) for the file format and example values.
 
 **3. Run Dapr Sidecar**:
 

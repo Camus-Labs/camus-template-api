@@ -145,49 +145,21 @@ The application uses Dapr for secret management. Configure appropriate secret st
 
 ### Azure Key Vault
 
-Create a Dapr component for Azure Key Vault:
-
-```yaml
-apiVersion: dapr.io/v1alpha1
-kind: Component
-metadata:
-  name: azurekeyvault
-spec:
-  type: secretstores.azure.keyvault
-  version: v1
-  metadata:
-  - name: vaultName
-    value: "your-keyvault-name"
-  - name: azureTenantId
-    value: "your-tenant-id"
-  # Use managed identity in production
-```
-
-Update `appsettings.Production.json` with the `DaprSecretProvider` settings — set `SecretStoreName` to
-`"azurekeyvault"`. See [Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md) for the
-complete configuration structure.
+Configure a Dapr Azure Key Vault component and update `appsettings.Production.json` with
+`SecretStoreName` set to `"azurekeyvault"`. See
+[Dapr Components README — Production Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
+for the component YAML template and
+[Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md) for the application settings
+structure.
 
 ### AWS Secrets Manager
 
-Create a Dapr component for AWS Secrets Manager:
-
-```yaml
-apiVersion: dapr.io/v1alpha1
-kind: Component
-metadata:
-  name: awssecretsmanager
-spec:
-  type: secretstores.aws.secretmanager
-  version: v1
-  metadata:
-  - name: region
-    value: "us-east-1"
-  # Use IAM roles in production
-```
-
-Update `appsettings.Production.json` with the `DaprSecretProvider` settings — set `SecretStoreName` to
-`"awssecretsmanager"`. See [Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md) for the
-complete configuration structure.
+Configure a Dapr AWS Secrets Manager component and update `appsettings.Production.json` with
+`SecretStoreName` set to `"awssecretsmanager"`. See
+[Dapr Components README — Production Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
+for the component YAML template and
+[Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md) for the application settings
+structure.
 
 **Deployment Steps:**
 

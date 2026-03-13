@@ -48,9 +48,12 @@ When deploying this template, please follow these security best practices:
 
 ### Rate Limiting
 
-- Default: 100 requests per minute per client
+- Default: 250 requests per minute per client (configurable per policy)
 - Customize based on your requirements
 - Consider implementing per-user rate limiting for authenticated endpoints
+
+> **📖 Full Guide:** See [Rate Limiting Adapter README](src/Adapters/emc.camus.ratelimiting.inmemory/README.md)
+for configuration and policy definitions.
 
 ## Security Updates
 

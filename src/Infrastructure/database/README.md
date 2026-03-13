@@ -2,6 +2,9 @@
 
 This directory contains database migration scripts and infrastructure for the Camus application.
 
+> **📖 Parent Documentation:** [Main README](../../../README.md) |
+[Architecture Guide](../../../docs/architecture.md)
+
 ## Directory Structure
 
 ``` text
@@ -178,3 +181,30 @@ migration (002).
 - [ ] Rollback/down migration scripts
 - [ ] Automated migration validation in CI/CD
 - [ ] Environment-specific seed data scripts
+
+---
+
+## Configuration
+
+Database connection details are configured through `DatabaseSettings` in `appsettings.json`. Migration credentials
+are configured in `DBUpSettings` with secret names resolved by `ISecretProvider` at runtime.
+See [Migrations Adapter README](../../Adapters/emc.camus.migrations.dbup/README.md) for the complete configuration
+reference.
+
+---
+
+## Integration
+
+Migration scripts in `migrations/` are embedded into the `emc.camus.migrations.dbup` adapter assembly at
+build time. The adapter executes them at application startup via DbUp.
+See [Migrations Adapter README](../../Adapters/emc.camus.migrations.dbup/README.md) for the wiring pattern.
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely Cause |
+| ------- | ------------ |
+| Migration script not detected | File not in `migrations/` or not matching `*.sql` naming pattern |
+| Schema already exists error | Migration missing `IF NOT EXISTS` guard |
+| Permission denied | Database user lacks DDL privileges — use admin credentials for migrations |

@@ -243,6 +243,18 @@ docker network rm camus-observability
 
 ---
 
+## Troubleshooting
+
+| Symptom | Likely Cause |
+| ------- | ------------ |
+| No traces in Jaeger | Application exporter not set to `"Otlp"` or Collector not forwarding to Jaeger |
+| Prometheus targets DOWN | Collector not exposing metrics on port 8889 or network mismatch |
+| Grafana datasource error | Datasource URL doesn't match container name and port in Docker network |
+| Loki shows no logs | Collector pipeline missing `loki` exporter or Loki endpoint unreachable |
+| Containers exit immediately | Port conflict — check `docker ps` for existing containers on the same ports |
+
+---
+
 ## 🏭 Production Configuration
 
 For production deployments:

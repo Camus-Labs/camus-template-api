@@ -142,6 +142,26 @@ spec:
 
 ---
 
+## Integration
+
+The [emc.camus.secrets.dapr](../../Adapters/emc.camus.secrets.dapr/README.md) adapter reads secrets from
+the configured Dapr secret store. Register the adapter and run the Dapr sidecar alongside the application.
+See the adapter README for the `appsettings.json` configuration that references the secret store name
+defined in the component YAML.
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely Cause |
+| ------- | ------------ |
+| `connection refused` on port 3500 | Dapr sidecar not running — start it with `dapr run` |
+| Secret not found | Secret name mismatch between `appsettings.json` and `secrets.json` |
+| Wrong secret store used | `SecretStoreName` in app settings doesn't match `metadata.name` in component YAML |
+| Dapr not initialized | Run `dapr init` to install Dapr runtime and default containers |
+
+---
+
 ## 🔗 Related Documentation
 
 - **[Secrets Adapter README](../../Adapters/emc.camus.secrets.dapr/README.md)** - How the

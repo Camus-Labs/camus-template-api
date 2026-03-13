@@ -74,7 +74,8 @@ Example: `@product_owner I need CRUD operations for managing user profiles with 
 **What the agent does:**
 
 1. Decomposes the feature request into atomic user stories
-2. Creates story files under `docs/stories/todo/{request-slug}/` using the template
+2. Creates story files under `docs/stories/todo/{request-slug}/` using the
+   [story template](stories/_user_story_template.md)
 3. Populates Section A (Product Owner Definition) — story statement, scope, FRs, NFRs, ACs
 4. Asks up to 5 rounds of clarification questions for ambiguous requirements
 5. Evaluates the Product Owner Handoff Gate per story
