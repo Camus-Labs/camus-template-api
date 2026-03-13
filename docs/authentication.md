@@ -47,8 +47,8 @@ examples, token generation, endpoint protection, and testing.
 JWT tokens include standard claims for user identification, roles, and token metadata.
 
 > **📖 Complete Claims Reference:** See
-[JWT Adapter README - JWT Claims](../src/Adapters/emc.camus.security.jwt/README.md#-jwt-claims) for
-detailed claims documentation and usage examples.
+[JWT Adapter README - JWT Claims](../src/Adapters/emc.camus.security.jwt/README.md#-jwt-claims) for detailed
+claims documentation and usage examples.
 
 ## Security Notes
 
@@ -72,12 +72,7 @@ detailed claims documentation and usage examples.
 ## API Key Authentication
 
 API Key authentication provides simple header-based authentication for service-to-service communication.
-
-**Request Header:**
-
-```http
-Api-Key: your-api-key-here
-```
+Include the API key in the `X-Api-Key` request header.
 
 > **📖 Complete Guide:** See [API Key Adapter README](../src/Adapters/emc.camus.security.apikey/README.md) for
 configuration, usage examples, and security best practices.

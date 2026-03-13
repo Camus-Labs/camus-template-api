@@ -196,8 +196,8 @@ Built-in OpenTelemetry integration with multiple exporter options:
 }
 ```
 
-The template includes Docker Compose configurations for a complete observability stack
-(Jaeger, Prometheus, Grafana, Loki).
+The template includes Docker Compose configurations for a complete observability stack (Jaeger, Prometheus,
+Grafana, Loki).
 
 **📖 Learn More:**
 
@@ -292,9 +292,8 @@ and cloud deployment.
 
 ### Add Business Controllers
 
-Create versioned API controllers in `src/Api/emc.camus.api/Controllers/`. Apply `[ApiController]`,
-`[ApiVersion]`, and version-based route attributes. See existing controllers in that folder for the
-pattern.
+Create versioned API controllers in `src/Api/emc.camus.api/Controllers/`. Apply `[ApiController]`, `[ApiVersion]`,
+and version-based route attributes. See existing controllers in that folder for the pattern.
 
 ### Implement Use Cases
 
@@ -349,8 +348,8 @@ Define business models in `src/Domain/emc.camus.domain/`. Keep domain entities f
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for branching conventions, versioning standard,
-changelog format, PR requirements, and the agent-driven development workflow.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for branching conventions, versioning standard, changelog format, PR
+requirements, and the agent-driven development workflow.
 
 ---
 

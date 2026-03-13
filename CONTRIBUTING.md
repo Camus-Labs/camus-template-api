@@ -1,7 +1,7 @@
 # Contributing to Camus API
 
-Thank you for contributing to the Camus API Template. This guide covers the rules and conventions
-every contributor must follow.
+Thank you for contributing to the Camus API Template. This guide covers the rules and conventions every
+contributor must follow.
 
 ---
 
@@ -78,13 +78,11 @@ Use the story details or feature description as the PR description.
 
 ## Development Workflow
 
-For new feature development, this project uses an **agent-driven SDLC workflow** with phased handoffs
-and human approval gates. See [Feature Development Workflow](docs/agentic-sdlc-workflow.md) for the
-complete process.
+For new feature development, this project uses an **agent-driven SDLC workflow** with phased handoffs and human
+approval gates. See [Feature Development Workflow](docs/agentic-sdlc-workflow.md) for the complete process.
 
-The workflow covers: requirements decomposition, architecture definition, TDD test creation,
-implementation, automated code review, and documentation compliance — all coordinated through
-specialized agents.
+The workflow covers: requirements decomposition, architecture definition, TDD test creation, implementation,
+automated code review, and documentation compliance — all coordinated through specialized agents.
 
 ---
 
@@ -96,5 +94,5 @@ See [Test Projects](src/Test/README.md) for frameworks, conventions, and coverag
 
 ## Security
 
-Report security vulnerabilities per [SECURITY.md](SECURITY.md). Never commit secrets, keys, or
-connection strings to the repository.
+Report security vulnerabilities per [SECURITY.md](SECURITY.md). Never commit secrets, keys, or connection
+strings to the repository.

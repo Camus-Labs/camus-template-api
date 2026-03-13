@@ -34,8 +34,8 @@ spec:
 
 **Usage in Application:**
 
-The [emc.camus.secrets.dapr](../../Adapters/emc.camus.secrets.dapr/README.md) adapter uses this
-component to retrieve secrets at runtime.
+The [emc.camus.secrets.dapr](../../Adapters/emc.camus.secrets.dapr/README.md) adapter uses this component to
+retrieve secrets at runtime.
 
 ---
 

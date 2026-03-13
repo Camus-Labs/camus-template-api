@@ -201,8 +201,8 @@ After Phase 4 produces PASS for both code and documentation reviews, finalize th
 3. Commit all changes to the feature branch
 
 **Your role:** Confirm stories are moved to `done/`, version is bumped, changelog is updated,
-all changes are committed, and the feature branch is ready for merge. Use the story details as
-the PR request details.
+all changes are committed, and the feature branch is ready for merge. Use the story details as the PR request
+details.
 
 ---
 

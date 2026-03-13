@@ -2,8 +2,8 @@
 
 > **Parent Documentation:** [Main README](../../README.md) | [Contributing](../../CONTRIBUTING.md)
 
-Unit test suite for the Camus API. One test project per production layer/adapter, all sharing
-common frameworks and conventions.
+Unit test suite for the Camus API. One test project per production layer/adapter, all sharing common frameworks
+and conventions.
 
 ---
 
@@ -11,15 +11,15 @@ common frameworks and conventions.
 
 ### Shared Build Properties
 
-`Directory.Build.props` in this folder applies to all test projects. It inherits from the root
-`src/Directory.Build.props` and adds test-specific settings (disables documentation generation,
-marks projects as non-packable).
+`Directory.Build.props` in this folder applies to all test projects.
+
+It inherits from the root `src/Directory.Build.props` and adds test-specific settings (disables documentation
+generation, marks projects as non-packable).
 
 ### Coverage Settings
 
-`coverlet.runsettings` at the repository root configures code coverage collection. It excludes
-test assemblies and auto-generated code from coverage metrics, and outputs Cobertura XML format
-for report generation.
+`coverlet.runsettings` at the repository root configures code coverage collection. It excludes test assemblies
+and auto-generated code from coverage metrics, and outputs Cobertura XML format for report generation.
 
 ### Test Frameworks
 
@@ -75,8 +75,8 @@ Generate a coverage report using the VS Code tasks:
 1. Run the **test-with-coverage** task — executes all tests with Coverlet collection
 2. Run the **test-coverage-report** task — generates an HTML report and opens it in the browser
 
-Coverage output lands in `src/Test/*/TestResults/` (git-ignored). The HTML report is generated
-in `coveragereport/` at the repository root.
+Coverage output lands in `src/Test/*/TestResults/` (git-ignored). The HTML report is generated in `coveragereport/`
+at the repository root.
 
 ### Conventions Summary
 
@@ -88,15 +88,15 @@ Tests follow the conventions defined in `.github/instructions/testing.instructio
 
 ### Tests fail with missing project references
 
-Each test `.csproj` must reference its production project. Verify the `<ProjectReference>` element
-points to the correct relative path.
+Each test `.csproj` must reference its production project. Verify the `<ProjectReference>` element points to
+the correct relative path.
 
 ### Coverage report shows 0% or is missing
 
-Ensure the **test-with-coverage** task runs before generating the report. The task cleans previous
-`TestResults/` directories, rebuilds, and collects fresh coverage data.
+Ensure the **test-with-coverage** task runs before generating the report. The task cleans previous `TestResults/`
+directories, rebuilds, and collects fresh coverage data.
 
 ### Tests pass locally but fail in CI
 
-Check for environment-dependent code: file paths, time zones, or locale-specific formatting.
-Tests must be deterministic with no dependency on machine state.
+Check for environment-dependent code: file paths, time zones, or locale-specific formatting. Tests must be
+deterministic with no dependency on machine state.

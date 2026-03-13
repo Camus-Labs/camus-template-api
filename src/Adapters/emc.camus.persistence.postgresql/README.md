@@ -82,8 +82,8 @@ dependency injection:
 - `app.UseAppDataSetup()` initializes and validates the database
 - `app.UseAuthorizationSetup()` initializes and validates the database
 
-See `AppDataSetupExtensions` and `AuthorizationSetupExtensions` in
-`src/Api/emc.camus.api/Extensions/` for the wiring details.
+See `AppDataSetupExtensions` and `AuthorizationSetupExtensions` in `src/Api/emc.camus.api/Extensions/` for the
+wiring details.
 
 ---
 
@@ -192,9 +192,12 @@ actual credentials from the secret provider at runtime.
 
 ### Custom Queries
 
-The repositories use Dapper for data access. Add custom queries using Dapper's `QueryAsync`,
-`QuerySingleOrDefaultAsync`, and `ExecuteAsync` extension methods on `IDbConnection`. See the
-existing repository implementations in this adapter for query patterns.
+The repositories use Dapper for data access.
+
+Add custom queries using Dapper's `QueryAsync`, `QuerySingleOrDefaultAsync`, and `ExecuteAsync` extension
+methods on `IDbConnection`.
+
+See the existing repository implementations in this adapter for query patterns.
 
 ### Transaction Support
 
@@ -223,8 +226,8 @@ This adapter integrates through extension methods defined in the API layer:
 - `app.UseAppDataSetup()` — initializes and validates the database connection at startup
 - `app.UseAuthorizationSetup()` — initializes and validates the database connection at startup
 
-See `AppDataSetupExtensions` and `AuthorizationSetupExtensions` in
-`src/Api/emc.camus.api/Extensions/` for the full wiring details.
+See `AppDataSetupExtensions` and `AuthorizationSetupExtensions` in `src/Api/emc.camus.api/Extensions/` for the
+full wiring details.
 
 ---
 

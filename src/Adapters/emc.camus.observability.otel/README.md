@@ -30,11 +30,11 @@ Collector for flexible telemetry routing.
 ### 1. Register in Program.cs
 
 Call `builder.AddObservability(serviceName, serviceVersion, instanceId, environmentName)` to register
-tracing, metrics, and structured logging. Then call `app.UseObservability()` to add the response
-trace-ID middleware.
+tracing, metrics, and structured logging. Then call `app.UseObservability()` to add the response trace-ID
+middleware.
 
-See `ObservabilitySetupExtensions` in this adapter for the full registration API and `Program.cs`
-for the wiring example.
+See `ObservabilitySetupExtensions` in this adapter for the full registration API and `Program.cs` for the
+wiring example.
 
 ### 2. Configure Settings
 
@@ -105,8 +105,7 @@ In `appsettings.json`:
 | Console  | `"Console"`  | Development debugging                            |
 
 > **💡 Recommendation:** Use OTLP exporter to send all telemetry to the OpenTelemetry Collector,
-which handles routing to Jaeger, Prometheus, Loki, etc. This provides maximum flexibility without
-code changes.
+which handles routing to Jaeger, Prometheus, Loki, etc. This provides maximum flexibility without code changes.
 
 ---
 
@@ -134,8 +133,8 @@ Your Application (with this adapter)
 ```
 
 > **📖 Stack Configuration:** See
-[Observability Components README](../../Infrastructure/observability/README.md) for setting up the
-observability stack.
+[Observability Components README](../../Infrastructure/observability/README.md) for setting up the observability
+stack.
 
 ---
 
@@ -187,20 +186,19 @@ observability stack.
 
 ## 🎯 Manual Instrumentation
 
-Inject `IActivitySourceWrapper` to create custom spans for business-critical operations. Call
-`StartActivity(name, kind)` to open a span, set tags for context, and set error status on failures.
-The wrapper is disposed automatically at the end of the `using` block.
+Inject `IActivitySourceWrapper` to create custom spans for business-critical operations. Call `StartActivity(name,
+kind)` to open a span, set tags for context, and set error status on failures. The wrapper is disposed automatically
+at the end of the `using` block.
 
-See `IActivitySourceWrapper` in the Application layer for the interface contract, and
-`ObservabilitySetupExtensions.cs` for registration details.
+See `IActivitySourceWrapper` in the Application layer for the interface contract, and `ObservabilitySetupExtensions.cs`
+for registration details.
 
 ---
 
 ## 📝 Structured Logging
 
-The adapter configures Serilog for structured logging. Logs are automatically enriched with trace
-context (trace ID and span ID). Use Serilog's message template syntax with named placeholders for
-structured properties.
+The adapter configures Serilog for structured logging. Logs are automatically enriched with trace context
+(trace ID and span ID). Use Serilog's message template syntax with named placeholders for structured properties.
 
 ### Log Levels
 
@@ -223,13 +221,8 @@ structured properties.
 
 ## 🔗 Response Trace ID Middleware
 
-The `UseObservability()` method adds middleware that includes the trace ID in response headers:
-
-```http
-HTTP/1.1 200 OK
-Trace-Id: 4bf92f3577b34da6a3ce929d0e0e4736
-Content-Type: application/json
-```
+The `UseObservability()` method adds middleware that includes the `Trace-Id` header in all HTTP responses for
+distributed tracing correlation.
 
 **Benefits:**
 
@@ -243,14 +236,13 @@ Content-Type: application/json
 
 ### Sampling
 
-Implement sampling to reduce overhead in high-traffic scenarios. Configure a
-`TraceIdRatioBasedSampler` (e.g., 0.1 for 10% of traces) via the OpenTelemetry tracing builder.
+Implement sampling to reduce overhead in high-traffic scenarios. Configure a `TraceIdRatioBasedSampler`
+(e.g., 0.1 for 10% of traces) via the OpenTelemetry tracing builder.
 
 ### Resource Attributes
 
-Enrich telemetry with environment information by passing service name, version, instance ID, and
-environment name to `AddObservability()`. See `ObservabilitySetupExtensions.cs` for parameter
-details.
+Enrich telemetry with environment information by passing service name, version, instance ID, and environment
+name to `AddObservability()`. See `ObservabilitySetupExtensions.cs` for parameter details.
 
 ---
 

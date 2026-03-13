@@ -29,9 +29,8 @@ API. It integrates with the Application layer's `ISecretProvider` for secure key
 
 ### 1. Register in Program.cs
 
-Register the secret provider first (`builder.AddDaprSecrets()`), then call
-`builder.AddJwtAuthentication()` to add JWT Bearer authentication. Enable the standard
-authentication/authorization middleware.
+Register the secret provider first (`builder.AddDaprSecrets()`), then call `builder.AddJwtAuthentication()` to
+add JWT Bearer authentication. Enable the standard authentication/authorization middleware.
 
 See `JwtSetupExtensions` in this adapter for the full registration API.
 
@@ -70,10 +69,10 @@ secret provider configuration.
 
 ### Using IJwtTokenGenerator
 
-The adapter provides `IJwtTokenGenerator` for token generation. Inject it into your authentication
-controller along with `ISecretProvider`. Validate credentials against secrets, build a
-`GenerateTokenCommand` with desired claims, and call `GenerateToken(command)` to produce a
-`GenerateTokenResult` containing the token string and expiration.
+The adapter provides `IJwtTokenGenerator` for token generation. Inject it into your authentication controller
+along with `ISecretProvider`. Validate credentials against secrets, build a `GenerateTokenCommand` with desired
+claims, and call `GenerateToken(command)` to produce a `GenerateTokenResult` containing the token string and
+expiration.
 
 **Key Points:**
 
@@ -82,8 +81,8 @@ controller along with `ISecretProvider`. Validate credentials against secrets, b
 - ✅ Add custom claims as needed (roles, permissions, etc.)
 - ✅ Returns `GenerateTokenResult` with token and expiration
 
-See `JwtSetupExtensions` and `IJwtTokenGenerator` in this adapter for API details, and the auth
-controller in `src/Api/emc.camus.api/Controllers/` for the wiring example.
+See `JwtSetupExtensions` and `IJwtTokenGenerator` in this adapter for API details, and the auth controller in
+`src/Api/emc.camus.api/Controllers/` for the wiring example.
 
 ---
 
@@ -91,14 +90,14 @@ controller in `src/Api/emc.camus.api/Controllers/` for the wiring example.
 
 ### Require JWT Authentication
 
-Apply `[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]` to controllers
-or actions that require JWT authentication. Use `[Authorize(Roles = "Admin")]` for role-based
-access or define custom policies for fine-grained authorization.
+Apply `[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]` to controllers or actions
+that require JWT authentication. Use `[Authorize(Roles = "Admin")]` for role-based access or define custom
+policies for fine-grained authorization.
 
 ### Support Multiple Authentication Schemes
 
-To accept either JWT or API Key on an endpoint, list both scheme names in the `[Authorize]`
-attribute's `AuthenticationSchemes` parameter.
+To accept either JWT or API Key on an endpoint, list both scheme names in the `[Authorize]` attribute's
+`AuthenticationSchemes` parameter.
 
 See controller source files in `src/Api/emc.camus.api/Controllers/` for examples.
 
@@ -121,40 +120,15 @@ Standard claims included in tokens:
 
 **Access Claims in Code:**
 
-Use `User.FindFirst(ClaimTypes.NameIdentifier)` for user ID,
-`User.FindAll(ClaimTypes.Role)` for roles, and `User.FindFirst("unique_name")` for username.
+Use `User.FindFirst(ClaimTypes.NameIdentifier)` for user ID, `User.FindAll(ClaimTypes.Role)` for roles, and
+`User.FindFirst("unique_name")` for username.
 
 ---
 
 ## 🧪 Example Usage
 
-### Get Token
-
-```bash
-POST /api/v2/auth/token
-Content-Type: application/json
-
-{
-  "accessKey": "your-access-key",
-  "accessSecret": "your-access-secret"
-}
-```
-
-**Response:**
-
-```json
-{
-  "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expiresOn": "2026-02-08T23:55:05.123Z"
-}
-```
-
-### Use Token
-
-```bash
-GET /api/v1/products
-Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
-```
+Authenticate by posting credentials to the auth endpoint, then include the returned token in the `Authorization: Bearer`
+header on subsequent requests. See the Swagger documentation for the complete API specification.
 
 ---
 
@@ -214,8 +188,8 @@ The adapter registers via the extension methods in `JwtSetupExtensions.cs`:
   keys from the secret provider, and registers JWT bearer authentication and
   token-generation services.
 
-Apply the `[Authorize]` attribute (with the appropriate authentication scheme) to controllers or
-actions that require JWT authentication.
+Apply the `[Authorize]` attribute (with the appropriate authentication scheme) to controllers or actions that
+require JWT authentication.
 
 ---
 
@@ -263,9 +237,8 @@ The adapter surfaces machine-readable error codes in HTTP responses for client e
 
 **Client Implementation:**
 
-Handle JWT error codes on the client side: refresh the token on `token_expired`, and clear
-credentials and re-authenticate on `invalid_signature`. See `ErrorCodes.cs` for the complete
-list of error codes.
+Handle JWT error codes on the client side: refresh the token on `token_expired`, and clear credentials and
+re-authenticate on `invalid_signature`. See `ErrorCodes.cs` for the complete list of error codes.
 
 > **📖 Error Codes Reference:** See [ErrorCodes.cs](../../Application/emc.camus.application/Common/ErrorCodes.cs)
 for complete error code definitions.
@@ -306,9 +279,8 @@ for complete error code definitions.
 
 ### RSA Key Generation
 
-Generate a 2048-bit RSA private key using `openssl genrsa`, extract the public key with
-`openssl rsa -pubout`, and store the private key PEM in the secret provider. Never commit private
-keys to source control.
+Generate a 2048-bit RSA private key using `openssl genrsa`, extract the public key with `openssl rsa -pubout`,
+and store the private key PEM in the secret provider. Never commit private keys to source control.
 
 ### Production Recommendations
 
@@ -329,14 +301,13 @@ keys to source control.
 
 ### Unit Tests
 
-Mock `ISecretProvider` to return a test RSA private key, then use the adapter's token generation
-API to verify token creation.
+Mock `ISecretProvider` to return a test RSA private key, then use the adapter's token generation API to verify
+token creation.
 
 ### Integration Tests
 
-Use `WebApplicationFactory` to create a test client, obtain a token from the auth endpoint, set
-the `Authorization: Bearer` header, and assert on protected endpoints. See test projects in
-`src/Test/` for integration test patterns.
+Use `WebApplicationFactory` to create a test client, obtain a token from the auth endpoint, set the `Authorization:
+Bearer` header, and assert on protected endpoints. See test projects in `src/Test/` for integration test patterns.
 
 ---
 
@@ -364,15 +335,14 @@ the `Authorization: Bearer` header, and assert on protected endpoints. See test 
 
 ### Custom Token Validation
 
-Configure `TokenValidationParameters` in `JwtSetupExtensions` to control issuer, audience,
-lifetime, and signing key validation. Set `ClockSkew` to `TimeSpan.Zero` for strict expiration
-checking.
+Configure `TokenValidationParameters` in `JwtSetupExtensions` to control issuer, audience, lifetime, and signing
+key validation. Set `ClockSkew` to `TimeSpan.Zero` for strict expiration checking.
 
 ### Custom Authorization Policies
 
-After calling `builder.AddCamusAuthorization()`, add custom policies via
-`builder.Services.AddAuthorization()` using `RequireRole()`, `RequireClaim()`, or custom
-requirements. See `AuthorizationSetupExtensions` in the API layer for the base configuration.
+After calling `builder.AddCamusAuthorization()`, add custom policies via `builder.Services.AddAuthorization()`
+using `RequireRole()`, `RequireClaim()`, or custom requirements. See `AuthorizationSetupExtensions` in the API
+layer for the base configuration.
 
 ## Design Principles
 

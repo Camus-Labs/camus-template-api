@@ -21,8 +21,8 @@ Configuration files for the OpenTelemetry-based observability stack used in Camu
 
 ### OpenTelemetry Collector
 
-Central telemetry pipeline that receives traces, metrics, and logs from your application via OTLP
-(OpenTelemetry Protocol).
+Central telemetry pipeline that receives traces, metrics, and logs from your application via OTLP (OpenTelemetry
+Protocol).
 
 **Key Features:**
 
@@ -33,8 +33,8 @@ Central telemetry pipeline that receives traces, metrics, and logs from your app
 
 **Usage in Application:**
 
-The [emc.camus.observability.otel](../../Adapters/emc.camus.observability.otel/README.md) adapter
-sends telemetry to the collector.
+The [emc.camus.observability.otel](../../Adapters/emc.camus.observability.otel/README.md) adapter sends telemetry
+to the collector.
 
 ### Prometheus
 
@@ -191,20 +191,12 @@ In `appsettings.json` of your API project:
 
 ### Register in Program.cs
 
-```csharp
-using emc.camus.observability.otel;
+Call `builder.AddObservability(serviceName, serviceVersion, instanceId, environmentName)` to register telemetry,
+then call `app.UseObservability()` to add the response trace-ID middleware.
 
-// Add observability adapter
-builder.AddObservability("camus-api", "1.0.0", Environment.MachineName, builder.Environment.EnvironmentName);
+For complete configuration details, see the [Observability Adapter README][obs-adapter-readme].
 
-var app = builder.Build();
-
-// Add observability middleware
-app.UseObservability();
-```
-
-For complete configuration details,
-see [emc.camus.observability.otel README](../../Adapters/emc.camus.observability.otel/README.md).
+[obs-adapter-readme]: ../../Adapters/emc.camus.observability.otel/README.md
 
 ---
 

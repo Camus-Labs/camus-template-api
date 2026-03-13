@@ -31,8 +31,8 @@ Examples:
 
 ### Development (Docker)
 
-Migrations are automatically applied when Docker containers start for the first time. The initial
-schema is mounted in the PostgreSQL container's `docker-entrypoint-initdb.d/` directory.
+Migrations are automatically applied when Docker containers start for the first time. The initial schema is
+mounted in the PostgreSQL container's `docker-entrypoint-initdb.d/` directory.
 
 To reset and reapply migrations:
 
@@ -165,8 +165,8 @@ These tools automatically:
 
 ### Current Approach
 
-For now, migrations use `IF NOT EXISTS` clauses making them **idempotent** (safe to run multiple
-times). This works for initial setup but won't handle schema changes properly.
+For now, migrations use `IF NOT EXISTS` clauses making them **idempotent** (safe to run multiple times). This
+works for initial setup but won't handle schema changes properly.
 
 **Recommendation:** Add a simple `schema_migrations` table when you create your second
 migration (002).

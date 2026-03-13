@@ -9,8 +9,8 @@ API Key authentication adapter for Camus applications.
 
 ## 📋 Overview
 
-This adapter implements API Key authentication using the `X-Api-Key` header, providing a simple
-authentication mechanism for service-to-service communication or legacy client support.
+This adapter implements API Key authentication using the `X-Api-Key` header, providing a simple authentication
+mechanism for service-to-service communication or legacy client support.
 
 ---
 
@@ -28,9 +28,10 @@ authentication mechanism for service-to-service communication or legacy client s
 
 ### 1. Register in Program.cs
 
-Register the secret provider first (`builder.AddDaprSecrets()`), then call
-`builder.AddApiKeyAuthentication(serviceName)` to add API Key authentication. Enable the standard
-ASP.NET Core authentication/authorization middleware.
+Register the secret provider (`builder.AddDaprSecrets()`) and call `builder.AddApiKeyAuthentication(serviceName)`
+to add API Key authentication.
+
+Enable the standard ASP.NET Core authentication/authorization middleware.
 
 See `ApiKeySetupExtensions` in this adapter for the full registration API.
 
@@ -52,9 +53,9 @@ this if you need to use a different secret name.
 
 ### 3. Protect Endpoints
 
-Apply `[Authorize(AuthenticationSchemes = AuthenticationSchemes.ApiKey)]` to controllers or actions
-that require API Key authentication. To accept both JWT and API Key, combine scheme names in the
-`AuthenticationSchemes` parameter.
+Apply `[Authorize(AuthenticationSchemes = AuthenticationSchemes.ApiKey)]` to controllers or actions that require
+API Key authentication. To accept both JWT and API Key, combine scheme names in the `AuthenticationSchemes`
+parameter.
 
 See controller source files in `src/Api/emc.camus.api/Controllers/` for examples.
 
@@ -159,9 +160,8 @@ secret provider configuration.
 
 ## 🔗 Combined with JWT
 
-To accept either JWT or API Key on an endpoint, list both scheme names in the `[Authorize]`
-attribute's `AuthenticationSchemes` parameter. See controller source files for the combined-scheme
-pattern.
+To accept either JWT or API Key on an endpoint, list both scheme names in the `[Authorize]` attribute's
+`AuthenticationSchemes` parameter. See controller source files for the combined-scheme pattern.
 
 ---
 
@@ -169,13 +169,13 @@ pattern.
 
 ### Unit Tests
 
-Mock `ISecretProvider` to return a known API key, then instantiate
-`ApiKeyAuthenticationHandler` with the mock. See `src/Test/` for existing test examples.
+Mock `ISecretProvider` to return a known API key, then instantiate `ApiKeyAuthenticationHandler` with the mock.
+See `src/Test/` for existing test examples.
 
 ### Integration Tests
 
-Use `WebApplicationFactory` to create a test client, set the `X-Api-Key` header, and assert on
-the response status code. See test projects in `src/Test/` for integration test patterns.
+Use `WebApplicationFactory` to create a test client, set the `X-Api-Key` header, and assert on the response
+status code. See test projects in `src/Test/` for integration test patterns.
 
 ---
 
@@ -196,8 +196,8 @@ The adapter registers via the extension method in `ApiKeySetupExtensions.cs`:
   the expected API key from the secret provider, and registers the API-key authentication handler
   in the DI container.
 
-Apply the `[Authorize(AuthenticationSchemes = "ApiKey")]` attribute to controllers or actions that
-require API-key authentication.
+Apply the `[Authorize(AuthenticationSchemes = "ApiKey")]` attribute to controllers or actions that require
+API-key authentication.
 
 ---
 

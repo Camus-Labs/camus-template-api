@@ -86,12 +86,11 @@ Once running, navigate to:
 
 ### XML Documentation Comments
 
-XML documentation generation is enabled centrally in `src/Directory.Build.props` — no per-project
-configuration is needed.
+XML documentation generation is enabled centrally in `src/Directory.Build.props` — no per-project configuration is
+needed.
 
-Document endpoints using standard XML summary, param, returns, and response tags, along with
-`[ProducesResponseType]` attributes. See controller source files in
-`src/Api/emc.camus.api/Controllers/` for examples.
+Document endpoints using standard XML summary, param, returns, and response tags, along with `[ProducesResponseType]`
+attributes. See controller source files in `src/Api/emc.camus.api/Controllers/` for examples.
 
 ### Swagger Annotations
 

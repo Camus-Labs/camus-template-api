@@ -6,8 +6,8 @@ In-memory rate limiting adapter for the Camus application using ASP.NET Core's b
 
 ## Overview
 
-This adapter provides IP-based rate limiting with policy-based configuration. It runs **before
-authentication** to protect auth endpoints from brute force attacks.
+This adapter provides IP-based rate limiting with policy-based configuration. It runs **before authentication**
+to protect auth endpoints from brute force attacks.
 
 ## Features
 
@@ -56,12 +56,11 @@ dotnet add reference ../../Adapters/emc.camus.ratelimiting.inmemory/emc.camus.ra
 2. Call `app.UseForwardedHeaders()` to process proxy headers (must come before rate limiting)
 3. Call `app.UseMemoryRateLimiting()` to apply the middleware before authentication
 
-See `InMemoryRateLimitingSetupExtensions` in this adapter for the full registration API and
-`Program.cs` for the wiring order.
+See `InMemoryRateLimitingSetupExtensions` in this adapter for the full registration API and `Program.cs` for
+the wiring order.
 
-⚠️ **Critical**: If deploying behind a reverse proxy, `UseForwardedHeaders()` must be called
-**before** `UseMemoryRateLimiting()`. Without it, all requests from the same proxy share one
-rate limit.
+⚠️ **Critical**: If deploying behind a reverse proxy, `UseForwardedHeaders()` must be called **before**
+`UseMemoryRateLimiting()`. Without it, all requests from the same proxy share one rate limit.
 
 ## Configuration
 
@@ -94,19 +93,19 @@ Add to `appsettings.json`:
 ### Apply to Controllers
 
 Apply the `[RateLimit]` attribute from the Application layer to controllers or individual endpoints.
-Use `RateLimitPolicies.Strict`, `RateLimitPolicies.Default`, or `RateLimitPolicies.Relaxed`
-constants. Controller-level attributes are inherited by all endpoints unless overridden.
+Use `RateLimitPolicies.Strict`, `RateLimitPolicies.Default`, or `RateLimitPolicies.Relaxed` constants.
+Controller-level attributes are inherited by all endpoints unless overridden.
 
-See the `RateLimitAttribute` and `RateLimitPolicies` in
-`src/Application/emc.camus.application/RateLimiting/` for the available policies.
+See the `RateLimitAttribute` and `RateLimitPolicies` in `src/Application/emc.camus.application/RateLimiting/`
+for the available policies.
 
 ## Limitations
 
-⚠️ **Single-Instance Only** - This adapter uses in-memory storage and is **NOT suitable for
-multi-instance deployments**.
+⚠️ **Single-Instance Only** - This adapter uses in-memory storage and is **NOT suitable for multi-instance
+deployments**.
 
-For production environments with horizontal scaling (Kubernetes, Azure App Service scale-out),
-use the Redis adapter instead:
+For production environments with horizontal scaling (Kubernetes, Azure App Service scale-out), use the Redis
+adapter instead:
 
 ```bash
 dotnet add package emc.camus.ratelimiting.redis
@@ -124,9 +123,8 @@ dotnet add package emc.camus.ratelimiting.redis
 
 **Without proxy headers**: All requests from the same proxy IP share one rate limit (security risk in production).
 
-The adapter logs a warning on first request if no proxy headers are detected. Review logs and
-ensure `UseForwardedHeaders()` is configured in
-[Program.cs](../../Api/emc.camus.api/Program.cs#L58-L62).
+The adapter logs a warning on first request if no proxy headers are detected. Review logs and ensure
+`UseForwardedHeaders()` is configured in [Program.cs](../../Api/emc.camus.api/Program.cs#L58-L62).
 
 ## Metrics
 
@@ -136,8 +134,8 @@ Exports OpenTelemetry metrics for anomaly detection:
 
 Tagged with: `partition`, `endpoint`, `method`, `user_or_ip`
 
-**Note**: Success cases are not metered to avoid high-volume noise. Rate limit information for
-successful requests is available via response headers (`RateLimit-Limit`, `RateLimit-Reset`).
+**Note**: Success cases are not metered to avoid high-volume noise. Rate limit information for successful
+requests is available via response headers (`RateLimit-Limit`, `RateLimit-Reset`).
 
 ## Migration to Redis
 
@@ -149,8 +147,8 @@ To migrate to Redis-based distributed rate limiting:
 
 ## Response Headers
 
-The adapter adds RFC-compliant IETF Draft Rate Limit Headers to **all responses** (both 200 OK
-and 429 Too Many Requests).
+The adapter adds RFC-compliant IETF Draft Rate Limit Headers to **all responses** (both 200 OK and 429 Too
+Many Requests).
 
 **Why headers on all responses?**
 

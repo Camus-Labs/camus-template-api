@@ -129,21 +129,21 @@ See individual adapter READMEs for implementation details:
 
 ### Using RateLimit Attribute
 
-Apply `[RateLimit(RateLimitPolicies.Strict)]` to controllers for sensitive endpoints or
-`[RateLimit(RateLimitPolicies.Relaxed)]` for high-throughput operations. See `RateLimitAttribute`
-and `RateLimitPolicies` in the `RateLimiting` namespace for available options.
+Apply `RateLimit` attribute to controllers:
+-`[RateLimit(RateLimitPolicies.Strict)]` for sensitive endpoints.
+-`[RateLimit(RateLimitPolicies.Relaxed)]` for high-throughput operations.
+
+See `RateLimitAttribute` and `RateLimitPolicies` in the `RateLimiting` namespace for available options.
 
 ### Using Error Codes
 
-Set `exception.Data[ErrorCodes.ErrorCodeKey]` to a constant from `ErrorCodes`
-(e.g., `ErrorCodes.InvalidCredentials`) to surface machine-readable error codes in API responses.
-See `ErrorCodes.cs` in the `Generic` namespace.
+Set `exception.Data[ErrorCodes.ErrorCodeKey]` to a constant from `ErrorCodes` (e.g., `ErrorCodes.InvalidCredentials`)
+to surface machine-readable error codes in API responses. See `ErrorCodes.cs` in the `Generic` namespace.
 
 ### Using Authentication Schemes
 
-Apply `[Authorize(AuthenticationSchemes = AuthenticationSchemes.JwtBearer)]` to controllers or
-actions requiring JWT authentication. See `AuthenticationSchemes` in the `Auth` namespace for
-available scheme constants.
+Apply `[Authorize(AuthenticationSchemes = AuthenticationSchemes.JwtBearer)]` to controllers or actions requiring
+JWT authentication. See `AuthenticationSchemes` in the `Auth` namespace for available scheme constants.
 
 ---
 
@@ -189,19 +189,17 @@ See [RateLimitPolicies.cs](RateLimiting/RateLimitPolicies.cs) for complete polic
 
 ## Configuration
 
-The Application layer defines contracts and constants only — it has no runtime configuration of its
-own. Adapter projects that implement these interfaces provide their own configuration (e.g.,
-connection strings, secret store settings). See individual adapter READMEs for configuration
-details.
+The Application layer defines contracts and constants only — it has no runtime configuration of its own. Adapter
+projects that implement these interfaces provide their own configuration (e.g., connection strings, secret store
+settings). See individual adapter READMEs for configuration details.
 
 ---
 
 ## Integration
 
-Consuming projects reference `emc.camus.application` to access interface contracts, attributes,
-constants, and exception types. The API layer wires concrete adapter implementations to these
-interfaces at startup via dependency injection. See the extension methods in
-`src/Api/emc.camus.api/Extensions/` for the registration patterns.
+Consuming projects reference `emc.camus.application` to access interface contracts, attributes, constants, and
+exception types. The API layer wires concrete adapter implementations to these interfaces at startup via dependency
+injection. See the extension methods in `src/Api/emc.camus.api/Extensions/` for the registration patterns.
 
 ---
 

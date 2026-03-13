@@ -23,8 +23,8 @@ Domain, Application, and Adapter layers interact.
 
 ### [Authentication](authentication.md)
 
-Complete guide to the authentication system including JWT token generation, API Key authentication,
-and security configuration.
+Complete guide to the authentication system including JWT token generation, API Key authentication, and
+security configuration.
 
 **Topics covered:**
 
@@ -114,6 +114,8 @@ Infrastructure component setup guides:
 
 - **[Observability Stack](../src/Infrastructure/observability/README.md)** - Jaeger, Prometheus, Grafana, Loki setup
 - **[Dapr Components](../src/Infrastructure/dapr/README.md)** - Dapr secret store and component configuration
+- **[Database Migrations](../src/Infrastructure/database/README.md)** - Schema management, migration scripts, and
+  versioning
 
 ---
 
