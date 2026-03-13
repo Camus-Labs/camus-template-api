@@ -1,15 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <RootNamespace>emc.camus.migrations.dbup</RootNamespace>
     <AssemblyName>emc.camus.migrations.dbup</AssemblyName>
     <PackageId>emc.camus.migrations.dbup</PackageId>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>1.0.0</Version>
-    <Authors>Camus Labs</Authors>
     <Description>Database migration adapter for Camus using DbUp for PostgreSQL schema versioning.</Description>
   </PropertyGroup>
 

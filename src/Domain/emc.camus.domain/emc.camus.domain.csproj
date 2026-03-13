@@ -1,15 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <RootNamespace>emc.camus.domain</RootNamespace>
     <AssemblyName>emc.camus.domain</AssemblyName>
     <PackageId>emc.camus.domain</PackageId>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>1.0.0</Version>
-    <Authors>Camus Labs</Authors>
     <Description>Domain layer for Camus application containing core business entities and logic.</Description>
   </PropertyGroup>
 

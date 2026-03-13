@@ -29,7 +29,7 @@ architecture, authentication, deployment, and debugging.
 
 ---
 
-## 📁 Project Structure
+## 📂 Project Structure
 
 ```text
 src/
@@ -140,25 +140,11 @@ The template includes two authentication mechanisms ready to use:
 
 ### JWT Bearer Tokens
 
-```bash
-# Request token
-POST /api/v2/auth/token
-Content-Type: application/json
-
-{
-  "accessKey": "your-access-key",
-  "accessSecret": "your-access-secret"
-}
-
-# Use token
-Authorization: Bearer <token>
-```
+Send a POST request to `/api/v2/auth/token` with `accessKey` and `accessSecret` credentials to receive a Bearer token. Include the token in the `Authorization: Bearer <token>` header for subsequent requests to protected endpoints.
 
 ### API Key
 
-```bash
-X-Api-Key: your-api-key
-```
+Include your API key in the `X-Api-Key` header on every request to protected endpoints.
 
 > **📖 Full Guide:** See [Authentication Documentation](docs/authentication.md) for configuration, claims, and security
 best practices.
@@ -176,13 +162,7 @@ Built-in IP-based rate limiting with sliding window algorithm:
 
 **Apply to endpoints:**
 
-```csharp
-[RateLimit(RateLimitPolicies.Strict)]  // 50 req/min
-public class AuthController : ControllerBase { }
-
-[RateLimit(RateLimitPolicies.Relaxed)]  // 500 req/min
-public IActionResult GetData() { }
-```
+Apply `[RateLimit(RateLimitPolicies.Strict)]` or `[RateLimit(RateLimitPolicies.Relaxed)]` attributes to controllers or actions. See `RateLimitPolicies` in `src/Application/emc.camus.application/RateLimiting/` for available policies.
 
 > **📖 Full Guide:** See [Rate Limiting Adapter README](src/Adapters/emc.camus.ratelimiting.inmemory/README.md) for
 configuration and deployment.
@@ -304,41 +284,15 @@ az containerapp create \
 
 ### Add Business Controllers
 
-Create controllers in `src/Api/emc.camus.api/Controllers/`:
-
-```csharp
-[ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
-public class ProductsController : ControllerBase
-{
-    // Your endpoints
-}
-```
+Create versioned API controllers in `src/Api/emc.camus.api/Controllers/`. Apply `[ApiController]`, `[ApiVersion]`, and version-based route attributes. See existing controllers in that folder for the pattern.
 
 ### Implement Use Cases
 
-Add application services in `src/Application/emc.camus.application/`:
-
-```csharp
-public interface IProductService
-{
-    Task<Product> GetProductAsync(int id);
-}
-```
+Add application service interfaces in `src/Application/emc.camus.application/`. See existing interfaces like `IApiInfoRepository` and `IUserRepository` for the contract pattern.
 
 ### Create Domain Entities
 
-Define business models in `src/Domain/emc.camus.domain/`:
-
-```csharp
-public class Product
-{
-    public int Id { get; set; }
-    public string Name { get; set; }
-    // Business rules here
-}
-```
+Define business models in `src/Domain/emc.camus.domain/`. Keep domain entities free of infrastructure dependencies.
 
 ---
 
@@ -360,6 +314,8 @@ public class Product
 - [Security (API Key)](src/Adapters/emc.camus.security.apikey/README.md)
 - [Secrets (Dapr)](src/Adapters/emc.camus.secrets.dapr/README.md)
 - [Persistence (PostgreSQL)](src/Adapters/emc.camus.persistence.postgresql/README.md)
+- [Cache (Memory)](src/Adapters/emc.camus.cache.inmemory/README.md)
+- [Persistence (Memory)](src/Adapters/emc.camus.persistence.inmemory/README.md)
 - [Documentation (Swagger)](src/Adapters/emc.camus.documentation.swagger/README.md)
 
 ---
@@ -382,12 +338,8 @@ public class Product
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Write tests for changes
-4. Ensure tests pass: `dotnet test`
-5. Update relevant documentation
-6. Submit Pull Request
+See [CONTRIBUTING.md](CONTRIBUTING.md) for branching conventions, versioning standard,
+changelog format, PR requirements, and the agent-driven development workflow.
 
 ---
 

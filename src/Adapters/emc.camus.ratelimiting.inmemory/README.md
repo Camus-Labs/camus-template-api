@@ -2,6 +2,8 @@
 
 In-memory rate limiting adapter for the Camus application using ASP.NET Core's built-in sliding window rate limiter.
 
+> **📖 Parent Documentation:** [Main README](../../../README.md) | [Architecture Guide](../../../docs/architecture.md)
+
 ## Overview
 
 This adapter provides IP-based rate limiting with policy-based configuration. It runs **before authentication** to protect auth endpoints from brute force attacks.
@@ -49,28 +51,11 @@ dotnet add reference ../../Adapters/emc.camus.ratelimiting.inmemory/emc.camus.ra
 
 **2. Configure in `Program.cs`:**
 
-```csharp
-using emc.camus.ratelimiting.inmemory;
-using Microsoft.AspNetCore.HttpOverrides;
+1. Call `builder.AddMemoryRateLimiting(serviceName)` to register rate limiting services
+2. Call `app.UseForwardedHeaders()` to process proxy headers (must come before rate limiting)
+3. Call `app.UseMemoryRateLimiting()` to apply the middleware before authentication
 
-// Step 1: Add rate limiting services
-builder.AddMemoryRateLimiting(SERVICE_NAME);
-
-var app = builder.Build();
-
-// Step 2: Configure forwarded headers (REQUIRED for proxies)
-// Must be BEFORE rate limiting to process X-Forwarded-For headers
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
-
-// Step 3: Apply rate limiting middleware (BEFORE authentication)
-app.UseMemoryRateLimiting();
-
-app.UseAuthentication();
-app.UseAuthorization();
-```
+See `InMemoryRateLimitingSetupExtensions` in this adapter for the full registration API and `Program.cs` for the wiring order.
 
 ⚠️ **Critical**: If deploying behind a reverse proxy, `UseForwardedHeaders()` must be called **before** `UseMemoryRateLimiting()`. Without it, all requests from the same proxy share one rate limit.
 
@@ -104,24 +89,9 @@ Add to `appsettings.json`:
 
 ### Apply to Controllers
 
-```csharp
-using emc.camus.application.RateLimiting;
+Apply the `[RateLimit]` attribute from the Application layer to controllers or individual endpoints. Use `RateLimitPolicies.Strict`, `RateLimitPolicies.Default`, or `RateLimitPolicies.Relaxed` constants. Controller-level attributes are inherited by all endpoints unless overridden.
 
-// Apply strict policy to entire controller
-[RateLimit(RateLimitPolicies.Strict)]
-public class AuthController : ControllerBase
-{
-    // All endpoints inherit strict policy (10 req/min)
-    
-    [HttpPost("token")]
-    public IActionResult GenerateToken() { ... }
-    
-    // Override with relaxed policy for specific endpoint
-    [RateLimit(RateLimitPolicies.Relaxed)]
-    [HttpGet("info")]
-    public IActionResult GetInfo() { ... }
-}
-```
+See the `RateLimitAttribute` and `RateLimitPolicies` in `src/Application/emc.camus.application/RateLimiting/` for the available policies.
 
 ## Limitations
 
@@ -161,34 +131,9 @@ Tagged with: `partition`, `endpoint`, `method`, `user_or_ip`
 
 To migrate to Redis-based distributed rate limiting:
 
-1. Install Redis adapter
-
-   ```bash
-   dotnet add package emc.camus.ratelimiting.redis
-   ```
-
-2. Update `Program.cs`
-
-   ```csharp
-   // Before
-   builder.AddMemoryRateLimiting(SERVICE_NAME);
-   app.UseMemoryRateLimiting();
-   
-   // After
-   builder.AddRedisRateLimiting(SERVICE_NAME);
-   app.UseRedisRateLimiting();
-   ```
-
-3. Add Redis connection string to configuration
-
-   ```json
-   {
-     "RateLimitSettings": {
-       "RedisConnectionString": "localhost:6379",
-       "Policies": { }
-     }
-   }
-   ```
+1. Install the Redis adapter package (`emc.camus.ratelimiting.redis`)
+2. Replace `AddMemoryRateLimiting` / `UseMemoryRateLimiting` calls with `AddRedisRateLimiting` / `UseRedisRateLimiting`
+3. Add a `RedisConnectionString` property to the `RateLimitSettings` configuration section
 
 ## Response Headers
 
@@ -203,33 +148,21 @@ The adapter adds RFC-compliant IETF Draft Rate Limit Headers to **all responses*
 
 ### Success Response (200 OK)
 
-```http
-RateLimit-Limit: 100
-RateLimit-Reset: 1640000000
-X-RateLimit-Policy: default
-X-RateLimit-Window: 60
-```
+Includes rate limit headers so clients can track usage proactively.
 
 ### Rate Limited Response (429 Too Many Requests)
 
-```http
-RateLimit-Limit: 100
-RateLimit-Reset: 1640000000
-Retry-After: 60
-X-RateLimit-Policy: default
-X-RateLimit-Window: 60
+Includes `Retry-After` header and an RFC 7807 Problem Details body with the `rate_limit_exceeded` error code.
 
-{
-  "type": "https://tools.ietf.org/html/rfc6585#section-4",
-  "title": "Too Many Requests",
-  "status": 429,
-  "detail": "Rate limit exceeded for policy 'default'. Limit: 100 requests per 60 seconds. Retry after 60 seconds.",
-  "instance": "/api/v1/auth/token",
-  "error": "rate_limit_exceeded",
-  "retryAfter": 60,
-  "policy": "default"
-}
-```
+**Response Headers:**
+
+| Header | Description |
+| ------ | ----------- |
+| `RateLimit-Limit` | Maximum requests allowed in the window |
+| `RateLimit-Reset` | Unix timestamp when the window resets |
+| `Retry-After` | Seconds until the client can retry (429 only) |
+| `X-RateLimit-Policy` | Name of the applied rate limit policy |
+| `X-RateLimit-Window` | Duration of the rate limit window in seconds |
 
 ## Clean Architecture
 
@@ -268,6 +201,29 @@ Following clean architecture principles:
 - RFC-compliant headers for client compatibility
 - Testable abstraction (IRateLimiter)
 - Easy to swap implementations (memory → Redis → distributed cache)
+
+---
+
+## Integration
+
+The adapter registers rate limiting services via two extension methods in `InMemoryRateLimitingSetupExtensions.cs`:
+
+1. **`builder.AddMemoryRateLimiting(serviceName)`** — Reads `RateLimitSettings` from configuration, validates policies, and registers the ASP.NET Core sliding-window rate limiter with IP-based partitioning.
+2. **`app.UseMemoryRateLimiting()`** — Activates the rate limiting middleware. Must be called **before** authentication middleware and **after** `UseForwardedHeaders()` when behind a proxy.
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely Cause |
+| ------- | ------------ |
+| All requests share one rate limit | `UseForwardedHeaders()` not called before rate limiting when behind a proxy |
+| 429 responses with default policy | No `[RateLimit]` attribute on endpoint — falls back to `default` policy |
+| `RateLimitSettings configuration is missing` | Missing `RateLimitSettings` section in `appsettings.json` |
+| Rate limit not applied to endpoint | Endpoint path matches an entry in `ExemptPaths` |
+| Metrics not appearing | OpenTelemetry adapter not registered or meter name mismatch |
+
+---
 
 ## Dependencies
 

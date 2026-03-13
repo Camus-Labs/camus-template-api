@@ -1,15 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <RootNamespace>emc.camus.cache.inmemory</RootNamespace>
     <AssemblyName>emc.camus.cache.inmemory</AssemblyName>
     <PackageId>emc.camus.cache.inmemory</PackageId>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>1.0.0</Version>
-    <Authors>Camus Labs</Authors>
     <Description>In-memory cache adapter for Camus API. Provides token revocation caching with ConcurrentDictionary. For multi-instance deployments, use the Redis adapter instead.</Description>
   </PropertyGroup>
 

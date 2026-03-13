@@ -2,7 +2,7 @@
 
 API Key authentication adapter for Camus applications.
 
-> **📖 Parent Documentation:** [Main README](../../../../README.md) | [Authentication Guide](../../../../docs/authentication.md)
+> **📖 Parent Documentation:** [Main README](../../../README.md) | [Authentication Guide](../../../docs/authentication.md)
 
 ---
 
@@ -26,23 +26,9 @@ This adapter implements API Key authentication using the `X-Api-Key` header, pro
 
 ### 1. Register in Program.cs
 
-```csharp
-using emc.camus.security.apikey;
+Register the secret provider first (`builder.AddDaprSecrets()`), then call `builder.AddApiKeyAuthentication(serviceName)` to add API Key authentication. Enable the standard ASP.NET Core authentication/authorization middleware.
 
-// Register secret provider first
-builder.AddDaprSecrets();
-
-// Add API Key authentication
-builder.AddApiKeyAuthentication(serviceName);
-
-var app = builder.Build();
-
-// Enable authentication middleware
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.Run();
-```
+See `ApiKeySetupExtensions` in this adapter for the full registration API.
 
 ### 2. Configure Settings (Optional)
 
@@ -61,28 +47,9 @@ In `appsettings.json`:
 
 ### 3. Protect Endpoints
 
-```csharp
-[ApiController]
-[Route("api/[controller]")]
-public class DataController : ControllerBase
-{
-    // Require API Key authentication
-    [Authorize(AuthenticationSchemes = AuthenticationSchemes.ApiKey)]
-    [HttpGet]
-    public IActionResult GetData()
-    {
-        return Ok(new { message = "Authenticated with API Key" });
-    }
-    
-    // Support both JWT and API Key
-    [Authorize(AuthenticationSchemes = $"{JwtBearerDefaults.AuthenticationScheme},{AuthenticationSchemes.ApiKey}")]
-    [HttpGet("flexible")]
-    public IActionResult GetFlexibleData()
-    {
-        return Ok(new { message = "Authenticated with JWT or API Key" });
-    }
-}
-```
+Apply `[Authorize(AuthenticationSchemes = AuthenticationSchemes.ApiKey)]` to controllers or actions that require API Key authentication. To accept both JWT and API Key, combine scheme names in the `AuthenticationSchemes` parameter.
+
+See controller source files in `src/Api/emc.camus.api/Controllers/` for examples.
 
 ---
 
@@ -112,34 +79,6 @@ Controller Action
 - **Secret Provider Integration** - Keys never in code or config files
 - **Claims-Based Identity** - Standard ASP.NET Core authentication
 - **Flexible Authorization** - Combine with policy-based authorization
-
----
-
-## 🧪 Example Requests
-
-### Using curl
-
-```bash
-curl -H "X-Api-Key: your-api-key-12345" \
-     http://localhost:5000/api/data
-```
-
-### Using Postman
-
-```bash
-GET http://localhost:5000/api/data
-Headers:
-  X-Api-Key: your-api-key-12345
-```
-
-### Using C# HttpClient
-
-```csharp
-var client = new HttpClient();
-client.DefaultRequestHeaders.Add("X-Api-Key", "your-api-key-12345");
-
-var response = await client.GetAsync("http://localhost:5000/api/data");
-```
 
 ---
 
@@ -212,27 +151,7 @@ az keyvault secret set --vault-name your-vault --name XApiKey --value "prod-key-
 
 ## 🔗 Combined with JWT
 
-Support both authentication methods:
-
-```csharp
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using emc.camus.application.Auth;
-
-// Accept either JWT or API Key
-[Authorize(AuthenticationSchemes = 
-    $"{JwtBearerDefaults.AuthenticationScheme},{AuthenticationSchemes.ApiKey}")]
-public class FlexibleController : ControllerBase
-{
-    [HttpGet]
-    public IActionResult Get()
-    {
-        var authType = User.Identity?.AuthenticationType;
-        return Ok(new { authenticated = true, type = authType });
-    }
-}
-```
+To accept either JWT or API Key on an endpoint, list both scheme names in the `[Authorize]` attribute’s `AuthenticationSchemes` parameter. See controller source files for the combined-scheme pattern.
 
 ---
 
@@ -240,88 +159,46 @@ public class FlexibleController : ControllerBase
 
 ### Unit Tests
 
-```csharp
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System.Text.Encodings.Web;
-using Moq;
-using Xunit;
-using emc.camus.application.Secrets;
-using emc.camus.security.apikey.Handlers;
-using emc.camus.security.apikey.Configurations;
-using emc.camus.security.apikey.Metrics;
-
-var mockSecretProvider = new Mock<ISecretProvider>();
-mockSecretProvider
-    .Setup(x => x.GetSecret("XApiKey"))
-    .Returns("test-api-key");
-
-var mockMetrics = new Mock<ApiKeyMetrics>("test-service");
-var mockOptions = new Mock<IOptionsMonitor<AuthenticationSchemeOptions>>();
-mockOptions
-    .Setup(x => x.Get(It.IsAny<string>()))
-    .Returns(new AuthenticationSchemeOptions());
-var mockLogger = new Mock<ILoggerFactory>();
-var encoder = UrlEncoder.Default;
-var settings = new ApiKeySettings { SecretKeyName = "XApiKey" };
-
-var handler = new ApiKeyAuthenticationHandler(
-    mockOptions.Object,
-    mockLogger.Object,
-    encoder,
-    mockSecretProvider.Object,
-    settings,
-    mockMetrics.Object
-);
-
-// Test authentication logic
-```
+Mock `ISecretProvider` to return a known API key, then instantiate `ApiKeyAuthenticationHandler` with the mock. See `src/Test/` for existing test examples.
 
 ### Integration Tests
 
-```csharp
-[Fact]
-public async Task GetData_WithValidApiKey_ReturnsOk()
-{
-    // Arrange
-    var client = _factory.CreateClient();
-    client.DefaultRequestHeaders.Add("X-Api-Key", "test-api-key");
-    
-    // Act
-    var response = await client.GetAsync("/api/data");
-    
-    // Assert
-    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-}
-
-[Fact]
-public async Task GetData_WithInvalidApiKey_ReturnsUnauthorized()
-{
-    // Arrange
-    var client = _factory.CreateClient();
-    client.DefaultRequestHeaders.Add("X-Api-Key", "wrong-key");
-    
-    // Act
-    var response = await client.GetAsync("/api/data");
-    
-    // Assert
-    Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-}
-```
+Use `WebApplicationFactory` to create a test client, set the `X-Api-Key` header, and assert on the response status code. See test projects in `src/Test/` for integration test patterns.
 
 ---
 
 ## 🔗 Related Documentation
 
 - **[JWT Authentication Adapter](../emc.camus.security.jwt/README.md)** - Token-based authentication
-- **[Authentication Guide](../../../../docs/authentication.md)** - Complete authentication overview
+- **[Authentication Guide](../../../docs/authentication.md)** - Complete authentication overview
 - **[Secrets Adapter](../emc.camus.secrets.dapr/README.md)** - Secret management
-- **[Architecture Guide](../../../../docs/architecture.md)** - Security architecture
+- **[Architecture Guide](../../../docs/architecture.md)** - Security architecture
 
 ---
 
-## 📊 Observability
+## Integration
+
+The adapter registers via the extension method in `ApiKeySetupExtensions.cs`:
+
+- **`builder.AddApiKeyAuthentication()`** — Reads `ApiKeySettings` from configuration, resolves the expected API key from the secret provider, and registers the API-key authentication handler in the DI container.
+
+Apply the `[Authorize(AuthenticationSchemes = "ApiKey")]` attribute to controllers or actions that require API-key authentication.
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely Cause |
+| ------- | ------------ |
+| 401 on every request | Secret provider not returning the expected key, or `X-Api-Key` header missing |
+| `SecretKeyName` not found | Secret name in `ApiKeySettings` doesn't match a secret in the store |
+| Header ignored | Using wrong header name — must be `X-Api-Key` (case-sensitive) |
+| Works locally, fails in production | Secret store not configured for production environment |
+| High `apikey_authentication_failures_total` | Possible brute-force attempt or client misconfiguration |
+
+---
+
+## Observability
 
 The adapter exports the following metrics via OpenTelemetry:
 

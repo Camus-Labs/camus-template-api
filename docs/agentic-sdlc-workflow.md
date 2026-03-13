@@ -42,8 +42,8 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 │  │  Gate:   Human reviews reports, approves final quality                │
 │  ▼                                                                       │
 │  POST: COMPLETE & COMMIT ─── User action                                 │
-│  │  Action: Move stories from todo/ to done/, commit changes             │
-│  │  Gate:   User confirms stories moved and changes committed            │
+│  │  Action: Move stories to done/, bump version, update changelog        │
+│  │  Gate:   User confirms all updated and committed                      │
 │  ▼                                                                       │
 │  DONE ✓                                                                  │
 │                                                                          │
@@ -196,10 +196,13 @@ After Phase 4 produces PASS for both code and documentation reviews, finalize th
 **Steps:**
 
 1. Move the story folder from `docs/stories/todo/{request-slug}/` to `docs/stories/done/{request-slug}/`
-2. Commit all changes to the feature branch
+2. Bump the version in `src/Directory.Build.props` and add a matching `CHANGELOG.md` entry
+   (see [Contributing — Versioning Standard](../CONTRIBUTING.md#versioning-standard))
+3. Commit all changes to the feature branch
 
-**Your role:** Confirm stories are moved to `done/`, all changes are committed, and the feature branch is ready
-for merge. Use the story details as the PR request details.
+**Your role:** Confirm stories are moved to `done/`, version is bumped, changelog is updated,
+all changes are committed, and the feature branch is ready for merge. Use the story details as
+the PR request details.
 
 ---
 

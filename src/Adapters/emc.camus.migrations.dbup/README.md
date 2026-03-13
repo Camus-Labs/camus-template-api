@@ -2,7 +2,7 @@
 
 Database migration adapter for Camus applications using DbUp for PostgreSQL schema versioning.
 
-> **📖 Parent Documentation:** [Main README](../../../../README.md) | [Architecture Guide](../../../../docs/architecture.md)
+> **📖 Parent Documentation:** [Main README](../../../README.md) | [Architecture Guide](../../../docs/architecture.md)
 
 ---
 
@@ -29,13 +29,12 @@ Runs ordered, embedded SQL scripts against PostgreSQL at application startup. Tr
 
 ### Wire up in `Program.cs`
 
-```csharp
-builder.AddDaprSecrets();          // Must run before migrations (provides ISecretProvider)
-builder.AddDatabaseMigrations();   // Validates DBUpSettings + DatabaseSettings
+1. Call `builder.AddDaprSecrets()` to register the secret provider (must run before migrations)
+2. Call `builder.AddDatabaseMigrations()` to validate `DBUpSettings` and `DatabaseSettings`
+3. Call `app.UseDaprSecrets()` to initialise secrets
+4. Call `app.UseDatabaseMigrations(logger)` to execute pending migrations
 
-app.UseDaprSecrets();              // Initialise secrets
-app.UseDatabaseMigrations(logger); // Execute pending migrations
-```
+See `DatabaseMigrationExtensions` in this adapter for the full registration API.
 
 ### Configuration (`appsettings.json`)
 
@@ -111,7 +110,18 @@ API (Program.cs)
 
 ---
 
-## 🔧 Troubleshooting
+## Integration
+
+The adapter registers migration services via two extension methods in `DatabaseMigrationExtensions.cs`:
+
+1. **`builder.AddDatabaseMigrations()`** — Validates that `DBUpSettings` and `DatabaseSettings` sections exist in configuration and registers migration services.
+2. **`app.UseDatabaseMigrations(logger)`** — Resolves `ISecretProvider` to fetch admin credentials, builds the connection string, and runs DbUp against embedded SQL scripts. Logs each applied migration.
+
+Call `AddDaprSecrets()` and `UseDaprSecrets()` before `UseDatabaseMigrations()` so credentials are available.
+
+---
+
+## Troubleshooting
 
 | Symptom | Likely Cause |
 | ------- | ------------ |

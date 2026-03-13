@@ -1,15 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>emc.camus.ratelimiting.inmemory</RootNamespace>
     <AssemblyName>emc.camus.ratelimiting.inmemory</AssemblyName>
     <PackageId>emc.camus.ratelimiting.inmemory</PackageId>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>1.0.0</Version>
-    <Authors>Camus Labs</Authors>
     <Description>In-memory rate limiting adapter for Camus API. Provides IP-based rate limiting with sliding window algorithm. For multi-instance deployments, use the Redis adapter instead.</Description>
   </PropertyGroup>
 

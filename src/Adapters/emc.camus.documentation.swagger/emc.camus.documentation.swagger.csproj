@@ -1,15 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>emc.camus.documentation.swagger</RootNamespace>
     <AssemblyName>emc.camus.documentation.swagger</AssemblyName>
     <PackageId>emc.camus.documentation.swagger</PackageId>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>1.0.0</Version>
-    <Authors>Camus Labs</Authors>
     <Description>Swagger/OpenAPI documentation adapter for Camus API with versioning support.</Description>
   </PropertyGroup>
 

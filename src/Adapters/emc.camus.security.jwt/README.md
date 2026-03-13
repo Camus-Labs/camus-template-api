@@ -2,7 +2,7 @@
 
 JWT (JSON Web Token) authentication adapter for Camus applications.
 
-> **📖 Parent Documentation:** [Main README](../../../../README.md) | [Authentication Guide](../../../../docs/authentication.md)
+> **📖 Parent Documentation:** [Main README](../../../README.md) | [Authentication Guide](../../../docs/authentication.md)
 
 ---
 
@@ -28,23 +28,9 @@ API. It integrates with the Application layer's `ISecretProvider` for secure key
 
 ### 1. Register in Program.cs
 
-```csharp
-using emc.camus.security.jwt;
+Register the secret provider first (`builder.AddDaprSecrets()`), then call `builder.AddJwtAuthentication()` to add JWT Bearer authentication. Enable the standard authentication/authorization middleware.
 
-// Register secret provider first
-builder.AddDaprSecrets();
-
-// Add JWT authentication
-builder.AddJwtAuthentication();
-
-var app = builder.Build();
-
-// Enable authentication and authorization middleware
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.Run();
-```
+See `JwtSetupExtensions` in this adapter for the full registration API.
 
 ### 2. Configure Settings
 
@@ -80,59 +66,7 @@ The adapter retrieves the RSA private key from your `ISecretProvider`:
 
 ### Using IJwtTokenGenerator
 
-The adapter provides `IJwtTokenGenerator` interface for token generation. Inject it into your authentication controller:
-
-```csharp
-[ApiController]
-[Route("api/v{version:apiVersion}/[controller]")]
-public class AuthController : ControllerBase
-{
-    private readonly ISecretProvider _secretProvider;
-    private readonly IJwtTokenGenerator _tokenGenerator;
-    private readonly ILogger<AuthController> _logger;
-    
-    public AuthController(
-        ISecretProvider secretProvider,
-        IJwtTokenGenerator tokenGenerator,
-        ILogger<AuthController> logger)
-    {
-        _secretProvider = secretProvider;
-        _tokenGenerator = tokenGenerator;
-        _logger = logger;
-    }
-    
-    [HttpPost("token")]
-    public async Task<IActionResult> GenerateToken([FromBody] Credentials request)
-    {
-        // Validate credentials against secrets
-        var accessKey = _secretProvider.GetSecret("AccessKey");
-        var accessSecret = _secretProvider.GetSecret("AccessSecret");
-        
-        if (request.AccessKey != accessKey || request.AccessSecret != accessSecret)
-        {
-            var exception = new UnauthorizedAccessException("Invalid credentials");
-            exception.Data[ErrorCodes.ErrorCodeKey] = ErrorCodes.InvalidCredentials;
-            throw exception;
-        }
-        
-        // Generate token with custom claims
-        var roleClaims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Role, "User"),
-            new Claim(ClaimTypes.Role, "ApiClient")
-        };
-        
-        var command = new GenerateTokenCommand(request.AccessKey, roleClaims);
-        var result = _tokenGenerator.GenerateToken(command);
-        
-        return Ok(new AuthenticateUserResponse
-        {
-            Token = result.Token,
-            ExpiresOn = result.ExpiresOn
-        });
-    }
-}
-```
+The adapter provides `IJwtTokenGenerator` for token generation. Inject it into your authentication controller along with `ISecretProvider`. Validate credentials against secrets, build a `GenerateTokenCommand` with desired claims, and call `GenerateToken(command)` to produce a `GenerateTokenResult` containing the token string and expiration.
 
 **Key Points:**
 
@@ -141,61 +75,21 @@ public class AuthController : ControllerBase
 - ✅ Add custom claims as needed (roles, permissions, etc.)
 - ✅ Returns `GenerateTokenResult` with token and expiration
 
+See `JwtSetupExtensions` and `IJwtTokenGenerator` in this adapter for API details, and the auth controller in `src/Api/emc.camus.api/Controllers/` for the wiring example.
+
 ---
 
 ## 🎯 Protecting Endpoints
 
 ### Require JWT Authentication
 
-```csharp
-[ApiController]
-[Route("api/v{version:apiVersion}/[controller]")]
-public class ProductsController : ControllerBase
-{
-    // Require JWT authentication
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    [HttpGet]
-    public IActionResult GetProducts()
-    {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        return Ok(new { message = $"Authenticated user: {userId}" });
-    }
-    
-    // Require specific role
-    [Authorize(Roles = "Admin")]
-    [HttpDelete("{id}")]
-    public IActionResult DeleteProduct(int id)
-    {
-        // Only users with "Admin" role can access
-        return NoContent();
-    }
-    
-    // Custom policy
-    [Authorize(Policy = "RequireAdminRole")]
-    [HttpPost]
-    public IActionResult CreateProduct(ProductDto product)
-    {
-        return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
-    }
-}
-```
+Apply `[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]` to controllers or actions that require JWT authentication. Use `[Authorize(Roles = "Admin")]` for role-based access or define custom policies for fine-grained authorization.
 
 ### Support Multiple Authentication Schemes
 
-```csharp
-// Accept either JWT or API Key
-[Authorize(AuthenticationSchemes = 
-    $"{JwtBearerDefaults.AuthenticationScheme},{ApiKeyAuthenticationHandler.SchemeName}")]
-public class FlexibleController : ControllerBase
-{
-    [HttpGet]
-    public IActionResult Get()
-    {
-        var authType = User.Identity?.AuthenticationType;
-        return Ok(new { authenticated = true, type = authType });
-    }
-}
-```
+To accept either JWT or API Key on an endpoint, list both scheme names in the `[Authorize]` attribute’s `AuthenticationSchemes` parameter.
+
+See controller source files in `src/Api/emc.camus.api/Controllers/` for examples.
 
 ---
 
@@ -216,11 +110,7 @@ Standard claims included in tokens:
 
 **Access Claims in Code:**
 
-```csharp
-var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-var roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value);
-var username = User.FindFirst("unique_name")?.Value;
-```
+Use `User.FindFirst(ClaimTypes.NameIdentifier)` for user ID, `User.FindAll(ClaimTypes.Role)` for roles, and `User.FindFirst("unique_name")` for username.
 
 ---
 
@@ -289,16 +179,11 @@ The adapter exports OpenTelemetry metrics for monitoring authentication failures
 
 **Example Queries:**
 
-```promql
-# Total authentication failures in the last hour
-sum(increase(jwt_authentication_failures_total[1h]))
-
-# Failure rate by reason
-sum by (failure_reason) (rate(jwt_authentication_failures_total[5m]))
-
-# Endpoints under attack (high invalid_signature rate)
-topk(5, sum by (endpoint) (rate(jwt_authentication_failures_total{failure_reason="invalid_signature"}[5m])))
-```
+| Query Purpose | Description |
+| ------------- | ----------- |
+| Total failures (1h) | Sum of `jwt_authentication_failures_total` increase over the last hour |
+| Failure rate by reason | Rate of `jwt_authentication_failures_total` grouped by `failure_reason` |
+| Endpoints under attack | Top 5 endpoints by `invalid_signature` failure rate |
 
 ### Error Handling
 
@@ -307,7 +192,29 @@ global exception handler logs errors and returns RFC 7807 Problem Details respon
 
 ---
 
-## 🔒 Error Codes
+## Integration
+
+The adapter registers via the extension methods in `JwtSetupExtensions.cs`:
+
+- **`builder.AddJwtAuthentication()`** — Reads `JwtSettings` from configuration, resolves RSA keys from the secret provider, and registers JWT bearer authentication and token-generation services.
+
+Apply the `[Authorize]` attribute (with the appropriate authentication scheme) to controllers or actions that require JWT authentication.
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely Cause |
+| ------- | ------------ |
+| `invalid_signature` on all tokens | RSA private key mismatch or key not loaded from secret store |
+| `token_expired` immediately | Server clock skew or `ExpirationMinutes` too low |
+| `invalid_issuer` / `invalid_audience` | `JwtSettings:Issuer` or `Audience` doesn't match the token’s claims |
+| 401 with no error code | `[Authorize]` attribute missing `AuthenticationSchemes` parameter |
+| Secret provider failure at startup | `AddDaprSecrets()` not called before `AddJwtAuthentication()` |
+
+---
+
+## Error Codes
 
 The adapter surfaces machine-readable error codes in HTTP responses for client error handling:
 
@@ -339,21 +246,7 @@ The adapter surfaces machine-readable error codes in HTTP responses for client e
 
 **Client Implementation:**
 
-```typescript
-// Example: TypeScript client handling JWT errors
-if (response.status === 401) {
-  const error = response.body.error;
-  
-  if (error === 'token_expired') {
-    // Refresh token or redirect to login
-    await refreshToken();
-  } else if (error === 'invalid_signature') {
-    // Security issue, clear token and re-authenticate
-    clearToken();
-    redirectToLogin();
-  }
-}
-```
+Handle JWT error codes on the client side: refresh the token on `token_expired`, and clear credentials and re-authenticate on `invalid_signature`. See `ErrorCodes.cs` for the complete list of error codes.
 
 > **📖 Error Codes Reference:** See [ErrorCodes.cs](../../../Application/emc.camus.application/Generic/ErrorCodes.cs)
 for complete error code definitions.
@@ -394,18 +287,7 @@ for complete error code definitions.
 
 ### RSA Key Generation
 
-Generate secure RSA keys:
-
-```bash
-# Generate private key
-openssl genrsa -out private.pem 2048
-
-# Extract public key (for verification)
-openssl rsa -in private.pem -pubout -out public.pem
-
-# View key contents
-cat private.pem
-```
+Generate a 2048-bit RSA private key using `openssl genrsa`, extract the public key with `openssl rsa -pubout`, and store the private key PEM in the secret provider. Never commit private keys to source control.
 
 ### Production Recommendations
 
@@ -426,43 +308,20 @@ cat private.pem
 
 ### Unit Tests
 
-```csharp
-var mockSecretProvider = new Mock<ISecretProvider>();
-mockSecretProvider
-    .Setup(x => x.GetSecretAsync("RsaPrivateKeyPem"))
-    .ReturnsAsync("-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----");
-
-// Test token generation logic
-```
+Mock `ISecretProvider` to return a test RSA private key, then use the adapter’s token generation API to verify token creation.
 
 ### Integration Tests
 
-```csharp
-[Fact]
-public async Task GetProducts_WithValidToken_ReturnsOk()
-{
-    // Arrange
-    var token = await GetTestTokenAsync();
-    var client = _factory.CreateClient();
-    client.DefaultRequestHeaders.Authorization = 
-        new AuthenticationHeaderValue("Bearer", token);
-    
-    // Act
-    var response = await client.GetAsync("/api/v1/products");
-    
-    // Assert
-    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-}
-```
+Use `WebApplicationFactory` to create a test client, obtain a token from the auth endpoint, set the `Authorization: Bearer` header, and assert on protected endpoints. See test projects in `src/Test/` for integration test patterns.
 
 ---
 
 ## 🔗 Related Documentation
 
 - **[API Key Authentication Adapter](../emc.camus.security.apikey/README.md)** - Alternative authentication method
-- **[Authentication Guide](../../../../docs/authentication.md)** - Complete authentication overview
+- **[Authentication Guide](../../../docs/authentication.md)** - Complete authentication overview
 - **[Secrets Adapter](../emc.camus.secrets.dapr/README.md)** - Secret management
-- **[Architecture Guide](../../../../docs/architecture.md)** - Security architecture
+- **[Architecture Guide](../../../docs/architecture.md)** - Security architecture
 - **[JWT.io](https://jwt.io/)** - JWT debugger and documentation
 
 ---
@@ -481,50 +340,11 @@ public async Task GetProducts_WithValidToken_ReturnsOk()
 
 ### Custom Token Validation
 
-```csharp
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings.Issuer,
-            ValidAudience = jwtSettings.Audience,
-            IssuerSigningKey = rsaSecurityKey,
-            ClockSkew = TimeSpan.Zero // No tolerance for expired tokens
-        };
-    });
-```
+Configure `TokenValidationParameters` in `JwtSetupExtensions` to control issuer, audience, lifetime, and signing key validation. Set `ClockSkew` to `TimeSpan.Zero` for strict expiration checking.
 
 ### Custom Authorization Policies
 
-```csharp
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("RequireAdminRole", policy =>
-        policy.RequireRole("Admin"));
-    
-    options.AddPolicy("RequireEmailVerified", policy =>
-        policy.RequireClaim("email_verified", "true"));
-});
-```
-
-```csharp
-builder.AddCamusAuthorization();
-
-// Add custom policies after
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("RequireAdminRole", policy => 
-        policy.RequireRole("Admin"));
-    
-    options.AddPolicy("RequireApiClient", policy =>
-        policy.RequireClaim(ClaimTypes.Role, "ApiClient"));
-});
-```
+After calling `builder.AddCamusAuthorization()`, add custom policies via `builder.Services.AddAuthorization()` using `RequireRole()`, `RequireClaim()`, or custom requirements. See `AuthorizationSetupExtensions` in the API layer for the base configuration.
 
 ## Design Principles
 

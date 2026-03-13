@@ -8,7 +8,8 @@ Complete technical documentation for the Camus API Template.
 
 ### [Architecture](architecture.md)
 
-Learn about the system design, layer responsibilities, dependency flow, and architectural patterns. Understand how Domain, Application, and Adapter layers interact.
+Learn about the system design, layer responsibilities, dependency flow, and architectural patterns. Understand how
+Domain, Application, and Adapter layers interact.
 
 **Topics covered:**
 
@@ -62,16 +63,35 @@ Production deployment strategies including Docker, Azure Container Apps, scaling
 
 ---
 
+### [Agentic SDLC Workflow](agentic-sdlc-workflow.md)
+
+Agent-driven software development lifecycle workflow and conventions.
+
+**Topics covered:**
+
+- Agent phases and approval gates
+- Story-driven development workflow
+- Quality checks and review process
+
+---
+
 ## 🔌 Adapter Documentation
 
 Detailed usage guides for infrastructure adapters:
 
-- **[Observability (OpenTelemetry)](../src/Adapters/emc.camus.observability.otel/README.md)** - Tracing, metrics, and logging configuration
-- **[Rate Limiting (Memory)](../src/Adapters/emc.camus.ratelimiting.inmemory/README.md)** - IP-based sliding window rate limiting
+- **[Observability (OpenTelemetry)](../src/Adapters/emc.camus.observability.otel/README.md)** - Tracing, metrics, and
+  logging configuration
+- **[Rate Limiting (Memory)](../src/Adapters/emc.camus.ratelimiting.inmemory/README.md)** - IP-based sliding window rate
+  limiting
 - **[Security (JWT)](../src/Adapters/emc.camus.security.jwt/README.md)** - JWT authentication setup and configuration
 - **[Security (API Key)](../src/Adapters/emc.camus.security.apikey/README.md)** - API Key authentication setup and configuration
 - **[Secrets (Dapr)](../src/Adapters/emc.camus.secrets.dapr/README.md)** - Dapr secret provider usage
-- **[Persistence (PostgreSQL)](../src/Adapters/emc.camus.persistence.postgresql/README.md)** - Database adapter and repository pattern
+- **[Persistence (PostgreSQL)](../src/Adapters/emc.camus.persistence.postgresql/README.md)** - Database adapter and
+  repository pattern
+- **[Migrations (DbUp)](../src/Adapters/emc.camus.migrations.dbup/README.md)** - Database schema versioning with DbUp
+- **[Cache (Memory)](../src/Adapters/emc.camus.cache.inmemory/README.md)** - Token revocation caching
+- **[Persistence (Memory)](../src/Adapters/emc.camus.persistence.inmemory/README.md)** - In-memory repositories for
+  development and testing
 - **[Documentation (Swagger)](../src/Adapters/emc.camus.documentation.swagger/README.md)** - OpenAPI/Swagger configuration
 
 ---
@@ -80,7 +100,8 @@ Detailed usage guides for infrastructure adapters:
 
 Core layer architecture and contracts:
 
-- **[Application Layer](../src/Application/emc.camus.application/README.md)** - Shared contracts, interfaces, attributes, and constants
+- **[Application Layer](../src/Application/emc.camus.application/README.md)** - Shared contracts, interfaces,
+  attributes, and constants
 
 ---
 
@@ -95,8 +116,8 @@ Infrastructure component setup guides:
 
 ## 🧪 Testing & Development
 
-- **[Postman Collection](../src/Postman/)** - API request examples and test scenarios
-- **Test Projects** - See `src/Test/` for comprehensive test project structure
+- **[Postman Collection](postman/)** - API request examples and test scenarios
+- **[Test Projects](../src/Test/README.md)** - Project mapping, coverage reports, and testing conventions
 
 ---
 

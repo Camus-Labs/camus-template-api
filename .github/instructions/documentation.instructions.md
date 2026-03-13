@@ -43,3 +43,5 @@ applyTo: "{**/*.md,!.github/prompts/**,!.github/instructions/**,!.github/agents/
     - [ ] `README.md` and `docs/*.md` files use consistent heading hierarchy (H1 title, H2 sections, H3 subsections)
     - [ ] Limitations and known constraints documented in a dedicated section or callout block
     - [ ] No `TODO`, `FIXME`, `TBD`, or `Lorem ipsum` markers in committed documentation
+    - [ ] No line exceeds 120 characters — markdown table rows are exempt
+    - [ ] Prose lines that are not the last line of a paragraph contain at least 100 characters

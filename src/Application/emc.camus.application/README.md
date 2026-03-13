@@ -124,44 +124,15 @@ See individual adapter READMEs for implementation details:
 
 ### Using RateLimit Attribute
 
-```csharp
-using emc.camus.application.RateLimiting;
-
-[RateLimit(RateLimitPolicies.Strict)]  // 10 req/min for auth endpoints
-public class AuthController : ControllerBase
-{
-    [HttpPost("token")]
-    public IActionResult GenerateToken() { }
-}
-
-[RateLimit(RateLimitPolicies.Relaxed)]  // 1000 req/min for read operations
-public IActionResult GetData() { }
-```
+Apply `[RateLimit(RateLimitPolicies.Strict)]` to controllers for sensitive endpoints or `[RateLimit(RateLimitPolicies.Relaxed)]` for high-throughput operations. See `RateLimitAttribute` and `RateLimitPolicies` in the `RateLimiting` namespace for available options.
 
 ### Using Error Codes
 
-```csharp
-using emc.camus.application.Generic;
-
-// In exception handler
-exception.Data[ErrorCodes.ErrorCodeKey] = ErrorCodes.InvalidCredentials;
-
-// In API response
-return new ProblemDetails
-{
-    Status = 401,
-    Title = ErrorCodes.Unauthorized
-};
-```
+Set `exception.Data[ErrorCodes.ErrorCodeKey]` to a constant from `ErrorCodes` (e.g., `ErrorCodes.InvalidCredentials`) to surface machine-readable error codes in API responses. See `ErrorCodes.cs` in the `Generic` namespace.
 
 ### Using Authentication Schemes
 
-```csharp
-using emc.camus.application.Auth;
-
-[Authorize(AuthenticationSchemes = AuthenticationSchemes.JwtBearer)]
-public class SecureController : ControllerBase { }
-```
+Apply `[Authorize(AuthenticationSchemes = AuthenticationSchemes.JwtBearer)]` to controllers or actions requiring JWT authentication. See `AuthenticationSchemes` in the `Auth` namespace for available scheme constants.
 
 ---
 
@@ -202,6 +173,28 @@ See [RateLimitPolicies.cs](RateLimiting/RateLimitPolicies.cs) for complete polic
 - `Retry-After` - Retry after seconds
 - `X-RateLimit-Policy` - Applied policy name
 - `X-RateLimit-Window` - Window duration
+
+---
+
+## Configuration
+
+The Application layer defines contracts and constants only — it has no runtime configuration of its own. Adapter projects that implement these interfaces provide their own configuration (e.g., connection strings, secret store settings). See individual adapter READMEs for configuration details.
+
+---
+
+## Integration
+
+Consuming projects reference `emc.camus.application` to access interface contracts, attributes, constants, and exception types. The API layer wires concrete adapter implementations to these interfaces at startup via dependency injection. See the extension methods in `src/Api/emc.camus.api/Extensions/` for the registration patterns.
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely Cause |
+| ------- | ------------ |
+| `MissingMethodException` on interface call | Adapter project not referenced or DI registration missing |
+| `RateLimitAttribute` has no effect | Rate limiting adapter not registered — call `builder.AddRateLimiting()` |
+| `ErrorCodes` constant not found | Missing `using emc.camus.application.Generic;` directive |
 
 ---
 

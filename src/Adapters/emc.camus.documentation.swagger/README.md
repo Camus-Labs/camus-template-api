@@ -2,13 +2,14 @@
 
 Swagger/OpenAPI documentation adapter for Camus applications.
 
-> **📖 Parent Documentation:** [Main README](../../../../README.md) | [Architecture Guide](../../../../docs/architecture.md)
+> **📖 Parent Documentation:** [Main README](../../../README.md) | [Architecture Guide](../../../docs/architecture.md)
 
 ---
 
 ## 📋 Overview
 
-This adapter provides comprehensive API documentation using Swagger/OpenAPI 3.0, with support for authentication, API versioning, and interactive testing through Swagger UI.
+This adapter provides comprehensive API documentation using Swagger/OpenAPI 3.0, with support for authentication, API
+versioning, and interactive testing through Swagger UI.
 
 ---
 
@@ -27,19 +28,8 @@ This adapter provides comprehensive API documentation using Swagger/OpenAPI 3.0,
 
 ### 1. Register in Program.cs
 
-```csharp
-using emc.camus.documentation.swagger;
-
-// Add Swagger documentation
-builder.AddSwaggerDocumentation();
-
-var app = builder.Build();
-
-// Enable Swagger middleware
-app.UseSwaggerDocumentation();
-
-app.Run();
-```
+Call `builder.AddSwaggerDocumentation()` to register Swagger services, then call `app.UseSwaggerDocumentation()` to
+enable the middleware. See `SwaggerSetupExtensions` in this adapter for the full registration API.
 
 ### 2. Configure Settings
 
@@ -96,63 +86,15 @@ Once running, navigate to:
 
 ### XML Documentation Comments
 
-Enable XML documentation in your `.csproj`:
+XML documentation generation is enabled centrally in `src/Directory.Build.props` — no per-project configuration is needed.
 
-```xml
-<PropertyGroup>
-  <GenerateDocumentationFile>true</GenerateDocumentationFile>
-  <NoWarn>$(NoWarn);1591</NoWarn>
-</PropertyGroup>
-```
-
-Document your endpoints:
-
-```csharp
-/// <summary>
-/// Retrieves a product by its ID
-/// </summary>
-/// <param name="id">The product identifier</param>
-/// <returns>The product details</returns>
-/// <response code="200">Product found successfully</response>
-/// <response code="404">Product not found</response>
-[HttpGet("{id}")]
-[ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
-[ProducesResponseType(StatusCodes.Status404NotFound)]
-public async Task<ActionResult<ProductDto>> GetProduct(int id)
-{
-    var product = await _productService.GetByIdAsync(id);
-    
-    if (product == null)
-        return NotFound();
-    
-    return Ok(product);
-}
-```
+Document endpoints using standard XML summary, param, returns, and response tags, along with `[ProducesResponseType]`
+attributes. See controller source files in `src/Api/emc.camus.api/Controllers/` for examples.
 
 ### Swagger Annotations
 
-Use attributes for enhanced documentation:
-
-```csharp
-[ApiController]
-[Route("api/v{version:apiVersion}/[controller]")]
-[ApiVersion("1.0")]
-[Produces("application/json")]
-public class ProductsController : ControllerBase
-{
-    /// <summary>
-    /// Creates a new product
-    /// </summary>
-    [HttpPost]
-    [ProducesResponseType(typeof(ProductDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<ProductDto>> CreateProduct(CreateProductRequest request)
-    {
-        var product = await _productService.CreateAsync(request);
-        return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
-    }
-}
-```
+Use `[ApiVersion]`, `[Produces]`, and `[ProducesResponseType]` attributes for enhanced documentation. See controller
+source files for annotation patterns.
 
 ---
 
@@ -177,25 +119,11 @@ public class ProductsController : ControllerBase
 
 ## 📌 API Versioning
 
-The adapter automatically generates documentation for each API version:
+The adapter automatically generates documentation for each API version. Define versioned controllers using
+`[ApiVersion]` and version-prefixed routes — Swagger UI presents a dropdown to switch between versions, each with its
+own OpenAPI document.
 
-```csharp
-[ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
-public class ProductsV1Controller : ControllerBase
-{
-    // Version 1 endpoints
-}
-
-[ApiController]
-[ApiVersion("2.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
-public class ProductsV2Controller : ControllerBase
-{
-    // Version 2 endpoints with breaking changes
-}
-```
+See controller source files in `src/Api/emc.camus.api/Controllers/` for versioning patterns.
 
 **Swagger UI Dropdown:**
 
@@ -209,57 +137,13 @@ public class ProductsV2Controller : ControllerBase
 
 ### Custom Swagger Options
 
-```csharp
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "Camus API",
-        Version = "v1",
-        Description = "API with hexagonal architecture",
-        Contact = new OpenApiContact
-        {
-            Name = "Support Team",
-            Email = "support@example.com",
-            Url = new Uri("https://example.com/support")
-        },
-        License = new OpenApiLicense
-        {
-            Name = "MIT",
-            Url = new Uri("https://opensource.org/licenses/MIT")
-        }
-    });
-    
-    // Add custom headers
-    options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
-    {
-        Description = "API Key authentication",
-        Name = "X-Api-Key",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey
-    });
-});
-```
+Customize the OpenAPI document metadata (title, description, contact, license) and add additional security definitions
+by configuring `SwaggerGenOptions` in `SwaggerSetupExtensions.cs`.
 
 ### Request/Response Examples
 
-```csharp
-public class CreateProductRequestExample : IExamplesProvider<CreateProductRequest>
-{
-    public CreateProductRequest GetExamples()
-    {
-        return new CreateProductRequest
-        {
-            Name = "Laptop",
-            Price = 999.99m,
-            Description = "High-performance laptop"
-        };
-    }
-}
-
-// Register in Swagger
-options.ExampleFilters();
-```
+Implement `IExamplesProvider<T>` for request/response example generation and register with `options.ExampleFilters()`.
+See `SwaggerSetupExtensions.cs` for the existing configuration.
 
 ---
 
@@ -267,25 +151,9 @@ options.ExampleFilters();
 
 ### Disable Swagger in Production (Optional)
 
-```csharp
-if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
-{
-    app.UseSwaggerDocumentation();
-}
-```
-
-### Secure Swagger UI
-
-```csharp
-app.UseSwaggerUI(options =>
-{
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Camus API v1");
-    
-    // Require authentication
-    options.ConfigObject.AdditionalItems["onComplete"] = 
-        "() => { ui.preauthorizeApiKey('ApiKey', 'your-key-here'); }";
-});
-```
+The `UseSwaggerDocumentation()` extension checks the `Enabled` setting and the hosting environment. Swagger is only
+active when `Enabled: true` and the environment is Development. See `SwaggerSetupExtensions.cs` for the built-in
+environment check.
 
 ---
 
@@ -297,13 +165,7 @@ app.UseSwaggerUI(options =>
 - **Environment Check**: `UseSwaggerDocumentation()` only activates in Development environment
 - **Explicit Override Required**: Must set `Enabled: true` AND configure for non-development use
 
-```csharp
-// Built-in environment check in middleware
-if (!settings.Enabled || !app.Environment.IsDevelopment())
-{
-    return app; // Swagger disabled
-}
-```
+The middleware checks both the `Enabled` flag and the hosting environment before activating.
 
 ### Security Considerations
 
@@ -323,25 +185,7 @@ Swagger UI exposes:
 3. **Remove Sensitive Data**: Sanitize examples and descriptions
 4. **Disable Try-It-Out**: Prevent direct API calls from UI
 
-```csharp
-// Example: Restrict to authenticated users
-app.MapWhen(
-    context => context.Request.Path.StartsWithSegments("/swagger"),
-    appBuilder =>
-    {
-        appBuilder.Use(async (context, next) =>
-        {
-            if (!context.User.Identity?.IsAuthenticated ?? true)
-            {
-                context.Response.StatusCode = 401;
-                return;
-            }
-            await next();
-        });
-        appBuilder.UseSwagger();
-        appBuilder.UseSwaggerUI();
-    });
-```
+See `SwaggerSetupExtensions.cs` for middleware configuration options.
 
 ### Configuration Validation
 
@@ -353,27 +197,6 @@ Configuration is validated at startup with fail-fast behavior:
 
 ---
 
-## 🔗 OpenAPI Specification Export
-
-Generate OpenAPI spec for client generation:
-
-```bash
-# Export OpenAPI JSON
-curl http://localhost:5000/swagger/v1/swagger.json > openapi.json
-
-# Generate TypeScript client
-npx @openapitools/openapi-generator-cli generate \
-  -i openapi.json \
-  -g typescript-axios \
-  -o ./clients/typescript
-
-# Generate C# client
-dotnet tool install --global Microsoft.dotnet-openapi
-dotnet openapi add url http://localhost:5000/swagger/v1/swagger.json
-```
-
----
-
 ## 🧪 Testing with Swagger UI
 
 1. **Explore Endpoints**: Browse available operations organized by controller
@@ -381,6 +204,31 @@ dotnet openapi add url http://localhost:5000/swagger/v1/swagger.json
 3. **Enter Parameters**: Fill in path parameters, query strings, request body
 4. **Execute**: Click "Execute" to send real request
 5. **View Response**: See status code, headers, and response body
+
+---
+
+## 🔗 Integration
+
+The adapter registers Swagger services and middleware via two extension methods in `SwaggerSetupExtensions.cs`:
+
+1. **`builder.AddSwaggerDocumentation()`** — Reads `SwaggerSettings` from configuration, validates versions and security
+  schemes, and registers SwaggerGen with OpenAPI documents, security definitions, XML comments, and annotation support.
+2. **`app.UseSwaggerDocumentation()`** — Activates Swagger and SwaggerUI middleware only when `Enabled: true` and the
+  environment is Development. Optionally redirects the root URL to Swagger UI.
+
+Call these in `Program.cs` after other service registrations and before `app.Run()`.
+
+---
+
+## 🔧 Troubleshooting
+
+| Symptom | Likely Cause |
+| ------- | ------------ |
+| Swagger UI not loading | `SwaggerSettings:Enabled` is `false` or environment is not Development |
+| No endpoints visible | Controllers missing `[ApiVersion]` attribute or route template mismatch |
+| XML comments not appearing | `IncludeXmlComments` is `false` or XML doc file not generated (check `Directory.Build.props`) |
+| Security "Authorize" button missing | `SecuritySchemes` array is empty or contains invalid values |
+| 404 on `/swagger` | `UseSwaggerDocumentation()` not called or called after `app.Run()` |
 
 ---
 

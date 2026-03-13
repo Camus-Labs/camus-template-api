@@ -1,15 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <RootNamespace>emc.camus.application</RootNamespace>
     <AssemblyName>emc.camus.application</AssemblyName>
     <PackageId>emc.camus.application</PackageId>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>1.0.0</Version>
-    <Authors>Camus Labs</Authors>
     <Description>Application layer for Camus containing business use cases, interfaces, and application services.</Description>
   </PropertyGroup>
 

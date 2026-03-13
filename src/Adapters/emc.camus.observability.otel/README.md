@@ -2,7 +2,7 @@
 
 OpenTelemetry-based observability adapter for Camus applications.
 
-> **📖 Parent Documentation:** [Main README](../../../../README.md) | [Architecture Guide](../../../../docs/architecture.md)
+> **📖 Parent Documentation:** [Main README](../../../README.md) | [Architecture Guide](../../../docs/architecture.md)
 
 ---
 
@@ -27,24 +27,9 @@ This adapter provides comprehensive observability through OpenTelemetry, includi
 
 ### 1. Register in Program.cs
 
-```csharp
-using emc.camus.observability.otel;
+Call `builder.AddObservability(serviceName, serviceVersion, instanceId, environmentName)` to register tracing, metrics, and structured logging. Then call `app.UseObservability()` to add the response trace-ID middleware.
 
-const string SERVICE_NAME = "camus-api";
-const string SERVICE_VERSION = "1.0.0";
-const string INSTANCE_ID = Environment.MachineName;
-const string ENV_NAME = builder.Environment.EnvironmentName;
-
-// Add observability (tracing, metrics, logging)
-builder.AddObservability(SERVICE_NAME, SERVICE_VERSION, INSTANCE_ID, ENV_NAME);
-
-var app = builder.Build();
-
-// Add response trace ID middleware
-app.UseObservability();
-
-app.Run();
-```
+See `ObservabilitySetupExtensions` in this adapter for the full registration API and `Program.cs` for the wiring example.
 
 ### 2. Configure Settings
 
@@ -193,63 +178,15 @@ Your Application (with this adapter)
 
 ## 🎯 Manual Instrumentation
 
-Use the `IActivitySourceWrapper` for custom spans:
+Inject `IActivitySourceWrapper` to create custom spans for business-critical operations. Call `StartActivity(name, kind)` to open a span, set tags for context, and set error status on failures. The wrapper is disposed automatically at the end of the `using` block.
 
-```csharp
-public class ProductService
-{
-    private readonly IActivitySourceWrapper _activitySource;
-    private readonly ILogger<ProductService> _logger;
-    
-    public ProductService(IActivitySourceWrapper activitySource, ILogger<ProductService> logger)
-    {
-        _activitySource = activitySource;
-        _logger = logger;
-    }
-    
-    public async Task<Product> GetProductAsync(int id)
-    {
-        using var activity = _activitySource.StartActivity("GetProduct", ActivityKind.Internal);
-        activity?.SetTag("product.id", id);
-        
-        try
-        {
-            _logger.LogInformation("Fetching product {ProductId}", id);
-            
-            var product = await _repository.GetByIdAsync(id);
-            
-            activity?.SetTag("product.found", product != null);
-            
-            if (product == null)
-            {
-                _logger.LogWarning("Product {ProductId} not found", id);
-            }
-            
-            return product;
-        }
-        catch (Exception ex)
-        {
-            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-            _logger.LogError(ex, "Error fetching product {ProductId}", id);
-            throw;
-        }
-    }
-}
-```
+See `IActivitySourceWrapper` in the Application layer for the interface contract, and `ObservabilitySetupExtensions.cs` for registration details.
 
 ---
 
 ## 📝 Structured Logging
 
-The adapter configures Serilog for structured logging:
-
-```csharp
-// Logs are automatically enriched with trace context
-_logger.LogInformation("User {UserId} created order {OrderId}", userId, orderId);
-
-// Trace ID and span ID are automatically included
-// Output: [INF] [TraceId: abc123] [SpanId: def456] User 42 created order 789
-```
+The adapter configures Serilog for structured logging. Logs are automatically enriched with trace context (trace ID and span ID). Use Serilog’s message template syntax with named placeholders for structured properties.
 
 ### Log Levels
 
@@ -292,27 +229,34 @@ Content-Type: application/json
 
 ### Sampling
 
-Implement sampling to reduce overhead in high-traffic scenarios:
-
-```csharp
-builder.Services.AddOpenTelemetryTracing(options =>
-{
-    options.SetSampler(new TraceIdRatioBasedSampler(0.1)); // Sample 10% of traces
-});
-```
+Implement sampling to reduce overhead in high-traffic scenarios. Configure a `TraceIdRatioBasedSampler` (e.g., 0.1 for 10% of traces) via the OpenTelemetry tracing builder.
 
 ### Resource Attributes
 
-Enrich telemetry with environment information:
+Enrich telemetry with environment information by passing service name, version, instance ID, and environment name to `AddObservability()`. See `ObservabilitySetupExtensions.cs` for parameter details.
 
-```csharp
-builder.AddObservability(
-    serviceName: "camus-api",
-    serviceVersion: Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown",
-    instanceId: Environment.GetEnvironmentVariable("HOSTNAME") ?? Environment.MachineName,
-    environmentName: builder.Environment.EnvironmentName
-);
-```
+---
+
+## 🔗 Integration
+
+The adapter registers all observability services via two extension methods in `ObservabilitySetupExtensions.cs`:
+
+1. **`builder.AddObservability(serviceName, serviceVersion, instanceId, environmentName)`** — Configures OpenTelemetry tracing, metrics, and Serilog structured logging based on `appsettings.json`. Registers the selected exporters and enriches telemetry with service resource attributes.
+2. **`app.UseObservability()`** — Adds middleware that copies the current trace ID into the `Trace-Id` response header for request correlation.
+
+Call these in `Program.cs` early in the pipeline, before authentication and routing middleware.
+
+---
+
+## 🔧 Troubleshooting
+
+| Symptom | Likely Cause |
+| ------- | ------------ |
+| No traces in Jaeger | Exporter set to `"Console"` instead of `"Otlp"`, or OTLP endpoint unreachable |
+| Missing `Trace-Id` response header | `app.UseObservability()` not called in the pipeline |
+| High memory usage from metrics | Too many custom meters or disabled-metrics list not filtering noisy meters |
+| Logs not appearing in Loki | Serilog OTLP sink not configured or Collector not forwarding to Loki |
+| `ActivitySource` spans not visible | Custom activity source name not registered in the tracing builder |
 
 ---
 

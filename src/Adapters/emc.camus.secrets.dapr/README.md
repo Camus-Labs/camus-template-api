@@ -2,7 +2,7 @@
 
 Dapr secret provider adapter for Camus applications.
 
-> **📖 Parent Documentation:** [Main README](../../../../README.md) | [Architecture Guide](../../../../docs/architecture.md)
+> **📖 Parent Documentation:** [Main README](../../../README.md) | [Architecture Guide](../../../docs/architecture.md)
 
 ---
 
@@ -26,19 +26,9 @@ This adapter implements the `ISecretProvider` interface from the Application lay
 
 ### 1. Register in Program.cs
 
-```csharp
-using emc.camus.secrets.dapr;
+Call `builder.AddDaprSecrets()` to register the Dapr secret provider in DI, then call `app.UseDaprSecrets()` to force secret initialization at startup (fail-fast pattern).
 
-// Add Dapr secrets to DI container
-builder.AddDaprSecrets();
-
-var app = builder.Build();
-
-// Force secret provider initialization (fail-fast pattern)
-app.UseDaprSecrets();
-
-app.Run();
-```
+See `DaprSecretsSetupExtensions` in this adapter for the full registration API.
 
 ### 2. Configure Settings
 
@@ -57,23 +47,9 @@ In `appsettings.json`:
 
 ### 3. Use in Your Code
 
-```csharp
-public class MyService
-{
-    private readonly ISecretProvider _secretProvider;
-    
-    public MyService(ISecretProvider secretProvider)
-    {
-        _secretProvider = secretProvider;
-    }
-    
-    public async Task DoSomethingAsync()
-    {
-        var apiKey = await _secretProvider.GetSecretAsync("XApiKey");
-        // Use the secret
-    }
-}
-```
+Inject `ISecretProvider` from the Application layer via constructor injection. Call `GetSecretAsync(secretName)` to retrieve a secret value at runtime.
+
+See `ISecretProvider` in `src/Application/emc.camus.application/Secrets/` for the interface contract.
 
 ---
 
@@ -85,18 +61,7 @@ For development, configure a local file-based secret store:
 
 **1. Dapr Component** (`src/Infrastructure/dapr/dapr-secret-component.yml`):
 
-```yaml
-apiVersion: dapr.io/v1alpha1
-kind: Component
-metadata:
-  name: localsecretstore
-spec:
-  type: secretstores.local.file
-  version: v1
-  metadata:
-  - name: secretsFile
-    value: ./secrets.json
-```
+Configure a local file-based secret store component. See [Dapr Components README](../../../Infrastructure/dapr/README.md) for the component file format and examples.
 
 **2. Secrets File** (`src/Infrastructure/dapr/secrets.json`):
 
@@ -111,13 +76,7 @@ spec:
 
 **3. Run Dapr Sidecar**:
 
-```bash
-cd src/Infrastructure/dapr
-dapr run --app-id camus-app \
-  --dapr-http-port 3500 \
-  --dapr-grpc-port 50001 \
-  --resources-path .
-```
+Start the Dapr sidecar from the `src/Infrastructure/dapr` directory using `dapr run` with the `--resources-path .` flag, specifying the app ID, HTTP port (3500), and gRPC port (50001). See [Dapr Components README](../../../Infrastructure/dapr/README.md) for the complete run command.
 
 > **📖 Full Guide:** See [Dapr Components README](../../../Infrastructure/dapr/README.md) for detailed Dapr setup.
 
@@ -176,16 +135,30 @@ Update your production settings to reference the appropriate secret store:
 
 ## 🧪 Testing
 
-Mock the interface in tests:
+Mock the `ISecretProvider` interface in unit tests to return predetermined secret values without requiring a running Dapr sidecar.
 
-```csharp
-var mockSecretProvider = new Mock<ISecretProvider>();
-mockSecretProvider
-    .Setup(x => x.GetSecretAsync("XApiKey"))
-    .ReturnsAsync("test-api-key");
+---
 
-var service = new MyService(mockSecretProvider.Object);
-```
+## 🔗 Integration
+
+The adapter registers the Dapr secret provider via two extension methods in `DaprSecretsSetupExtensions.cs`:
+
+1. **`builder.AddDaprSecrets()`** — Reads `DaprSecretProvider` settings from configuration and registers `DaprSecretProvider` as the `ISecretProvider` singleton.
+2. **`app.UseDaprSecrets()`** — Resolves `ISecretProvider` from DI and calls `Initialize()` to fetch all configured secrets at startup (fail-fast pattern).
+
+Call `AddDaprSecrets()` before any adapter that depends on `ISecretProvider` (e.g., JWT, API Key, migrations).
+
+---
+
+## 🔧 Troubleshooting
+
+| Symptom | Likely Cause |
+| ------- | ------------ |
+| `DaprSecretProvider configuration is missing` | Missing `DaprSecretProvider` section in `appsettings.json` |
+| `Failed to retrieve secret 'X'` | Secret name mismatch or Dapr sidecar not running |
+| Connection refused on port 3500 | Dapr sidecar not started — run `dapr run` or check container setup |
+| Secrets empty in production | Secret store component name doesn't match `SecretStoreName` setting |
+| Startup crash with secret error | `UseDaprSecrets()` called before Dapr sidecar is ready |
 
 ---
 
