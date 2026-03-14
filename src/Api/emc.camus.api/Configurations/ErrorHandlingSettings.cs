@@ -33,7 +33,7 @@ public class ErrorHandlingSettings
     {
         if (AdditionalRules == null)
         {
-            throw new ArgumentException("AdditionalRules cannot be null.", nameof(AdditionalRules));
+            throw new ArgumentException($"AdditionalRules cannot be null. Got: '{AdditionalRules}'.", nameof(AdditionalRules));
         }
 
         for (int i = 0; i < AdditionalRules.Count; i++)

@@ -54,8 +54,8 @@ Camus follows **Hexagonal Architecture (Ports & Adapters)** pattern with clean s
 - `Generic/` - Application-wide constants (ErrorCodes, Headers, MediaTypes)
 - `Exceptions/` - Custom exceptions (RateLimitExceededException)
 
-> **📖 Full Reference:** See [Application Layer README](../src/Application/emc.camus.application/README.md) for complete
-contracts documentation.
+> **📖 Full Reference:** See [Application Layer README](../src/Application/emc.camus.application/README.md)
+for complete contracts documentation.
 
 ### Adapters
 

@@ -24,14 +24,14 @@ namespace emc.camus.api.Extensions
 
             // Register HTTP Context Accessor (required for accessing current user in services)
             builder.Services.AddHttpContextAccessor();
-            
+
             // Register User Context (provides access to current authenticated user)
             builder.Services.AddScoped<IUserContext, HttpUserContext>();
 
             // Register Authentication Service (business logic in Application layer)
             builder.Services.AddScoped<AuthService>();
             builder.Services.AddScoped<ApiInfoService>();
-            
+
             // Add controllers
             builder.Services.AddControllers();
 
@@ -55,10 +55,10 @@ namespace emc.camus.api.Extensions
 
             // Add Username header to responses (for observability and debugging)
             app.UseMiddleware<UsernameHeaderMiddleware>();
-            
+
             // Map controller endpoints
             app.MapControllers();
-            
+
             return app;
         }
     }

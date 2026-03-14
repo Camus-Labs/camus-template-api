@@ -83,7 +83,8 @@ namespace emc.camus.api.Controllers
                 });
 
                 // Call application service to retrieve API info
-                var result = await _apiInfoService.GetByVersionAsync(apiVersion);
+                var filter = ApiInfoMappingExtensions.ToFilter(apiVersion);
+                var result = await _apiInfoService.GetByVersionAsync(filter);
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
@@ -120,7 +121,8 @@ namespace emc.camus.api.Controllers
                 });
 
                 // Call application service to retrieve API info
-                var result = await _apiInfoService.GetByVersionAsync(apiVersion);
+                var filter = ApiInfoMappingExtensions.ToFilter(apiVersion);
+                var result = await _apiInfoService.GetByVersionAsync(filter);
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
@@ -157,7 +159,8 @@ namespace emc.camus.api.Controllers
                 });
 
                 // Call application service to retrieve API info
-                var result = await _apiInfoService.GetByVersionAsync(apiVersion);
+                var filter = ApiInfoMappingExtensions.ToFilter(apiVersion);
+                var result = await _apiInfoService.GetByVersionAsync(filter);
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {

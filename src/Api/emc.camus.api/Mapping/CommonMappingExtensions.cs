@@ -17,7 +17,6 @@ public static class CommonMappingExtensions
     /// <returns>Validated pagination parameters for the application layer.</returns>
     public static PaginationParams ToPaginationParams(this PaginationQuery query)
     {
-        ArgumentNullException.ThrowIfNull(query);
         return new PaginationParams(query.Page, query.PageSize);
     }
 
@@ -34,9 +33,6 @@ public static class CommonMappingExtensions
         this PagedResult<TSource> pagedResult,
         Func<TSource, TDestination> mapper)
     {
-        ArgumentNullException.ThrowIfNull(pagedResult);
-        ArgumentNullException.ThrowIfNull(mapper);
-
         return new PagedResponse<TDestination>
         {
             Items = pagedResult.Items.Select(mapper).ToList(),

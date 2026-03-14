@@ -15,13 +15,8 @@ public static class AuthMappingExtensions
     /// </summary>
     /// <param name="request">The login request from the API.</param>
     /// <returns>An authentication command for the application layer.</returns>
-    /// <exception cref="ArgumentException">Thrown when username or password is null, empty, or whitespace.</exception>
     public static AuthenticateUserCommand ToCommand(this AuthenticateUserRequest request)
     {
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.Username);
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.Password);
-        
         return new AuthenticateUserCommand(
             request.Username,
             request.Password
@@ -35,8 +30,6 @@ public static class AuthMappingExtensions
     /// <returns>An AuthenticateUserResponse DTO for the API layer.</returns>
     public static AuthenticateUserResponse ToResponse(this AuthenticateUserResult result)
     {
-        ArgumentNullException.ThrowIfNull(result);
-        
         return new AuthenticateUserResponse
         {
             Token = result.Token,
@@ -49,18 +42,8 @@ public static class AuthMappingExtensions
     /// </summary>
     /// <param name="request">The generate token request from the API.</param>
     /// <returns>A generate token command for the application layer.</returns>
-    /// <exception cref="ArgumentException">Thrown when validation fails.</exception>
     public static GenerateTokenCommand ToCommand(this GenerateTokenRequest request)
     {
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.UsernameSuffix);
-        ArgumentNullException.ThrowIfNull(request.Permissions);
-
-        if (request.Permissions.Count == 0)
-        {
-            throw new ArgumentException($"At least one permission is required. Got: {request.Permissions.Count} permission(s).", nameof(request.Permissions));
-        }
-        
         return new GenerateTokenCommand(
             request.UsernameSuffix,
             request.ExpiresOn,
@@ -75,8 +58,6 @@ public static class AuthMappingExtensions
     /// <returns>A GenerateTokenResponse DTO for the API layer.</returns>
     public static GenerateTokenResponse ToResponse(this GenerateTokenResult result)
     {
-        ArgumentNullException.ThrowIfNull(result);
-        
         return new GenerateTokenResponse
         {
             Token = result.Token,
@@ -92,8 +73,6 @@ public static class AuthMappingExtensions
     /// <returns>A GeneratedTokenSummaryDto for the API layer.</returns>
     public static GeneratedTokenSummaryDto ToDto(this GeneratedTokenSummaryView view)
     {
-        ArgumentNullException.ThrowIfNull(view);
-
         return new GeneratedTokenSummaryDto
         {
             Jti = view.Jti,
@@ -114,7 +93,6 @@ public static class AuthMappingExtensions
     /// <returns>A filter for the application layer.</returns>
     public static GeneratedTokenFilter ToFilter(this GetGeneratedTokensQuery query)
     {
-        ArgumentNullException.ThrowIfNull(query);
         return new GeneratedTokenFilter(
             ExcludeRevoked: query.ExcludeRevoked,
             ExcludeExpired: query.ExcludeExpired
@@ -122,18 +100,12 @@ public static class AuthMappingExtensions
     }
 
     /// <summary>
-    /// Validates a JTI and creates a <see cref="RevokeTokenCommand"/>.
+    /// Creates a <see cref="RevokeTokenCommand"/> from a JTI.
     /// </summary>
     /// <param name="jti">The JWT ID from the route.</param>
     /// <returns>A revoke token command for the application layer.</returns>
-    /// <exception cref="ArgumentException">Thrown when JTI is <see cref="Guid.Empty"/>.</exception>
     public static RevokeTokenCommand ToRevokeTokenCommand(Guid jti)
     {
-        if (jti == Guid.Empty)
-        {
-            throw new ArgumentException($"Token JTI cannot be empty: '{jti}'.", nameof(jti));
-        }
-
         return new RevokeTokenCommand(jti);
     }
 }

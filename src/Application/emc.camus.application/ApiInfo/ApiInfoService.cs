@@ -29,19 +29,18 @@ public class ApiInfoService
     /// <summary>
     /// Retrieves API information for a specific version.
     /// </summary>
-    /// <param name="version">The API version to retrieve (e.g., "1.0", "2.0")</param>
+    /// <param name="filter">The filter containing the API version to retrieve</param>
     /// <returns>View containing API information for the requested version</returns>
     /// <exception cref="KeyNotFoundException">Thrown when the requested version is not found in the repository</exception>
-    /// <exception cref="ArgumentException">Thrown when version is null or empty</exception>
     /// <exception cref="InvalidOperationException">Thrown when database operations fail</exception>
-    public virtual async Task<ApiInfoView> GetByVersionAsync(string version)
+    public virtual async Task<ApiInfoView> GetByVersionAsync(ApiInfoFilter filter)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(version);
+        ArgumentNullException.ThrowIfNull(filter);
 
         try
         {
             // Call repository to get domain entity (KeyNotFoundException bubbles up)
-            var apiInfo = await _repository.GetByVersionAsync(version);
+            var apiInfo = await _repository.GetByVersionAsync(filter.Version);
 
             // Convert domain entity to application result
             return new ApiInfoView(
@@ -59,7 +58,7 @@ public class ApiInfoService
         {
             // Wrap infrastructure failures with business context
             throw new InvalidOperationException(
-                $"Failed to retrieve API information for version '{version}' due to a system error.", ex);
+                $"Failed to retrieve API information for version '{filter.Version}' due to a system error.", ex);
         }
     }
 

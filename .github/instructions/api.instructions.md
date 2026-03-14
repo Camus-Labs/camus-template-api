@@ -42,7 +42,6 @@ applyTo: "src/Api/**/*.cs"
 
 3. Validation & Error Handling
 
-    - [ ] Mapper methods are pure structural transformers — they convert shapes, never validate
     - [ ] Controllers contain zero validation logic
     - [ ] No try/catch in controllers — exceptions propagate to the global error-handling middleware
     - [ ] No validation attributes on model classes (`[Required]`, `[StringLength]`, `[Range]`)

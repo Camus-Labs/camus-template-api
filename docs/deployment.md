@@ -84,32 +84,6 @@ az containerapp update \
   --scale-rule-http-concurrency 50
 ```
 
-## Health Checks
-
-API includes built-in health endpoints:
-
-- `/health` - Basic health check
-- `/health/ready` - Readiness probe
-- `/health/live` - Liveness probe
-
-Configure in container orchestrator:
-
-```yaml
-livenessProbe:
-  httpGet:
-    path: /health/live
-    port: 80
-  initialDelaySeconds: 30
-  periodSeconds: 10
-
-readinessProbe:
-  httpGet:
-    path: /health/ready
-    port: 80
-  initialDelaySeconds: 5
-  periodSeconds: 5
-```
-
 ## Monitoring
 
 ### Application Insights Integration
@@ -149,8 +123,8 @@ Configure a Dapr Azure Key Vault component and update `appsettings.Production.js
 `SecretStoreName` set to `"azurekeyvault"`. See
 [Dapr Components README — Production Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
 for the component YAML template and
-[Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md) for the application settings
-structure.
+[Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md)
+for the application settings structure.
 
 ### AWS Secrets Manager
 
@@ -158,8 +132,8 @@ Configure a Dapr AWS Secrets Manager component and update `appsettings.Productio
 `SecretStoreName` set to `"awssecretsmanager"`. See
 [Dapr Components README — Production Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
 for the component YAML template and
-[Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md) for the application settings
-structure.
+[Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md)
+for the application settings structure.
 
 **Deployment Steps:**
 

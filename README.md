@@ -110,8 +110,7 @@ and dependency flow.
 
 4. **Explore**:
    - Swagger UI: <http://localhost:5000/swagger>
-   - Get JWT Token: `POST /api/v2/auth/token`
-   - Health Check: `GET /health`
+   - Authenticate: `POST /api/v2/auth/authenticate`
 
 ### Run with Docker
 
@@ -130,58 +129,24 @@ with VS Code debugging.
 
 ## 🔐 Authentication
 
-The template includes two authentication mechanisms ready to use:
-
-### JWT Bearer Tokens
-
-Send a POST request to `/api/v2/auth/token` with `accessKey` and `accessSecret` credentials to receive a
-Bearer token. Include the token in the `Authorization: Bearer <token>` header for subsequent requests to
-protected endpoints.
-
-### API Key
-
-Include your API key in the `X-Api-Key` header on every request to protected endpoints.
-
-> **📖 Full Guide:** See [Authentication Documentation](docs/authentication.md) for configuration, claims, and security
-best practices.
+JWT Bearer token and API Key authentication with permission-based policies and RSA256 token signing — see
+[Authentication Documentation](docs/authentication.md) for configuration, claims reference, and security best practices.
 
 ---
 
 ## �️ Rate Limiting
 
-Built-in IP-based rate limiting with sliding window algorithm:
-
-- **Policy-based configuration** - Multiple limit profiles (strict/default/relaxed)
-- **Proxy support** - Automatic X-Forwarded-For header detection
-- **RFC-compliant headers** - Standard rate limit response headers
-- **OpenTelemetry metrics** - Track rejections and usage patterns
-
-**Apply to endpoints:**
-
-Apply `[RateLimit(RateLimitPolicies.Strict)]` or `[RateLimit(RateLimitPolicies.Relaxed)]` attributes to
-controllers or actions. See `RateLimitPolicies` in `src/Application/emc.camus.application/RateLimiting/`
-for available policies.
-
-> **📖 Full Guide:** See [Rate Limiting Adapter README](src/Adapters/emc.camus.ratelimiting.inmemory/README.md) for
-configuration and deployment.
+IP-based sliding-window rate limiting with policy-based configuration (strict, default, relaxed) and OpenTelemetry
+metrics — see [Rate Limiting Adapter README](src/Adapters/emc.camus.ratelimiting.inmemory/README.md) for configuration
+and deployment.
 
 ---
 
 ## 📊 Observability
 
-Built-in OpenTelemetry integration with multiple exporter options:
-
-- **Tracing**: OTLP, Jaeger, Zipkin, Console
-- **Metrics**: OTLP, Prometheus, Console
-- **Logging**: Serilog with OTLP exporter to Loki
-
-The template includes Docker Compose configurations for a complete observability stack (Jaeger, Prometheus,
-Grafana, Loki).
-
-**📖 Learn More:**
-
-> - [Observability Adapter README](src/Adapters/emc.camus.observability.otel/README.md) - Usage guide
-> - [Observability Stack README](src/Infrastructure/observability/README.md) - Stack configuration
+OpenTelemetry integration for tracing, metrics, and structured logging with Docker Compose observability stack.
+See [Observability Adapter README](src/Adapters/emc.camus.observability.otel/README.md) for usage guide and
+[Observability Stack README](src/Infrastructure/observability/README.md) for stack configuration.
 
 ---
 
@@ -209,8 +174,8 @@ Camus follows **Hexagonal Architecture** (Ports & Adapters):
 - ✅ Testable without external dependencies
 - ✅ Clear separation of concerns
 
-> **📖 Deep Dive:** Read [Architecture Documentation](docs/architecture.md) for layer responsibilities, dependency flow,
-and patterns.
+> **📖 Deep Dive:** Read [Architecture Documentation](docs/architecture.md) for layer responsibilities, dependency
+flow, and patterns.
 
 ---
 

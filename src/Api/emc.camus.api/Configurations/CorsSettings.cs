@@ -13,17 +13,17 @@ namespace emc.camus.api.Configurations
         /// </summary>
         public const string ConfigurationSectionName = "CorsSettings";
 
-        private const string WildcardOrigin = "*";
+        private const string DefaultPolicyName = "DefaultCorsPolicy";
         private const int DefaultPreflightMaxAgeMinutes = 60;
         private const int MaxPolicyNameLength = 100;
         private const int MinPreflightMaxAgeMinutes = 1;
         private const int MaxPreflightMaxAgeMinutes = 86400; // 24 hours
         private static readonly string[] DefaultAllowedMethods = new[] { "GET", "POST" };
-        
+
         /// <summary>
         /// Gets or sets the name of the CORS policy.
         /// </summary>
-        public string PolicyName { get; set; } = "DefaultCorsPolicy";
+        public string PolicyName { get; set; } = DefaultPolicyName;
 
         /// <summary>
         /// Gets or sets the allowed origins for CORS requests.
@@ -43,9 +43,9 @@ namespace emc.camus.api.Configurations
         /// <summary>
         /// Gets or sets the headers that should be exposed to the client.
         /// </summary>
-        public string[] ExposedHeaders { get; set; } = new[] 
-        { 
-            HeaderNames.ContentType, 
+        public string[] ExposedHeaders { get; set; } = new[]
+        {
+            HeaderNames.ContentType,
             Headers.TraceId,
             Headers.RetryAfter,
             Headers.RateLimitLimit,
@@ -85,7 +85,7 @@ namespace emc.camus.api.Configurations
         {
             if (string.IsNullOrWhiteSpace(PolicyName))
             {
-                throw new ArgumentException("PolicyName cannot be null or empty.", nameof(PolicyName));
+                throw new ArgumentException($"PolicyName cannot be null or empty. Got: '{PolicyName}'.", nameof(PolicyName));
             }
 
             if (PolicyName.Length > MaxPolicyNameLength)
@@ -97,33 +97,33 @@ namespace emc.camus.api.Configurations
         private void ValidateAllowedOrigins()
         {
             if (AllowedOrigins == null)
-                throw new ArgumentException("AllowedOrigins cannot be null", nameof(AllowedOrigins));
+                throw new ArgumentException($"AllowedOrigins cannot be null. Got: '{AllowedOrigins}'.", nameof(AllowedOrigins));
 
             if (AllowedOrigins.Length == 0)
-                throw new ArgumentException("At least one allowed origin must be specified", nameof(AllowedOrigins));
+                throw new ArgumentException($"At least one allowed origin must be specified. Got: {AllowedOrigins.Length} origin(s).", nameof(AllowedOrigins));
 
             foreach (var origin in AllowedOrigins)
             {
                 if (string.IsNullOrWhiteSpace(origin))
                     throw new ArgumentException($"AllowedOrigins contains a null or empty value: '{origin}'.", nameof(AllowedOrigins));
 
-                if (origin != WildcardOrigin && !Uri.TryCreate(origin, UriKind.Absolute, out _))
-                    throw new ArgumentException($"Invalid origin URL: '{origin}'. Must be a valid absolute URL or '{WildcardOrigin}'.", nameof(AllowedOrigins));
+                if (origin != "*" && !Uri.TryCreate(origin, UriKind.Absolute, out _))
+                    throw new ArgumentException($"Invalid origin URL: '{origin}'. Must be a valid absolute URL or '*'.", nameof(AllowedOrigins));
             }
         }
 
         private void ValidateAllowCredentials()
         {
-            if (AllowCredentials && AllowedOrigins.Any(o => o == WildcardOrigin))
+            if (AllowCredentials && AllowedOrigins.Any(o => o == "*"))
                 throw new ArgumentException(
-                    $"AllowCredentials cannot be true when AllowedOrigins contains '{WildcardOrigin}'. Specify explicit origins instead.",
+                    $"AllowCredentials cannot be true when AllowedOrigins contains '*'. Specify explicit origins instead.",
                     nameof(AllowCredentials));
         }
 
         private void ValidateAllowedMethods()
         {
             if (AllowedMethods == null || AllowedMethods.Length == 0)
-                throw new ArgumentException("At least one allowed HTTP method must be specified", nameof(AllowedMethods));
+                throw new ArgumentException($"At least one allowed HTTP method must be specified. Got: {AllowedMethods?.Length ?? 0} method(s).", nameof(AllowedMethods));
 
             foreach (var method in AllowedMethods)
             {
@@ -135,13 +135,13 @@ namespace emc.camus.api.Configurations
         private void ValidateAllowedHeaders()
         {
             if (AllowedHeaders == null)
-                throw new ArgumentException("AllowedHeaders cannot be null", nameof(AllowedHeaders));
+                throw new ArgumentException($"AllowedHeaders cannot be null. Got: '{AllowedHeaders}'.", nameof(AllowedHeaders));
         }
 
         private void ValidateExposedHeaders()
         {
             if (ExposedHeaders == null)
-                throw new ArgumentException("ExposedHeaders cannot be null", nameof(ExposedHeaders));
+                throw new ArgumentException($"ExposedHeaders cannot be null. Got: '{ExposedHeaders}'.", nameof(ExposedHeaders));
         }
 
         private void ValidatePreflightMaxAge()

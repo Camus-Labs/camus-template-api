@@ -247,7 +247,6 @@ namespace emc.camus.api.Controllers
                     { "error_type", "demo_exception" }
                 });
 
-                _logger.LogDebug("This is a demo warning for error handling.");
                 throw new Exception("This is a demo exception for error handling.", new Exception("Inner exception for demo purposes."));
             });
         }

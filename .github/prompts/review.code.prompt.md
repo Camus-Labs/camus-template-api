@@ -2,7 +2,9 @@
 description: 'Review C# source files against their matching instruction checklists and return a verdict'
 argument-hint: 'Provide the list of modified .cs files to review'
 mode: 'agent'
-tools: ['search']
+tools:
+  - 'read'
+  - 'search'
 ---
 
 # Review Code
@@ -41,8 +43,8 @@ Read and internalize the instruction checklists before starting:
 2. Read every file in `modified_files` — if any file is unreadable or is not a `.cs` file, stop and report the problem;
   otherwise proceed to Step 3.
 
-3. Match each file to its applicable instruction checklists by evaluating the `applyTo` glob patterns declared in the
-  instruction file frontmatter — apply these rules in order:
+3. Match each file to its applicable instruction checklists by evaluating the `applyTo` glob patterns that each
+  instruction file frontmatter declares — apply these rules in order:
     - `src/Test/**` → `testing.instructions`
     - `src/Domain/**/*.cs` → `csharp.instructions` + `domain.instructions`
     - `src/Application/**/*.cs` → `csharp.instructions` + `application.instructions`

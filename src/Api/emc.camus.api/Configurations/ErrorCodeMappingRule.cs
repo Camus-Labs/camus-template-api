@@ -62,7 +62,7 @@ public class ErrorCodeMappingRule
         if (string.IsNullOrWhiteSpace(Type) && string.IsNullOrWhiteSpace(Pattern))
         {
             throw new ArgumentException(
-                $"Rules[{index}] must have either Type or Pattern specified.");
+                $"Rules[{index}] must have either Type or Pattern specified. Got Type: '{Type}', Pattern: '{Pattern}'.");
         }
     }
 

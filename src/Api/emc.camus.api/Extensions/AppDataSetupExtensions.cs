@@ -29,9 +29,9 @@ namespace emc.camus.api.Extensions
             var settings = builder.Configuration
                 .GetSection(AppDataSettings.ConfigurationSectionName)
                 .Get<AppDataSettings>() ?? new AppDataSettings();
-            
+
             settings.Validate();
-            
+
             // Register settings as singleton
             builder.Services.AddSingleton(settings);
 
@@ -44,9 +44,6 @@ namespace emc.camus.api.Extensions
             {
                 builder.AddPostgreSqlPersistence(PersistenceFeatures.AppData);
             }
-
-            // Register application service for API info
-            builder.Services.AddScoped<ApiInfoService>();
 
             return builder;
         }
@@ -68,7 +65,7 @@ namespace emc.camus.api.Extensions
                 var apiInfoService = scope.ServiceProvider.GetRequiredService<ApiInfoService>();
                 apiInfoService.Initialize();
             }
-            
+
             return app;
         }
     }

@@ -3,17 +3,17 @@
 REST API host layer for the Camus application, wiring controllers, middleware, and adapter registrations into the
 ASP.NET Core pipeline.
 
-> **📖 Parent Documentation:** [Main README](../../../README.md) |
-[Architecture Guide](../../../docs/architecture.md) |
-[Authentication Guide](../../../docs/authentication.md)
+> **📖 Parent Documentation:** [Main README](../../../README.md) | [Architecture](../../../docs/architecture.md) |
+[Authentication](../../../docs/authentication.md)
 
 ---
 
 ## 📋 Overview
 
-This project is the composition root of the Camus system. It owns the HTTP pipeline, controller routing, request/response
-models, and dependency-injection wiring. Domain and Application layers are referenced as project dependencies; every
-infrastructure capability is provided by a swappable adapter registered through extension methods in `Extensions/`.
+This project is the composition root of the Camus system. It owns the HTTP pipeline, controller routing,
+request/response models, and dependency-injection wiring. Domain and Application layers are referenced as project
+dependencies; every infrastructure capability is provided by a swappable adapter registered through extension methods
+in `Extensions/`.
 
 ---
 
@@ -62,8 +62,8 @@ dotnet run --project src/Api/emc.camus.api/emc.camus.api.csproj
 
 Hot-reload is available through the **watch-api** task.
 
-> **📖 Development Setup:** See [Debugging Guide](../../../docs/debugging.md) for Docker Compose
-and VS Code debugger attachment.
+> **📖 Development Setup:** See [Debugging Guide](../../../docs/debugging.md) for Docker Compose and VS Code
+debugger attachment.
 
 ### Pipeline Order
 
@@ -85,7 +85,7 @@ in the pipeline to capture exceptions from all downstream components. Refer to t
     "AllowedOrigins": ["https://app.camus.com/"],
     "AllowedMethods": ["GET", "POST"],
     "AllowedHeaders": ["Content-Type", "Authorization", "Api-Key"],
-    "ExposedHeaders": ["Trace-Id", "User-Id", "Retry-After"],
+    "ExposedHeaders": ["Trace-Id", "Username", "Retry-After"],
     "AllowCredentials": true,
     "PreflightMaxAgeMinutes": 5
   }
@@ -147,16 +147,7 @@ Each adapter exposes a pair of extension methods consumed in `Program.cs`:
 
 ### Response Envelope
 
-All success responses are wrapped in `ApiResponse<T>`:
-
-```json
-{
-  "message": "...",
-  "data": { },
-  "timestamp": "2026-01-01T00:00:00Z"
-}
-```
-
+All success responses are wrapped in `ApiResponse<T>` containing `Message`, `Data`, and `Timestamp` properties.
 Error responses use RFC 7807 `ProblemDetails`, generated automatically by `ExceptionHandlingMiddleware`.
 
 ### Metrics
@@ -186,4 +177,4 @@ The API layer exports:
 | Swagger UI not loading | `SwaggerSettings.Enabled` is `false` in the active configuration profile |
 | `500` with "secret" or "configuration" in logs | Dapr sidecar not running or secret store misconfigured — see [Dapr Secrets Adapter](../../Adapters/emc.camus.secrets.dapr/README.md) |
 | CORS preflight failures | `AllowedOrigins` does not include the requesting origin — update `CorsSettings` |
-| Missing `User-Id` / `Trace-Id` headers | Middleware pipeline order incorrect or observability adapter not registered |
+| Missing `Username` / `Trace-Id` headers | Middleware pipeline order incorrect or observability adapter not registered |

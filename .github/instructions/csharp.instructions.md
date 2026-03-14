@@ -6,17 +6,18 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
 
 1. Code Quality
 
-    - [ ] Numeric literals other than 0, 1, -1 appear as named const or static readonly fields
-    - [ ] String literals other than string.Empty appear as named const or static readonly fields when used more than
-          once, represent an external contract (configuration keys, HTTP header names, public API response field
-          names), or appear at a call site without a self-documenting named parameter — except (even when repeated):
-          dictionary initializer keys, activity/span names, and structured log template parameters
+    - [ ] Numeric literals other than 0, 1, -1 that represent domain constraints, thresholds, or configuration defaults
+          appear as named const or static readonly fields — arbitrary sample values (e.g., Swagger example providers)
+          stay inline
+    - [ ] String literals assigned as property or field default values appear as named const or static readonly fields
+          — all other string literals stay inline at the call site
     - [ ] XML documentation on all public types and members
 
 2. Validation & Error Handling
 
     - [ ] All public methods/constructors validate parameters with `ArgumentNullException.ThrowIf*()` static helpers
-          — no manual `if`/`throw` with `nameof()`
+          — no manual `if`/`throw` with `nameof()` — exceptions: mapper methods (pure structural transformers) and
+          middleware parameters supplied by the ASP.NET Core pipeline (e.g., `RequestDelegate`, `HttpContext`)
     - [ ] `Guid` parameters guard against `Guid.Empty` with `ArgumentException`
     - [ ] Validation methods throw exceptions — never return null/false
     - [ ] Multi-statement validation on non-settings classes as `private void Validate{Property}()` methods
@@ -60,3 +61,4 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
     - [ ] No inline/nested DTO or model classes
     - [ ] Type-conversion extension methods live in `Mapping/` folder of the layer where the conversion belongs —
           `*MappingExtensions` suffix
+    - [ ] Mapper methods are pure structural transformers — they convert shapes, never validate

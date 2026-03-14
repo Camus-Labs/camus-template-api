@@ -2,7 +2,9 @@
 description: 'Discover documentation for modified files and produce a coherence and convention compliance review report'
 argument-hint: 'Provide the list of modified files whose documentation impact to review'
 mode: 'agent'
-tools: ['search']
+tools:
+  - 'read'
+  - 'search'
 ---
 
 # Review Documentation

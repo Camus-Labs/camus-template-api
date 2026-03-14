@@ -34,7 +34,7 @@ namespace emc.camus.api.Metrics
                 name: MetricNameErrorResponses,
                 unit: "responses",
                 description: "Total number of error responses returned by the application");
-            
+
             _logger = logger;
         }
 

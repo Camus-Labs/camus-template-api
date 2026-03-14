@@ -13,13 +13,14 @@ applyTo: "src/Application/**/*.cs"
 
 2. Type Conventions & Lifecycle
 
-    - [ ] `*Commands.cs` — positional records for write inputs
-    - [ ] `*Results.cs` — positional records for write outputs, only when no View matches the shape
-    - [ ] `*Filters.cs` — positional records with defaults for query inputs
-    - [ ] `*Views.cs` — positional records for query output projections
+    - [ ] Write-input records live in `*Commands.cs` as positional records
+    - [ ] Write-output records live in `*Results.cs` as positional records — never duplicate an existing View shape
+          as a Result
+    - [ ] Query-input records live in `*Filters.cs` as positional records with default parameter values
+    - [ ] Query-output records live in `*Views.cs` as positional records
     - [ ] Service methods accept Application-layer types only (`*Command`, `*Filter`, `PaginationParams`) — never
           raw primitives or API models
-    - [ ] Service methods return View types — Result types only when output fields differ from every existing View
+    - [ ] Service methods return View or Result types
     - [ ] View names contain the entity and a content/shape qualifier — never a filter-dimension qualifier
           (`GeneratedTokenSummaryView`, not `GeneratedTokenByUserView`)
     - [ ] Filter naming targets the entity (`GeneratedTokenFilter`, not `GeneratedTokenSummaryFilter`)
@@ -36,7 +37,8 @@ applyTo: "src/Application/**/*.cs"
     - [ ] Catch blocks add business operation context to exceptions (e.g., `"Failed to cancel order {orderId}"`)
     - [ ] Domain and validation exceptions re-thrown unchanged
     - [ ] Infrastructure failures wrapped in `InvalidOperationException` preserving inner exception
-    - [ ] Transactional methods: inner catch calls `Rollback()` + `throw;`, outer catch applies the wrapping pattern
+    - [ ] Transactional methods: inner catch calls `Rollback()` + `throw;`, outer catch wraps in
+          `InvalidOperationException` preserving inner exception
 
 4. Observability
 

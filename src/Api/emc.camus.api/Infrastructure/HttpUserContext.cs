@@ -20,7 +20,6 @@ public class HttpUserContext : IUserContext
     public HttpUserContext(IHttpContextAccessor httpContextAccessor)
     {
         ArgumentNullException.ThrowIfNull(httpContextAccessor);
-
         _httpContextAccessor = httpContextAccessor;
     }
 

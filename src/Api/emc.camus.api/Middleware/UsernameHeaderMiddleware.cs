@@ -30,8 +30,6 @@ public sealed class UsernameHeaderMiddleware
     /// <param name="next">The next middleware in the pipeline.</param>
     public UsernameHeaderMiddleware(RequestDelegate next)
     {
-        ArgumentNullException.ThrowIfNull(next);
-
         _next = next;
     }
 

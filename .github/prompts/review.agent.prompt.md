@@ -2,7 +2,9 @@
 description: 'Review an agent file and return a verdict based on best practices'
 argument-hint: 'Provide the target agent path to review'
 mode: 'agent'
-tools: ['search']
+tools:
+  - 'read'
+  - 'search'
 ---
 # Review Agent Prompt
 

@@ -16,7 +16,7 @@ namespace emc.camus.api.Middleware
     /// It catches exceptions, logs them, and returns a standardized RFC 7807 ProblemDetails response to the client.
     /// The middleware provides environment-specific detail levels - verbose in Development, minimal in Production.
     /// It is typically used to centralize error handling in an ASP.NET Core application, ensuring that all unhandled exceptions are processed consistently.
-    /// </summary> 
+    /// </summary>
     public class ExceptionHandlingMiddleware
     {
         private const int RegexTimeoutMilliseconds = 100;
@@ -69,13 +69,12 @@ namespace emc.camus.api.Middleware
         /// <param name="settings">Error handling settings containing error code mapping rules</param>
         /// <param name="errorMetrics">Metrics service for tracking error responses</param>
         public ExceptionHandlingMiddleware(
-            RequestDelegate next, 
-            ILogger<ExceptionHandlingMiddleware> logger, 
+            RequestDelegate next,
+            ILogger<ExceptionHandlingMiddleware> logger,
             IHostEnvironment environment,
             IOptions<ErrorHandlingSettings> settings,
             ErrorMetrics errorMetrics)
         {
-            ArgumentNullException.ThrowIfNull(next);
             ArgumentNullException.ThrowIfNull(logger);
             ArgumentNullException.ThrowIfNull(environment);
             ArgumentNullException.ThrowIfNull(settings);
@@ -85,7 +84,7 @@ namespace emc.camus.api.Middleware
             _logger = logger;
             _environment = environment;
             _errorMetrics = errorMetrics;
-            
+
             // Combine rules once at startup: AdditionalRules first (allow config overrides), then PlatformRules
             _allRules = settings.Value.AdditionalRules.Concat(PlatformRules).ToList().AsReadOnly();
         }
@@ -96,7 +95,7 @@ namespace emc.camus.api.Middleware
         /// If an exception occurs during request processing, it catches the exception and handles it gracefully.
         /// </summary>
         /// <param name="context">The HTTP context for the current request</param>
-        /// <returns>A task representing the asynchronous operation</returns> 
+        /// <returns>A task representing the asynchronous operation</returns>
         public async Task InvokeAsync(HttpContext context)
         {
             try
@@ -123,9 +122,9 @@ namespace emc.camus.api.Middleware
             var problemDetails = CreateProblemDetails(exception);
 
             problemDetails.Instance = context.Request.Path;
-            
+
             AddErrorCode(context, problemDetails, exception);
-            
+
             if (_environment.IsDevelopment())
             {
                 AddDevelopmentInformation(problemDetails, exception);
@@ -135,13 +134,13 @@ namespace emc.camus.api.Middleware
 
             context.Response.StatusCode = problemDetails.Status ?? (int)HttpStatusCode.InternalServerError;
             context.Response.ContentType = MediaTypes.ProblemJson;
-            
+
             var json = JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
             });
-            
+
             return context.Response.WriteAsync(json);
         }
 
@@ -222,13 +221,13 @@ namespace emc.camus.api.Middleware
         {
             var errorCode = ResolveErrorCode(exception);
             problemDetails.Extensions["error"] = errorCode;
-            
+
             // Normalize path to route template to ensure low-cardinality metric labels
             var endpoint = context.GetEndpoint();
             var routePattern = (endpoint as Microsoft.AspNetCore.Routing.RouteEndpoint)?.RoutePattern?.RawText
                 ?? problemDetails.Instance
                 ?? "unknown";
-            
+
             // Record error metrics (fire-and-forget telemetry)
             _errorMetrics.RecordError(errorCode, problemDetails.Status ?? (int)HttpStatusCode.InternalServerError, routePattern);
         }
@@ -240,7 +239,7 @@ namespace emc.camus.api.Middleware
         private string ResolveErrorCode(Exception exception)
         {
             // First check if error code was explicitly set in exception.Data (override mechanism)
-            if (exception.Data.Contains(ErrorCodes.ErrorCodeKey) && 
+            if (exception.Data.Contains(ErrorCodes.ErrorCodeKey) &&
                 exception.Data[ErrorCodes.ErrorCodeKey] is string explicitCode &&
                 !string.IsNullOrWhiteSpace(explicitCode))
             {
@@ -254,11 +253,11 @@ namespace emc.camus.api.Middleware
 
             // Evaluate rules in order - first match wins
             var exceptionTypeName = exception.GetType().Name;
-            
+
             foreach (var rule in _allRules)
             {
                 // Check type match (if specified)
-                bool typeMatches = string.IsNullOrWhiteSpace(rule.Type) || 
+                bool typeMatches = string.IsNullOrWhiteSpace(rule.Type) ||
                                    exceptionTypeName.Equals(rule.Type, StringComparison.OrdinalIgnoreCase);
 
                 if (!typeMatches)
@@ -300,13 +299,13 @@ namespace emc.camus.api.Middleware
         {
             problemDetails.Extensions["exceptionType"] = exception.GetType().Name;
             problemDetails.Extensions["exceptionMessage"] = exception.Message;
-            
+
             // Add inner exception chain if present
             if (exception.InnerException != null)
             {
                 var innerExceptions = new List<object>();
                 var currentException = exception.InnerException;
-                
+
                 while (currentException != null)
                 {
                     innerExceptions.Add(new
@@ -316,10 +315,10 @@ namespace emc.camus.api.Middleware
                     });
                     currentException = currentException.InnerException;
                 }
-                
+
                 problemDetails.Extensions["innerExceptions"] = innerExceptions;
             }
-            
+
             if (!string.IsNullOrWhiteSpace(exception.StackTrace))
             {
                 problemDetails.Extensions["stackTrace"] = exception.StackTrace;

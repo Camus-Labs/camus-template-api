@@ -12,8 +12,9 @@ detailed configuration, settings, and security best practices.
 
 ## How to Get a Token
 
-Post credentials to `POST /api/v2/Auth/token` to receive a JWT token, then include it in the `Authorization: Bearer`
-header on subsequent requests. See the Swagger UI at `/swagger` for the complete request/response specification.
+Post credentials to `POST /api/v2/auth/authenticate` to receive a JWT token, then include it in the
+`Authorization: Bearer` header on subsequent requests. See the Swagger UI at `/swagger` for the complete
+request/response specification.
 
 > **📖 Complete Usage Guide:** See [JWT Adapter README](../src/Adapters/emc.camus.security.jwt/README.md) for
 token generation, endpoint protection, and testing.
@@ -22,9 +23,8 @@ token generation, endpoint protection, and testing.
 
 JWT tokens include standard claims for user identification, roles, and token metadata.
 
-> **📖 Complete Claims Reference:** See
-[JWT Adapter README - JWT Claims](../src/Adapters/emc.camus.security.jwt/README.md#-jwt-claims) for detailed
-claims documentation and usage examples.
+> **📖 Complete Claims Reference:** See [JWT Adapter README](../src/Adapters/emc.camus.security.jwt/README.md) for
+detailed claims documentation and usage examples.
 
 ## Security Notes
 
@@ -41,14 +41,14 @@ claims documentation and usage examples.
 
 ## Architecture
 
-- Token generation is handled in `AuthController` (no separate service).
+- Token generation is delegated to `AuthService` via the `AuthController`.
 - Credentials and signing keys are injected via DI.
 - API versioning and observability are integrated (API version is logged and tagged).
 
 ## API Key Authentication
 
 API Key authentication provides simple header-based authentication for service-to-service communication.
-Include the API key in the `X-Api-Key` request header.
+Include the API key in the `Api-Key` request header.
 
 > **📖 Complete Guide:** See [API Key Adapter README](../src/Adapters/emc.camus.security.apikey/README.md) for
 configuration, usage examples, and security best practices.

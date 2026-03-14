@@ -8,7 +8,7 @@ applyTo: "{**/*.md,!.github/prompts/**,!.github/instructions/**,!.github/agents/
 
     - [ ] Main `README.md` contains a project-purpose section and a quick-start section
     - [ ] `docs/README.md` contains a link to every `docs/*.md` guide and every adapter README
-    - [ ] Each `docs/*.md` file covers exactly one cross-cutting concern (architecture, auth, deployment, debugging)
+    - [ ] Each `docs/*.md` file has a single H1 topic and no H2 sections that belong to a different guide's scope
     - [ ] Each `docs/*.md` file contains no forward-references that defer definitions, configuration examples, or behavioral
           descriptions to other `docs/` files
     - [ ] Each `src/**/README.md` contains Configuration, Integration, and Troubleshooting sections
@@ -43,5 +43,6 @@ applyTo: "{**/*.md,!.github/prompts/**,!.github/instructions/**,!.github/agents/
     - [ ] `README.md` and `docs/*.md` files use consistent heading hierarchy (H1 title, H2 sections, H3 subsections)
     - [ ] Limitations and known constraints documented in a dedicated section or callout block
     - [ ] No `TODO`, `FIXME`, `TBD`, or `Lorem ipsum` markers in committed documentation
-    - [ ] No line exceeds 120 characters — markdown table rows are exempt
+    - [ ] No line exceeds 120 visible characters (grapheme clusters — an emoji with a variation selector counts as
+          one character, not two) — markdown table rows and lines inside fenced code blocks are exempt
     - [ ] Prose lines that are not the last line of a paragraph contain at least 100 characters
