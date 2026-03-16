@@ -3,6 +3,7 @@
         "aliasadidev.nugetpackagemanagergui",
         "davidanson.vscode-markdownlint",
         "editorconfig.editorconfig",
+        "exiasr.hadolint",
         "github.copilot-chat",
         "github.vscode-github-actions",
         "hashicorp.terraform",

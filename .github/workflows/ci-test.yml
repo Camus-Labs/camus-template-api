@@ -1,0 +1,80 @@
+name: CI + Test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore src/CamusApp.sln
+
+      - name: Build solution
+        run: dotnet build src/CamusApp.sln -c Release --no-restore
+
+      - name: Run tests with coverage
+        run: >
+          dotnet test src/CamusApp.sln
+          -c Release
+          --no-build
+          --logger "trx;LogFileName=test-results.trx"
+          --collect:"XPlat Code Coverage"
+          --settings coverlet.runsettings
+          --results-directory ./TestResults
+
+      - name: Enforce coverage threshold
+        run: |
+          THRESHOLD=80
+
+          # Install dotnet-coverage tool for merging reports
+          dotnet tool install --global dotnet-coverage
+
+          # Merge all per-project Cobertura reports into one
+          dotnet-coverage merge ./TestResults/**/coverage.cobertura.xml \
+            --output ./TestResults/merged.cobertura.xml \
+            --output-format cobertura
+
+          REPORT="./TestResults/merged.cobertura.xml"
+
+          if [[ ! -f "$REPORT" ]]; then
+            echo "❌ ERROR: Merged coverage report not found."
+            exit 1
+          fi
+
+          # Extract line-rate from the root <coverage> element (value is 0.0–1.0)
+          LINE_RATE=$(grep -oP '<coverage[^>]+line-rate="\K[0-9.]+' "$REPORT" | head -1)
+
+          if [[ -z "$LINE_RATE" ]]; then
+            echo "❌ ERROR: Could not parse line-rate from coverage report."
+            exit 1
+          fi
+
+          # Convert to percentage (awk handles floating-point math)
+          COVERAGE=$(awk "BEGIN { printf \"%.2f\", $LINE_RATE * 100 }")
+
+          echo "📊 Line coverage: ${COVERAGE}%"
+          echo "📏 Threshold:     ${THRESHOLD}%"
+
+          PASS=$(awk "BEGIN { print ($COVERAGE >= $THRESHOLD) ? 1 : 0 }")
+
+          if [[ "$PASS" -ne 1 ]]; then
+            echo ""
+            echo "❌ FAILED: Coverage ${COVERAGE}% is below the ${THRESHOLD}% minimum."
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ PASSED: Coverage ${COVERAGE}% meets the ${THRESHOLD}% minimum."
