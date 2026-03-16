@@ -1,0 +1,48 @@
+# Version control
+.git
+.gitignore
+
+# IDE and editor files
+.vscode
+.vs
+.idea
+*.swp
+*.swo
+
+# CI/CD and GitHub
+.github
+
+# Documentation
+docs
+*.md
+LICENSE
+
+# Docker files (avoid recursive COPY)
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Build outputs
+**/bin
+**/obj
+**/out
+**/publish
+**/TestResults
+
+# Test projects (not needed in production image)
+src/Test
+
+# Coverage and reports
+coveragereport
+coverlet.runsettings
+**/coverage.cobertura.xml
+
+# Infrastructure config (not needed in image)
+src/Infrastructure
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Postman
+docs/postman
