@@ -1,5 +1,8 @@
 # Application Layer - Shared Contracts
 
+> **📖 Parent Documentation:** [Main README](../../../README.md) |
+[Architecture Guide](../../../docs/architecture.md)
+
 The Application layer defines **shared contracts** (interfaces, attributes, exceptions, and constants)
 consumed by the API layer and infrastructure adapters. This layer contains **zero implementations** -
 only abstractions that enable clean architecture and dependency inversion.
@@ -102,8 +105,8 @@ The Application layer has **minimal dependencies**:
 </ItemGroup>
 ```
 
-**Dependency Rule:** Application layer must **never depend on infrastructure packages** (database,
-HTTP, logging frameworks).
+**Dependency Rule:** Application layer must **never depend on infrastructure packages** (database, HTTP,
+logging frameworks).
 
 ---
 
@@ -130,8 +133,9 @@ See individual adapter READMEs for implementation details:
 ### Using RateLimit Attribute
 
 Apply `RateLimit` attribute to controllers:
--`[RateLimit(RateLimitPolicies.Strict)]` for sensitive endpoints.
--`[RateLimit(RateLimitPolicies.Relaxed)]` for high-throughput operations.
+
+- `[RateLimit(RateLimitPolicies.Strict)]` for sensitive endpoints.
+- `[RateLimit(RateLimitPolicies.Relaxed)]` for high-throughput operations.
 
 See `RateLimitAttribute` and `RateLimitPolicies` in the `RateLimiting` namespace for available options.
 

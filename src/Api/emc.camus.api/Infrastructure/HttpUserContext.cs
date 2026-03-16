@@ -23,7 +23,11 @@ public class HttpUserContext : IUserContext
         _httpContextAccessor = httpContextAccessor;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Extracts the current user ID from the JWT <see cref="ClaimTypes.NameIdentifier"/> claim
+    /// in the HTTP context. Returns <c>null</c> if the user is not authenticated or the claim is missing.
+    /// </summary>
+    /// <returns>The current user's ID, or <c>null</c> if unavailable.</returns>
     public Guid? GetCurrentUserId()
     {
         var httpContext = _httpContextAccessor.HttpContext;
@@ -36,7 +40,11 @@ public class HttpUserContext : IUserContext
         return subClaim != null && Guid.TryParse(subClaim.Value, out var userId) ? userId : null;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Extracts the current username from the authenticated identity in the HTTP context.
+    /// Returns <c>null</c> if the user is not authenticated.
+    /// </summary>
+    /// <returns>The current user's username, or <c>null</c> if unavailable.</returns>
     public string? GetCurrentUsername()
     {
         var httpContext = _httpContextAccessor.HttpContext;
@@ -50,7 +58,11 @@ public class HttpUserContext : IUserContext
         return httpContext.User.Identity.Name;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Extracts the current user's permissions from claims of type <see cref="Permissions.ClaimType"/>
+    /// in the HTTP context. Returns an empty list if the user is not authenticated.
+    /// </summary>
+    /// <returns>A list of permission strings for the current user.</returns>
     public List<string> GetCurrentPermissions()
     {
         var httpContext = _httpContextAccessor.HttpContext;
@@ -65,7 +77,11 @@ public class HttpUserContext : IUserContext
             .ToList();
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Retrieves the current distributed trace ID from <see cref="Activity.Current"/>.
+    /// Returns <c>null</c> if no active trace exists.
+    /// </summary>
+    /// <returns>The current trace ID string, or <c>null</c> if unavailable.</returns>
     public string? GetCurrentTraceId()
     {
         return Activity.Current?.TraceId.ToString();

@@ -77,7 +77,7 @@ public static class AuthMappingExtensions
         {
             Jti = view.Jti,
             TokenUsername = view.TokenUsername,
-            Permissions = view.Permissions,
+            Permissions = view.Permissions.ToList(),
             ExpiresOn = view.ExpiresOn,
             CreatedAt = view.CreatedAt,
             IsRevoked = view.IsRevoked,

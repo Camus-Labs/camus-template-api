@@ -156,8 +156,8 @@ The API layer exports:
 
 #### `error_responses_total`
 
-**Type:** Counter
-**Unit:** responses
+**Type:** Counter  
+**Unit:** responses  
 **Description:** Total error responses returned by the application
 
 **Dimensions:**

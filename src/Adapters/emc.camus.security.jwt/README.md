@@ -184,9 +184,8 @@ global exception handler logs errors and returns RFC 7807 Problem Details respon
 
 The adapter registers via the extension methods in `JwtSetupExtensions.cs`:
 
-- **`builder.AddJwtAuthentication()`** — Reads `JwtSettings` from configuration, resolves RSA
-  keys from the secret provider, and registers JWT bearer authentication and
-  token-generation services.
+- **`builder.AddJwtAuthentication()`** — Reads `JwtSettings` from configuration, resolves RSA keys
+  from the secret provider, and registers JWT bearer authentication and token-generation services.
 
 Apply the `[Authorize]` attribute (with the appropriate authentication scheme) to controllers or actions that
 require JWT authentication.
@@ -316,10 +315,9 @@ layer for the base configuration.
 
 ## Design Principles
 
-✅ **Separation of Concerns** - Authentication and authorization split  
-✅ **Loose Coupling** - Depends only on abstractions  
-✅ **Reusability** - Can be used across multiple APIs  
-✅ **Testability** - Easy to mock `ISecretProvider` for tests  
-✅ **Maintainability** - All security logic in one place  
-✅ **Extensibility** - Ready for complex authorization scenarios  
-✅ **Maintainability** - All authentication logic in one place
+- ✅ **Separation of Concerns** - Authentication and authorization split
+- ✅ **Loose Coupling** - Depends only on abstractions
+- ✅ **Reusability** - Can be used across multiple APIs
+- ✅ **Testability** - Easy to mock `ISecretProvider` for tests
+- ✅ **Maintainability** - All security logic in one place
+- ✅ **Extensibility** - Ready for complex authorization scenarios

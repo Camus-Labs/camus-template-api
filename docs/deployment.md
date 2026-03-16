@@ -119,20 +119,20 @@ The application uses Dapr for secret management. Configure appropriate secret st
 
 ### Azure Key Vault
 
-Configure a Dapr Azure Key Vault component and update `appsettings.Production.json` with
-`SecretStoreName` set to `"azurekeyvault"`. See
-[Dapr Components README — Production Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
-for the component YAML template and
-[Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md)
+Configure a Dapr Azure Key Vault component and update `appsettings.Production.json` with `SecretStoreName`
+set to `"azurekeyvault"`.
+
+See [Dapr Components README — Production Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
+for the component YAML template and [Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md)
 for the application settings structure.
 
 ### AWS Secrets Manager
 
-Configure a Dapr AWS Secrets Manager component and update `appsettings.Production.json` with
-`SecretStoreName` set to `"awssecretsmanager"`. See
-[Dapr Components README — Production Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
-for the component YAML template and
-[Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md)
+Configure a Dapr AWS Secrets Manager component and update `appsettings.Production.json` with `SecretStoreName`
+set to `"awssecretsmanager"`.
+
+See [Dapr Components README — Production Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
+for the component YAML template and [Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md)
 for the application settings structure.
 
 **Deployment Steps:**
@@ -189,8 +189,8 @@ docker inspect camus-api-prod
 ### Database connection issues
 
 ```bash
-# Test connection from container
-docker exec -it camus-api-prod dotnet ef database update --connection "Host=db;..."
+# Verify PostgreSQL is reachable from the container
+docker exec -it camus-api-prod pg_isready -h db
 ```
 
 ### Performance issues

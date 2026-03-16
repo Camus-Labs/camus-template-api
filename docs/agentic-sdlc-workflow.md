@@ -82,8 +82,8 @@ Example: `@product_owner I need CRUD operations for managing user profiles with 
 
 **Deliverable:** Story files with completed Section A, handoff gate evaluated, status set.
 
-**Your role:** Review stories. Verify scope boundaries, acceptance criteria completeness,
-and NFR coverage. Approve or request changes before handing to the architect.
+**Your role:** Review stories. Verify scope boundaries, acceptance criteria completeness, and NFR coverage.
+Approve or request changes before handing to the architect.
 
 ---
 
@@ -102,11 +102,11 @@ Example: `@architect #file:docs/stories/user-profiles/US-01-create-profile.md`
 4. Asks up to 5 rounds of clarification for architectural ambiguities
 5. Evaluates the Architect Handoff Readiness gate
 
-**Deliverable:** Story file with completed Section B, implementation plan ordered by
-dependency direction, and status set to `READY_FOR_IMPLEMENTATION`.
+**Deliverable:** Story file with completed Section B, implementation plan ordered by dependency direction,
+and status set to `READY_FOR_IMPLEMENTATION`.
 
-**Your role:** Review architecture. Verify layer boundaries, implementation plan order,
-and cross-cutting decisions. Approve before proceeding to testing.
+**Your role:** Review architecture. Verify layer boundaries, implementation plan order, and cross-cutting
+decisions. Approve before proceeding to testing.
 
 ---
 
@@ -131,8 +131,8 @@ Example: `@tester #file:docs/stories/user-profiles/US-01-create-profile.md`
 **Deliverable:** Stub files, test files, Section C populated (Skeleton Inventory + Test Traceability),
 Tester Handoff Report.
 
-**Your role:** Review the production skeleton and test design. Verify coverage of every AC, proper
-naming, behavioral assertions. Approve before handing to the developer.
+**Your role:** Review the production skeleton and test design. Verify coverage of every AC, proper naming,
+behavioral assertions. Approve before handing to the developer.
 
 ---
 
@@ -156,8 +156,8 @@ Example: `@developer #file:docs/stories/user-profiles/US-01-create-profile.md`
 
 **Deliverable:** Implementation files, Section C updated, code review approved, Developer Handoff Report.
 
-**Your role:** Review implementation quality, architecture compliance, and test results.
-Approve before moving to final review.
+**Your role:** Review implementation quality, architecture compliance, and test results. Approve before
+moving to final review.
 
 ---
 
@@ -201,9 +201,8 @@ After Phase 4 produces PASS for both code and documentation reviews, finalize th
    (see [Contributing — Versioning Standard](../CONTRIBUTING.md#versioning-standard))
 3. Commit all changes to the feature branch
 
-**Your role:** Confirm stories are moved to `done/`, version is bumped, changelog is updated,
-all changes are committed, and the feature branch is ready for merge. Use the story details as the PR request
-details.
+**Your role:** Confirm stories are moved to `done/`, version is bumped, changelog is updated, all changes
+are committed, and the feature branch is ready for merge. Use the story details as the PR request details.
 
 ---
 

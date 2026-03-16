@@ -191,9 +191,6 @@ public class AuthService
             // Construct token username with suffix
             var tokenUsername = $"{currentUsername}-{command.UsernameSuffix}";
 
-            // Generate JTI for token tracking
-            var jti = Guid.NewGuid();
-
             AuthToken token;
 
             // Build additional claims for the custom token
@@ -203,12 +200,13 @@ public class AuthService
 
             // Construct domain entity for the generated token
             var generatedToken = new GeneratedToken(
-                jti,
                 currentUserId,
                 currentUsername,
                 tokenUsername,
                 command.Permissions,
                 command.ExpiresOn);
+
+            var jti = generatedToken.Jti;
 
             // Generate token with custom JTI and expiration
             token = _tokenGenerator.GenerateToken(
@@ -489,7 +487,7 @@ public class AuthService
             token.CreatedAt,
             token.IsRevoked,
             token.RevokedAt,
-            token.IsValid()
+            token.IsActive()
         );
     }
 }

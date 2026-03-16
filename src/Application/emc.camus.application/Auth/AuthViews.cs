@@ -14,7 +14,7 @@ namespace emc.camus.application.Auth;
 public record GeneratedTokenSummaryView(
     Guid Jti,
     string TokenUsername,
-    List<string> Permissions,
+    IReadOnlyList<string> Permissions,
     DateTime ExpiresOn,
     DateTime CreatedAt,
     bool IsRevoked,

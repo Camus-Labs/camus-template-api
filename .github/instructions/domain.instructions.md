@@ -1,5 +1,5 @@
 ---
-applyTo: "src/Domain/**/*.cs"
+applyTo: "src/Domain/**"
 ---
 
 # Domain Layer Conventions
@@ -7,6 +7,7 @@ applyTo: "src/Domain/**/*.cs"
 1. Scope Compliance
 
     - [ ] All entity properties use private setters
+    - [ ] Collection properties expose `IReadOnlyList<T>` — prevents external mutation
     - [ ] No `<ProjectReference>` elements targeting projects outside `src/Domain/`
     - [ ] No `<PackageReference>` elements — zero NuGet dependencies
 
@@ -15,11 +16,11 @@ applyTo: "src/Domain/**/*.cs"
     - [ ] Public constructor for new entities — the only way to create a new instance
     - [ ] Public constructor validates business attributes before setting state
     - [ ] Public constructor auto-generates `Id` when the caller passes null
-    - [ ] `Reconstitute` static factory for rebuilding from persistence — bypasses business validation
-    - [ ] `Reconstitute` accepts all fields including lifecycle/audit data
+    - [ ] `Reconstitute` static factory is required only when persistence must bypass constructor validation
+    - [ ] `Reconstitute`, when present, is the only way to bypass business rules — no other public API skips validation
+    - [ ] `Reconstitute`, when present, accepts all fields including lifecycle/audit data
     - [ ] Business methods for state transitions (e.g., `Revoke()`) — the only way to mutate state after construction
     - [ ] Business methods that mutate state include guard clauses before any field assignment
-    - [ ] Business methods that need timestamps accept them as parameters — callers supply the clock value
     - [ ] Lifecycle/audit fields (`CreatedAt`, `UpdatedAt`, `CreatedBy`, `UpdatedBy`) are read-only — populated only
           via `Reconstitute`
 

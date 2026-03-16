@@ -15,3 +15,6 @@ dotnet_diagnostic.CS8619.severity = none
 
 # CS8600: Converting null literal or possible null value to non-nullable type
 dotnet_diagnostic.CS8600.severity = none
+
+# CA1707: Identifiers should not contain underscores — test names use MethodName_Scenario_ExpectedResult convention
+dotnet_diagnostic.CA1707.severity = none

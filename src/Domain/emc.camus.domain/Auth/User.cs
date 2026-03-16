@@ -18,7 +18,7 @@ public class User
     /// <summary>
     /// Gets the list of roles assigned to the user.
     /// </summary>
-    public List<Role> Roles { get; private set; } = new();
+    public IReadOnlyList<Role> Roles { get; private set; } = new List<Role>();
 
     /// <summary>
     /// Creates a new user. Validates business attributes and auto-generates ID when null.
@@ -27,9 +27,13 @@ public class User
     /// <param name="roles">Optional list of roles assigned to the user.</param>
     /// <param name="id">Optional unique identifier. If not provided, a new GUID will be generated.</param>
     /// <exception cref="ArgumentException">Thrown when username is null, empty, or whitespace.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when id is empty.</exception>
     public User(string username, List<Role>? roles = null, Guid? id = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
+
+        if (id.HasValue)
+            ArgumentOutOfRangeException.ThrowIfEqual(id.Value, Guid.Empty);
 
         Id = id ?? Guid.NewGuid();
         Username = username;
@@ -44,6 +48,9 @@ public class User
     /// <summary>
     /// Rebuilds a user from persistence data. Skips business validation.
     /// </summary>
+    /// <param name="id">The unique identifier.</param>
+    /// <param name="username">The username.</param>
+    /// <param name="roles">The list of roles.</param>
     public static User Reconstitute(Guid id, string username, List<Role> roles)
     {
         return new User

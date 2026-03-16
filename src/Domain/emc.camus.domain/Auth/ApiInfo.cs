@@ -25,7 +25,7 @@ public class ApiInfo
     /// <summary>
     /// List of features available in this API version.
     /// </summary>
-    public List<string> Features { get; private set; } = new List<string>();
+    public IReadOnlyList<string> Features { get; private set; } = new List<string>();
 
     /// <summary>
     /// Creates a new API info. Validates business attributes.
@@ -39,6 +39,9 @@ public class ApiInfo
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
         ArgumentException.ThrowIfNullOrWhiteSpace(status);
+
+        if (name is not null)
+            ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
         Name = name ?? DefaultApiName;
         Version = version;
@@ -54,6 +57,10 @@ public class ApiInfo
     /// <summary>
     /// Rebuilds an API info from persistence data. Skips business validation.
     /// </summary>
+    /// <param name="name">The API name.</param>
+    /// <param name="version">The API version.</param>
+    /// <param name="status">The status descriptor.</param>
+    /// <param name="features">The list of features.</param>
     public static ApiInfo Reconstitute(string name, string version, string status, List<string> features)
     {
         return new ApiInfo

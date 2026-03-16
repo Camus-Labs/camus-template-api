@@ -253,5 +253,5 @@ The adapter registers rate limiting services via two extension methods in `InMem
 
 ---
 
-**Note:** This is a production-ready implementation for single-instance deployments. For
-distributed systems, migrate to the Redis adapter.
+**Note:** This is a production-ready implementation for single-instance deployments. For distributed
+systems, migrate to the Redis adapter.

@@ -53,6 +53,8 @@ namespace emc.camus.api.Middleware
             new() { Type = nameof(UnauthorizedAccessException), Pattern = "invalid|credentials|incorrect", ErrorCode = ErrorCodes.InvalidCredentials },
             new() { Type = nameof(UnauthorizedAccessException), ErrorCode = ErrorCodes.Unauthorized },
             new() { Type = nameof(ArgumentException), ErrorCode = ErrorCodes.BadRequest },
+            new() { Type = nameof(ArgumentOutOfRangeException), ErrorCode = ErrorCodes.BadRequest },
+            new() { Type = nameof(ArgumentNullException), ErrorCode = ErrorCodes.BadRequest },
             new() { Type = nameof(InvalidOperationException), Pattern = "not.?found", ErrorCode = ErrorCodes.NotFound },
             new() { Type = nameof(InvalidOperationException), Pattern = "permission", ErrorCode = ErrorCodes.Forbidden },
             new() { Pattern = "secret|configuration", ErrorCode = ErrorCodes.InternalServerError }

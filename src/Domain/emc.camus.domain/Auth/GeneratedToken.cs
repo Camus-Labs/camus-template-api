@@ -30,7 +30,7 @@ public class GeneratedToken
     /// <summary>
     /// Gets the permissions granted to this token.
     /// </summary>
-    public List<string> Permissions { get; private set; } = new();
+    public IReadOnlyList<string> Permissions { get; private set; } = new List<string>();
 
     /// <summary>
     /// Gets the expiration date and time of the token (UTC).
@@ -55,30 +55,31 @@ public class GeneratedToken
     /// <summary>
     /// Creates a new generated token. Validates business attributes and sets initial state.
     /// </summary>
-    /// <param name="jti">The JWT ID — primary identifier for this token.</param>
     /// <param name="creatorUserId">The user ID who created this token.</param>
     /// <param name="creatorUsername">The username who created this token.</param>
     /// <param name="tokenUsername">The username for the token (with suffix).</param>
     /// <param name="permissions">The permissions granted to this token.</param>
     /// <param name="expiresOn">The expiration date and time (UTC).</param>
+    /// <param name="jti">Optional JTI (JWT ID). If not provided, a new GUID will be generated.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when creatorUserId is empty, jti is empty, permissions is empty, or expiresOn is not in the future.</exception>
     public GeneratedToken(
-        Guid jti,
         Guid creatorUserId,
         string creatorUsername,
         string tokenUsername,
         List<string> permissions,
-        DateTime expiresOn)
+        DateTime expiresOn,
+        Guid? jti = null)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(creatorUserId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(creatorUsername);
         ArgumentException.ThrowIfNullOrWhiteSpace(tokenUsername);
-        ArgumentNullException.ThrowIfNull(permissions);
+        ValidatePermissions(permissions);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(expiresOn, DateTime.UtcNow);
 
-        if (permissions.Count == 0)
-        {
-            throw new ArgumentException("At least one permission is required.", nameof(permissions));
-        }
+        if (jti.HasValue)
+            ArgumentOutOfRangeException.ThrowIfEqual(jti.Value, Guid.Empty);
 
-        Jti = jti;
+        Jti = jti ?? Guid.NewGuid();
         CreatorUserId = creatorUserId;
         CreatorUsername = creatorUsername;
         TokenUsername = tokenUsername;
@@ -96,6 +97,15 @@ public class GeneratedToken
     /// Rebuilds a generated token from persistence data. Skips business validation
     /// since data is already validated. Populates all fields including lifecycle fields.
     /// </summary>
+    /// <param name="jti">The JTI (JWT ID).</param>
+    /// <param name="creatorUserId">The user ID of the creator.</param>
+    /// <param name="creatorUsername">The username of the creator.</param>
+    /// <param name="tokenUsername">The username associated with this token.</param>
+    /// <param name="permissions">The permissions granted to this token.</param>
+    /// <param name="expiresOn">The expiration date and time (UTC).</param>
+    /// <param name="createdAt">The creation date and time (UTC).</param>
+    /// <param name="isRevoked">Whether the token has been revoked.</param>
+    /// <param name="revokedAt">The revocation date and time (UTC), if revoked.</param>
     public static GeneratedToken Reconstitute(
         Guid jti,
         Guid creatorUserId,
@@ -129,7 +139,7 @@ public class GeneratedToken
     {
         if (IsRevoked)
         {
-            throw new InvalidOperationException("Token is already revoked.");
+            throw new InvalidOperationException($"Token {Jti} is already revoked.");
         }
 
         IsRevoked = true;
@@ -137,11 +147,23 @@ public class GeneratedToken
     }
 
     /// <summary>
-    /// Checks if the token is currently valid (not expired and not revoked).
+    /// Checks if the token is currently active (not expired and not revoked).
     /// </summary>
-    /// <returns>True if the token is valid, false otherwise.</returns>
-    public bool IsValid()
+    /// <returns>True if the token is active, false otherwise.</returns>
+    public bool IsActive()
     {
         return !IsRevoked && ExpiresOn > DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Validates that the permissions list is not null and not empty.
+    /// </summary>
+    /// <param name="permissions">The permissions list to validate.</param>
+    /// <exception cref="ArgumentNullException">Thrown when permissions is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when permissions is empty.</exception>
+    private static void ValidatePermissions(List<string> permissions)
+    {
+        ArgumentNullException.ThrowIfNull(permissions);
+        ArgumentOutOfRangeException.ThrowIfZero(permissions.Count);
     }
 }
