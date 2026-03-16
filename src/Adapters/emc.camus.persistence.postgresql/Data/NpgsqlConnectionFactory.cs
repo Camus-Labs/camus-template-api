@@ -99,7 +99,7 @@ public class NpgsqlConnectionFactory : IConnectionFactory
             
             return connection;
         }
-        catch (Exception ex)
+        catch (Exception ex) // codeql[cs/catch-of-all-exceptions] Intentional: wraps connection failures with diagnostic context
         {
             throw new InvalidOperationException("Failed to open database connection. Ensure the database is accessible and the connection string is correct.", ex);
         }

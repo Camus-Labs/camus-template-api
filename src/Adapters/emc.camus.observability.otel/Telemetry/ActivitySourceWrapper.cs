@@ -140,7 +140,7 @@ namespace emc.camus.observability.otel.Telemetry
                 ActivitySucceeded(activity);
                 return result;
             }
-            catch (Exception ex)
+            catch (Exception ex) // codeql[cs/catch-of-all-exceptions] Required: records failure telemetry on any exception before rethrowing
             {
                 ActivityFailed(activity, ex);
                 throw;

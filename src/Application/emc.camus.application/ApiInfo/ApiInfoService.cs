@@ -54,7 +54,7 @@ public class ApiInfoService
             // Let domain exceptions bubble up with their original context
             throw;
         }
-        catch (Exception ex)
+        catch (Exception ex) // codeql[cs/catch-of-all-exceptions] Intentional: wraps unexpected infrastructure failures with business context at service boundary
         {
             // Wrap infrastructure failures with business context
             throw new InvalidOperationException(
@@ -81,7 +81,7 @@ public class ApiInfoService
                 apiInfo.Features
             ));
         }
-        catch (Exception ex)
+        catch (Exception ex) // codeql[cs/catch-of-all-exceptions] Intentional: wraps unexpected infrastructure failures with business context at service boundary
         {
             // Wrap infrastructure failures with business context
             throw new InvalidOperationException(
@@ -102,7 +102,7 @@ public class ApiInfoService
         {
             _repository.Initialize();
         }
-        catch (Exception ex)
+        catch (Exception ex) // codeql[cs/catch-of-all-exceptions] Intentional: wraps unexpected infrastructure failures with business context at service boundary
         {
             throw new InvalidOperationException(
                 "Failed to initialize API info service. Ensure the database is accessible.", ex);
