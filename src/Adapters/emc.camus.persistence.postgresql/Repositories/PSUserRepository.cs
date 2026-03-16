@@ -16,7 +16,7 @@ namespace emc.camus.persistence.postgresql.Repositories;
 public class PSUserRepository : IUserRepository
 {
     private readonly IConnectionFactory _connectionFactory;
-    private bool _initialized = false;
+    private bool _initialized;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PSUserRepository"/> class.
@@ -26,7 +26,7 @@ public class PSUserRepository : IUserRepository
         IConnectionFactory connectionFactory)
     {
         ArgumentNullException.ThrowIfNull(connectionFactory);
-            
+
         _connectionFactory = connectionFactory;
     }
 
@@ -46,29 +46,29 @@ public class PSUserRepository : IUserRepository
 
         // Test connection and verify tables exist
         using var connection = _connectionFactory.CreateConnectionAsync().GetAwaiter().GetResult();
-        
+
         const string checkTablesSql = @"
-            SELECT 
+            SELECT
                 (SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
+                    SELECT FROM information_schema.tables
                     WHERE table_schema = 'camus' AND table_name = 'users'
                 )) as users_exists,
                 (SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
+                    SELECT FROM information_schema.tables
                     WHERE table_schema = 'camus' AND table_name = 'roles'
                 )) as roles_exists,
                 (SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
+                    SELECT FROM information_schema.tables
                     WHERE table_schema = 'camus' AND table_name = 'user_roles'
                 )) as user_roles_exists,
                 (SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
+                    SELECT FROM information_schema.tables
                     WHERE table_schema = 'camus' AND table_name = 'role_permissions'
                 )) as role_permissions_exists";
-        
+
         var result = connection.QuerySingle<dynamic>(checkTablesSql);
-        
-        if (!result.users_exists || !result.roles_exists || 
+
+        if (!result.users_exists || !result.roles_exists ||
             !result.user_roles_exists || !result.role_permissions_exists)
         {
             var missingTables = new List<string>();
@@ -76,7 +76,7 @@ public class PSUserRepository : IUserRepository
             if (!result.roles_exists) missingTables.Add("roles");
             if (!result.user_roles_exists) missingTables.Add("user_roles");
             if (!result.role_permissions_exists) missingTables.Add("role_permissions");
-            
+
             throw new InvalidOperationException(
                 $"Required tables do not exist in the database: {string.Join(", ", missingTables)}. " +
                 "Please run database migrations to create the schema.");
@@ -86,7 +86,7 @@ public class PSUserRepository : IUserRepository
     }
 
     /// <summary>
-    /// Validates user credentials by looking up the username in the database and verifying 
+    /// Validates user credentials by looking up the username in the database and verifying
     /// the password against the stored bcrypt hash using an external connection (for transactions).
     /// </summary>
     /// <param name="connection">The database connection to use for the operation.</param>
@@ -109,7 +109,7 @@ public class PSUserRepository : IUserRepository
 
         // Get user with password hash
         const string userSql = @"
-            SELECT 
+            SELECT
                 id,
                 username,
                 password_hash
@@ -146,7 +146,7 @@ public class PSUserRepository : IUserRepository
 
         // Get user's roles with permissions
         const string rolesSql = @"
-            SELECT 
+            SELECT
                 r.id,
                 r.name,
                 r.description,
@@ -176,8 +176,8 @@ public class PSUserRepository : IUserRepository
         ArgumentNullException.ThrowIfNull(connection);
 
         const string updateSql = @"
-            UPDATE camus.users 
-            SET last_login = NOW() 
+            UPDATE camus.users
+            SET last_login = NOW()
             WHERE id = @UserId";
 
         var rowsAffected = await connection.ExecuteAsync(updateSql, new { userId });

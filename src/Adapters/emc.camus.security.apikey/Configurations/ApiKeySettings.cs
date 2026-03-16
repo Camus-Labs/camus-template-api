@@ -23,7 +23,7 @@ namespace emc.camus.security.apikey.Configurations
         /// <summary>
         /// Validates the API Key settings configuration.
         /// </summary>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="InvalidOperationException">
         /// Thrown when any setting is invalid.
         /// </exception>
         public void Validate()
@@ -35,7 +35,7 @@ namespace emc.camus.security.apikey.Configurations
         {
             if (string.IsNullOrWhiteSpace(ApiKeySecretName))
             {
-                throw new ArgumentException("ApiKeySecretName cannot be null or empty.", nameof(ApiKeySecretName));
+                throw new InvalidOperationException("ApiKeySecretName cannot be null or empty.");
             }
         }
     }

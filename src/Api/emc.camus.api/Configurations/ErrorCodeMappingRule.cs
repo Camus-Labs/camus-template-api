@@ -31,7 +31,7 @@ public class ErrorCodeMappingRule
     /// Validates the error code mapping rule.
     /// </summary>
     /// <param name="index">The index of this rule in the Rules collection, used for error messages.</param>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="InvalidOperationException">
     /// Thrown when any property is invalid.
     /// </exception>
     public void Validate(int index)
@@ -46,14 +46,14 @@ public class ErrorCodeMappingRule
     {
         if (string.IsNullOrWhiteSpace(ErrorCode))
         {
-            throw new ArgumentException(
-                $"Rules[{index}].ErrorCode cannot be null or empty.", nameof(ErrorCode));
+            throw new InvalidOperationException(
+                $"Rules[{index}].ErrorCode cannot be null or empty.");
         }
 
         if (ErrorCode.Length > MaxErrorCodeLength)
         {
-            throw new ArgumentException(
-                $"Rules[{index}].ErrorCode must not exceed {MaxErrorCodeLength} characters. Current length: {ErrorCode.Length}", nameof(ErrorCode));
+            throw new InvalidOperationException(
+                $"Rules[{index}].ErrorCode must not exceed {MaxErrorCodeLength} characters. Current length: {ErrorCode.Length}");
         }
     }
 
@@ -61,7 +61,7 @@ public class ErrorCodeMappingRule
     {
         if (string.IsNullOrWhiteSpace(Type) && string.IsNullOrWhiteSpace(Pattern))
         {
-            throw new ArgumentException(
+            throw new InvalidOperationException(
                 $"Rules[{index}] must have either Type or Pattern specified. Got Type: '{Type}', Pattern: '{Pattern}'.");
         }
     }
@@ -70,8 +70,8 @@ public class ErrorCodeMappingRule
     {
         if (!string.IsNullOrWhiteSpace(Type) && Type.Length > MaxTypeLength)
         {
-            throw new ArgumentException(
-                $"Rules[{index}].Type must not exceed {MaxTypeLength} characters. Current length: {Type.Length}", nameof(Type));
+            throw new InvalidOperationException(
+                $"Rules[{index}].Type must not exceed {MaxTypeLength} characters. Current length: {Type.Length}");
         }
     }
 
@@ -79,8 +79,8 @@ public class ErrorCodeMappingRule
     {
         if (!string.IsNullOrWhiteSpace(Pattern) && Pattern.Length > MaxPatternLength)
         {
-            throw new ArgumentException(
-                $"Rules[{index}].Pattern must not exceed {MaxPatternLength} characters. Current length: {Pattern.Length}", nameof(Pattern));
+            throw new InvalidOperationException(
+                $"Rules[{index}].Pattern must not exceed {MaxPatternLength} characters. Current length: {Pattern.Length}");
         }
     }
 }

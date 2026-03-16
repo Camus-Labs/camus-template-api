@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace emc.camus.application.Configurations;
 
 /// <summary>
@@ -30,7 +28,7 @@ public class UserConfig
     /// Validates the user configuration against available roles.
     /// </summary>
     /// <param name="availableRoles">List of valid role names.</param>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="InvalidOperationException">
     /// Thrown when any property is invalid.
     /// </exception>
     public void Validate(List<string> availableRoles)
@@ -44,12 +42,12 @@ public class UserConfig
     {
         if (string.IsNullOrWhiteSpace(UsernameSecretName))
         {
-            throw new ArgumentException("UsernameSecretName cannot be null or empty.", nameof(UsernameSecretName));
+            throw new InvalidOperationException("UsernameSecretName cannot be null or empty.");
         }
 
         if (UsernameSecretName.Length > MaxSecretNameLength)
         {
-            throw new ArgumentException($"UsernameSecretName must not exceed {MaxSecretNameLength} characters. Current length: {UsernameSecretName.Length}", nameof(UsernameSecretName));
+            throw new InvalidOperationException($"UsernameSecretName must not exceed {MaxSecretNameLength} characters. Current length: {UsernameSecretName.Length}");
         }
     }
 
@@ -57,12 +55,12 @@ public class UserConfig
     {
         if (string.IsNullOrWhiteSpace(PasswordSecretName))
         {
-            throw new ArgumentException($"User with UsernameSecretName '{UsernameSecretName}' must have a PasswordSecretName.", nameof(PasswordSecretName));
+            throw new InvalidOperationException($"User with UsernameSecretName '{UsernameSecretName}' must have a PasswordSecretName.");
         }
 
         if (PasswordSecretName.Length > MaxSecretNameLength)
         {
-            throw new ArgumentException($"PasswordSecretName must not exceed {MaxSecretNameLength} characters. Current length: {PasswordSecretName.Length}", nameof(PasswordSecretName));
+            throw new InvalidOperationException($"PasswordSecretName must not exceed {MaxSecretNameLength} characters. Current length: {PasswordSecretName.Length}");
         }
     }
 
@@ -70,14 +68,14 @@ public class UserConfig
     {
         if (Roles == null || Roles.Count == 0)
         {
-            throw new ArgumentException($"User with UsernameSecretName '{UsernameSecretName}' must have at least one role.", nameof(Roles));
+            throw new InvalidOperationException($"User with UsernameSecretName '{UsernameSecretName}' must have at least one role.");
         }
 
         var invalidRoles = Roles.Where(r => !availableRoles.Contains(r)).ToList();
         
         if (invalidRoles.Count > 0)
         {
-            throw new ArgumentException($"User with UsernameSecretName '{UsernameSecretName}' has invalid roles: {string.Join(", ", invalidRoles)}. Valid roles are: {string.Join(", ", availableRoles)}", nameof(Roles));
+            throw new InvalidOperationException($"User with UsernameSecretName '{UsernameSecretName}' has invalid roles: {string.Join(", ", invalidRoles)}. Valid roles are: {string.Join(", ", availableRoles)}");
         }
     }
 }

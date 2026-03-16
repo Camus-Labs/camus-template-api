@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using System.Collections.Generic;
 using System;
+using System.Globalization;
 using OpenTelemetry.Exporter;
 using Serilog;
 using Serilog.Sinks.OpenTelemetry;
@@ -46,7 +47,7 @@ namespace emc.camus.observability.otel.Logging
             var configured = loggerConfiguration;
             if (enabled)
             {
-                configured = configured.WriteTo.Console(outputTemplate: template);
+                configured = configured.WriteTo.Console(outputTemplate: template, formatProvider: CultureInfo.InvariantCulture);
             }
 
             return configured;

@@ -12,14 +12,30 @@ namespace emc.camus.persistence.inmemory.Repositories;
 /// In-memory implementation of user repository that loads configuration from settings.
 /// This is a temporary implementation for development/testing. In production, replace with database implementation.
 /// </summary>
-public class IMUserRepository : IUserRepository
+public partial class IMUserRepository : IUserRepository
 {
     private readonly InMemoryAuthorizationSettings _settings;
     private readonly ISecretProvider _secretProvider;
     private readonly ILogger<IMUserRepository> _logger;
     private List<Role> _roles = new();
     private Dictionary<string, (User User, string PasswordSecretName)> _usersByUsername = new();
-    private bool _initialized = false;
+    private bool _initialized;
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "IMUserRepository already initialized. Skipping.")]
+    private partial void LogAlreadyInitialized();
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "User not found for username: {Username}")]
+    private partial void LogUserNotFound(string username);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Invalid password for user: {Username}")]
+    private partial void LogInvalidPassword(string username);
+
+    [LoggerMessage(Level = LogLevel.Information,
+        Message = "Authentication successful for user: {Username}")]
+    private partial void LogAuthenticationSuccessful(string username);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="IMUserRepository"/> class.
@@ -49,12 +65,12 @@ public class IMUserRepository : IUserRepository
     {
         if (_initialized)
         {
-            _logger.LogWarning("IMUserRepository already initialized. Skipping.");
+            LogAlreadyInitialized();
             return;
         }
 
         // Load roles from configuration
-        _roles = _settings.Roles.Select(roleConfig => 
+        _roles = _settings.Roles.Select(roleConfig =>
             new Role(
                 roleConfig.Name,
                 null, // Description removed from RoleConfig
@@ -65,7 +81,7 @@ public class IMUserRepository : IUserRepository
 
         // Load users from configuration and index by username for fast lookup
         _usersByUsername = new Dictionary<string, (User, string)>();
-        
+
         foreach (var userConfig in _settings.Users)
         {
             var userRoles = userConfig.Roles
@@ -74,7 +90,7 @@ public class IMUserRepository : IUserRepository
 
             // Get actual username from secret store
             var username = _secretProvider.GetSecret(userConfig.UsernameSecretName);
-            
+
             if (string.IsNullOrWhiteSpace(username))
             {
                 throw new InvalidOperationException($"Failed to retrieve username from secret '{userConfig.UsernameSecretName}'. Ensure the secret exists in the secret store.");
@@ -100,7 +116,7 @@ public class IMUserRepository : IUserRepository
     }
 
     /// <summary>
-    /// Validates user credentials by looking up the username in the in-memory store and comparing 
+    /// Validates user credentials by looking up the username in the in-memory store and comparing
     /// the password with the value retrieved from the secret provider (connection parameter ignored).
     /// </summary>
     /// <param name="connection">The database connection (ignored for in-memory implementation).</param>
@@ -123,7 +139,7 @@ public class IMUserRepository : IUserRepository
         // Find user by username (O(1) lookup)
         if (!_usersByUsername.TryGetValue(username, out var userEntry))
         {
-            _logger.LogWarning("User not found for username: {Username}", username);
+            LogUserNotFound(username);
             throw new UnauthorizedAccessException("The provided credentials are invalid. User not found.");
         }
 
@@ -134,11 +150,11 @@ public class IMUserRepository : IUserRepository
         // Note: In production, this should use secure password hashing (bcrypt, Argon2, etc.)
         if (passwordFromSecret != password)
         {
-            _logger.LogWarning("Invalid password for user: {Username}", userEntry.User.Username);
+            LogInvalidPassword(userEntry.User.Username);
             throw new UnauthorizedAccessException("The provided credentials are invalid. Username and password mismatch.");
         }
 
-        _logger.LogInformation("Authentication successful for user: {Username}", userEntry.User.Username);
+        LogAuthenticationSuccessful(userEntry.User.Username);
 
         return Task.FromResult(userEntry.User);
     }

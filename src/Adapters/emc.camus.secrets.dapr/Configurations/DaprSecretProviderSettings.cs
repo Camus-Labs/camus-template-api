@@ -9,11 +9,11 @@ namespace emc.camus.secrets.dapr.Configurations
         /// The configuration section name for Dapr secret provider settings.
         /// </summary>
         public const string ConfigurationSectionName = "DaprSecretProviderSettings";
-        
+
         private const int MinPort = 1;
         private const int MaxPort = 65535;
         private const int MaxTimeoutSeconds = 300;
-        
+
         /// <summary>
         /// Gets or sets the base URL for the Dapr sidecar. Defaults to "localhost".
         /// </summary>
@@ -42,7 +42,7 @@ namespace emc.camus.secrets.dapr.Configurations
         /// <summary>
         /// Validates the Dapr secret provider settings configuration.
         /// </summary>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="InvalidOperationException">
         /// Thrown when any setting is invalid.
         /// </exception>
         public void Validate()
@@ -57,48 +57,43 @@ namespace emc.camus.secrets.dapr.Configurations
         private void ValidateBaseHost()
         {
             if (string.IsNullOrWhiteSpace(BaseHost))
-                throw new ArgumentException("BaseHost cannot be null or empty", nameof(BaseHost));
+                throw new InvalidOperationException("BaseHost cannot be null or empty");
         }
 
         private void ValidateHttpPort()
         {
             if (string.IsNullOrWhiteSpace(HttpPort))
-                throw new ArgumentException("HttpPort cannot be null or empty", nameof(HttpPort));
+                throw new InvalidOperationException("HttpPort cannot be null or empty");
 
             if (!int.TryParse(HttpPort, out int portNumber) || portNumber < MinPort || portNumber > MaxPort)
-                throw new ArgumentException($"HttpPort must be a valid port number ({MinPort}-{MaxPort}): '{HttpPort}'", nameof(HttpPort));
+                throw new InvalidOperationException($"HttpPort must be a valid port number ({MinPort}-{MaxPort}): '{HttpPort}'");
         }
 
         private void ValidateSecretStoreName()
         {
             if (string.IsNullOrWhiteSpace(SecretStoreName))
-                throw new ArgumentException("SecretStoreName cannot be null or empty", nameof(SecretStoreName));
+                throw new InvalidOperationException("SecretStoreName cannot be null or empty");
         }
 
         private void ValidateTimeoutSeconds()
         {
             if (TimeoutSeconds <= 0 || TimeoutSeconds > MaxTimeoutSeconds)
-                throw new ArgumentException($"TimeoutSeconds must be between 1 and {MaxTimeoutSeconds}", nameof(TimeoutSeconds));
+                throw new InvalidOperationException($"TimeoutSeconds must be between 1 and {MaxTimeoutSeconds}");
         }
 
         private void ValidateSecretNames()
         {
             if (SecretNames == null)
-                throw new ArgumentException("SecretNames cannot be null", nameof(SecretNames));
+                throw new InvalidOperationException("SecretNames cannot be null");
 
             if (SecretNames.Count == 0)
-                throw new ArgumentException("At least one secret name must be specified in SecretNames", nameof(SecretNames));
+                throw new InvalidOperationException("At least one secret name must be specified in SecretNames");
 
             foreach (var secretName in SecretNames)
             {
-                ValidateSecretName(secretName);
-            }
-        }
-
-        private void ValidateSecretName(string secretName)
-        {
             if (string.IsNullOrWhiteSpace(secretName))
-                throw new ArgumentException("SecretNames cannot contain null or empty values", nameof(SecretNames));
+                throw new InvalidOperationException("SecretNames cannot contain null or empty values");
+            }
         }
     }
 }

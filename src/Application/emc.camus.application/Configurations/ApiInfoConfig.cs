@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace emc.camus.application.Configurations;
 
 /// <summary>
@@ -30,29 +28,29 @@ public class ApiInfoConfig
     /// <summary>
     /// Validates the API info configuration.
     /// </summary>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="InvalidOperationException">
     /// Thrown when any setting is invalid.
     /// </exception>
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(Name))
         {
-            throw new ArgumentException("API Name cannot be null or empty.", nameof(Name));
+            throw new InvalidOperationException("API Name cannot be null or empty.");
         }
 
         if (string.IsNullOrWhiteSpace(Version))
         {
-            throw new ArgumentException("API Version cannot be null or empty.", nameof(Version));
+            throw new InvalidOperationException("API Version cannot be null or empty.");
         }
 
         if (string.IsNullOrWhiteSpace(Status))
         {
-            throw new ArgumentException("API Status cannot be null or empty.", nameof(Status));
+            throw new InvalidOperationException("API Status cannot be null or empty.");
         }
 
         if (Features == null)
         {
-            throw new ArgumentException("Features list cannot be null.", nameof(Features));
+            throw new InvalidOperationException("Features list cannot be null.");
         }
     }
 }

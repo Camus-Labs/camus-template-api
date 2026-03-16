@@ -11,11 +11,11 @@ namespace emc.camus.documentation.swagger.Configurations
         /// The configuration section name for Swagger settings.
         /// </summary>
         public const string ConfigurationSectionName = "SwaggerSettings";
-        
+
         /// <summary>
         /// Gets or sets whether Swagger should be enabled.
         /// </summary>
-        public bool Enabled { get; set; } = false;
+        public bool Enabled { get; set; }
 
         /// <summary>
         /// Gets or sets the collection of API versions to document.
@@ -30,17 +30,17 @@ namespace emc.camus.documentation.swagger.Configurations
         /// <summary>
         /// Gets or sets whether to include XML comments from the API assembly.
         /// </summary>
-        public bool IncludeXmlComments { get; set; } = false;
+        public bool IncludeXmlComments { get; set; }
 
         /// <summary>
         /// Gets or sets whether to enable example filters.
         /// </summary>
-        public bool EnableExampleFilters { get; set; } = false;
+        public bool EnableExampleFilters { get; set; }
 
         /// <summary>
         /// Validates the Swagger settings configuration.
         /// </summary>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="InvalidOperationException">
         /// Thrown when any setting is invalid.
         /// </exception>
         public void Validate()
@@ -52,52 +52,41 @@ namespace emc.camus.documentation.swagger.Configurations
         private void ValidateVersions()
         {
             if (Versions == null)
-                throw new ArgumentException("Versions cannot be null", nameof(Versions));
+                throw new InvalidOperationException("Versions cannot be null");
 
             if (!Enabled)
                 return;
 
             if (Versions.Count == 0)
-                throw new ArgumentException("At least one API version must be configured when Swagger is enabled", nameof(Versions));
+                throw new InvalidOperationException("At least one API version must be configured when Swagger is enabled");
 
             foreach (var version in Versions)
             {
-                ValidateVersion(version);
+                if (version == null)
+                    throw new InvalidOperationException("Versions cannot contain null values");
+
+                version.Validate();
             }
-        }
-
-        private void ValidateVersion(ApiVersionInfo version)
-        {
-            if (version == null)
-                throw new ArgumentException("Versions cannot contain null values", nameof(Versions));
-
-            version.Validate();
         }
 
         private void ValidateSecuritySchemes()
         {
             if (SecuritySchemes == null)
-                throw new ArgumentException("SecuritySchemes cannot be null", nameof(SecuritySchemes));
+                throw new InvalidOperationException("SecuritySchemes cannot be null");
 
             if (!Enabled || SecuritySchemes.Count == 0)
                 return;
 
             foreach (var scheme in SecuritySchemes)
             {
-                ValidateSecurityScheme(scheme);
+                if (string.IsNullOrWhiteSpace(scheme))
+                    throw new InvalidOperationException("SecuritySchemes cannot contain null or empty values");
+
+                var validSchemes = AuthenticationSchemes.GetAll();
+                if (!validSchemes.Contains(scheme, StringComparer.OrdinalIgnoreCase))
+                    throw new InvalidOperationException(
+                        $"Invalid security scheme '{scheme}'. Valid values are: {string.Join(", ", validSchemes)} (case-insensitive)");
             }
-        }
-
-        private void ValidateSecurityScheme(string scheme)
-        {
-            if (string.IsNullOrWhiteSpace(scheme))
-                throw new ArgumentException("SecuritySchemes cannot contain null or empty values", nameof(SecuritySchemes));
-
-            var validSchemes = AuthenticationSchemes.GetAll();
-            if (!validSchemes.Contains(scheme, StringComparer.OrdinalIgnoreCase))
-                throw new ArgumentException(
-                    $"Invalid security scheme '{scheme}'. Valid values are: {string.Join(", ", validSchemes)} (case-insensitive)",
-                    nameof(SecuritySchemes));
         }
     }
 }

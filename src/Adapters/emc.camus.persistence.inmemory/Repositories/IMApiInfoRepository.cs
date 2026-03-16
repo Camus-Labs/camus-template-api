@@ -12,7 +12,7 @@ public class IMApiInfoRepository : IApiInfoRepository
 {
     private readonly InMemoryAppDataSettings _settings;
     private Dictionary<string, ApiInfo> _apiInfoByVersion = new();
-    private bool _initialized = false;
+    private bool _initialized;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="IMApiInfoRepository"/> class.
@@ -70,7 +70,7 @@ public class IMApiInfoRepository : IApiInfoRepository
     public Task<ApiInfo> GetByVersionAsync(string version)
     {
         EnsureInitialized();
-        
+
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
 
         if (!_apiInfoByVersion.TryGetValue(version, out var apiInfo))

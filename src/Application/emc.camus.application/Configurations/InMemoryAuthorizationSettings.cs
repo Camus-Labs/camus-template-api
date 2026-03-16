@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using emc.camus.application.Auth;
 
 namespace emc.camus.application.Configurations;
@@ -21,7 +20,7 @@ public class InMemoryAuthorizationSettings
     /// <summary>
     /// Validates the in-memory authorization settings.
     /// </summary>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="InvalidOperationException">
     /// Thrown when any setting is invalid.
     /// </exception>
     public void Validate()
@@ -34,7 +33,7 @@ public class InMemoryAuthorizationSettings
     {
         if (Roles == null || Roles.Count == 0)
         {
-            throw new ArgumentException("At least one role must be defined in Authorization.InMemory.Roles.", nameof(Roles));
+            throw new InvalidOperationException("At least one role must be defined in Authorization.InMemory.Roles.");
         }
 
         var roleNames = new HashSet<string>();
@@ -45,7 +44,7 @@ public class InMemoryAuthorizationSettings
 
             if (roleNames.Contains(role.Name))
             {
-                throw new ArgumentException($"Duplicate role name: {role.Name}", nameof(Roles));
+                throw new InvalidOperationException($"Duplicate role name: {role.Name}");
             }
 
             roleNames.Add(role.Name);
@@ -56,7 +55,7 @@ public class InMemoryAuthorizationSettings
     {
         if (Users == null || Users.Count == 0)
         {
-            throw new ArgumentException("At least one user must be defined in Authorization.InMemory.Users.", nameof(Users));
+            throw new InvalidOperationException("At least one user must be defined in Authorization.InMemory.Users.");
         }
 
         var availableRoles = Roles.Select(r => r.Name).ToList();

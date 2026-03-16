@@ -39,7 +39,7 @@ public class JwtSettings
     /// <summary>
     /// Validates the JWT settings configuration.
     /// </summary>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="InvalidOperationException">
     /// Thrown when any setting is invalid.
     /// </exception>
     public void Validate()
@@ -54,17 +54,17 @@ public class JwtSettings
     {
         if (string.IsNullOrWhiteSpace(Issuer))
         {
-            throw new ArgumentException("Issuer cannot be null or empty.", nameof(Issuer));
+            throw new InvalidOperationException("Issuer cannot be null or empty.");
         }
 
         if (Issuer.Length > MaxIssuerLength)
         {
-            throw new ArgumentException($"Issuer must not exceed {MaxIssuerLength} characters. Current length: {Issuer.Length}", nameof(Issuer));
+            throw new InvalidOperationException($"Issuer must not exceed {MaxIssuerLength} characters. Current length: {Issuer.Length}");
         }
 
         if (!Uri.TryCreate(Issuer, UriKind.Absolute, out _))
         {
-            throw new ArgumentException($"Issuer must be a valid absolute URL: '{Issuer}'", nameof(Issuer));
+            throw new InvalidOperationException($"Issuer must be a valid absolute URL: '{Issuer}'");
         }
     }
 
@@ -72,17 +72,17 @@ public class JwtSettings
     {
         if (string.IsNullOrWhiteSpace(Audience))
         {
-            throw new ArgumentException("Audience cannot be null or empty.", nameof(Audience));
+            throw new InvalidOperationException("Audience cannot be null or empty.");
         }
 
         if (Audience.Length > MaxAudienceLength)
         {
-            throw new ArgumentException($"Audience must not exceed {MaxAudienceLength} characters. Current length: {Audience.Length}", nameof(Audience));
+            throw new InvalidOperationException($"Audience must not exceed {MaxAudienceLength} characters. Current length: {Audience.Length}");
         }
 
         if (!Uri.TryCreate(Audience, UriKind.Absolute, out _))
         {
-            throw new ArgumentException($"Audience must be a valid absolute URL: '{Audience}'", nameof(Audience));
+            throw new InvalidOperationException($"Audience must be a valid absolute URL: '{Audience}'");
         }
     }
 
@@ -90,7 +90,7 @@ public class JwtSettings
     {
         if (ExpirationMinutes < MinExpirationMinutes || ExpirationMinutes > MaxExpirationMinutes)
         {
-            throw new ArgumentException($"ExpirationMinutes must be between {MinExpirationMinutes} and {MaxExpirationMinutes} (30 days). Current value: {ExpirationMinutes}", nameof(ExpirationMinutes));
+            throw new InvalidOperationException($"ExpirationMinutes must be between {MinExpirationMinutes} and {MaxExpirationMinutes} (30 days). Current value: {ExpirationMinutes}");
         }
     }
 
@@ -98,12 +98,12 @@ public class JwtSettings
     {
         if (string.IsNullOrWhiteSpace(RsaPrivateKeySecretName))
         {
-            throw new ArgumentException("RsaPrivateKeySecretName cannot be null or empty.", nameof(RsaPrivateKeySecretName));
+            throw new InvalidOperationException("RsaPrivateKeySecretName cannot be null or empty.");
         }
 
         if (RsaPrivateKeySecretName.Length > MaxRsaPrivateKeySecretNameLength)
         {
-            throw new ArgumentException($"RsaPrivateKeySecretName must not exceed {MaxRsaPrivateKeySecretNameLength} characters. Current length: {RsaPrivateKeySecretName.Length}", nameof(RsaPrivateKeySecretName));
+            throw new InvalidOperationException($"RsaPrivateKeySecretName must not exceed {MaxRsaPrivateKeySecretNameLength} characters. Current length: {RsaPrivateKeySecretName.Length}");
         }
     }
 }

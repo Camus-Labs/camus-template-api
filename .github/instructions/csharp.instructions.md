@@ -12,6 +12,7 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
     - [ ] String literals assigned as property or field default values appear as named const or static readonly fields
           — all other string literals stay inline at the call site
     - [ ] XML documentation on all public types and members
+    - [ ] No `<inheritdoc />` — every public type and member has its own explicit XML documentation
 
 2. Validation & Error Handling
 
@@ -31,6 +32,8 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
     - [ ] `Validate{Property}()` methods called from a central `Validate()` method
     - [ ] Each property has its own validation method
     - [ ] Validation constants as `private const` fields
+    - [ ] Property validation throws `InvalidOperationException` (invalid object state) — never `ArgumentException`
+          (`ArgumentException` is reserved for bad method/constructor parameters)
     - [ ] XML exception documentation on `Validate()` method
     - [ ] No separate validator classes — validation lives with the data
 

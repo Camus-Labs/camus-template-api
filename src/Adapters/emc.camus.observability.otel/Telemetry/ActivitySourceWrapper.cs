@@ -79,7 +79,7 @@ namespace emc.camus.observability.otel.Telemetry
         /// <param name="activity">The activity to add tags to.</param>
         /// <param name="tags">Dictionary of tag key-value pairs to add.</param>
         /// <param name="prefix">Required prefix to prepend to each tag key.</param>
-        private void SetTagsWithPrefix(Activity? activity, IDictionary<string, object?> tags, string prefix)
+        private static void SetTagsWithPrefix(Activity? activity, IDictionary<string, object?> tags, string prefix)
         {
             if (activity != null && tags != null)
             {

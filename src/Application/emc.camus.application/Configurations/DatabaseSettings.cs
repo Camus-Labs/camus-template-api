@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace emc.camus.application.Configurations;
 
 /// <summary>
@@ -12,7 +10,7 @@ public class DatabaseSettings
     private const int MaxAdditionalParametersLength = 100;
     private const int MinPort = 1;
     private const int MaxPort = 65535;
-    
+
     /// <summary>
     /// Gets the configuration section name for database settings.
     /// </summary>
@@ -62,7 +60,7 @@ public class DatabaseSettings
     /// <summary>
     /// Validates the database settings.
     /// </summary>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="InvalidOperationException">
     /// Thrown when any setting is invalid.
     /// </exception>
     public void Validate()
@@ -78,9 +76,9 @@ public class DatabaseSettings
 
     private void ValidateProvider()
     {
-        if (!Enum.IsDefined(typeof(DatabaseProvider), Provider))
+        if (!Enum.IsDefined(Provider))
         {
-            throw new ArgumentException($"Invalid database provider: {Provider}.", nameof(Provider));
+            throw new InvalidOperationException($"Invalid database provider: {Provider}.");
         }
     }
 
@@ -88,7 +86,7 @@ public class DatabaseSettings
     {
         if (string.IsNullOrWhiteSpace(Host))
         {
-            throw new ArgumentException("Host cannot be null or empty.", nameof(Host));
+            throw new InvalidOperationException("Host cannot be null or empty.");
         }
     }
 
@@ -96,7 +94,7 @@ public class DatabaseSettings
     {
         if (Port < MinPort || Port > MaxPort)
         {
-            throw new ArgumentException($"Port must be between {MinPort} and {MaxPort}. Current value: {Port}", nameof(Port));
+            throw new InvalidOperationException($"Port must be between {MinPort} and {MaxPort}. Current value: {Port}");
         }
     }
 
@@ -104,7 +102,7 @@ public class DatabaseSettings
     {
         if (string.IsNullOrWhiteSpace(Database))
         {
-            throw new ArgumentException("Database cannot be null or empty.", nameof(Database));
+            throw new InvalidOperationException("Database cannot be null or empty.");
         }
     }
 
@@ -112,14 +110,13 @@ public class DatabaseSettings
     {
         if (string.IsNullOrWhiteSpace(UserSecretName))
         {
-            throw new ArgumentException("UserSecretName cannot be null or empty.", nameof(UserSecretName));
+            throw new InvalidOperationException("UserSecretName cannot be null or empty.");
         }
 
         if (UserSecretName.Length > MaxSecretNameLength)
         {
-            throw new ArgumentException(
-                $"UserSecretName must not exceed {MaxSecretNameLength} characters. Current length: {UserSecretName.Length}", 
-                nameof(UserSecretName));
+            throw new InvalidOperationException(
+                $"UserSecretName must not exceed {MaxSecretNameLength} characters. Current length: {UserSecretName.Length}");
         }
     }
 
@@ -127,14 +124,13 @@ public class DatabaseSettings
     {
         if (string.IsNullOrWhiteSpace(PasswordSecretName))
         {
-            throw new ArgumentException("PasswordSecretName cannot be null or empty.", nameof(PasswordSecretName));
+            throw new InvalidOperationException("PasswordSecretName cannot be null or empty.");
         }
 
         if (PasswordSecretName.Length > MaxSecretNameLength)
         {
-            throw new ArgumentException(
-                $"PasswordSecretName must not exceed {MaxSecretNameLength} characters. Current length: {PasswordSecretName.Length}", 
-                nameof(PasswordSecretName));
+            throw new InvalidOperationException(
+                $"PasswordSecretName must not exceed {MaxSecretNameLength} characters. Current length: {PasswordSecretName.Length}");
         }
     }
 
@@ -142,9 +138,8 @@ public class DatabaseSettings
     {
         if (AdditionalParameters != null && AdditionalParameters.Length > MaxAdditionalParametersLength)
         {
-            throw new ArgumentException(
-                $"AdditionalParameters must not exceed {MaxAdditionalParametersLength} characters. Current length: {AdditionalParameters.Length}", 
-                nameof(AdditionalParameters));
+            throw new InvalidOperationException(
+                $"AdditionalParameters must not exceed {MaxAdditionalParametersLength} characters. Current length: {AdditionalParameters.Length}");
         }
     }
 }

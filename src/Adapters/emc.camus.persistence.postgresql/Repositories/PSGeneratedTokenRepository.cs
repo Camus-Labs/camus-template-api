@@ -108,7 +108,7 @@ public class PSGeneratedTokenRepository : IGeneratedTokenRepository
 
         if (totalCount == 0)
         {
-            return PagedResult<GeneratedToken>.Empty(pagination.Page, pagination.PageSize);
+            return new PagedResult<GeneratedToken>([], 0, pagination.Page, pagination.PageSize);
         }
 
         var results = await connection.QueryAsync<GeneratedTokenModel>(dataSql, parameters);

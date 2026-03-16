@@ -15,7 +15,7 @@ namespace emc.camus.persistence.postgresql.Repositories;
 public class PSApiInfoRepository : IApiInfoRepository
 {
     private readonly IConnectionFactory _connectionFactory;
-    private bool _initialized = false;
+    private bool _initialized;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PSApiInfoRepository"/> class.
@@ -25,7 +25,7 @@ public class PSApiInfoRepository : IApiInfoRepository
         IConnectionFactory connectionFactory)
     {
         ArgumentNullException.ThrowIfNull(connectionFactory);
-            
+
         _connectionFactory = connectionFactory;
     }
 
@@ -45,16 +45,16 @@ public class PSApiInfoRepository : IApiInfoRepository
 
         // Test connection and verify table exists
         using var connection = _connectionFactory.CreateConnectionAsync().GetAwaiter().GetResult();
-        
+
         const string checkTableSql = @"
             SELECT EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_schema = 'camus' 
+                SELECT FROM information_schema.tables
+                WHERE table_schema = 'camus'
                 AND table_name = 'api_info'
             )";
-        
+
         var tableExists = connection.ExecuteScalar<bool>(checkTableSql);
-        
+
         if (!tableExists)
         {
             throw new InvalidOperationException(
@@ -88,7 +88,7 @@ public class PSApiInfoRepository : IApiInfoRepository
         using var connection = await _connectionFactory.CreateConnectionAsync();
 
         const string sql = @"
-            SELECT 
+            SELECT
                 name,
                 version,
                 status,
@@ -97,7 +97,7 @@ public class PSApiInfoRepository : IApiInfoRepository
             WHERE version = @Version";
 
         var result = await connection.QuerySingleOrDefaultAsync<ApiInfoModel>(
-            sql, 
+            sql,
             new { version });
 
         if (result == null)
@@ -122,7 +122,7 @@ public class PSApiInfoRepository : IApiInfoRepository
         using var connection = await _connectionFactory.CreateConnectionAsync();
 
         const string sql = @"
-            SELECT 
+            SELECT
                 name,
                 version,
                 status,

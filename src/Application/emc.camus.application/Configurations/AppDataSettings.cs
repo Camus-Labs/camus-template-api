@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace emc.camus.application.Configurations;
 
 /// <summary>
@@ -25,7 +23,7 @@ public class AppDataSettings
     /// <summary>
     /// Validates the application data settings.
     /// </summary>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="InvalidOperationException">
     /// Thrown when any setting is invalid.
     /// </exception>
     public void Validate()
@@ -36,9 +34,9 @@ public class AppDataSettings
 
     private void ValidateProvider()
     {
-        if (!Enum.IsDefined(typeof(AppDataProvider), Provider))
+        if (!Enum.IsDefined(Provider))
         {
-            throw new ArgumentException($"Invalid application data provider: {Provider}. Must be 'InMemory' or 'Database'.", nameof(Provider));
+            throw new InvalidOperationException($"Invalid application data provider: {Provider}. Must be 'InMemory' or 'Database'.");
         }
     }
 
@@ -51,7 +49,7 @@ public class AppDataSettings
                 break;
 
             default:
-                throw new ArgumentException($"Unsupported provider: {Provider}", nameof(Provider));
+                throw new InvalidOperationException($"Unsupported provider: {Provider}");
         }
     }
 }

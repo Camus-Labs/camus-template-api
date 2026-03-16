@@ -174,7 +174,7 @@ namespace emc.camus.documentation.swagger
         /// </summary>
         private static void ConfigureSecurityRequirements(SwaggerGenOptions options, SwaggerSettings settings)
         {
-            if (!settings.SecuritySchemes.Any())
+            if (settings.SecuritySchemes.Count == 0)
             {
                 return;
             }

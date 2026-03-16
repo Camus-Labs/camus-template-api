@@ -25,7 +25,7 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
         /// Validates the policy configuration.
         /// </summary>
         /// <param name="policyName">The name of the policy being validated (for error messages).</param>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="InvalidOperationException">
         /// Thrown when any setting is invalid.
         /// </exception>
         public void Validate(string policyName)
@@ -38,9 +38,8 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
         {
             if (PermitLimit < MinPermitLimit || PermitLimit > MaxPermitLimit)
             {
-                throw new ArgumentException(
-                    $"Policy '{policyName}': PermitLimit must be between {MinPermitLimit:N0} and {MaxPermitLimit:N0}. Current value: {PermitLimit}",
-                    nameof(PermitLimit));
+                throw new InvalidOperationException(
+                    $"Policy '{policyName}': PermitLimit must be between {MinPermitLimit:N0} and {MaxPermitLimit:N0}. Current value: {PermitLimit}");
             }
         }
 
@@ -48,9 +47,8 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
         {
             if (WindowSeconds < MinWindowSeconds || WindowSeconds > MaxWindowSeconds)
             {
-                throw new ArgumentException(
-                    $"Policy '{policyName}': WindowSeconds must be between {MinWindowSeconds} and {MaxWindowSeconds:N0} (1 hour). Current value: {WindowSeconds}",
-                    nameof(WindowSeconds));
+                throw new InvalidOperationException(
+                    $"Policy '{policyName}': WindowSeconds must be between {MinWindowSeconds} and {MaxWindowSeconds:N0} (1 hour). Current value: {WindowSeconds}");
             }
         }
     }

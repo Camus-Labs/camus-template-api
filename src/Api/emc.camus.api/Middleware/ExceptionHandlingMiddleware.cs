@@ -17,9 +17,15 @@ namespace emc.camus.api.Middleware
     /// The middleware provides environment-specific detail levels - verbose in Development, minimal in Production.
     /// It is typically used to centralize error handling in an ASP.NET Core application, ensuring that all unhandled exceptions are processed consistently.
     /// </summary>
-    public class ExceptionHandlingMiddleware
+    public partial class ExceptionHandlingMiddleware
     {
         private const int RegexTimeoutMilliseconds = 100;
+
+        private static readonly JsonSerializerOptions ProblemDetailsSerializerOptions = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        };
 
         /// <summary>
         /// Platform-defined error code mapping rules that cannot be changed via configuration.
@@ -57,6 +63,18 @@ namespace emc.camus.api.Middleware
         private readonly IHostEnvironment _environment;
         private readonly IReadOnlyList<ErrorCodeMappingRule> _allRules;
         private readonly ErrorMetrics _errorMetrics;
+
+        [LoggerMessage(Level = LogLevel.Error,
+            Message = "Exception detected: {ErrorMessage}")]
+        private partial void LogExceptionDetected(Exception ex, string errorMessage);
+
+        [LoggerMessage(Level = LogLevel.Warning,
+            Message = "Explicit error code '{ExplicitCode}' found in exception.Data[{ErrorCodeKey}]. This pattern is discouraged - error codes should be automatically detected via configuration. Exception type: {ExceptionType}")]
+        private partial void LogExplicitErrorCodeFound(string explicitCode, string errorCodeKey, string exceptionType);
+
+        [LoggerMessage(Level = LogLevel.Warning,
+            Message = "Regex pattern '{Pattern}' timed out matching exception message. Skipping rule.")]
+        private partial void LogRegexPatternTimeout(string pattern);
 
         /// <summary>
         /// ExceptionHandlingMiddleware constructor initializes the middleware with a request delegate, logger, host environment, and error handling settings.
@@ -130,16 +148,12 @@ namespace emc.camus.api.Middleware
                 AddDevelopmentInformation(problemDetails, exception);
             }
 
-            _logger.LogError(exception, "Exception detected: {ErrorMessage}", exception.Message);
+            LogExceptionDetected(exception, exception.Message);
 
             context.Response.StatusCode = problemDetails.Status ?? (int)HttpStatusCode.InternalServerError;
             context.Response.ContentType = MediaTypes.ProblemJson;
 
-            var json = JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-            });
+            var json = JsonSerializer.Serialize(problemDetails, ProblemDetailsSerializerOptions);
 
             return context.Response.WriteAsync(json);
         }
@@ -147,7 +161,7 @@ namespace emc.camus.api.Middleware
         /// <summary>
         /// Creates a ProblemDetails object based on the exception type.
         /// </summary>
-        private ProblemDetails CreateProblemDetails(Exception exception)
+        private static ProblemDetails CreateProblemDetails(Exception exception)
         {
             var problemDetails = exception switch
             {
@@ -243,11 +257,7 @@ namespace emc.camus.api.Middleware
                 exception.Data[ErrorCodes.ErrorCodeKey] is string explicitCode &&
                 !string.IsNullOrWhiteSpace(explicitCode))
             {
-                _logger.LogWarning(
-                    "Explicit error code '{ExplicitCode}' found in exception.Data[{ErrorCodeKey}]. " +
-                    "This pattern is discouraged - error codes should be automatically detected via configuration. " +
-                    "Exception type: {ExceptionType}",
-                    explicitCode, ErrorCodes.ErrorCodeKey, exception.GetType().Name);
+                LogExplicitErrorCodeFound(explicitCode, ErrorCodes.ErrorCodeKey, exception.GetType().Name);
                 return explicitCode;
             }
 
@@ -275,9 +285,7 @@ namespace emc.camus.api.Middleware
                     }
                     catch (RegexMatchTimeoutException)
                     {
-                        _logger.LogWarning(
-                            "Regex pattern '{Pattern}' timed out matching exception message. Skipping rule.",
-                            rule.Pattern);
+                        LogRegexPatternTimeout(rule.Pattern);
                         continue;
                     }
                 }
@@ -295,7 +303,7 @@ namespace emc.camus.api.Middleware
         /// <summary>
         /// Adds development debugging information to the problem details.
         /// </summary>
-        private void AddDevelopmentInformation(ProblemDetails problemDetails, Exception exception)
+        private static void AddDevelopmentInformation(ProblemDetails problemDetails, Exception exception)
         {
             problemDetails.Extensions["exceptionType"] = exception.GetType().Name;
             problemDetails.Extensions["exceptionMessage"] = exception.Message;

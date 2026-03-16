@@ -62,12 +62,4 @@ public class PagedResult<T>
         PageSize = pageSize;
     }
 
-    /// <summary>
-    /// Creates an empty paged result.
-    /// </summary>
-    /// <param name="page">The requested page number.</param>
-    /// <param name="pageSize">The requested page size.</param>
-    /// <returns>An empty paged result with zero total count.</returns>
-    public static PagedResult<T> Empty(int page = 1, int pageSize = 25)
-        => new(new List<T>(), 0, page, pageSize);
 }

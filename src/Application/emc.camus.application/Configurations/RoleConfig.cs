@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using emc.camus.application.Auth;
 
 namespace emc.camus.application.Configurations;
@@ -23,7 +22,7 @@ public class RoleConfig
     /// <summary>
     /// Validates the role configuration.
     /// </summary>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="InvalidOperationException">
     /// Thrown when any property is invalid.
     /// </exception>
     public void Validate()
@@ -36,12 +35,12 @@ public class RoleConfig
     {
         if (string.IsNullOrWhiteSpace(Name))
         {
-            throw new ArgumentException("Name cannot be null or empty.", nameof(Name));
+            throw new InvalidOperationException("Name cannot be null or empty.");
         }
 
         if (Name.Length > MaxRoleNameLength)
         {
-            throw new ArgumentException($"Name must not exceed {MaxRoleNameLength} characters. Current length: {Name.Length}", nameof(Name));
+            throw new InvalidOperationException($"Name must not exceed {MaxRoleNameLength} characters. Current length: {Name.Length}");
         }
     }
 
@@ -49,7 +48,7 @@ public class RoleConfig
     {
         if (Permissions == null || Permissions.Count == 0)
         {
-            throw new ArgumentException($"Role '{Name}' must have at least one permission.", nameof(Permissions));
+            throw new InvalidOperationException($"Role '{Name}' must have at least one permission.");
         }
 
         var validPermissions = Auth.Permissions.GetAll();
@@ -57,7 +56,7 @@ public class RoleConfig
         
         if (invalidPermissions.Count > 0)
         {
-            throw new ArgumentException($"Role '{Name}' has invalid permissions: {string.Join(", ", invalidPermissions)}. Valid permissions are: {string.Join(", ", validPermissions)}", nameof(Permissions));
+            throw new InvalidOperationException($"Role '{Name}' has invalid permissions: {string.Join(", ", invalidPermissions)}. Valid permissions are: {string.Join(", ", validPermissions)}");
         }
     }
 }

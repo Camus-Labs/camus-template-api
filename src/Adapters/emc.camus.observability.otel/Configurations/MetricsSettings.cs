@@ -31,7 +31,7 @@ namespace emc.camus.observability.otel.Configurations
         /// <summary>
         /// Validates the metrics configuration.
         /// </summary>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="InvalidOperationException">
         /// Thrown when any setting is invalid.
         /// </exception>
         public void Validate()
@@ -44,8 +44,8 @@ namespace emc.camus.observability.otel.Configurations
 
         private void ValidateExporter()
         {
-            if (!Enum.IsDefined(typeof(MetricsExporter), Exporter))
-                throw new ArgumentException($"Invalid Exporter value: {Exporter}. Valid values are: {string.Join(", ", Enum.GetNames(typeof(MetricsExporter)))}", nameof(Exporter));
+            if (!Enum.IsDefined(Exporter))
+                throw new InvalidOperationException($"Invalid Exporter value: {Exporter}. Valid values are: {string.Join(", ", Enum.GetNames<MetricsExporter>())}");
         }
 
         private void ValidateOtlpEndpoint()
@@ -53,23 +53,23 @@ namespace emc.camus.observability.otel.Configurations
             if (Exporter == MetricsExporter.Otlp)
             {
                 if (string.IsNullOrWhiteSpace(OtlpEndpoint))
-                    throw new ArgumentException("OtlpEndpoint cannot be null or empty when Exporter is 'otlp'", nameof(OtlpEndpoint));
+                    throw new InvalidOperationException("OtlpEndpoint cannot be null or empty when Exporter is 'otlp'");
 
                 if (!Uri.TryCreate(OtlpEndpoint, UriKind.Absolute, out _))
-                    throw new ArgumentException($"OtlpEndpoint must be a valid URI: '{OtlpEndpoint}'", nameof(OtlpEndpoint));
+                    throw new InvalidOperationException($"OtlpEndpoint must be a valid URI: '{OtlpEndpoint}'");
             }
         }
 
         private void ValidateDisabledMetrics()
         {
             if (DisabledMetrics == null)
-                throw new ArgumentException("DisabledMetrics cannot be null", nameof(DisabledMetrics));
+                throw new InvalidOperationException("DisabledMetrics cannot be null");
         }
 
         private void ValidateDisabledMeters()
         {
             if (DisabledMeters == null)
-                throw new ArgumentException("DisabledMeters cannot be null", nameof(DisabledMeters));
+                throw new InvalidOperationException("DisabledMeters cannot be null");
         }
     }
 }

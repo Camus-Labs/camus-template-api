@@ -21,7 +21,7 @@ public class ErrorHandlingSettings
     /// <summary>
     /// Validates the error handling settings.
     /// </summary>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="InvalidOperationException">
     /// Thrown when any setting is invalid.
     /// </exception>
     public void Validate()
@@ -33,7 +33,7 @@ public class ErrorHandlingSettings
     {
         if (AdditionalRules == null)
         {
-            throw new ArgumentException($"AdditionalRules cannot be null. Got: '{AdditionalRules}'.", nameof(AdditionalRules));
+            throw new InvalidOperationException($"AdditionalRules cannot be null. Got: '{AdditionalRules}'.");
         }
 
         for (int i = 0; i < AdditionalRules.Count; i++)

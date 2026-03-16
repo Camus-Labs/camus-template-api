@@ -1,3 +1,4 @@
+using System.Globalization;
 using emc.camus.application.Common;
 using Microsoft.AspNetCore.Http;
 
@@ -46,7 +47,7 @@ namespace emc.camus.ratelimiting.inmemory.Middleware
             if (int.TryParse(window, out var windowSeconds))
             {
                 var resetTimestamp = DateTimeOffset.UtcNow.AddSeconds(windowSeconds).ToUnixTimeSeconds();
-                context.Response.Headers[Headers.RateLimitReset] = resetTimestamp.ToString();
+                context.Response.Headers[Headers.RateLimitReset] = resetTimestamp.ToString(CultureInfo.InvariantCulture);
             }
 
             // Add custom headers for additional context (backward compatibility)

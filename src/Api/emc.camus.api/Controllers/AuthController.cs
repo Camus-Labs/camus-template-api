@@ -231,7 +231,7 @@ namespace emc.camus.api.Controllers
         [AllowAnonymous]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
-            Description = "Handles unexpected errors in API version 1.0"
+            Description = "Handles unexpected errors in API version 2.0"
         )]
         public async Task<IActionResult> GetUnexpectedError()
         {
@@ -247,7 +247,7 @@ namespace emc.camus.api.Controllers
                     { "error_type", "demo_exception" }
                 });
 
-                throw new Exception("This is a demo exception for error handling.", new Exception("Inner exception for demo purposes."));
+                throw new InvalidOperationException("This is a demo exception for error handling.", new InvalidProgramException("Inner exception for demo purposes."));
             });
         }
     }

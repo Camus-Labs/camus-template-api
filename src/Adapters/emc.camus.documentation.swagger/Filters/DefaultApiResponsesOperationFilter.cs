@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
@@ -26,35 +27,35 @@ namespace emc.camus.documentation.swagger.Filters
             // Single examples for most status codes
             var examples = new Dictionary<string, OpenApiObject>
             {
-                [StatusCodes.Status400BadRequest.ToString()] = new OpenApiObject
+                [StatusCodes.Status400BadRequest.ToString(CultureInfo.InvariantCulture)] = new OpenApiObject
                 {
                     ["status"] = new OpenApiInteger(StatusCodes.Status400BadRequest),
                     ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status400BadRequest)),
                     ["detail"] = new OpenApiString("A detailed error message describing what went wrong."),
                     ["error"] = new OpenApiString(ErrorCodes.BadRequest)
                 },
-                [StatusCodes.Status403Forbidden.ToString()] = new OpenApiObject
+                [StatusCodes.Status403Forbidden.ToString(CultureInfo.InvariantCulture)] = new OpenApiObject
                 {
                     ["status"] = new OpenApiInteger(StatusCodes.Status403Forbidden),
                     ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status403Forbidden)),
                     ["detail"] = new OpenApiString("You do not have permission to access this resource."),
                     ["error"] = new OpenApiString(ErrorCodes.Forbidden)
                 },
-                [StatusCodes.Status404NotFound.ToString()] = new OpenApiObject
+                [StatusCodes.Status404NotFound.ToString(CultureInfo.InvariantCulture)] = new OpenApiObject
                 {
                     ["status"] = new OpenApiInteger(StatusCodes.Status404NotFound),
                     ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status404NotFound)),
                     ["detail"] = new OpenApiString("The requested resource was not found."),
                     ["error"] = new OpenApiString(ErrorCodes.NotFound)
                 },
-                [StatusCodes.Status409Conflict.ToString()] = new OpenApiObject
+                [StatusCodes.Status409Conflict.ToString(CultureInfo.InvariantCulture)] = new OpenApiObject
                 {
                     ["status"] = new OpenApiInteger(StatusCodes.Status409Conflict),
                     ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status409Conflict)),
                     ["detail"] = new OpenApiString("The request conflicts with the current state of the resource."),
                     ["error"] = new OpenApiString(ErrorCodes.Conflict)
                 },
-                [StatusCodes.Status429TooManyRequests.ToString()] = new OpenApiObject
+                [StatusCodes.Status429TooManyRequests.ToString(CultureInfo.InvariantCulture)] = new OpenApiObject
                 {
                     ["status"] = new OpenApiInteger(StatusCodes.Status429TooManyRequests),
                     ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status429TooManyRequests)),
@@ -62,7 +63,7 @@ namespace emc.camus.documentation.swagger.Filters
                     ["error"] = new OpenApiString(ErrorCodes.RateLimitExceeded),
                     ["retryAfter"] = new OpenApiDouble(20.0)
                 },
-                [StatusCodes.Status500InternalServerError.ToString()] = new OpenApiObject
+                [StatusCodes.Status500InternalServerError.ToString(CultureInfo.InvariantCulture)] = new OpenApiObject
                 {
                     ["status"] = new OpenApiInteger(StatusCodes.Status500InternalServerError),
                     ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status500InternalServerError)),
@@ -125,7 +126,7 @@ namespace emc.camus.documentation.swagger.Filters
             };
 
             // Add 401 with multiple examples
-            operation.Responses[StatusCodes.Status401Unauthorized.ToString()] = new OpenApiResponse
+            operation.Responses[StatusCodes.Status401Unauthorized.ToString(CultureInfo.InvariantCulture)] = new OpenApiResponse
             {
                 Description = ReasonPhrases.GetReasonPhrase(StatusCodes.Status401Unauthorized),
                 Content = {
@@ -140,12 +141,12 @@ namespace emc.camus.documentation.swagger.Filters
             // Add other status codes with single examples
             var statusCodesToAdd = new Dictionary<string, string>
             {
-                [StatusCodes.Status400BadRequest.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status400BadRequest),
-                [StatusCodes.Status403Forbidden.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status403Forbidden),
-                [StatusCodes.Status404NotFound.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status404NotFound),
-                [StatusCodes.Status409Conflict.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status409Conflict),
-                [StatusCodes.Status429TooManyRequests.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status429TooManyRequests),
-                [StatusCodes.Status500InternalServerError.ToString()] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status500InternalServerError)
+                [StatusCodes.Status400BadRequest.ToString(CultureInfo.InvariantCulture)] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status400BadRequest),
+                [StatusCodes.Status403Forbidden.ToString(CultureInfo.InvariantCulture)] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status403Forbidden),
+                [StatusCodes.Status404NotFound.ToString(CultureInfo.InvariantCulture)] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status404NotFound),
+                [StatusCodes.Status409Conflict.ToString(CultureInfo.InvariantCulture)] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status409Conflict),
+                [StatusCodes.Status429TooManyRequests.ToString(CultureInfo.InvariantCulture)] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status429TooManyRequests),
+                [StatusCodes.Status500InternalServerError.ToString(CultureInfo.InvariantCulture)] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status500InternalServerError)
             };
             
             foreach (var status in statusCodesToAdd.Keys)

@@ -54,7 +54,7 @@ public class JwtTokenGenerator : ITokenGenerator
             new Claim(ClaimTypes.NameIdentifier, userId.ToString()), // For HttpUserContext.GetCurrentUserId()
             new Claim(ClaimTypes.Name, username),         // For HttpUserContext.GetCurrentUsername() via Identity.Name
             new Claim(JwtRegisteredClaimNames.Jti, jti.ToString()),
-            new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
+            new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture), ClaimValueTypes.Integer64)
         };
 
         // Add additional claims if provided

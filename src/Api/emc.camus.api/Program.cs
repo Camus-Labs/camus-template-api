@@ -71,9 +71,8 @@ var app = builder.Build();
 // Step 15: Get logger for startup events
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 
-startupLogger.LogInformation("Starting {ServiceName} v{ServiceVersion} in {Environment} environment",
-    SERVICE_NAME, SERVICE_VERSION, ENV_NAME);
-startupLogger.LogInformation("Instance ID: {InstanceId}", INSTANCE_ID);
+Program.LogServiceStarting(startupLogger, SERVICE_NAME, SERVICE_VERSION, ENV_NAME);
+Program.LogInstanceId(startupLogger, INSTANCE_ID);
 
 // Step 16: Configure forwarded headers for proxy/load balancer scenarios
 // This ensures X-Forwarded-For and X-Real-IP headers are properly processed
@@ -125,7 +124,25 @@ app.UseAppData();
 app.UseApplicationServices();
 
 
-startupLogger.LogInformation("{ServiceName} startup complete. Ready to accept requests", SERVICE_NAME);
+Program.LogStartupComplete(startupLogger, SERVICE_NAME);
 
 // Step 28: Run the app
 await app.RunAsync();
+
+/// <summary>
+/// Application entry point. Partial class enables LoggerMessage source generation for top-level statements.
+/// </summary>
+public partial class Program
+{
+    [LoggerMessage(Level = LogLevel.Information,
+        Message = "Starting {ServiceName} v{ServiceVersion} in {Environment} environment")]
+    internal static partial void LogServiceStarting(ILogger logger, string serviceName, string serviceVersion, string environment);
+
+    [LoggerMessage(Level = LogLevel.Information,
+        Message = "Instance ID: {InstanceId}")]
+    internal static partial void LogInstanceId(ILogger logger, string instanceId);
+
+    [LoggerMessage(Level = LogLevel.Information,
+        Message = "{ServiceName} startup complete. Ready to accept requests")]
+    internal static partial void LogStartupComplete(ILogger logger, string serviceName);
+}

@@ -28,7 +28,7 @@ public class DBUpSettings
     /// <summary>
     /// Validates the DbUp settings.
     /// </summary>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="InvalidOperationException">
     /// Thrown when any setting is invalid.
     /// </exception>
     public void Validate()
@@ -41,12 +41,12 @@ public class DBUpSettings
     {
         if (string.IsNullOrWhiteSpace(AdminSecretName))
         {
-            throw new ArgumentException("AdminSecretName cannot be null or empty.", nameof(AdminSecretName));
+            throw new InvalidOperationException("AdminSecretName cannot be null or empty.");
         }
 
         if (AdminSecretName.Length > MaxSecretNameLength)
         {
-            throw new ArgumentException($"AdminSecretName cannot exceed {MaxSecretNameLength} characters.", nameof(AdminSecretName));
+            throw new InvalidOperationException($"AdminSecretName cannot exceed {MaxSecretNameLength} characters.");
         }
     }
 
@@ -54,12 +54,12 @@ public class DBUpSettings
     {
         if (string.IsNullOrWhiteSpace(PasswordSecretName))
         {
-            throw new ArgumentException("PasswordSecretName cannot be null or empty.", nameof(PasswordSecretName));
+            throw new InvalidOperationException("PasswordSecretName cannot be null or empty.");
         }
 
         if (PasswordSecretName.Length > MaxSecretNameLength)
         {
-            throw new ArgumentException($"PasswordSecretName cannot exceed {MaxSecretNameLength} characters.", nameof(PasswordSecretName));
+            throw new InvalidOperationException($"PasswordSecretName cannot exceed {MaxSecretNameLength} characters.");
         }
     }
 }

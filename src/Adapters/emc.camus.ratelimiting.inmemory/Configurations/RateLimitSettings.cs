@@ -5,19 +5,19 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
     /// <summary>
     /// Configuration settings for API rate limiting policies.
     /// Rate limiting is always enabled for security. Adjust limits per environment.
-    /// 
+    ///
     /// Implementation Details:
     /// - Uses sliding window algorithm with configurable segments for smooth distribution
     /// - IP-based rate limiting for ALL requests (runs before authentication)
     /// - Returns 429 with RetryAfter header when limit exceeded
     /// - No queueing (QueueLimit=0) - requests rejected immediately
     /// - Policy-based approach allows different limits per endpoint
-    /// 
+    ///
     /// Security Note:
     /// Rate limiting runs BEFORE authentication middleware to protect auth endpoints.
     /// This means we cannot distinguish between authenticated and anonymous users.
     /// All requests from the same IP address share the same rate limit for a given policy.
-    /// 
+    ///
     /// Example Configuration:
     /// "SegmentsPerWindow": 5,
     /// "Policies": {
@@ -32,10 +32,10 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
         /// The configuration section name for rate limit settings.
         /// </summary>
         public const string ConfigurationSectionName = "RateLimitSettings";
-        
+
         private const int MinSegmentsPerWindow = 1;
         private const int MaxSegmentsPerWindow = 20;
-        
+
         /// <summary>
         /// Number of segments per window for sliding window algorithm.
         /// Higher values provide smoother rate limiting but use more memory.
@@ -65,7 +65,7 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
         /// <summary>
         /// Validates the rate limit configuration at startup.
         /// </summary>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="InvalidOperationException">
         /// Thrown when any setting is invalid.
         /// </exception>
         public void Validate()
@@ -78,58 +78,52 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
         private void ValidateSegmentsPerWindow()
         {
             if (SegmentsPerWindow < MinSegmentsPerWindow || SegmentsPerWindow > MaxSegmentsPerWindow)
-                throw new ArgumentException($"SegmentsPerWindow must be between {MinSegmentsPerWindow} and {MaxSegmentsPerWindow}", nameof(SegmentsPerWindow));
+                throw new InvalidOperationException($"SegmentsPerWindow must be between {MinSegmentsPerWindow} and {MaxSegmentsPerWindow}");
         }
 
         private void ValidatePolicies()
         {
             if (Policies == null || Policies.Count == 0)
-                throw new ArgumentException("At least one rate limit policy must be defined", nameof(Policies));
-            
+                throw new InvalidOperationException("At least one rate limit policy must be defined");
+
             if (!Policies.ContainsKey(RateLimitPolicies.Default))
-                throw new ArgumentException($"A '{RateLimitPolicies.Default}' rate limit policy must be defined", nameof(Policies));
-            
+                throw new InvalidOperationException($"A '{RateLimitPolicies.Default}' rate limit policy must be defined");
+
             foreach (var (policyName, policy) in Policies)
             {
                 ValidatePolicy(policyName, policy);
             }
         }
 
-        private void ValidatePolicy(string policyName, RateLimitPolicy policy)
+        private static void ValidatePolicy(string policyName, RateLimitPolicy policy)
         {
             if (string.IsNullOrWhiteSpace(policyName))
-                throw new ArgumentException("Policy name cannot be null or empty", nameof(Policies));
-            
+                throw new InvalidOperationException("Policy name cannot be null or empty");
+
             var validPolicyNames = RateLimitPolicies.GetAll();
             if (!validPolicyNames.Contains(policyName))
-                throw new ArgumentException(
-                    $"Invalid policy name '{policyName}'. Valid policy names are: {string.Join(", ", validPolicyNames)} (case-sensitive)",
-                    nameof(Policies));
-            
+                throw new InvalidOperationException(
+                    $"Invalid policy name '{policyName}'. Valid policy names are: {string.Join(", ", validPolicyNames)} (case-sensitive)");
+
             if (policy == null)
-                throw new ArgumentException($"Policy '{policyName}' cannot be null", nameof(Policies));
-            
+                throw new InvalidOperationException($"Policy '{policyName}' cannot be null");
+
             policy.Validate(policyName);
         }
 
         private void ValidateExemptPaths()
         {
             if (ExemptPaths == null)
-                throw new ArgumentException("ExemptPaths cannot be null", nameof(ExemptPaths));
-            
+                throw new InvalidOperationException("ExemptPaths cannot be null");
+
             foreach (var path in ExemptPaths)
             {
-                ValidateExemptPath(path);
-            }
-        }
+                if (string.IsNullOrWhiteSpace(path))
+                    throw new InvalidOperationException("ExemptPaths cannot contain null or empty values");
 
-        private void ValidateExemptPath(string path)
-        {
-            if (string.IsNullOrWhiteSpace(path))
-                throw new ArgumentException("ExemptPaths cannot contain null or empty values", nameof(ExemptPaths));
-            
-            if (!path.StartsWith('/'))
-                throw new ArgumentException($"ExemptPath '{path}' must start with '/' (e.g., '/health')", nameof(ExemptPaths));
+                if (!path.StartsWith('/'))
+                    throw new InvalidOperationException($"ExemptPath '{path}' must start with '/' (e.g., '/health')");
+            }
         }
     }
 }

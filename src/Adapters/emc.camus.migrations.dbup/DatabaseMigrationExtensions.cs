@@ -15,10 +15,34 @@ namespace emc.camus.migrations.dbup
     /// Provides extension methods for database migration using DbUp.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public static class DatabaseMigrationExtensions
+    public static partial class DatabaseMigrationExtensions
     {
         private const string DefaultSchema = "public";
         private const string DefaultSchemaVersionsTable = "camus_schemaversions";
+
+        [LoggerMessage(Level = LogLevel.Information,
+            Message = "Starting database migrations...")]
+        private static partial void LogMigrationStarting(ILogger logger);
+
+        [LoggerMessage(Level = LogLevel.Information,
+            Message = "Database migration credentials will be fetched from secret provider")]
+        private static partial void LogCredentialsFetchFromSecrets(ILogger logger);
+
+        [LoggerMessage(Level = LogLevel.Information,
+            Message = "Database is up to date. No migrations needed.")]
+        private static partial void LogDatabaseUpToDate(ILogger logger);
+
+        [LoggerMessage(Level = LogLevel.Error,
+            Message = "Database migration failed")]
+        private static partial void LogMigrationFailed(ILogger logger, Exception ex);
+
+        [LoggerMessage(Level = LogLevel.Information,
+            Message = "Database migrations completed successfully")]
+        private static partial void LogMigrationCompleted(ILogger logger);
+
+        [LoggerMessage(Level = LogLevel.Information,
+            Message = "Executed migration: {ScriptName}")]
+        private static partial void LogMigrationScriptExecuted(ILogger logger, string scriptName);
 
         /// <summary>
         /// Registers database migration configuration and validates settings.
@@ -77,7 +101,7 @@ namespace emc.camus.migrations.dbup
 
             try
             {
-                logger.LogInformation("Starting database migrations...");
+                LogMigrationStarting(logger);
 
                 // Get secret provider for credentials
                 var secretProvider = app.Services.GetService<ISecretProvider>();
@@ -87,7 +111,7 @@ namespace emc.camus.migrations.dbup
                     "Database migrations are configured to use secrets but ISecretProvider is not registered in DI");
             }
             
-            logger.LogInformation("Database migration credentials will be fetched from secret provider");
+            LogCredentialsFetchFromSecrets(logger);
 
             // Fetch admin credentials from secret provider
             var adminUsername = secretProvider.GetSecret(migrationsSettings.AdminSecretName!);
@@ -119,7 +143,7 @@ namespace emc.camus.migrations.dbup
                 .PostgresqlDatabase(connectionString)
                 .WithScriptsEmbeddedInAssembly(
                     Assembly.GetExecutingAssembly(),
-                    script => script.EndsWith(".sql"))
+                    script => script.EndsWith(".sql", StringComparison.Ordinal))
                 .WithVariablesDisabled() // Disable variable substitution to avoid conflicts with bcrypt hashes ($2a$)
                 .JournalToPostgresqlTable(DefaultSchema, DefaultSchemaVersionsTable)
                 .LogToConsole()
@@ -128,7 +152,7 @@ namespace emc.camus.migrations.dbup
             // Step 2: Check if migrations are needed
             if (!upgrader.IsUpgradeRequired())
             {
-                logger.LogInformation("Database is up to date. No migrations needed.");
+                LogDatabaseUpToDate(logger);
                 return app;
             }
 
@@ -137,16 +161,16 @@ namespace emc.camus.migrations.dbup
 
             if (!result.Successful)
             {
-                logger.LogError(result.Error, "Database migration failed");
+                LogMigrationFailed(logger, result.Error);
                 throw new InvalidOperationException("Database migration failed. See logs for details.", result.Error);
             }
 
-            logger.LogInformation("Database migrations completed successfully");
+            LogMigrationCompleted(logger);
             
             // Log which scripts were executed
             foreach (var script in result.Scripts)
             {
-                logger.LogInformation("Executed migration: {ScriptName}", script.Name);
+                LogMigrationScriptExecuted(logger, script.Name);
             }
         }
         catch (Exception ex)

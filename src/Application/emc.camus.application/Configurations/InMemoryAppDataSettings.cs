@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace emc.camus.application.Configurations;
 
 /// <summary>
@@ -15,7 +13,7 @@ public class InMemoryAppDataSettings
     /// <summary>
     /// Validates the in-memory application data settings.
     /// </summary>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="InvalidOperationException">
     /// Thrown when any setting is invalid.
     /// </exception>
     public void Validate()
@@ -27,7 +25,7 @@ public class InMemoryAppDataSettings
     {
         if (ApiInfos == null)
         {
-            throw new ArgumentException("ApiInfos cannot be null.", nameof(ApiInfos));
+            throw new InvalidOperationException("ApiInfos cannot be null.");
         }
 
         var versionKeys = new HashSet<string>();
@@ -39,7 +37,7 @@ public class InMemoryAppDataSettings
             var key = apiInfo.Version.ToLowerInvariant();
             if (versionKeys.Contains(key))
             {
-                throw new ArgumentException($"Duplicate API version: {apiInfo.Version}", nameof(ApiInfos));
+                throw new InvalidOperationException($"Duplicate API version: {apiInfo.Version}");
             }
 
             versionKeys.Add(key);

@@ -8,9 +8,17 @@ namespace emc.camus.persistence.inmemory.Repositories;
 /// In-memory implementation of action audit repository.
 /// This is a no-op implementation that does not persist audit logs.
 /// </summary>
-public class IMActionAuditRepository : IActionAuditRepository
+public partial class IMActionAuditRepository : IActionAuditRepository
 {
     private readonly ILogger<IMActionAuditRepository> _logger;
+
+    [LoggerMessage(Level = LogLevel.Information,
+        Message = "Audit Log: {ActionTitle} - {ActionSummary}")]
+    private partial void LogAuditAction(string actionTitle, string actionSummary);
+
+    [LoggerMessage(Level = LogLevel.Information,
+        Message = "System Audit Log: {Username} ({UserId}) - {ActionTitle} - {ActionSummary}")]
+    private partial void LogSystemAuditAction(string username, string userId, string actionTitle, string actionSummary);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="IMActionAuditRepository"/> class.
@@ -31,10 +39,7 @@ public class IMActionAuditRepository : IActionAuditRepository
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(actionTitle);
         // Log to application logs instead of database
-        _logger.LogInformation(
-            "Audit Log: {ActionTitle} - {ActionSummary}",
-            actionTitle,
-            actionSummary ?? "No details");
+        LogAuditAction(actionTitle, actionSummary ?? "No details");
 
         // Return a dummy ID
         return Task.FromResult(0L);
@@ -51,8 +56,7 @@ public class IMActionAuditRepository : IActionAuditRepository
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
         ArgumentException.ThrowIfNullOrWhiteSpace(actionTitle);
         // Log to application logs instead of database
-        _logger.LogInformation(
-            "System Audit Log: {Username} ({UserId}) - {ActionTitle} - {ActionSummary}",
+        LogSystemAuditAction(
             username,
             userId?.ToString() ?? "System",
             actionTitle,

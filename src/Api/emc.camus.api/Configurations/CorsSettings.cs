@@ -57,7 +57,7 @@ namespace emc.camus.api.Configurations
         /// <summary>
         /// Gets or sets whether credentials are allowed in CORS requests.
         /// </summary>
-        public bool AllowCredentials { get; set; } = false;
+        public bool AllowCredentials { get; set; }
 
         /// <summary>
         /// Gets or sets the preflight cache duration in minutes.
@@ -67,7 +67,7 @@ namespace emc.camus.api.Configurations
         /// <summary>
         /// Validates the CORS configuration.
         /// </summary>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="InvalidOperationException">
         /// Thrown when any setting is invalid.
         /// </exception>
         public void Validate()
@@ -85,70 +85,69 @@ namespace emc.camus.api.Configurations
         {
             if (string.IsNullOrWhiteSpace(PolicyName))
             {
-                throw new ArgumentException($"PolicyName cannot be null or empty. Got: '{PolicyName}'.", nameof(PolicyName));
+                throw new InvalidOperationException($"PolicyName cannot be null or empty. Got: '{PolicyName}'.");
             }
 
             if (PolicyName.Length > MaxPolicyNameLength)
             {
-                throw new ArgumentException($"PolicyName must not exceed {MaxPolicyNameLength} characters. Current length: {PolicyName.Length}", nameof(PolicyName));
+                throw new InvalidOperationException($"PolicyName must not exceed {MaxPolicyNameLength} characters. Current length: {PolicyName.Length}");
             }
         }
 
         private void ValidateAllowedOrigins()
         {
             if (AllowedOrigins == null)
-                throw new ArgumentException($"AllowedOrigins cannot be null. Got: '{AllowedOrigins}'.", nameof(AllowedOrigins));
+                throw new InvalidOperationException($"AllowedOrigins cannot be null. Got: '{AllowedOrigins}'.");
 
             if (AllowedOrigins.Length == 0)
-                throw new ArgumentException($"At least one allowed origin must be specified. Got: {AllowedOrigins.Length} origin(s).", nameof(AllowedOrigins));
+                throw new InvalidOperationException($"At least one allowed origin must be specified. Got: {AllowedOrigins.Length} origin(s).");
 
             foreach (var origin in AllowedOrigins)
             {
                 if (string.IsNullOrWhiteSpace(origin))
-                    throw new ArgumentException($"AllowedOrigins contains a null or empty value: '{origin}'.", nameof(AllowedOrigins));
+                    throw new InvalidOperationException($"AllowedOrigins contains a null or empty value: '{origin}'.");
 
                 if (origin != "*" && !Uri.TryCreate(origin, UriKind.Absolute, out _))
-                    throw new ArgumentException($"Invalid origin URL: '{origin}'. Must be a valid absolute URL or '*'.", nameof(AllowedOrigins));
+                    throw new InvalidOperationException($"Invalid origin URL: '{origin}'. Must be a valid absolute URL or '*'.");
             }
         }
 
         private void ValidateAllowCredentials()
         {
             if (AllowCredentials && AllowedOrigins.Any(o => o == "*"))
-                throw new ArgumentException(
-                    $"AllowCredentials cannot be true when AllowedOrigins contains '*'. Specify explicit origins instead.",
-                    nameof(AllowCredentials));
+                throw new InvalidOperationException(
+                    $"AllowCredentials cannot be true when AllowedOrigins contains '*'. Specify explicit origins instead.");
         }
 
         private void ValidateAllowedMethods()
         {
             if (AllowedMethods == null || AllowedMethods.Length == 0)
-                throw new ArgumentException($"At least one allowed HTTP method must be specified. Got: {AllowedMethods?.Length ?? 0} method(s).", nameof(AllowedMethods));
+                throw new InvalidOperationException($"At least one allowed HTTP method must be specified. Got: {AllowedMethods?.Length ?? 0} method(s).");
 
             foreach (var method in AllowedMethods)
             {
                 if (string.IsNullOrWhiteSpace(method))
-                    throw new ArgumentException($"AllowedMethods contains a null or empty value: '{method}'.", nameof(AllowedMethods));
+                    throw new InvalidOperationException($"AllowedMethods contains a null or empty value: '{method}'.");
             }
         }
 
         private void ValidateAllowedHeaders()
         {
             if (AllowedHeaders == null)
-                throw new ArgumentException($"AllowedHeaders cannot be null. Got: '{AllowedHeaders}'.", nameof(AllowedHeaders));
+                throw new InvalidOperationException($"AllowedHeaders cannot be null. Got: '{AllowedHeaders}'.");
         }
 
         private void ValidateExposedHeaders()
         {
             if (ExposedHeaders == null)
-                throw new ArgumentException($"ExposedHeaders cannot be null. Got: '{ExposedHeaders}'.", nameof(ExposedHeaders));
+                throw new InvalidOperationException($"ExposedHeaders cannot be null. Got: '{ExposedHeaders}'.");
         }
 
         private void ValidatePreflightMaxAge()
         {
             if (PreflightMaxAgeMinutes < MinPreflightMaxAgeMinutes || PreflightMaxAgeMinutes > MaxPreflightMaxAgeMinutes)
             {
-                throw new ArgumentException($"PreflightMaxAgeMinutes must be between {MinPreflightMaxAgeMinutes} and {MaxPreflightMaxAgeMinutes} (24 hours). Current value: {PreflightMaxAgeMinutes}", nameof(PreflightMaxAgeMinutes));
+                throw new InvalidOperationException($"PreflightMaxAgeMinutes must be between {MinPreflightMaxAgeMinutes} and {MaxPreflightMaxAgeMinutes} (24 hours). Current value: {PreflightMaxAgeMinutes}");
             }
         }
     }

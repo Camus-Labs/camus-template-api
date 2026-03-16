@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
@@ -24,8 +25,16 @@ namespace emc.camus.ratelimiting.inmemory
     /// multi-instance deployments. For production scale-out scenarios, use the Redis adapter.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public static class InMemoryRateLimitingSetupExtensions
+    public static partial class InMemoryRateLimitingSetupExtensions
     {
+        [LoggerMessage(Level = LogLevel.Warning,
+            Message = "Rate limit policy '{PolicyName}' not found in configuration. Falling back to '{DefaultPolicy}' policy. Endpoint: {Method} {Path}")]
+        private static partial void LogPolicyNotFound(ILogger logger, string policyName, string defaultPolicy, string method, string path);
+
+        [LoggerMessage(Level = LogLevel.Warning,
+            Message = "Rate limit exceeded for IP: {IpAddress}, Policy: {Policy}, Endpoint: {Method} {Path}, Limit: {Limit} req/{Window}s")]
+        private static partial void LogRateLimitExceeded(ILogger logger, string ipAddress, string policy, string method, string path, int limit, int window);
+
         /// <summary>
         /// Registers in-memory rate limiting services with policy-based sliding window configuration.
         /// Endpoints can specify policies using [RateLimit("policyName")] attribute from API project.
@@ -110,8 +119,8 @@ namespace emc.camus.ratelimiting.inmemory
         /// </summary>
         private static bool IsExemptPath(HttpContext context, RateLimitSettings settings)
         {
-            var path = context.Request.Path.ToString().ToLowerInvariant();
-            return settings.ExemptPaths?.Any(exemptPath => path.StartsWith(exemptPath.ToLowerInvariant())) ?? false;
+            var path = context.Request.Path.ToString();
+            return settings.ExemptPaths?.Any(exemptPath => path.StartsWith(exemptPath, StringComparison.OrdinalIgnoreCase)) ?? false;
         }
 
         /// <summary>
@@ -144,10 +153,7 @@ namespace emc.camus.ratelimiting.inmemory
                         // Log warning if policy not found (misconfiguration)
                         var logger = context.RequestServices.GetRequiredService<ILogger<WebApplication>>();
                         
-                        logger.LogWarning(
-                            "Rate limit policy '{PolicyName}' not found in configuration. Falling back to '{DefaultPolicy}' policy. " +
-                            "Endpoint: {Method} {Path}",
-                            policyName, RateLimitPolicies.Default, context.Request.Method, context.Request.Path);
+                        LogPolicyNotFound(logger, policyName, RateLimitPolicies.Default, context.Request.Method, context.Request.Path);
                     }
                 }
             }
@@ -206,9 +212,10 @@ namespace emc.camus.ratelimiting.inmemory
             
             // Get policy name from context (set during partition creation)
             var policyName = context.HttpContext.Items["RateLimit:Policy"]?.ToString() ?? "unknown";
-            var policy = settings.Policies.ContainsKey(policyName) 
-                ? settings.Policies[policyName] 
-                : settings.Policies[RateLimitPolicies.Default];
+            if (!settings.Policies.TryGetValue(policyName, out var policy))
+            {
+                policy = settings.Policies[RateLimitPolicies.Default];
+            }
 
             // Calculate retry and reset times
             var retryAfterSeconds = policy.WindowSeconds;
@@ -218,18 +225,17 @@ namespace emc.camus.ratelimiting.inmemory
             // These will be preserved when ExceptionHandlingMiddleware catches the exception
             
             // RFC-compliant IETF Draft headers
-            context.HttpContext.Response.Headers[Headers.RateLimitLimit] = policy.PermitLimit.ToString();
-            context.HttpContext.Response.Headers[Headers.RateLimitReset] = resetTimestamp.ToString();
-            context.HttpContext.Response.Headers[Headers.RetryAfter] = retryAfterSeconds.ToString();
+            context.HttpContext.Response.Headers[Headers.RateLimitLimit] = policy.PermitLimit.ToString(CultureInfo.InvariantCulture);
+            context.HttpContext.Response.Headers[Headers.RateLimitReset] = resetTimestamp.ToString(CultureInfo.InvariantCulture);
+            context.HttpContext.Response.Headers[Headers.RetryAfter] = retryAfterSeconds.ToString(CultureInfo.InvariantCulture);
             
             // Custom headers for additional context (backward compatibility)
             context.HttpContext.Response.Headers[Headers.RateLimitPolicy] = policyName;
-            context.HttpContext.Response.Headers[Headers.RateLimitWindow] = policy.WindowSeconds.ToString();
+            context.HttpContext.Response.Headers[Headers.RateLimitWindow] = policy.WindowSeconds.ToString(CultureInfo.InvariantCulture);
 
             // Log rate limit rejection
-            logger.LogWarning(
-                "Rate limit exceeded for IP: {IpAddress}, Policy: {Policy}, Endpoint: {Method} {Path}, Limit: {Limit} req/{Window}s",
-                ipAddress, policyName, method, endpoint,
+            LogRateLimitExceeded(
+                logger, ipAddress, policyName, method, endpoint,
                 policy.PermitLimit,
                 policy.WindowSeconds);
 

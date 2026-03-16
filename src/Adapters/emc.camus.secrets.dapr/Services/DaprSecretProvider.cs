@@ -13,7 +13,7 @@ namespace emc.camus.secrets.dapr.Services
     /// <remarks>
     /// This implementation loads secrets from a Dapr sidecar using HTTP requests and caches them in memory.
     /// </remarks>
-    public class DaprSecretProvider : ISecretProvider
+    public partial class DaprSecretProvider : ISecretProvider
     {
         private const int MaxRetryAttempts = 3;
         private const int RetryBaseDelayMilliseconds = 500;
@@ -28,6 +28,29 @@ namespace emc.camus.secrets.dapr.Services
         private readonly DaprSecretProviderSettings _settings;
         private readonly ConcurrentDictionary<string, string> _secrets = new();
 
+        [LoggerMessage(Level = LogLevel.Warning,
+            Message = "Secret '{SecretName}' not found in loaded secrets. Available secrets: {LoadedCount}")]
+        private partial void LogSecretNotFoundInCache(string secretName, int loadedCount);
+
+        [LoggerMessage(Level = LogLevel.Warning,
+            Message = "Secret '{SecretName}' not found in store '{SecretStore}'")]
+        private partial void LogSecretNotFoundInStore(string secretName, string secretStore);
+
+        [LoggerMessage(Level = LogLevel.Warning,
+            Message = "Empty response received for secret '{SecretName}'")]
+        private partial void LogEmptySecretResponse(string secretName);
+
+        [LoggerMessage(Level = LogLevel.Error,
+            Message = "Failed to deserialize secret '{SecretName}' response: {ResponseContent}")]
+        private partial void LogDeserializationFailed(Exception ex, string secretName, string responseContent);
+
+        [LoggerMessage(Level = LogLevel.Error,
+            Message = "Transient error on final attempt loading secret '{SecretName}'. Max retries exhausted.")]
+        private partial void LogTransientErrorExhausted(Exception ex, string secretName);
+
+        [LoggerMessage(Level = LogLevel.Error,
+            Message = "Non-retryable error loading secret '{SecretName}' (attempt {Attempt}).")]
+        private partial void LogNonRetryableError(Exception ex, string secretName, int attempt);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DaprSecretProvider"/> class.
@@ -104,8 +127,7 @@ namespace emc.camus.secrets.dapr.Services
                 return value;
             }
 
-            _logger.LogWarning("Secret '{SecretName}' not found in loaded secrets. Available secrets: {LoadedCount}", 
-                name, _secrets.Count);
+            LogSecretNotFoundInCache(name, _secrets.Count);
             return null;
         }
         
@@ -126,7 +148,7 @@ namespace emc.camus.secrets.dapr.Services
             // Handle 404 as acceptable - secret doesn't exist
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                _logger.LogWarning("Secret '{SecretName}' not found in store '{SecretStore}'", secretName, _settings.SecretStoreName);
+                LogSecretNotFoundInStore(secretName, _settings.SecretStoreName);
                 return;
             }
            
@@ -137,7 +159,7 @@ namespace emc.camus.secrets.dapr.Services
            
             if (string.IsNullOrWhiteSpace(responseContent))
             {
-                _logger.LogWarning("Empty response received for secret '{SecretName}'", secretName);
+                LogEmptySecretResponse(secretName);
                 return;
             }
 
@@ -148,7 +170,7 @@ namespace emc.camus.secrets.dapr.Services
             }
             catch (JsonException ex)
             {
-                _logger.LogError(ex, "Failed to deserialize secret '{SecretName}' response: {ResponseContent}", secretName, responseContent);
+                LogDeserializationFailed(ex, secretName, responseContent);
                 throw; // Re-throw to trigger retry logic
             }
         }
@@ -230,12 +252,12 @@ namespace emc.camus.secrets.dapr.Services
                 catch (HttpRequestException ex) when (IsTransientError(ex))
                 {
                     // Transient error on final attempt - let loop exit naturally
-                    _logger.LogError(ex, "Transient error on final attempt loading secret '{SecretName}'. Max retries exhausted.", secretName);
+                    LogTransientErrorExhausted(ex, secretName);
                 }
                 catch (Exception ex)
                 {
                     // Non-transient error - stop immediately
-                    _logger.LogError(ex, "Non-retryable error loading secret '{SecretName}' (attempt {Attempt}).", secretName, attempt + 1);
+                    LogNonRetryableError(ex, secretName, attempt + 1);
                     break;
                 }
             }

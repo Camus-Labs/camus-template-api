@@ -23,7 +23,7 @@ namespace emc.camus.documentation.swagger.Configurations
         /// <summary>
         /// Validates the API version info configuration.
         /// </summary>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="InvalidOperationException">
         /// Thrown when any setting is invalid.
         /// </exception>
         public void Validate()
@@ -35,13 +35,13 @@ namespace emc.camus.documentation.swagger.Configurations
         private void ValidateVersion()
         {
             if (string.IsNullOrWhiteSpace(Version))
-                throw new ArgumentException("Version cannot be null or empty", nameof(Version));
+                throw new InvalidOperationException("Version cannot be null or empty");
         }
 
         private void ValidateTitle()
         {
             if (string.IsNullOrWhiteSpace(Title))
-                throw new ArgumentException("Title cannot be null or empty", nameof(Title));
+                throw new InvalidOperationException("Title cannot be null or empty");
         }
     }
 }

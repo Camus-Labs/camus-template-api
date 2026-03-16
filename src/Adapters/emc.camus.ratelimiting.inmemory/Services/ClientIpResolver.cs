@@ -8,12 +8,16 @@ namespace emc.camus.ratelimiting.inmemory.Services
     /// Checks X-Forwarded-For and X-Real-IP headers for multi-instance deployments behind reverse proxies.
     /// Critical for nginx, Azure LB, CloudFlare, etc.
     /// </summary>
-    public class ClientIpResolver
+    public partial class ClientIpResolver
     {
         private const string XForwardedForHeader = "X-Forwarded-For";
         private const string XRealIpHeader = "X-Real-IP";
-        
+
         private readonly ILogger<ClientIpResolver> _logger;
+
+        [LoggerMessage(Level = LogLevel.Warning,
+            Message = "Invalid IP format in X-Forwarded-For header: {ForwardedFor}. This may indicate header tampering or proxy misconfiguration. Endpoint: {Path}")]
+        private partial void LogInvalidForwardedForIp(string forwardedFor, string path);
 
         /// <summary>
         /// Creates a new instance of ClientIpResolver with logging support.
@@ -37,21 +41,21 @@ namespace emc.camus.ratelimiting.inmemory.Services
             {
                 return forwardedIp;
             }
-            
+
             // Check X-Real-IP header (used by some proxies like nginx)
             var realIp = TryGetRealIp(context);
             if (realIp != null)
             {
                 return realIp;
             }
-            
+
             // Fallback to direct connection IP (only works without proxy)
             var remoteIp = TryGetRemoteIp(context);
             if (remoteIp != null)
             {
                 return remoteIp;
             }
-            
+
             throw new InvalidOperationException(
                 $"Unable to determine client IP address for rate limiting. " +
                 $"No proxy headers (X-Forwarded-For, X-Real-IP) and no direct connection IP available. " +
@@ -84,16 +88,12 @@ namespace emc.camus.ratelimiting.inmemory.Services
             }
 
             // Invalid IP format in X-Forwarded-For - log warning
-            _logger.LogWarning(
-                $"Invalid IP format in {XForwardedForHeader} header: {{ForwardedFor}}. " +
-                "This may indicate header tampering or proxy misconfiguration. " +
-                "Endpoint: {Path}",
-                clientIp, context.Request.Path);
-            
+            LogInvalidForwardedForIp(clientIp, context.Request.Path);
+
             return null;
         }
 
-        private string? TryGetRealIp(HttpContext context)
+        private static string? TryGetRealIp(HttpContext context)
         {
             if (!context.Request.Headers.TryGetValue(XRealIpHeader, out var realIp))
             {
@@ -104,7 +104,7 @@ namespace emc.camus.ratelimiting.inmemory.Services
             return IsValidIp(ip) ? ip : null;
         }
 
-        private string? TryGetRemoteIp(HttpContext context)
+        private static string? TryGetRemoteIp(HttpContext context)
         {
             var remoteIp = context.Connection.RemoteIpAddress?.ToString();
             if (remoteIp == null)

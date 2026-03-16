@@ -11,11 +11,15 @@ namespace emc.camus.api.Metrics
     /// Exports counters to Prometheus/Application Insights via OpenTelemetry.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public class ErrorMetrics
+    public partial class ErrorMetrics
     {
         private const string MetricNameErrorResponses = "error_responses_total";
         private readonly Counter<long> _errorResponsesCounter;
         private readonly ILogger<ErrorMetrics> _logger;
+
+        [LoggerMessage(Level = LogLevel.Warning,
+            Message = "Failed to record error metrics for error code {ErrorCode}")]
+        private partial void LogMetricsRecordingFailed(Exception ex, string errorCode);
 
         /// <summary>
         /// Creates a new instance of ErrorMetrics with the specified service name.
@@ -60,7 +64,7 @@ namespace emc.camus.api.Metrics
             catch (Exception ex)
             {
                 // Log but suppress - telemetry failures should never affect application behavior
-                _logger.LogWarning(ex, "Failed to record error metrics for error code {ErrorCode}", errorCode);
+                LogMetricsRecordingFailed(ex, errorCode);
             }
         }
     }
