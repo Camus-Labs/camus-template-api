@@ -39,11 +39,18 @@ jobs:
         run: |
           THRESHOLD=80
 
-          # Find the merged Cobertura report
-          REPORT=$(find ./TestResults -name 'coverage.cobertura.xml' | head -1)
+          # Install dotnet-coverage tool for merging reports
+          dotnet tool install --global dotnet-coverage
 
-          if [[ -z "$REPORT" ]]; then
-            echo "❌ ERROR: No coverage report found."
+          # Merge all per-project Cobertura reports into one
+          dotnet-coverage merge ./TestResults/**/coverage.cobertura.xml \
+            --output ./TestResults/merged.cobertura.xml \
+            --output-format cobertura
+
+          REPORT="./TestResults/merged.cobertura.xml"
+
+          if [[ ! -f "$REPORT" ]]; then
+            echo "❌ ERROR: Merged coverage report not found."
             exit 1
           fi
 
