@@ -12,10 +12,10 @@ jobs:
 
     steps:
       - name: Clone repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '9.0.x'
 
@@ -25,7 +25,7 @@ jobs:
       - name: Build solution
         run: dotnet build src/CamusApp.sln -c Release --no-restore
 
-      - name: Run tests
+      - name: Run tests with coverage
         run: >
           dotnet test src/CamusApp.sln
           -c Release
@@ -33,3 +33,41 @@ jobs:
           --logger "trx;LogFileName=test-results.trx"
           --collect:"XPlat Code Coverage"
           --settings coverlet.runsettings
+          --results-directory ./TestResults
+
+      - name: Enforce coverage threshold
+        run: |
+          THRESHOLD=80
+
+          # Find the merged Cobertura report
+          REPORT=$(find ./TestResults -name 'coverage.cobertura.xml' | head -1)
+
+          if [[ -z "$REPORT" ]]; then
+            echo "❌ ERROR: No coverage report found."
+            exit 1
+          fi
+
+          # Extract line-rate from the root <coverage> element (value is 0.0–1.0)
+          LINE_RATE=$(grep -oP '<coverage[^>]+line-rate="\K[0-9.]+' "$REPORT" | head -1)
+
+          if [[ -z "$LINE_RATE" ]]; then
+            echo "❌ ERROR: Could not parse line-rate from coverage report."
+            exit 1
+          fi
+
+          # Convert to percentage (awk handles floating-point math)
+          COVERAGE=$(awk "BEGIN { printf \"%.2f\", $LINE_RATE * 100 }")
+
+          echo "📊 Line coverage: ${COVERAGE}%"
+          echo "📏 Threshold:     ${THRESHOLD}%"
+
+          PASS=$(awk "BEGIN { print ($COVERAGE >= $THRESHOLD) ? 1 : 0 }")
+
+          if [[ "$PASS" -ne 1 ]]; then
+            echo ""
+            echo "❌ FAILED: Coverage ${COVERAGE}% is below the ${THRESHOLD}% minimum."
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ PASSED: Coverage ${COVERAGE}% meets the ${THRESHOLD}% minimum."
