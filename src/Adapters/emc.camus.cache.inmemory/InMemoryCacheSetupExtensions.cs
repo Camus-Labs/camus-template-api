@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using emc.camus.application.Auth;
-using emc.camus.cache.inmemory.Caches;
+using emc.camus.cache.inmemory.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

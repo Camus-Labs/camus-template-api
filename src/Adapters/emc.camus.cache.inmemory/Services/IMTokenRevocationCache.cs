@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using emc.camus.application.Auth;
 
-namespace emc.camus.cache.inmemory.Caches;
+namespace emc.camus.cache.inmemory.Services;
 
 /// <summary>
 /// In-memory implementation of <see cref="ITokenRevocationCache"/> using a <see cref="ConcurrentDictionary{TKey, TValue}"/>.
@@ -19,7 +19,12 @@ public class IMTokenRevocationCache : ITokenRevocationCache
 {
     private readonly ConcurrentDictionary<Guid, DateTime> _revokedTokens = new();
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Checks whether a token identified by its JTI has been revoked.
+    /// Lazily evicts expired entries encountered during lookup.
+    /// </summary>
+    /// <param name="jti">The JWT ID to check.</param>
+    /// <returns><see langword="true"/> if the token is revoked and not yet expired; otherwise <see langword="false"/>.</returns>
     public bool IsRevoked(Guid jti)
     {
         if (_revokedTokens.TryGetValue(jti, out var expiresOn))
@@ -34,7 +39,12 @@ public class IMTokenRevocationCache : ITokenRevocationCache
         return false;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Records a token as revoked until its expiration time.
+    /// Ignores tokens that have already expired.
+    /// </summary>
+    /// <param name="jti">The JWT ID to revoke.</param>
+    /// <param name="expiresOn">The token's expiration date, used for cache eviction.</param>
     public void Revoke(Guid jti, DateTime expiresOn)
     {
         if (expiresOn > DateTime.UtcNow)

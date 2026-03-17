@@ -16,11 +16,10 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
 
 2. Validation & Error Handling
 
-    - [ ] All public methods/constructors validate parameters with `ArgumentNullException.ThrowIf*()` static helpers
+    - [ ] All public methods/constructors validate parameters with `Argument*Exception.ThrowIf*()` static helpers
           — no manual `if`/`throw` with `nameof()` — exceptions: mapper methods (pure structural transformers),
-          middleware parameters supplied by the ASP.NET Core pipeline (e.g., `RequestDelegate`, `HttpContext`),
-          controller action parameters bound by `[ApiController]` (framework guarantees non-null binding), and
-          `Reconstitute` static factories (trusted persistence data — validation bypassed by design)
+          middleware parameters supplied by the ASP.NET Core pipeline, controller action parameters bound by
+          `[ApiController]`, DI setup extension method parameters, and `Reconstitute` static factories
     - [ ] Validation methods throw exceptions — never return null/false
     - [ ] Multi-statement validation on non-settings classes as `private void Validate{Property}()` methods
     - [ ] Exception throw statements use string interpolation containing the offending value or the violated constraint
