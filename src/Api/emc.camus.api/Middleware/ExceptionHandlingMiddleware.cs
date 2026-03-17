@@ -122,7 +122,7 @@ namespace emc.camus.api.Middleware
             {
                 await _next(context);
             }
-            catch (Exception ex)
+            catch (Exception ex) // codeql[cs/catch-of-all-exceptions] Required: global exception handler must catch all unhandled exceptions
             {
                 await HandleExceptionAsync(context, ex);
             }

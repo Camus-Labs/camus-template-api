@@ -45,3 +45,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Observability stack (Jaeger, Prometheus, Grafana, Loki) via Docker Compose
 - .NET 9.0 target framework
 - Comprehensive test project structure with 100% coverage target across all layers
+- Copilot instruction files per layer (Domain, Application, API, Adapters, Persistence, Testing, C#, Documentation)
+- AI agent definitions for TDD workflow (product owner, architect, tester, developer) and automated fixes
+- Multi-model concurrent reviewer agents for code, documentation, agents, and prompts
+- Review prompt templates for code, documentation, agent, and prompt compliance
+- GitHub Actions workflows for CI, dependency vulnerability scanning, Markdown lint, Docker lint, and version check

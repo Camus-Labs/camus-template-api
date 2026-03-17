@@ -132,7 +132,7 @@ public class PSUserRepository : IUserRepository
         {
             isPasswordValid = BCrypt.Net.BCrypt.Verify(password, userModel.PasswordHash);
         }
-        catch (Exception ex)
+        catch (Exception ex) // codeql[cs/catch-of-all-exceptions] Intentional: wraps BCrypt failures with diagnostic context
         {
             throw new InvalidOperationException(
                 "Failed to verify password. The password hash may be corrupted.", ex);

@@ -254,7 +254,7 @@ namespace emc.camus.secrets.dapr.Services
                     // Transient error on final attempt - let loop exit naturally
                     LogTransientErrorExhausted(ex, secretName);
                 }
-                catch (Exception ex)
+                catch (Exception ex) // codeql[cs/catch-of-all-exceptions] Intentional: non-transient errors must stop retry loop immediately
                 {
                     // Non-transient error - stop immediately
                     LogNonRetryableError(ex, secretName, attempt + 1);

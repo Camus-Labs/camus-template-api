@@ -173,7 +173,7 @@ namespace emc.camus.migrations.dbup
                 LogMigrationScriptExecuted(logger, script.Name);
             }
         }
-        catch (Exception ex)
+        catch (Exception ex) // codeql[cs/catch-of-all-exceptions] Intentional: wraps migration failures with diagnostic context
         {
             throw new InvalidOperationException("Failed to run database migrations. Ensure the database is accessible and the configuration is correct.", ex);
         }

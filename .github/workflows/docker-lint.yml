@@ -7,7 +7,7 @@ on:
 
 jobs:
   hadolint:
-    name: Lint Docker files
+    name: Docker Linter
     runs-on: ubuntu-latest
 
     steps:
