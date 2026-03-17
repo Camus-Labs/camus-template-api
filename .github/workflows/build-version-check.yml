@@ -8,6 +8,7 @@ on:
 
 jobs:
   version-check:
+    name: Version Check
     runs-on: ubuntu-latest
     steps:
     - name: Clone repository
