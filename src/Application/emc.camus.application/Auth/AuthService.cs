@@ -94,10 +94,7 @@ public class AuthService
                     await _userRepository.UpdateLastLoginAsync(connection, user.Id);
 
                     // Generate token with user's permissions
-                    var claims = user.GetPermissions()
-                        .Select(p => new Claim(Permissions.ClaimType, p))
-                        .ToList();
-                    token = _tokenGenerator.GenerateToken(user.Id, user.Username, claims);
+                    token = _tokenGenerator.GenerateToken(user.Id, user.Username, BuildPermissionClaims(user));
 
                     // Log successful login audit
                     await _auditRepository.LogSystemActionAsync(
@@ -123,10 +120,7 @@ public class AuthService
                 user = await _userRepository.ValidateCredentialsAsync(null!, command.Username, command.Password);
 
                 // Generate token with user's permissions
-                var claims = user.GetPermissions()
-                    .Select(p => new Claim(Permissions.ClaimType, p))
-                    .ToList();
-                token = _tokenGenerator.GenerateToken(user.Id, user.Username, claims);
+                token = _tokenGenerator.GenerateToken(user.Id, user.Username, BuildPermissionClaims(user));
             }
 
             // Return immutable result
@@ -472,6 +466,13 @@ public class AuthService
                 $"Cannot grant permissions you don't have: {string.Join(", ", unauthorizedPermissions)}.",
                 nameof(requestedPermissions));
         }
+    }
+
+    private static List<Claim> BuildPermissionClaims(User user)
+    {
+        return user.GetPermissions()
+            .Select(p => new Claim(Permissions.ClaimType, p))
+            .ToList();
     }
 
     private static GeneratedTokenSummaryView ToSummaryView(GeneratedToken token)
