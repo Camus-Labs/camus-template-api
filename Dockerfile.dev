@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS dev
 
 # Install debugger
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN apt-get update && apt-get install -y --no-install-recommends unzip=6.0-* \
+RUN apt-get update && apt-get install -y --no-install-recommends unzip=6.0-28 \
     && curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg \
     && rm -rf /var/lib/apt/lists/*
 
