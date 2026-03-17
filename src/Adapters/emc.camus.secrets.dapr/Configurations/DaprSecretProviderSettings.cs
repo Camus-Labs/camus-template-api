@@ -89,9 +89,8 @@ namespace emc.camus.secrets.dapr.Configurations
             if (SecretNames.Count == 0)
                 throw new InvalidOperationException("At least one secret name must be specified in SecretNames");
 
-            foreach (var secretName in SecretNames)
+            foreach (var secretName in SecretNames.Where(string.IsNullOrWhiteSpace))
             {
-            if (string.IsNullOrWhiteSpace(secretName))
                 throw new InvalidOperationException("SecretNames cannot contain null or empty values");
             }
         }

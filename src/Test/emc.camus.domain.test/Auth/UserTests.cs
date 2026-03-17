@@ -64,6 +64,7 @@ public class UserTests
 
         // Assert
         act.Should().Throw<ArgumentException>()
+            .WithMessage("*username*")
             .And.ParamName.Should().Be("username");
     }
 
