@@ -181,23 +181,21 @@ namespace emc.camus.documentation.swagger
 
             var securityRequirements = new OpenApiSecurityRequirement();
 
-            foreach (var scheme in settings.SecuritySchemes)
+            foreach (var schemeKey in settings.SecuritySchemes
+                .Select(GetSecuritySchemeKey)
+                .Where(key => key != null))
             {
-                var schemeKey = GetSecuritySchemeKey(scheme);
-                if (schemeKey != null)
-                {
-                    securityRequirements.Add(
-                        new OpenApiSecurityScheme
+                securityRequirements.Add(
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
                         {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = schemeKey
-                            }
-                        },
-                        Array.Empty<string>()
-                    );
-                }
+                            Type = ReferenceType.SecurityScheme,
+                            Id = schemeKey
+                        }
+                    },
+                    Array.Empty<string>()
+                );
             }
 
             options.AddSecurityRequirement(securityRequirements);
@@ -214,7 +212,7 @@ namespace emc.camus.documentation.swagger
             }
 
             var xmlFile = $"{targetAssembly.GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            var xmlPath = Path.Join(AppContext.BaseDirectory, xmlFile);
             if (File.Exists(xmlPath))
             {
                 options.IncludeXmlComments(xmlPath);

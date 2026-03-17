@@ -37,8 +37,8 @@ namespace emc.camus.security.jwt
             settings.Validate();
             builder.Services.AddSingleton(settings);
 
-            // Register RSA Security Key (requires ISecretProvider)
-            builder.Services.AddSingleton<RsaSecurityKey>(provider =>
+            // Register RSA key (DI container owns lifecycle and disposes at shutdown)
+            builder.Services.AddSingleton<RSA>(provider =>
             {
                 var secretProvider = provider.GetRequiredService<ISecretProvider>();
                 var jwtSettings = provider.GetRequiredService<JwtSettings>();
@@ -47,6 +47,13 @@ namespace emc.camus.security.jwt
 
                 var rsa = RSA.Create();
                 rsa.ImportFromPem(pem.ToCharArray());
+                return rsa;
+            });
+
+            // Register RSA Security Key (wraps the DI-managed RSA instance)
+            builder.Services.AddSingleton<RsaSecurityKey>(provider =>
+            {
+                var rsa = provider.GetRequiredService<RSA>();
                 return new RsaSecurityKey(rsa);
             });
 

@@ -56,13 +56,9 @@ namespace emc.camus.observability.otel.Telemetry
                 // Register application meters, excluding any specified in DisabledMeters configuration
                 var disabledMeters = settings.Metrics.DisabledMeters ?? Array.Empty<string>();
                 
-                foreach (var meterSuffix in MeterNames.GetAll())
+                foreach (var meterSuffix in MeterNames.GetAll().Where(m => !disabledMeters.Contains(m)))
                 {
-                    // Skip meters that are in the disabled list
-                    if (!disabledMeters.Contains(meterSuffix))
-                    {
-                        metricsBuilder.AddMeter($"{serviceName}{meterSuffix}");
-                    }
+                    metricsBuilder.AddMeter($"{serviceName}{meterSuffix}");
                 }
 
                 metricsBuilder.ConfigureMetricsExporter(settings);
