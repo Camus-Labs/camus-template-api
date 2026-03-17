@@ -110,7 +110,7 @@ public class AuthService
                     // Commit transaction
                     transaction.Commit();
                 }
-                catch (Exception) // codeql[cs/catch-of-all-exceptions] Required: rollback transaction on any failure before rethrowing
+                catch (Exception)
                 {
                     // Rollback on infrastructure failures
                     transaction.Rollback();
@@ -140,7 +140,7 @@ public class AuthService
             // Let domain exceptions bubble up with their original context
             throw;
         }
-        catch (Exception ex) // codeql[cs/catch-of-all-exceptions] Intentional: wraps unexpected infrastructure failures with business context at service boundary
+        catch (Exception ex)
         {
             // Wrap infrastructure failures with business context
             throw new InvalidOperationException(
@@ -238,7 +238,7 @@ public class AuthService
                     // Commit transaction
                     transaction.Commit();
                 }
-                catch (Exception) // codeql[cs/catch-of-all-exceptions] Required: rollback transaction on any failure before rethrowing
+                catch (Exception)
                 {
                     // Rollback on infrastructure failures
                     transaction.Rollback();
@@ -259,7 +259,7 @@ public class AuthService
             // Let validation exceptions bubble up
             throw;
         }
-        catch (Exception ex) // codeql[cs/catch-of-all-exceptions] Intentional: wraps unexpected infrastructure failures with business context at service boundary
+        catch (Exception ex)
         {
             // Wrap infrastructure failures with business context
             throw new InvalidOperationException(
@@ -296,7 +296,7 @@ public class AuthService
 
             return new PagedResult<GeneratedTokenSummaryView>(items, pagedTokens.TotalCount, pagedTokens.Page, pagedTokens.PageSize);
         }
-        catch (Exception ex) // codeql[cs/catch-of-all-exceptions] Intentional: wraps unexpected infrastructure failures with business context at service boundary
+        catch (Exception ex)
         {
             throw new InvalidOperationException(
                 "Failed to retrieve generated tokens due to a system error.", ex);
@@ -365,7 +365,7 @@ public class AuthService
 
                 return ToSummaryView(generatedToken);
             }
-            catch (Exception) // codeql[cs/catch-of-all-exceptions] Required: rollback transaction on any failure before rethrowing
+            catch (Exception)
             {
                 transaction.Rollback();
                 throw;
@@ -375,7 +375,7 @@ public class AuthService
         {
             throw;
         }
-        catch (Exception ex) // codeql[cs/catch-of-all-exceptions] Intentional: wraps unexpected infrastructure failures with business context at service boundary
+        catch (Exception ex)
         {
             throw new InvalidOperationException(
                 "Token revocation failed due to a system error.", ex);
@@ -398,7 +398,7 @@ public class AuthService
         {
             _userRepository.Initialize();
         }
-        catch (Exception ex) // codeql[cs/catch-of-all-exceptions] Intentional: wraps unexpected infrastructure failures with business context at service boundary
+        catch (Exception ex)
         {
             throw new InvalidOperationException(
                 "Failed to initialize authentication service. Ensure the database is accessible.", ex);

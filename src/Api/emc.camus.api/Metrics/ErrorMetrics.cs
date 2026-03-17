@@ -61,7 +61,7 @@ namespace emc.camus.api.Metrics
                     new KeyValuePair<string, object?>("http_status", httpStatus),
                     new KeyValuePair<string, object?>("path", path));
             }
-            catch (Exception ex) // codeql[cs/catch-of-all-exceptions] Intentional: telemetry failures must never affect application behavior
+            catch (Exception ex)
             {
                 // Log but suppress - telemetry failures should never affect application behavior
                 LogMetricsRecordingFailed(ex, errorCode);

@@ -1,0 +1,9 @@
+name: "Custom CodeQL Configuration"
+
+# Exclude generic catch clause alerts — our Application and Adapter layers
+# intentionally catch all exceptions at service boundaries to wrap
+# infrastructure failures with business context before rethrowing.
+# See: docs/architecture.md (error handling conventions)
+query-filters:
+  - exclude:
+      id: cs/catch-of-all-exceptions
