@@ -97,7 +97,7 @@ namespace emc.camus.api.Configurations
         private void ValidateAllowedOrigins()
         {
             if (AllowedOrigins == null)
-                throw new InvalidOperationException($"AllowedOrigins cannot be null. Got: '{AllowedOrigins}'.");
+                throw new InvalidOperationException($"AllowedOrigins cannot be null.");
 
             if (AllowedOrigins.Length == 0)
                 throw new InvalidOperationException($"At least one allowed origin must be specified. Got: {AllowedOrigins.Length} origin(s).");
@@ -124,23 +124,22 @@ namespace emc.camus.api.Configurations
             if (AllowedMethods == null || AllowedMethods.Length == 0)
                 throw new InvalidOperationException($"At least one allowed HTTP method must be specified. Got: {AllowedMethods?.Length ?? 0} method(s).");
 
-            foreach (var method in AllowedMethods)
+            foreach (var method in AllowedMethods.Where(string.IsNullOrWhiteSpace))
             {
-                if (string.IsNullOrWhiteSpace(method))
-                    throw new InvalidOperationException($"AllowedMethods contains a null or empty value: '{method}'.");
+                throw new InvalidOperationException($"AllowedMethods contains a null or empty value: '{method}'.");
             }
         }
 
         private void ValidateAllowedHeaders()
         {
             if (AllowedHeaders == null)
-                throw new InvalidOperationException($"AllowedHeaders cannot be null. Got: '{AllowedHeaders}'.");
+                throw new InvalidOperationException($"AllowedHeaders cannot be null.");
         }
 
         private void ValidateExposedHeaders()
         {
             if (ExposedHeaders == null)
-                throw new InvalidOperationException($"ExposedHeaders cannot be null. Got: '{ExposedHeaders}'.");
+                throw new InvalidOperationException($"ExposedHeaders cannot be null.");
         }
 
         private void ValidatePreflightMaxAge()

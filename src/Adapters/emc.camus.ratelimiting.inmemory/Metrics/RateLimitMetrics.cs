@@ -9,10 +9,11 @@ namespace emc.camus.ratelimiting.inmemory.Metrics
     /// Exports counters to Prometheus/Application Insights via OpenTelemetry.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public class RateLimitMetrics
+    public class RateLimitMetrics : IDisposable
     {
         private const string MetricNameRateLimitRejections = "rate_limit_rejections_total";
-        
+
+        private readonly Meter _meter;
         private readonly Counter<long> _rateLimitRejectionsCounter;
 
         /// <summary>
@@ -21,10 +22,10 @@ namespace emc.camus.ratelimiting.inmemory.Metrics
         /// <param name="serviceName">The service name to use for the meter (should match OpenTelemetry service name).</param>
         public RateLimitMetrics(string serviceName)
         {
-            var meter = new Meter($"{serviceName}{MeterNames.Security}");
+            _meter = new Meter($"{serviceName}{MeterNames.Security}");
 
             // Counter for requests rejected due to rate limiting
-            _rateLimitRejectionsCounter = meter.CreateCounter<long>(
+            _rateLimitRejectionsCounter = _meter.CreateCounter<long>(
                 name: MetricNameRateLimitRejections,
                 unit: "requests",
                 description: "Total number of requests rejected due to rate limiting");
@@ -40,6 +41,15 @@ namespace emc.camus.ratelimiting.inmemory.Metrics
             _rateLimitRejectionsCounter.Add(1,
                 new KeyValuePair<string, object?>("policy", policyName),
                 new KeyValuePair<string, object?>("method", method));
+        }
+
+        /// <summary>
+        /// Disposes the underlying meter instance.
+        /// </summary>
+        public void Dispose()
+        {
+            _meter.Dispose();
+            GC.SuppressFinalize(this);
         }
 
     }

@@ -11,9 +11,10 @@ namespace emc.camus.api.Metrics
     /// Exports counters to Prometheus/Application Insights via OpenTelemetry.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public partial class ErrorMetrics
+    public partial class ErrorMetrics : IDisposable
     {
         private const string MetricNameErrorResponses = "error_responses_total";
+        private readonly Meter _meter;
         private readonly Counter<long> _errorResponsesCounter;
         private readonly ILogger<ErrorMetrics> _logger;
 
@@ -31,10 +32,10 @@ namespace emc.camus.api.Metrics
             ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
             ArgumentNullException.ThrowIfNull(logger);
 
-            var meter = new Meter($"{serviceName}{MeterNames.ErrorHandling}");
+            _meter = new Meter($"{serviceName}{MeterNames.ErrorHandling}");
 
             // Counter for all error responses
-            _errorResponsesCounter = meter.CreateCounter<long>(
+            _errorResponsesCounter = _meter.CreateCounter<long>(
                 name: MetricNameErrorResponses,
                 unit: "responses",
                 description: "Total number of error responses returned by the application");
@@ -66,6 +67,15 @@ namespace emc.camus.api.Metrics
                 // Log but suppress - telemetry failures should never affect application behavior
                 LogMetricsRecordingFailed(ex, errorCode);
             }
+        }
+
+        /// <summary>
+        /// Disposes the underlying meter instance.
+        /// </summary>
+        public void Dispose()
+        {
+            _meter.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

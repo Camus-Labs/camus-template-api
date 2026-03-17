@@ -149,7 +149,7 @@ public class AuthService
     }
 
     /// <summary>
-    /// /// Generates a custom token with specified permissions and expiration for an authenticated user.
+    /// Generates a custom token with specified permissions and expiration for an authenticated user.
     /// Validates and restricts permissions to those possessed by the current user.
     /// Stores the generated token metadata in the database for audit and tracking.
     /// </summary>
@@ -383,10 +383,7 @@ public class AuthService
     }
 
     /// <summary>
-    /// Maps a GeneratedToken domain entity to a GeneratedTokenSummaryView.
-    /// </summary>
-
-    /// <summary>    /// Initializes the user repository to load users and roles.
+    /// Initializes the user repository to load users and roles.
     /// Should be called during application startup.
     /// </summary>
     /// <exception cref="InvalidOperationException">
