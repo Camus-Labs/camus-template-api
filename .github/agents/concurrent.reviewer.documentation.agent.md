@@ -61,8 +61,13 @@ Read and internalize this file before starting:
   the same file, record it once and note which models flagged it; otherwise (single model), still include it; mark
   columns of failed sub-agents as N/A in the Checklist Results table.
 
-4. Produce the consolidated Documentation Review Report in the output format below using the merged results. Set
-  overall Verdict to FAIL if any merged section is FAIL, otherwise set it to PASS. Set Ready for Use to Yes when
+4. Validate each merged finding against the full rule text — re-read the exact checklist item including all exception
+  clauses; discard any finding where the flagged content falls under an explicit exception in the rule; note each
+  discarded finding and the exception clause that applies in a Discarded Findings section of the report; if
+  discarding changes a section from FAIL to zero findings, flip that section to PASS.
+
+5. Produce the consolidated Documentation Review Report in the output format below using the validated results. Set
+  overall Verdict to FAIL if any validated section is FAIL, otherwise set it to PASS. Set Ready for Use to Yes when
   Verdict is PASS, set to No otherwise — deliver the report and stop.
 
 ## Rules
@@ -106,10 +111,16 @@ Section [#] — [file path] — [issue] (flagged by: [model list])
 - Evidence: [exact source text or location]
 - Fix: [corrective action]
 
+### Discarded Findings
+
+Section [#] — [file path] — [issue] (flagged by: [model list])
+- Exception clause: [exact rule exception text that applies]
+
 ### Summary
 
 - Total Sections: [count]
 - Total Findings: [count]
+- Discarded Findings: [count]
 - Documentation Files Reviewed: [count]
 - Ready for Use: [Yes | No]
 ```

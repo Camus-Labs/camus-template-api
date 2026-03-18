@@ -25,9 +25,7 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
           applies to all validation code (public entry points and private `Validate*` methods alike)
     - [ ] Validation methods throw exceptions — never return null/false
     - [ ] Multi-statement validation on non-settings classes as `private void Validate{Property}()` methods
-    - [ ] Exception throw statements use string interpolation containing the offending value or the violated constraint
-          — exception: pure null checks may use a plain string literal since interpolating a null reference yields no
-          diagnostic value
+    - [ ] Exception throw statements contain the offending value or the violated constraint
 
 3. Configuration Classes (`*Settings`)
 

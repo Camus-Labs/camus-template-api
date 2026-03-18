@@ -70,7 +70,7 @@ namespace emc.camus.security.jwt.Handlers
                             // AuthenticateFailure is populated by the framework from AuthenticateResult.Failure
                             // This covers both framework validation errors and custom context.Fail() calls
                             var originalException = context.AuthenticateFailure;
-                            
+
                             // Throw exception - middleware will auto-detect error code from message pattern
                             if (originalException != null)
                             {
@@ -81,7 +81,7 @@ namespace emc.camus.security.jwt.Handlers
                                     SecurityTokenInvalidSignatureException => "The provided credentials are invalid. JWT token has invalid signature.",
                                     SecurityTokenInvalidIssuerException => "The provided credentials are invalid. JWT token has invalid issuer.",
                                     SecurityTokenInvalidAudienceException => "The provided credentials are invalid. JWT token has invalid audience.",
-                                    SecurityTokenException ex when ex.Message.Contains("revoked", StringComparison.OrdinalIgnoreCase) 
+                                    SecurityTokenException ex when ex.Message.Contains("revoked", StringComparison.OrdinalIgnoreCase)
                                         => "The provided credentials are invalid. JWT token has been revoked.",
                                     _ => "The provided credentials are invalid. Invalid JWT token."
                                 };

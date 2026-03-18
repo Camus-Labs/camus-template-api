@@ -15,26 +15,30 @@ public class JwtSettings
     private const int MaxIssuerLength = 200;
     private const int MaxAudienceLength = 200;
     private const int MaxRsaPrivateKeySecretNameLength = 50;
-    
+    private const string DefaultIssuer = "https://auth.camus.com/";
+    private const string DefaultAudience = "https://app.camus.com/";
+    private const int DefaultExpirationMinutes = 60;
+    private const string DefaultRsaPrivateKeySecretName = "RsaPrivateKeyPem";
+
     /// <summary>
     /// The issuer of the JWT token (usually your API's URL).
     /// </summary>
-    public string Issuer { get; set; } = "https://auth.camus.com/";
+    public string Issuer { get; set; } = DefaultIssuer;
 
     /// <summary>
     /// The audience for the JWT token (usually your client app's URL).
     /// </summary>
-    public string Audience { get; set; } = "https://app.camus.com/";
+    public string Audience { get; set; } = DefaultAudience;
 
     /// <summary>
     /// Token expiration time in minutes.
     /// </summary>
-    public int ExpirationMinutes { get; set; } = 60;
+    public int ExpirationMinutes { get; set; } = DefaultExpirationMinutes;
 
     /// <summary>
     /// Secret name for the RSA private key PEM used in JWT token signing.
     /// </summary>
-    public string RsaPrivateKeySecretName { get; set; } = "RsaPrivateKeyPem";
+    public string RsaPrivateKeySecretName { get; set; } = DefaultRsaPrivateKeySecretName;
 
     /// <summary>
     /// Validates the JWT settings configuration.

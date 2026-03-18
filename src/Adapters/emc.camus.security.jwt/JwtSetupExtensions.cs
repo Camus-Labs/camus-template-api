@@ -9,7 +9,6 @@ using emc.camus.security.jwt.Services;
 using emc.camus.security.jwt.Handlers;
 using emc.camus.application.Secrets;
 using emc.camus.application.Auth;
-using emc.camus.application.Common;
 using System.Diagnostics.CodeAnalysis;
 
 namespace emc.camus.security.jwt
