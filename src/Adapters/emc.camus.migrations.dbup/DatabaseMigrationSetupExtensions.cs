@@ -15,7 +15,7 @@ namespace emc.camus.migrations.dbup
     /// Provides extension methods for database migration using DbUp.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public static partial class DatabaseMigrationExtensions
+    public static partial class DatabaseMigrationSetupExtensions
     {
         private const string DefaultSchema = "public";
         private const string DefaultSchemaVersionsTable = "camus_schemaversions";
@@ -32,7 +32,7 @@ namespace emc.camus.migrations.dbup
             Message = "Database is up to date. No migrations needed.")]
         private static partial void LogDatabaseUpToDate(ILogger logger);
 
-        [LoggerMessage(Level = LogLevel.Error,
+        [LoggerMessage(Level = LogLevel.Warning,
             Message = "Database migration failed")]
         private static partial void LogMigrationFailed(ILogger logger, Exception ex);
 
@@ -105,80 +105,80 @@ namespace emc.camus.migrations.dbup
 
                 // Get secret provider for credentials
                 var secretProvider = app.Services.GetService<ISecretProvider>();
-            if (secretProvider == null)
-            {
-                throw new InvalidOperationException(
-                    "Database migrations are configured to use secrets but ISecretProvider is not registered in DI");
+                if (secretProvider == null)
+                {
+                    throw new InvalidOperationException(
+                        "Database migrations are configured to use secrets but ISecretProvider is not registered in DI");
+                }
+
+                LogCredentialsFetchFromSecrets(logger);
+
+                // Fetch admin credentials from secret provider
+                var adminUsername = secretProvider.GetSecret(migrationsSettings.AdminSecretName!);
+                var adminPassword = secretProvider.GetSecret(migrationsSettings.PasswordSecretName!);
+
+                if (string.IsNullOrWhiteSpace(adminUsername))
+                {
+                    throw new InvalidOperationException(
+                        $"Database admin username secret '{migrationsSettings.AdminSecretName}' not found or empty");
+                }
+
+                if (string.IsNullOrWhiteSpace(adminPassword))
+                {
+                    throw new InvalidOperationException(
+                        $"Database admin password secret '{migrationsSettings.PasswordSecretName}' not found or empty");
+                }
+
+                // Build connection string using DatabaseSettings structure with admin credentials
+                var connectionString = $"Host={dbSettings.Host};Port={dbSettings.Port};Database={dbSettings.Database};Username={adminUsername};Password={adminPassword}";
+
+                if (!string.IsNullOrWhiteSpace(dbSettings.AdditionalParameters))
+                {
+                    connectionString += $";{dbSettings.AdditionalParameters}";
+                }
+
+                // Step 1: Configure DbUp to run migrations
+                // Note: 001_initial_schema.sql creates the camus schema
+                var upgrader = DeployChanges.To
+                    .PostgresqlDatabase(connectionString)
+                    .WithScriptsEmbeddedInAssembly(
+                        Assembly.GetExecutingAssembly(),
+                        script => script.EndsWith(".sql", StringComparison.Ordinal))
+                    .WithVariablesDisabled() // Disable variable substitution to avoid conflicts with bcrypt hashes ($2a$)
+                    .JournalToPostgresqlTable(DefaultSchema, DefaultSchemaVersionsTable)
+                    .LogToConsole()
+                    .Build();
+
+                // Step 2: Check if migrations are needed
+                if (!upgrader.IsUpgradeRequired())
+                {
+                    LogDatabaseUpToDate(logger);
+                    return app;
+                }
+
+                // Step 3: Execute migrations
+                var result = upgrader.PerformUpgrade();
+
+                if (!result.Successful)
+                {
+                    LogMigrationFailed(logger, result.Error);
+                    throw new InvalidOperationException($"Database migration failed: {result.Error.Message}", result.Error);
+                }
+
+                LogMigrationCompleted(logger);
+
+                // Log which scripts were executed
+                foreach (var script in result.Scripts)
+                {
+                    LogMigrationScriptExecuted(logger, script.Name);
+                }
             }
-            
-            LogCredentialsFetchFromSecrets(logger);
-
-            // Fetch admin credentials from secret provider
-            var adminUsername = secretProvider.GetSecret(migrationsSettings.AdminSecretName!);
-            var adminPassword = secretProvider.GetSecret(migrationsSettings.PasswordSecretName!);
-
-            if (string.IsNullOrWhiteSpace(adminUsername))
+            catch (Exception ex)
             {
-                throw new InvalidOperationException(
-                    $"Database admin username secret '{migrationsSettings.AdminSecretName}' not found or empty");
+                throw new InvalidOperationException($"Failed to run database migrations: {ex.Message}", ex);
             }
 
-            if (string.IsNullOrWhiteSpace(adminPassword))
-            {
-                throw new InvalidOperationException(
-                    $"Database admin password secret '{migrationsSettings.PasswordSecretName}' not found or empty");
-            }
-
-            // Build connection string using DatabaseSettings structure with admin credentials
-            var connectionString = $"Host={dbSettings.Host};Port={dbSettings.Port};Database={dbSettings.Database};Username={adminUsername};Password={adminPassword}";
-            
-            if (!string.IsNullOrWhiteSpace(dbSettings.AdditionalParameters))
-            {
-                connectionString += $";{dbSettings.AdditionalParameters}";
-            }
-
-            // Step 1: Configure DbUp to run migrations
-            // Note: 001_initial_schema.sql creates the camus schema
-            var upgrader = DeployChanges.To
-                .PostgresqlDatabase(connectionString)
-                .WithScriptsEmbeddedInAssembly(
-                    Assembly.GetExecutingAssembly(),
-                    script => script.EndsWith(".sql", StringComparison.Ordinal))
-                .WithVariablesDisabled() // Disable variable substitution to avoid conflicts with bcrypt hashes ($2a$)
-                .JournalToPostgresqlTable(DefaultSchema, DefaultSchemaVersionsTable)
-                .LogToConsole()
-                .Build();
-
-            // Step 2: Check if migrations are needed
-            if (!upgrader.IsUpgradeRequired())
-            {
-                LogDatabaseUpToDate(logger);
-                return app;
-            }
-
-            // Step 3: Execute migrations
-            var result = upgrader.PerformUpgrade();
-
-            if (!result.Successful)
-            {
-                LogMigrationFailed(logger, result.Error);
-                throw new InvalidOperationException("Database migration failed. See logs for details.", result.Error);
-            }
-
-            LogMigrationCompleted(logger);
-            
-            // Log which scripts were executed
-            foreach (var script in result.Scripts)
-            {
-                LogMigrationScriptExecuted(logger, script.Name);
-            }
+            return app;
         }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException("Failed to run database migrations. Ensure the database is accessible and the configuration is correct.", ex);
-        }
-
-        return app;
     }
-}
 }

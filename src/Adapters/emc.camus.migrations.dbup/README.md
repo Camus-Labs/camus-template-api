@@ -34,7 +34,7 @@ Runs ordered, embedded SQL scripts against PostgreSQL at application startup. Tr
 3. Call `app.UseDaprSecrets()` to initialise secrets
 4. Call `app.UseDatabaseMigrations(logger)` to execute pending migrations
 
-See `DatabaseMigrationExtensions` in this adapter for the full registration API.
+See `DatabaseMigrationSetupExtensions` in this adapter for the full registration API.
 
 ### Configuration (`appsettings.json`)
 
@@ -112,7 +112,7 @@ API (Program.cs)
 
 ## Integration
 
-The adapter registers migration services via two extension methods in `DatabaseMigrationExtensions.cs`:
+The adapter registers migration services via two extension methods in `DatabaseMigrationSetupExtensions.cs`:
 
 1. **`builder.AddDatabaseMigrations()`** — Validates that `DBUpSettings` and `DatabaseSettings`
    sections exist in configuration and registers migration services.
