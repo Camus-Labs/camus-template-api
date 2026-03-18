@@ -13,7 +13,7 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
           — all other string literals stay inline at the call site
     - [ ] XML documentation on all public types and members
     - [ ] No `<inheritdoc />` — every public type and member has its own explicit XML documentation
-    - [ ] No dead code — unused private constructors, methods, fields, properties, or variables must be removed
+    - [ ] No dead code — no unused private constructors, methods, fields, properties, or variables
 
 2. Validation & Error Handling
 
@@ -64,6 +64,7 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
     - [ ] No business rules or domain logic outside `Domain/`
     - [ ] No direct infrastructure access outside `Adapters/`
     - [ ] No HTTP runtime objects (`HttpContext`, `HttpRequest`, `HttpResponse`) or endpoint definitions outside `Api/`
+          — exception: adapter-specific middleware registered through the adapter's setup extension
     - [ ] No layer orchestration (coordinating domain entities and port calls) outside `Application/`
     - [ ] No middleware or DI registration outside `Api/` and `Adapters/`
     - [ ] No inline/nested DTO or model classes

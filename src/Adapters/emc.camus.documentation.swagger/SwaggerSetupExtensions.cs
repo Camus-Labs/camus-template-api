@@ -79,7 +79,7 @@ namespace emc.camus.documentation.swagger
 
             app.UseSwagger();
             ConfigureSwaggerUI(app, settings);
-            ConfigureRootRedirect(app, settings);
+            ConfigureRootRedirect(app);
 
             return app;
         }
@@ -249,7 +249,7 @@ namespace emc.camus.documentation.swagger
         /// <summary>
         /// Configures root path redirect to Swagger UI.
         /// </summary>
-        private static void ConfigureRootRedirect(WebApplication app, SwaggerSettings settings)
+        private static void ConfigureRootRedirect(WebApplication app)
         {
             app.Use(async (context, next) =>
             {

@@ -20,7 +20,7 @@ namespace emc.camus.documentation.swagger.Configurations
         /// <summary>
         /// Gets or sets the collection of API versions to document.
         /// </summary>
-        public List<ApiVersionInfo> Versions { get; set; } = new();
+        public List<ApiVersionSettings> Versions { get; set; } = new();
 
         /// <summary>
         /// Gets or sets the security schemes to include in Swagger.

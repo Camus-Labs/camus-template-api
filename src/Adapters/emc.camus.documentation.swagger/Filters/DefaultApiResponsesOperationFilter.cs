@@ -137,7 +137,7 @@ namespace emc.camus.documentation.swagger.Filters
                     }
                 }
             };
-            
+
             // Add other status codes with single examples
             var statusCodesToAdd = new Dictionary<string, string>
             {
@@ -148,7 +148,7 @@ namespace emc.camus.documentation.swagger.Filters
                 [StatusCodes.Status429TooManyRequests.ToString(CultureInfo.InvariantCulture)] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status429TooManyRequests),
                 [StatusCodes.Status500InternalServerError.ToString(CultureInfo.InvariantCulture)] = ReasonPhrases.GetReasonPhrase(StatusCodes.Status500InternalServerError)
             };
-            
+
             foreach (var status in statusCodesToAdd.Keys)
             {
                 operation.Responses[status] = new OpenApiResponse
