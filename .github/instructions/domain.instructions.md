@@ -26,4 +26,4 @@ applyTo: "src/Domain/**"
 
 3. Validation & Error Handling
 
-    - [ ] Business invariant violations throw `InvalidOperationException`
+    - [ ] Domain rule violations throw `DomainException` — never `InvalidOperationException`

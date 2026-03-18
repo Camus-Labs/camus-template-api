@@ -286,7 +286,7 @@ public class AuthService
 
             return new PagedResult<GeneratedTokenSummaryView>(items, pagedTokens.TotalCount, pagedTokens.Page, pagedTokens.PageSize);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException)
         {
             throw;
         }

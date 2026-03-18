@@ -19,6 +19,7 @@ public sealed record AuthenticateUserResult
     public AuthenticateUserResult(string token, DateTime expiresOn)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
+        ArgumentOutOfRangeException.ThrowIfEqual(expiresOn, default);
         Token = token;
         ExpiresOn = expiresOn;
     }
@@ -55,6 +56,7 @@ public sealed record GenerateTokenResult
     public GenerateTokenResult(string token, DateTime expiresOn, Guid requestorUserId, string requestorUsername, string tokenUsername)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
+        ArgumentOutOfRangeException.ThrowIfEqual(expiresOn, default);
         ArgumentOutOfRangeException.ThrowIfEqual(requestorUserId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(requestorUsername);
         ArgumentException.ThrowIfNullOrWhiteSpace(tokenUsername);

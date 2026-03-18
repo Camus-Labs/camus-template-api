@@ -85,7 +85,7 @@ namespace emc.camus.api.Configurations
         {
             if (string.IsNullOrWhiteSpace(PolicyName))
             {
-                throw new InvalidOperationException($"PolicyName cannot be null or empty. Got: '{PolicyName}'.");
+                throw new InvalidOperationException($"PolicyName cannot be null or empty.");
             }
 
             if (PolicyName.Length > MaxPolicyNameLength)

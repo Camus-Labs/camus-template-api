@@ -35,7 +35,7 @@ public class RoleSettings
     {
         if (string.IsNullOrWhiteSpace(Name))
         {
-            throw new InvalidOperationException($"Name cannot be null or empty. Got: '{Name}'.");
+            throw new InvalidOperationException($"Name cannot be null or empty.");
         }
 
         if (Name.Length > MaxRoleNameLength)
@@ -53,7 +53,7 @@ public class RoleSettings
 
         var validPermissions = Auth.Permissions.GetAll();
         var invalidPermissions = Permissions.Where(p => !validPermissions.Contains(p)).ToList();
-        
+
         if (invalidPermissions.Count > 0)
         {
             throw new InvalidOperationException($"Role '{Name}' has invalid permissions: {string.Join(", ", invalidPermissions)}. Valid permissions are: {string.Join(", ", validPermissions)}");

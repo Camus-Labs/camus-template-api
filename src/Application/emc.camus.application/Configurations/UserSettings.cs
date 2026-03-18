@@ -42,7 +42,7 @@ public class UserSettings
     {
         if (string.IsNullOrWhiteSpace(UsernameSecretName))
         {
-            throw new InvalidOperationException($"UsernameSecretName cannot be null or empty. Got: '{UsernameSecretName}'.");
+            throw new InvalidOperationException($"UsernameSecretName cannot be null or empty.");
         }
 
         if (UsernameSecretName.Length > MaxSecretNameLength)

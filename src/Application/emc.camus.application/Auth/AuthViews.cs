@@ -53,6 +53,8 @@ public sealed record GeneratedTokenSummaryView
         ArgumentOutOfRangeException.ThrowIfEqual(jti, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(tokenUsername);
         ArgumentNullException.ThrowIfNull(permissions);
+        ArgumentOutOfRangeException.ThrowIfEqual(expiresOn, default);
+        ArgumentOutOfRangeException.ThrowIfEqual(createdAt, default);
         Jti = jti;
         TokenUsername = tokenUsername;
         Permissions = permissions;

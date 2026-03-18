@@ -87,7 +87,7 @@ public class DatabaseSettings
     {
         if (string.IsNullOrWhiteSpace(Host))
         {
-            throw new InvalidOperationException($"Host cannot be null or empty. Got: '{Host}'.");
+            throw new InvalidOperationException($"Host cannot be null or empty.");
         }
     }
 
@@ -103,7 +103,7 @@ public class DatabaseSettings
     {
         if (string.IsNullOrWhiteSpace(Database))
         {
-            throw new InvalidOperationException($"Database cannot be null or empty. Got: '{Database}'.");
+            throw new InvalidOperationException($"Database cannot be null or empty.");
         }
     }
 
@@ -111,7 +111,7 @@ public class DatabaseSettings
     {
         if (string.IsNullOrWhiteSpace(UserSecretName))
         {
-            throw new InvalidOperationException($"UserSecretName cannot be null or empty. Got: '{UserSecretName}'.");
+            throw new InvalidOperationException($"UserSecretName cannot be null or empty.");
         }
 
         if (UserSecretName.Length > MaxSecretNameLength)
@@ -125,7 +125,7 @@ public class DatabaseSettings
     {
         if (string.IsNullOrWhiteSpace(PasswordSecretName))
         {
-            throw new InvalidOperationException($"PasswordSecretName cannot be null or empty. Got: '{PasswordSecretName}'.");
+            throw new InvalidOperationException($"PasswordSecretName cannot be null or empty.");
         }
 
         if (PasswordSecretName.Length > MaxSecretNameLength)

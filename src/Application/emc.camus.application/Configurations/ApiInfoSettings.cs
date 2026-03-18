@@ -43,7 +43,7 @@ public class ApiInfoSettings
     {
         if (string.IsNullOrWhiteSpace(Name))
         {
-            throw new InvalidOperationException($"API Name cannot be null or empty. Got: '{Name}'.");
+            throw new InvalidOperationException($"API Name cannot be null or empty.");
         }
     }
 
@@ -51,7 +51,7 @@ public class ApiInfoSettings
     {
         if (string.IsNullOrWhiteSpace(Version))
         {
-            throw new InvalidOperationException($"API Version cannot be null or empty. Got: '{Version}'.");
+            throw new InvalidOperationException($"API Version cannot be null or empty.");
         }
     }
 
@@ -59,7 +59,7 @@ public class ApiInfoSettings
     {
         if (string.IsNullOrWhiteSpace(Status))
         {
-            throw new InvalidOperationException($"API Status cannot be null or empty. Got: '{Status}'.");
+            throw new InvalidOperationException($"API Status cannot be null or empty.");
         }
     }
 

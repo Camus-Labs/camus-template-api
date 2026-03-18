@@ -181,8 +181,8 @@ public class GeneratedToken
         var minExpiration = now.AddHours(1);
         var maxExpiration = now.AddYears(1);
 
-        ArgumentOutOfRangeException.ThrowIfLessThan(expiresOn, minExpiration, nameof(expiresOn));
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(expiresOn, maxExpiration, nameof(expiresOn));
+        ArgumentOutOfRangeException.ThrowIfLessThan(expiresOn, minExpiration);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(expiresOn, maxExpiration);
     }
 
     /// <summary>
