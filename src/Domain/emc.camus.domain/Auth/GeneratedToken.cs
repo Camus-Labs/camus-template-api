@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using emc.camus.domain.Exceptions;
 
 namespace emc.camus.domain.Auth;
 
@@ -143,18 +144,17 @@ public class GeneratedToken
     /// and a token can only be revoked once.
     /// </summary>
     /// <param name="actingUserId">The ID of the user attempting to revoke the token.</param>
-    /// <exception cref="UnauthorizedAccessException">Thrown when the acting user is not the creator of the token.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the token is already revoked.</exception>
+    /// <exception cref="DomainException">Thrown when the acting user is not the creator of the token or when the token is already revoked.</exception>
     public void Revoke(Guid actingUserId)
     {
         if (actingUserId != CreatorUserId)
         {
-            throw new UnauthorizedAccessException($"User '{actingUserId}' cannot revoke token '{Jti}' — creator is '{CreatorUserId}'.");
+            throw new DomainException($"User '{actingUserId}' cannot revoke token '{Jti}' — creator is '{CreatorUserId}'.");
         }
 
         if (IsRevoked)
         {
-            throw new InvalidOperationException($"Token {Jti} is already revoked.");
+            throw new DomainException($"Token {Jti} is already revoked.");
         }
 
         IsRevoked = true;
@@ -221,7 +221,7 @@ public class GeneratedToken
     /// </summary>
     /// <param name="permissions">The permissions to grant to this token.</param>
     /// <param name="creator">The user creating this token.</param>
-    /// <exception cref="InvalidOperationException">Thrown when the creator does not possess one or more of the requested permissions.</exception>
+    /// <exception cref="DomainException">Thrown when the creator does not possess one or more of the requested permissions.</exception>
     private static void ValidatePermissionSubset(List<string> permissions, User creator)
     {
         var creatorPermissions = creator.GetPermissions();
@@ -229,7 +229,7 @@ public class GeneratedToken
 
         if (unauthorizedPermissions.Count > 0)
         {
-            throw new InvalidOperationException(
+            throw new DomainException(
                 $"User '{creator.Username}' cannot grant permissions they don't have: {string.Join(", ", unauthorizedPermissions)}.");
         }
     }

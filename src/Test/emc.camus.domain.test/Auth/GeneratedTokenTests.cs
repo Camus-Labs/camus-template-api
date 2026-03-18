@@ -1,5 +1,6 @@
 using FluentAssertions;
 using emc.camus.domain.Auth;
+using emc.camus.domain.Exceptions;
 
 namespace emc.camus.domain.test.Auth;
 
@@ -136,7 +137,7 @@ public class GeneratedTokenTests
     }
 
     [Fact]
-    public void Constructor_PermissionsNotSubsetOfCreator_ThrowsInvalidOperationException()
+    public void Constructor_PermissionsNotSubsetOfCreator_ThrowsDomainException()
     {
         // Arrange
         var creator = CreateCreator(permissions: ["read"]);
@@ -146,7 +147,7 @@ public class GeneratedTokenTests
         var act = () => new GeneratedToken(creator, ValidSuffix, permissions, ValidExpiration);
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        act.Should().Throw<DomainException>()
             .WithMessage("*cannot grant*write*");
     }
 
@@ -243,7 +244,7 @@ public class GeneratedTokenTests
     }
 
     [Fact]
-    public void Revoke_AlreadyRevoked_ThrowsInvalidOperationException()
+    public void Revoke_AlreadyRevoked_ThrowsDomainException()
     {
         // Arrange
         var creator = CreateCreator(permissions: ["read"]);
@@ -254,7 +255,7 @@ public class GeneratedTokenTests
         var act = () => token.Revoke(ValidCreatorUserId);
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        act.Should().Throw<DomainException>()
             .WithMessage("*already revoked*");
     }
 
