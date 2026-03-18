@@ -29,7 +29,7 @@ public class AppDataSettings
     public void Validate()
     {
         ValidateProvider();
-        ValidateProviderSettings();
+        ValidateInMemory();
     }
 
     private void ValidateProvider()
@@ -40,7 +40,7 @@ public class AppDataSettings
         }
     }
 
-    private void ValidateProviderSettings()
+    private void ValidateInMemory()
     {
         switch (Provider)
         {
