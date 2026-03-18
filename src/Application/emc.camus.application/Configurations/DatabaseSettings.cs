@@ -8,6 +8,7 @@ public class DatabaseSettings
 {
     private const int MaxSecretNameLength = 50;
     private const int MaxAdditionalParametersLength = 100;
+    private const int DefaultPort = 5432;
     private const int MinPort = 1;
     private const int MaxPort = 65535;
 
@@ -31,7 +32,7 @@ public class DatabaseSettings
     /// Gets or sets the database port.
     /// Default: 5432 for PostgreSQL.
     /// </summary>
-    public int Port { get; set; } = 5432;
+    public int Port { get; set; } = DefaultPort;
 
     /// <summary>
     /// Gets or sets the database name.
@@ -86,7 +87,7 @@ public class DatabaseSettings
     {
         if (string.IsNullOrWhiteSpace(Host))
         {
-            throw new InvalidOperationException("Host cannot be null or empty.");
+            throw new InvalidOperationException($"Host cannot be null or empty. Got: '{Host}'.");
         }
     }
 
@@ -102,7 +103,7 @@ public class DatabaseSettings
     {
         if (string.IsNullOrWhiteSpace(Database))
         {
-            throw new InvalidOperationException("Database cannot be null or empty.");
+            throw new InvalidOperationException($"Database cannot be null or empty. Got: '{Database}'.");
         }
     }
 
@@ -110,7 +111,7 @@ public class DatabaseSettings
     {
         if (string.IsNullOrWhiteSpace(UserSecretName))
         {
-            throw new InvalidOperationException("UserSecretName cannot be null or empty.");
+            throw new InvalidOperationException($"UserSecretName cannot be null or empty. Got: '{UserSecretName}'.");
         }
 
         if (UserSecretName.Length > MaxSecretNameLength)
@@ -124,7 +125,7 @@ public class DatabaseSettings
     {
         if (string.IsNullOrWhiteSpace(PasswordSecretName))
         {
-            throw new InvalidOperationException("PasswordSecretName cannot be null or empty.");
+            throw new InvalidOperationException($"PasswordSecretName cannot be null or empty. Got: '{PasswordSecretName}'.");
         }
 
         if (PasswordSecretName.Length > MaxSecretNameLength)

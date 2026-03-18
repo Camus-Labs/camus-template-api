@@ -25,9 +25,8 @@ namespace emc.camus.application.RateLimiting
         /// <exception cref="ArgumentException">Thrown if policy name is null or whitespace.</exception>
         public RateLimitAttribute(string policyName)
         {
-            if (string.IsNullOrWhiteSpace(policyName))
-                throw new ArgumentException("Policy name cannot be null or whitespace", nameof(policyName));
-            
+            ArgumentException.ThrowIfNullOrWhiteSpace(policyName);
+
             PolicyName = policyName;
         }
     }

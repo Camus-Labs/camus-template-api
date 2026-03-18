@@ -73,7 +73,7 @@ public partial class IMUserRepository : IUserRepository
         _roles = _settings.Roles.Select(roleConfig =>
             new Role(
                 roleConfig.Name,
-                null, // Description removed from RoleConfig
+                null, // Description removed from RoleSettings
                 roleConfig.Permissions,
                 null // Auto-generate ID
             )
@@ -157,6 +157,27 @@ public partial class IMUserRepository : IUserRepository
         LogAuthenticationSuccessful(userEntry.User.Username);
 
         return Task.FromResult(userEntry.User);
+    }
+
+    /// <summary>
+    /// Retrieves a user by their unique identifier from the in-memory store (connection parameter ignored).
+    /// </summary>
+    /// <param name="connection">The database connection (ignored for in-memory implementation).</param>
+    /// <param name="userId">The unique identifier of the user to retrieve.</param>
+    /// <returns>The User with roles.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the repository has not been initialized.</exception>
+    /// <exception cref="KeyNotFoundException">Thrown when the user is not found.</exception>
+    public Task<User> GetByIdAsync(IDbConnection connection, Guid userId)
+    {
+        EnsureInitialized();
+
+        var user = _usersByUsername.Values
+            .Where(entry => entry.User.Id == userId)
+            .Select(entry => entry.User)
+            .FirstOrDefault()
+            ?? throw new KeyNotFoundException($"User with ID '{userId}' not found.");
+
+        return Task.FromResult(user);
     }
 
     /// <summary>

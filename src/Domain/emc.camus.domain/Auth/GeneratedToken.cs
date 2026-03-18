@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace emc.camus.domain.Auth;
 
 /// <summary>
@@ -6,6 +8,9 @@ namespace emc.camus.domain.Auth;
 /// </summary>
 public class GeneratedToken
 {
+    private const int MaxSuffixLength = 20;
+    private static readonly Regex SuffixPattern = new(@"^[a-zA-Z0-9._-]+$", RegexOptions.Compiled);
+
     /// <summary>
     /// Gets the JTI (JWT ID) — the primary identifier for this generated token.
     /// </summary>
@@ -54,35 +59,37 @@ public class GeneratedToken
 
     /// <summary>
     /// Creates a new generated token. Validates business attributes and sets initial state.
+    /// Enforces invariants: suffix format/length, expiration range, token permissions must be a subset of the creator's permissions.
     /// </summary>
-    /// <param name="creatorUserId">The user ID who created this token.</param>
-    /// <param name="creatorUsername">The username who created this token.</param>
-    /// <param name="tokenUsername">The username for the token (with suffix).</param>
+    /// <param name="creator">The user who is creating this token.</param>
+    /// <param name="suffix">The suffix to append to the creator's username (up to 20 chars, alphanumeric + . - _ only).</param>
     /// <param name="permissions">The permissions granted to this token.</param>
-    /// <param name="expiresOn">The expiration date and time (UTC).</param>
+    /// <param name="expiresOn">The expiration date and time (UTC). Must be between 1 hour and 1 year from now.</param>
     /// <param name="jti">Optional JTI (JWT ID). If not provided, a new GUID will be generated.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when creatorUserId is empty, jti is empty, permissions is empty, or expiresOn is not in the future.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when creator is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when suffix is null/empty or contains invalid characters.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when suffix exceeds max length, jti is empty, permissions is empty, or expiresOn is outside the valid range.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when requested permissions are not a subset of the creator's permissions.</exception>
     public GeneratedToken(
-        Guid creatorUserId,
-        string creatorUsername,
-        string tokenUsername,
+        User creator,
+        string suffix,
         List<string> permissions,
         DateTime expiresOn,
         Guid? jti = null)
     {
-        ArgumentOutOfRangeException.ThrowIfEqual(creatorUserId, Guid.Empty);
-        ArgumentException.ThrowIfNullOrWhiteSpace(creatorUsername);
-        ArgumentException.ThrowIfNullOrWhiteSpace(tokenUsername);
+        ArgumentNullException.ThrowIfNull(creator);
+        ValidateSuffix(suffix);
         ValidatePermissions(permissions);
-        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(expiresOn, DateTime.UtcNow);
+        ValidatePermissionSubset(permissions, creator);
+        ValidateExpirationDate(expiresOn);
 
         if (jti.HasValue)
             ArgumentOutOfRangeException.ThrowIfEqual(jti.Value, Guid.Empty);
 
         Jti = jti ?? Guid.NewGuid();
-        CreatorUserId = creatorUserId;
-        CreatorUsername = creatorUsername;
-        TokenUsername = tokenUsername;
+        CreatorUserId = creator.Id;
+        CreatorUsername = creator.Username;
+        TokenUsername = $"{creator.Username}-{suffix}";
         Permissions = permissions;
         ExpiresOn = expiresOn;
         IsRevoked = false;
@@ -132,11 +139,19 @@ public class GeneratedToken
     }
 
     /// <summary>
-    /// Marks the token as revoked. Enforces invariant: a token can only be revoked once.
+    /// Marks the token as revoked. Enforces invariants: only the creator can revoke,
+    /// and a token can only be revoked once.
     /// </summary>
+    /// <param name="actingUserId">The ID of the user attempting to revoke the token.</param>
+    /// <exception cref="UnauthorizedAccessException">Thrown when the acting user is not the creator of the token.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the token is already revoked.</exception>
-    public void Revoke()
+    public void Revoke(Guid actingUserId)
     {
+        if (actingUserId != CreatorUserId)
+        {
+            throw new UnauthorizedAccessException($"User '{actingUserId}' cannot revoke token '{Jti}' — creator is '{CreatorUserId}'.");
+        }
+
         if (IsRevoked)
         {
             throw new InvalidOperationException($"Token {Jti} is already revoked.");
@@ -156,6 +171,21 @@ public class GeneratedToken
     }
 
     /// <summary>
+    /// Validates that the expiration date is within the allowed range (1 hour to 1 year from now).
+    /// </summary>
+    /// <param name="expiresOn">The expiration date to validate.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when expiresOn is outside the valid range.</exception>
+    private static void ValidateExpirationDate(DateTime expiresOn)
+    {
+        var now = DateTime.UtcNow;
+        var minExpiration = now.AddHours(1);
+        var maxExpiration = now.AddYears(1);
+
+        ArgumentOutOfRangeException.ThrowIfLessThan(expiresOn, minExpiration, nameof(expiresOn));
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(expiresOn, maxExpiration, nameof(expiresOn));
+    }
+
+    /// <summary>
     /// Validates that the permissions list is not null and not empty.
     /// </summary>
     /// <param name="permissions">The permissions list to validate.</param>
@@ -165,5 +195,42 @@ public class GeneratedToken
     {
         ArgumentNullException.ThrowIfNull(permissions);
         ArgumentOutOfRangeException.ThrowIfZero(permissions.Count);
+    }
+
+    /// <summary>
+    /// Validates that the suffix is non-empty, within length limits, and contains only allowed characters.
+    /// </summary>
+    /// <param name="suffix">The suffix to validate.</param>
+    /// <exception cref="ArgumentException">Thrown when suffix is null/empty or contains invalid characters.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when suffix exceeds max length.</exception>
+    private static void ValidateSuffix(string suffix)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(suffix);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(suffix.Length, MaxSuffixLength, nameof(suffix));
+
+        if (!SuffixPattern.IsMatch(suffix))
+        {
+            throw new ArgumentException(
+                $"Suffix can only contain alphanumeric characters, dots (.), hyphens (-), and underscores (_). Got: '{suffix}'.",
+                nameof(suffix));
+        }
+    }
+
+    /// <summary>
+    /// Validates that the requested permissions are a subset of the creator's permissions.
+    /// </summary>
+    /// <param name="permissions">The permissions to grant to this token.</param>
+    /// <param name="creator">The user creating this token.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the creator does not possess one or more of the requested permissions.</exception>
+    private static void ValidatePermissionSubset(List<string> permissions, User creator)
+    {
+        var creatorPermissions = creator.GetPermissions();
+        var unauthorizedPermissions = permissions.Where(p => !creatorPermissions.Contains(p)).ToList();
+
+        if (unauthorizedPermissions.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"User '{creator.Username}' cannot grant permissions they don't have: {string.Join(", ", unauthorizedPermissions)}.");
+        }
     }
 }

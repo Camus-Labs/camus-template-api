@@ -13,16 +13,21 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
           — all other string literals stay inline at the call site
     - [ ] XML documentation on all public types and members
     - [ ] No `<inheritdoc />` — every public type and member has its own explicit XML documentation
+    - [ ] No dead code — unused private constructors, methods, fields, properties, or variables must be removed
 
 2. Validation & Error Handling
 
-    - [ ] All public methods/constructors validate parameters with `Argument*Exception.ThrowIf*()` static helpers
-          — no manual `if`/`throw` with `nameof()` — exceptions: mapper methods (pure structural transformers),
-          middleware parameters supplied by the ASP.NET Core pipeline, controller action parameters bound by
-          `[ApiController]`, DI setup extension method parameters, and `Reconstitute` static factories
+    - [ ] All public methods/constructors validate parameters — exceptions: mapper methods (pure structural
+          transformers), middleware parameters supplied by the ASP.NET Core pipeline, controller action parameters
+          bound by `[ApiController]`, DI setup extension method parameters, `Reconstitute` static factories, and
+          exception type constructors
+    - [ ] `Argument*Exception.ThrowIf*()` static helpers replace manual `if`/`throw` when a matching helper exists —
+          applies to all validation code (public entry points and private `Validate*` methods alike)
     - [ ] Validation methods throw exceptions — never return null/false
     - [ ] Multi-statement validation on non-settings classes as `private void Validate{Property}()` methods
     - [ ] Exception throw statements use string interpolation containing the offending value or the violated constraint
+          — exception: pure null checks may use a plain string literal since interpolating a null reference yields no
+          diagnostic value
 
 3. Configuration Classes (`*Settings`)
 
@@ -63,5 +68,6 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
     - [ ] No middleware or DI registration outside `Api/` and `Adapters/`
     - [ ] No inline/nested DTO or model classes
     - [ ] Type-conversion extension methods live in `Mapping/` folder of the layer where the conversion belongs —
-          `*MappingExtensions` suffix
+          `*MappingExtensions` suffix — exception: `Application/` layer co-locates mappers in their topic folder
+          (e.g., `Auth/AuthMappingExtensions.cs`) to preserve feature cohesion
     - [ ] Mapper methods are pure structural transformers — they convert shapes, never validate

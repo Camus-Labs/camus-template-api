@@ -3,7 +3,7 @@ namespace emc.camus.application.Configurations;
 /// <summary>
 /// Configuration for an API info entry.
 /// </summary>
-public class ApiInfoConfig
+public class ApiInfoSettings
 {
     /// <summary>
     /// Gets or sets the name of the API.
@@ -33,21 +33,38 @@ public class ApiInfoConfig
     /// </exception>
     public void Validate()
     {
+        ValidateName();
+        ValidateVersion();
+        ValidateStatus();
+        ValidateFeatures();
+    }
+
+    private void ValidateName()
+    {
         if (string.IsNullOrWhiteSpace(Name))
         {
-            throw new InvalidOperationException("API Name cannot be null or empty.");
+            throw new InvalidOperationException($"API Name cannot be null or empty. Got: '{Name}'.");
         }
+    }
 
+    private void ValidateVersion()
+    {
         if (string.IsNullOrWhiteSpace(Version))
         {
-            throw new InvalidOperationException("API Version cannot be null or empty.");
+            throw new InvalidOperationException($"API Version cannot be null or empty. Got: '{Version}'.");
         }
+    }
 
+    private void ValidateStatus()
+    {
         if (string.IsNullOrWhiteSpace(Status))
         {
-            throw new InvalidOperationException("API Status cannot be null or empty.");
+            throw new InvalidOperationException($"API Status cannot be null or empty. Got: '{Status}'.");
         }
+    }
 
+    private void ValidateFeatures()
+    {
         if (Features == null)
         {
             throw new InvalidOperationException("Features list cannot be null.");

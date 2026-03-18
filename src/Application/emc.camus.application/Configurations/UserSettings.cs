@@ -3,7 +3,7 @@ namespace emc.camus.application.Configurations;
 /// <summary>
 /// Configuration for a user definition.
 /// </summary>
-public class UserConfig
+public class UserSettings
 {
     private const int MaxSecretNameLength = 50;
 
@@ -42,7 +42,7 @@ public class UserConfig
     {
         if (string.IsNullOrWhiteSpace(UsernameSecretName))
         {
-            throw new InvalidOperationException("UsernameSecretName cannot be null or empty.");
+            throw new InvalidOperationException($"UsernameSecretName cannot be null or empty. Got: '{UsernameSecretName}'.");
         }
 
         if (UsernameSecretName.Length > MaxSecretNameLength)
@@ -66,13 +66,15 @@ public class UserConfig
 
     private void ValidateRoles(List<string> availableRoles)
     {
+        ArgumentNullException.ThrowIfNull(availableRoles);
+
         if (Roles == null || Roles.Count == 0)
         {
             throw new InvalidOperationException($"User with UsernameSecretName '{UsernameSecretName}' must have at least one role.");
         }
 
         var invalidRoles = Roles.Where(r => !availableRoles.Contains(r)).ToList();
-        
+
         if (invalidRoles.Count > 0)
         {
             throw new InvalidOperationException($"User with UsernameSecretName '{UsernameSecretName}' has invalid roles: {string.Join(", ", invalidRoles)}. Valid roles are: {string.Join(", ", availableRoles)}");

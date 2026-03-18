@@ -7,9 +7,17 @@ public class GeneratedTokenTests
 {
     private static readonly Guid ValidCreatorUserId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private const string ValidCreatorUsername = "admin";
+    private const string ValidSuffix = "token1";
     private const string ValidTokenUsername = "admin-token1";
     private readonly List<string> ValidPermissions = ["read", "write"];
-    private static readonly DateTime ValidExpiration = new(2099, 12, 31, 23, 59, 59, DateTimeKind.Utc);
+    private static readonly DateTime ValidExpiration = DateTime.UtcNow.AddMonths(6);
+
+    private static User CreateCreator(Guid? id = null, string username = ValidCreatorUsername, List<string>? permissions = null)
+    {
+        var perms = permissions ?? ["read", "write"];
+        var role = new Role("testrole", permissions: perms);
+        return new User(username, [role], id ?? ValidCreatorUserId);
+    }
 
     // --- Constructor ---
 
@@ -17,20 +25,19 @@ public class GeneratedTokenTests
     public void Constructor_ValidParameters_SetsAllProperties()
     {
         // Arrange
-        var creatorUserId = ValidCreatorUserId;
-        var creatorUsername = ValidCreatorUsername;
-        var tokenUsername = ValidTokenUsername;
+        var creator = CreateCreator();
+        var suffix = ValidSuffix;
         var permissions = new List<string> { "read", "write" };
         var expiresOn = ValidExpiration;
 
         // Act
-        var token = new GeneratedToken(creatorUserId, creatorUsername, tokenUsername, permissions, expiresOn);
+        var token = new GeneratedToken(creator, suffix, permissions, expiresOn);
 
         // Assert
         token.Jti.Should().NotBeEmpty();
-        token.CreatorUserId.Should().Be(creatorUserId);
-        token.CreatorUsername.Should().Be(creatorUsername);
-        token.TokenUsername.Should().Be(tokenUsername);
+        token.CreatorUserId.Should().Be(creator.Id);
+        token.CreatorUsername.Should().Be(creator.Username);
+        token.TokenUsername.Should().Be($"{creator.Username}-{suffix}");
         token.Permissions.Should().BeEquivalentTo(permissions);
         token.ExpiresOn.Should().Be(expiresOn);
         token.IsRevoked.Should().BeFalse();
@@ -38,56 +45,74 @@ public class GeneratedTokenTests
     }
 
     [Fact]
-    public void Constructor_EmptyCreatorUserId_ThrowsArgumentException()
+    public void Constructor_NullCreator_ThrowsArgumentNullException()
     {
-        // Arrange
-        var emptyId = Guid.Empty;
-
         // Act
-        var act = () => new GeneratedToken(emptyId, ValidCreatorUsername, ValidTokenUsername, ValidPermissions, ValidExpiration);
+        var act = () => new GeneratedToken(null!, ValidSuffix, ValidPermissions, ValidExpiration);
 
         // Assert
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("*not*equal*")
-            .And.ParamName.Should().Be("creatorUserId");
+        act.Should().Throw<ArgumentNullException>()
+            .And.ParamName.Should().Be("creator");
     }
 
     [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void Constructor_InvalidCreatorUsername_ThrowsArgumentException(string? creatorUsername)
+    public void Constructor_InvalidSuffix_ThrowsArgumentException(string? suffix)
     {
         // Arrange
+        var creator = CreateCreator();
+
         // Act
-        var act = () => new GeneratedToken(ValidCreatorUserId, creatorUsername!, ValidTokenUsername, ValidPermissions, ValidExpiration);
+        var act = () => new GeneratedToken(creator, suffix!, ValidPermissions, ValidExpiration);
 
         // Assert
         act.Should().Throw<ArgumentException>()
-            .And.ParamName.Should().Be("creatorUsername");
+            .And.ParamName.Should().Be("suffix");
+    }
+
+    [Fact]
+    public void Constructor_SuffixExceedsMaxLength_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var creator = CreateCreator();
+        var longSuffix = new string('a', 21);
+
+        // Act
+        var act = () => new GeneratedToken(creator, longSuffix, ValidPermissions, ValidExpiration);
+
+        // Assert
+        act.Should().Throw<ArgumentOutOfRangeException>()
+            .And.ParamName.Should().Be("suffix");
     }
 
     [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Constructor_InvalidTokenUsername_ThrowsArgumentException(string? tokenUsername)
+    [InlineData("has space")]
+    [InlineData("has@symbol")]
+    [InlineData("has/slash")]
+    public void Constructor_SuffixInvalidFormat_ThrowsArgumentException(string suffix)
     {
         // Arrange
+        var creator = CreateCreator();
+
         // Act
-        var act = () => new GeneratedToken(ValidCreatorUserId, ValidCreatorUsername, tokenUsername!, ValidPermissions, ValidExpiration);
+        var act = () => new GeneratedToken(creator, suffix, ValidPermissions, ValidExpiration);
 
         // Assert
         act.Should().Throw<ArgumentException>()
-            .And.ParamName.Should().Be("tokenUsername");
+            .WithMessage("*alphanumeric*")
+            .And.ParamName.Should().Be("suffix");
     }
 
     [Fact]
     public void Constructor_NullPermissions_ThrowsArgumentNullException()
     {
         // Arrange
+        var creator = CreateCreator();
+
         // Act
-        var act = () => new GeneratedToken(ValidCreatorUserId, ValidCreatorUsername, ValidTokenUsername, null!, ValidExpiration);
+        var act = () => new GeneratedToken(creator, ValidSuffix, null!, ValidExpiration);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -98,10 +123,11 @@ public class GeneratedTokenTests
     public void Constructor_EmptyPermissions_ThrowsArgumentException()
     {
         // Arrange
+        var creator = CreateCreator();
         var emptyPermissions = new List<string>();
 
         // Act
-        var act = () => new GeneratedToken(ValidCreatorUserId, ValidCreatorUsername, ValidTokenUsername, emptyPermissions, ValidExpiration);
+        var act = () => new GeneratedToken(creator, ValidSuffix, emptyPermissions, ValidExpiration);
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -110,17 +136,47 @@ public class GeneratedTokenTests
     }
 
     [Fact]
-    public void Constructor_PastExpiration_ThrowsArgumentOutOfRangeException()
+    public void Constructor_PermissionsNotSubsetOfCreator_ThrowsInvalidOperationException()
     {
         // Arrange
-        var pastDate = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var creator = CreateCreator(permissions: ["read"]);
+        var permissions = new List<string> { "read", "write" };
 
         // Act
-        var act = () => new GeneratedToken(ValidCreatorUserId, ValidCreatorUsername, ValidTokenUsername, ValidPermissions, pastDate);
+        var act = () => new GeneratedToken(creator, ValidSuffix, permissions, ValidExpiration);
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*cannot grant*write*");
+    }
+
+    [Fact]
+    public void Constructor_ExpirationTooSoon_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var creator = CreateCreator();
+        var tooSoon = DateTime.UtcNow.AddMinutes(30);
+
+        // Act
+        var act = () => new GeneratedToken(creator, ValidSuffix, ValidPermissions, tooSoon);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
-            .WithMessage("*greater*")
+            .And.ParamName.Should().Be("expiresOn");
+    }
+
+    [Fact]
+    public void Constructor_ExpirationTooFar_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var creator = CreateCreator();
+        var tooFar = DateTime.UtcNow.AddYears(1).AddDays(1);
+
+        // Act
+        var act = () => new GeneratedToken(creator, ValidSuffix, ValidPermissions, tooFar);
+
+        // Assert
+        act.Should().Throw<ArgumentOutOfRangeException>()
             .And.ParamName.Should().Be("expiresOn");
     }
 
@@ -176,10 +232,11 @@ public class GeneratedTokenTests
     public void Revoke_NotRevoked_SetsIsRevokedAndRevokedAt()
     {
         // Arrange
-        var token = new GeneratedToken(ValidCreatorUserId, ValidCreatorUsername, ValidTokenUsername, new List<string> { "read" }, ValidExpiration);
+        var creator = CreateCreator(permissions: ["read"]);
+        var token = new GeneratedToken(creator, ValidSuffix, new List<string> { "read" }, ValidExpiration);
 
         // Act
-        token.Revoke();
+        token.Revoke(ValidCreatorUserId);
 
         // Assert
         token.IsRevoked.Should().BeTrue();
@@ -189,11 +246,12 @@ public class GeneratedTokenTests
     public void Revoke_AlreadyRevoked_ThrowsInvalidOperationException()
     {
         // Arrange
-        var token = new GeneratedToken(ValidCreatorUserId, ValidCreatorUsername, ValidTokenUsername, new List<string> { "read" }, ValidExpiration);
-        token.Revoke();
+        var creator = CreateCreator(permissions: ["read"]);
+        var token = new GeneratedToken(creator, ValidSuffix, new List<string> { "read" }, ValidExpiration);
+        token.Revoke(ValidCreatorUserId);
 
         // Act
-        var act = () => token.Revoke();
+        var act = () => token.Revoke(ValidCreatorUserId);
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -206,7 +264,8 @@ public class GeneratedTokenTests
     public void IsActive_NotRevokedAndNotExpired_ReturnsTrue()
     {
         // Arrange
-        var token = new GeneratedToken(ValidCreatorUserId, ValidCreatorUsername, ValidTokenUsername, new List<string> { "read" }, ValidExpiration);
+        var creator = CreateCreator(permissions: ["read"]);
+        var token = new GeneratedToken(creator, ValidSuffix, new List<string> { "read" }, ValidExpiration);
 
         // Act
         var result = token.IsActive();
@@ -219,8 +278,9 @@ public class GeneratedTokenTests
     public void IsActive_Revoked_ReturnsFalse()
     {
         // Arrange
-        var token = new GeneratedToken(ValidCreatorUserId, ValidCreatorUsername, ValidTokenUsername, new List<string> { "read" }, ValidExpiration);
-        token.Revoke();
+        var creator = CreateCreator(permissions: ["read"]);
+        var token = new GeneratedToken(creator, ValidSuffix, new List<string> { "read" }, ValidExpiration);
+        token.Revoke(ValidCreatorUserId);
 
         // Act
         var result = token.IsActive();

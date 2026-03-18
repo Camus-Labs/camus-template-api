@@ -166,6 +166,50 @@ public class PSUserRepository : IUserRepository
     }
 
     /// <summary>
+    /// Retrieves a user by their unique identifier with roles using an external connection.
+    /// </summary>
+    /// <param name="connection">The database connection to use for the operation.</param>
+    /// <param name="userId">The unique identifier of the user to retrieve.</param>
+    /// <returns>The User if found, otherwise null.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the repository has not been initialized.</exception>
+    /// <exception cref="KeyNotFoundException">Thrown when the user is not found.</exception>
+    public async Task<User> GetByIdAsync(IDbConnection connection, Guid userId)
+    {
+        EnsureInitialized();
+
+        ArgumentNullException.ThrowIfNull(connection);
+
+        const string userSql = @"
+            SELECT id, username
+            FROM camus.users
+            WHERE id = @UserId";
+
+        var userModel = await connection.QuerySingleOrDefaultAsync<UserModel>(
+            userSql,
+            new { UserId = userId })
+            ?? throw new KeyNotFoundException($"User with ID '{userId}' not found.");
+
+        const string rolesSql = @"
+            SELECT
+                r.id,
+                r.name,
+                r.description,
+                ARRAY_AGG(rp.permission) FILTER (WHERE rp.permission IS NOT NULL) as permissions
+            FROM camus.roles r
+            INNER JOIN camus.user_roles ur ON r.id = ur.role_id
+            LEFT JOIN camus.role_permissions rp ON r.id = rp.role_id
+            WHERE ur.user_id = @UserId
+            GROUP BY r.id, r.name, r.description
+            ORDER BY r.name";
+
+        var roleModels = await connection.QueryAsync<RoleModel>(
+            rolesSql,
+            new { UserId = userModel.Id });
+
+        return userModel.ToEntity(roleModels);
+    }
+
+    /// <summary>
     /// Updates the last login timestamp for a user.
     /// </summary>
     /// <param name="connection">The database connection to use for the operation.</param>

@@ -94,8 +94,8 @@ public static class AuthMappingExtensions
     public static GeneratedTokenFilter ToFilter(this GetGeneratedTokensQuery query)
     {
         return new GeneratedTokenFilter(
-            ExcludeRevoked: query.ExcludeRevoked,
-            ExcludeExpired: query.ExcludeExpired
+            excludeRevoked: query.ExcludeRevoked,
+            excludeExpired: query.ExcludeExpired
         );
     }
 

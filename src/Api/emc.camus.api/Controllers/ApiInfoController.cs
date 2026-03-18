@@ -34,26 +34,21 @@ namespace emc.camus.api.Controllers
     [ApiController]
     public class ApiInfoController : ApiControllerBase
     {
-        private readonly ILogger<ApiInfoController> _logger;
         private readonly IActivitySourceWrapper _activitySource;
         private readonly ApiInfoService _apiInfoService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ApiInfoController"/> class.
         /// </summary>
-        /// <param name="logger">Logger for ApiInfoController.</param>
         /// <param name="activitySource">Activity source for OpenTelemetry tracing.</param>
         /// <param name="apiInfoService">Application service for retrieving API information.</param>
         public ApiInfoController(
-            ILogger<ApiInfoController> logger,
             IActivitySourceWrapper activitySource,
             ApiInfoService apiInfoService)
         {
-            ArgumentNullException.ThrowIfNull(logger);
             ArgumentNullException.ThrowIfNull(activitySource);
             ArgumentNullException.ThrowIfNull(apiInfoService);
 
-            _logger = logger;
             _activitySource = activitySource;
             _apiInfoService = apiInfoService;
         }

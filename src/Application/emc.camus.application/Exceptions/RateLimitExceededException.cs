@@ -40,11 +40,11 @@ namespace emc.camus.application.Exceptions
         /// <param name="retryAfterSeconds">The number of seconds to wait before retrying.</param>
         /// <param name="resetTimestamp">The Unix timestamp when the limit resets.</param>
         public RateLimitExceededException(
-            string policyName, 
-            int permitLimit, 
-            int windowSeconds, 
+            string policyName,
+            int permitLimit,
+            int windowSeconds,
             int retryAfterSeconds,
-            long resetTimestamp) 
+            long resetTimestamp)
             : base($"Rate limit exceeded for policy '{policyName}'. Limit: {permitLimit} requests per {windowSeconds} seconds. Retry after {retryAfterSeconds} seconds.")
         {
             PolicyName = policyName;

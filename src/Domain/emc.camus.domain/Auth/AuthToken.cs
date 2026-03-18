@@ -30,9 +30,4 @@ public class AuthToken
         Token = token;
         ExpiresOn = expiresOn;
     }
-
-    /// <summary>
-    /// Private constructor.
-    /// </summary>
-    private AuthToken() { }
 }

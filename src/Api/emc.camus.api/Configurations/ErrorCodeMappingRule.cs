@@ -36,6 +36,8 @@ public class ErrorCodeMappingRule
     /// </exception>
     public void Validate(int index)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(index);
+
         ValidateErrorCode(index);
         ValidateTypeOrPattern(index);
         ValidateType(index);

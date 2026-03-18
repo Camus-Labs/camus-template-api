@@ -30,6 +30,15 @@ public interface IUserRepository
     Task<User> ValidateCredentialsAsync(IDbConnection connection, string username, string password);
 
     /// <summary>
+    /// Retrieves a user by their unique identifier using an external connection (for transactions).
+    /// </summary>
+    /// <param name="connection">The database connection to use for the operation.</param>
+    /// <param name="userId">The unique identifier of the user to retrieve.</param>
+    /// <returns>The User with roles.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown when the user is not found.</exception>
+    Task<User> GetByIdAsync(IDbConnection connection, Guid userId);
+
+    /// <summary>
     /// Updates the last login timestamp for a user using an external connection (for transactions).
     /// </summary>
     /// <param name="connection">The database connection to use for the operation.</param>

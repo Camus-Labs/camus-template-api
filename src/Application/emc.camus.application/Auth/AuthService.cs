@@ -73,12 +73,9 @@ public class AuthService
     public virtual async Task<AuthenticateUserResult> AuthenticateAsync(AuthenticateUserCommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
-
         try
         {
-            User user;
             AuthToken token;
-
             // If connection factory is available, use transactional approach
             if (_connectionFactory != null)
             {
@@ -88,13 +85,18 @@ public class AuthService
                 try
                 {
                     // Validate credentials via repository (UnauthorizedAccessException bubbles up)
-                    user = await _userRepository.ValidateCredentialsAsync(connection, command.Username, command.Password);
+                    var user = await _userRepository.ValidateCredentialsAsync(connection, command.Username, command.Password);
+
+                    _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
+                    {
+                        { "user_id", user.Id }
+                    });
 
                     // Update last login timestamp
                     await _userRepository.UpdateLastLoginAsync(connection, user.Id);
 
                     // Generate token with user's permissions
-                    token = _tokenGenerator.GenerateToken(user.Id, user.Username, BuildPermissionClaims(user));
+                    token = _tokenGenerator.GenerateToken(user.Id, user.Username, user.ToPermissionClaims());
 
                     // Log successful login audit
                     await _auditRepository.LogSystemActionAsync(
@@ -117,10 +119,15 @@ public class AuthService
             else
             {
                 // Simple validation without transaction (e.g., InMemory provider)
-                user = await _userRepository.ValidateCredentialsAsync(null!, command.Username, command.Password);
+                var user = await _userRepository.ValidateCredentialsAsync(null!, command.Username, command.Password);
+
+                _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
+                {
+                    { "user_id", user.Id }
+                });
 
                 // Generate token with user's permissions
-                token = _tokenGenerator.GenerateToken(user.Id, user.Username, BuildPermissionClaims(user));
+                token = _tokenGenerator.GenerateToken(user.Id, user.Username, user.ToPermissionClaims());
             }
 
             // Return immutable result
@@ -160,30 +167,19 @@ public class AuthService
             ?? throw new InvalidOperationException("User ID is not available. Ensure the user is authenticated.");
         var currentUsername = _userContext.GetCurrentUsername()
             ?? throw new InvalidOperationException("Username is not available. Ensure the user is authenticated.");
-        var currentUserPermissions = _userContext.GetCurrentPermissions();
-
-        var activity = Activity.Current;
-
         try
         {
-            _activitySource.SetExecutionTags(activity, new Dictionary<string, object?>
+            _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
             {
                 { "requestor_username", currentUsername },
-                { "requestor_user_id", currentUserId },
-                { "requestor_permissions", string.Join(",", currentUserPermissions) }
+                { "requestor_user_id", currentUserId }
             });
 
-            // Validate username suffix
-            ValidateUsernameSuffix(command.UsernameSuffix);
-
-            // Validate expiration date
-            ValidateExpirationDate(command.ExpiresOn);
-
-            // Validate permissions are subset of current user's permissions
-            ValidatePermissions(command.Permissions, currentUserPermissions);
-
-            // Construct token username with suffix
-            var tokenUsername = $"{currentUsername}-{command.UsernameSuffix}";
+            // Open a single connection for both read and write operations
+            using var connection = _connectionFactory != null
+                ? await _connectionFactory.CreateConnectionAsync()
+                : null!;
+            var creator = await _userRepository.GetByIdAsync(connection, currentUserId);
 
             AuthToken token;
 
@@ -192,28 +188,24 @@ public class AuthService
                 .Select(p => new Claim(Permissions.ClaimType, p))
                 .ToList();
 
-            // Construct domain entity for the generated token
+            // Construct domain entity — enforces suffix format and permission subset invariants
             var generatedToken = new GeneratedToken(
-                currentUserId,
-                currentUsername,
-                tokenUsername,
+                creator,
+                command.UsernameSuffix,
                 command.Permissions,
                 command.ExpiresOn);
-
-            var jti = generatedToken.Jti;
 
             // Generate token with custom JTI and expiration
             token = _tokenGenerator.GenerateToken(
                 currentUserId,
-                tokenUsername,
-                jti,
+                generatedToken.TokenUsername,
+                generatedToken.Jti,
                 command.ExpiresOn,
                 additionalClaims);
 
             // If connection factory and token repository are available, use transactional approach
             if (_connectionFactory != null && _generatedTokenRepository != null)
             {
-                using var connection = await _connectionFactory.CreateConnectionAsync();
                 using var transaction = connection.BeginTransaction();
 
                 try
@@ -227,7 +219,7 @@ public class AuthService
                         currentUserId,
                         currentUsername,
                         "token.generate.success",
-                        $"Generated token for '{tokenUsername}' with permissions: {string.Join(", ", command.Permissions)}. Expires: {command.ExpiresOn:yyyy-MM-dd HH:mm:ss} UTC");
+                        $"Generated token for '{generatedToken.TokenUsername}' with permissions: {string.Join(", ", command.Permissions)}. Expires: {command.ExpiresOn:yyyy-MM-dd HH:mm:ss} UTC");
 
                     // Commit transaction
                     transaction.Commit();
@@ -246,11 +238,11 @@ public class AuthService
                 token.ExpiresOn,
                 currentUserId,
                 currentUsername,
-                tokenUsername);
+                generatedToken.TokenUsername);
         }
-        catch (Exception ex) when (ex is ArgumentException)
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            // Let validation exceptions bubble up
+            // Let validation and domain exceptions bubble up
             throw;
         }
         catch (Exception ex)
@@ -275,25 +267,33 @@ public class AuthService
         var currentUserId = _userContext.GetCurrentUserId()
             ?? throw new InvalidOperationException("User ID is not available. Ensure the user is authenticated.");
 
+        if (_connectionFactory == null || _generatedTokenRepository == null)
+        {
+            throw new InvalidOperationException("Token retrieval requires a database connection and token repository.");
+        }
         try
         {
-            if (_connectionFactory == null || _generatedTokenRepository == null)
+            _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
             {
-                throw new InvalidOperationException("Token retrieval requires a database connection and token repository.");
-            }
+                { "user_id", currentUserId }
+            });
 
             using var connection = await _connectionFactory.CreateConnectionAsync();
 
             var pagedTokens = await _generatedTokenRepository.GetPagedByCreatorUserIdAsync(connection, currentUserId, pagination, filter);
 
-            var items = pagedTokens.Items.Select(ToSummaryView).ToList();
+            var items = pagedTokens.Items.Select(t => t.ToSummaryView()).ToList();
 
             return new PagedResult<GeneratedTokenSummaryView>(items, pagedTokens.TotalCount, pagedTokens.Page, pagedTokens.PageSize);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException(
-                "Failed to retrieve generated tokens due to a system error.", ex);
+                $"Failed to retrieve generated tokens for user '{currentUserId}' due to a system error.", ex);
         }
     }
 
@@ -323,6 +323,11 @@ public class AuthService
 
         try
         {
+            _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
+            {
+                { "requestor_username", currentUsername },
+                { "requestor_user_id", currentUserId }
+            });
             using var connection = await _connectionFactory.CreateConnectionAsync();
             using var transaction = connection.BeginTransaction();
 
@@ -332,14 +337,8 @@ public class AuthService
                 var generatedToken = await _generatedTokenRepository.GetByJtiAsync(connection, jti)
                     ?? throw new KeyNotFoundException($"Generated token with JTI '{jti}' not found.");
 
-                // Verify the current user is the creator
-                if (generatedToken.CreatorUserId != currentUserId)
-                {
-                    throw new UnauthorizedAccessException("You can only revoke tokens that you created.");
-                }
-
-                // Mutate domain entity (enforces invariant: can only revoke once)
-                generatedToken.Revoke();
+                // Mutate domain entity (enforces ownership + single-revoke invariants)
+                generatedToken.Revoke(currentUserId);
 
                 // Save mutated entity
                 await _generatedTokenRepository.SaveAsync(connection, generatedToken);
@@ -357,7 +356,7 @@ public class AuthService
 
                 transaction.Commit();
 
-                return ToSummaryView(generatedToken);
+                return generatedToken.ToSummaryView();
             }
             catch (Exception)
             {
@@ -372,7 +371,7 @@ public class AuthService
         catch (Exception ex)
         {
             throw new InvalidOperationException(
-                "Token revocation failed due to a system error.", ex);
+                $"Token revocation failed for JTI '{jti}' due to a system error.", ex);
         }
     }
 
@@ -389,6 +388,10 @@ public class AuthService
         {
             _userRepository.Initialize();
         }
+        catch (Exception ex) when (ex is InvalidOperationException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             throw new InvalidOperationException(
@@ -396,96 +399,4 @@ public class AuthService
         }
     }
 
-    private static void ValidateUsernameSuffix(string suffix)
-    {
-        if (string.IsNullOrWhiteSpace(suffix))
-        {
-            throw new ArgumentException("Username suffix cannot be empty.", nameof(suffix));
-        }
-
-        if (suffix.Length > 20)
-        {
-            throw new ArgumentException("Username suffix cannot exceed 20 characters.", nameof(suffix));
-        }
-
-        // Allow only alphanumeric characters, dots, hyphens, and underscores
-        var validPattern = new System.Text.RegularExpressions.Regex(@"^[a-zA-Z0-9._-]+$");
-        if (!validPattern.IsMatch(suffix))
-        {
-            throw new ArgumentException(
-                "Username suffix can only contain alphanumeric characters, dots (.), hyphens (-), and underscores (_).",
-                nameof(suffix));
-        }
-    }
-
-    private static void ValidateExpirationDate(DateTime expiresOn)
-    {
-        var now = DateTime.UtcNow;
-        var minExpiration = now.AddHours(1);
-        var maxExpiration = now.AddYears(1);
-
-        if (expiresOn < minExpiration)
-        {
-            throw new ArgumentException(
-                $"Expiration date must be at least 1 hour from now (minimum: {minExpiration:yyyy-MM-dd HH:mm:ss} UTC).",
-                nameof(expiresOn));
-        }
-
-        if (expiresOn > maxExpiration)
-        {
-            throw new ArgumentException(
-                $"Expiration date cannot exceed 1 year from now (maximum: {maxExpiration:yyyy-MM-dd HH:mm:ss} UTC).",
-                nameof(expiresOn));
-        }
-    }
-
-    private static void ValidatePermissions(List<string> requestedPermissions, List<string> currentUserPermissions)
-    {
-        if (requestedPermissions == null || requestedPermissions.Count == 0)
-        {
-            throw new ArgumentException("At least one permission must be specified.", nameof(requestedPermissions));
-        }
-
-        // Validate all requested permissions are valid system permissions
-        var validPermissions = Permissions.GetAll();
-        var invalidPermissions = requestedPermissions.Where(p => !validPermissions.Contains(p)).ToList();
-
-        if (invalidPermissions.Count > 0)
-        {
-            throw new ArgumentException(
-                $"Invalid permissions: {string.Join(", ", invalidPermissions)}. Valid permissions are: {string.Join(", ", validPermissions)}.",
-                nameof(requestedPermissions));
-        }
-
-        // Validate all requested permissions are subset of current user's permissions
-        var unauthorizedPermissions = requestedPermissions.Where(p => !currentUserPermissions.Contains(p)).ToList();
-
-        if (unauthorizedPermissions.Count > 0)
-        {
-            throw new ArgumentException(
-                $"Cannot grant permissions you don't have: {string.Join(", ", unauthorizedPermissions)}.",
-                nameof(requestedPermissions));
-        }
-    }
-
-    private static List<Claim> BuildPermissionClaims(User user)
-    {
-        return user.GetPermissions()
-            .Select(p => new Claim(Permissions.ClaimType, p))
-            .ToList();
-    }
-
-    private static GeneratedTokenSummaryView ToSummaryView(GeneratedToken token)
-    {
-        return new GeneratedTokenSummaryView(
-            token.Jti,
-            token.TokenUsername,
-            token.Permissions,
-            token.ExpiresOn,
-            token.CreatedAt,
-            token.IsRevoked,
-            token.RevokedAt,
-            token.IsActive()
-        );
-    }
 }

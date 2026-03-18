@@ -5,7 +5,7 @@ namespace emc.camus.application.Configurations;
 /// <summary>
 /// Configuration for a role definition.
 /// </summary>
-public class RoleConfig
+public class RoleSettings
 {
     private const int MaxRoleNameLength = 50;
 
@@ -35,7 +35,7 @@ public class RoleConfig
     {
         if (string.IsNullOrWhiteSpace(Name))
         {
-            throw new InvalidOperationException("Name cannot be null or empty.");
+            throw new InvalidOperationException($"Name cannot be null or empty. Got: '{Name}'.");
         }
 
         if (Name.Length > MaxRoleNameLength)

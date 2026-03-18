@@ -1,11 +1,9 @@
-using System.Security.Claims;
-
 namespace emc.camus.application.Auth;
 
 /// <summary>
 /// Command to authenticate a user with username and password.
 /// </summary>
-public record AuthenticateUserCommand
+public sealed record AuthenticateUserCommand
 {
     /// <summary>The username for authentication.</summary>
     public string Username { get; }
@@ -30,7 +28,7 @@ public record AuthenticateUserCommand
 /// <summary>
 /// Command to generate a custom token with specific permissions and expiration.
 /// </summary>
-public record GenerateTokenCommand
+public sealed record GenerateTokenCommand
 {
     /// <summary>The suffix to append to the current username (up to 20 chars, alphanumeric + . - _ only).</summary>
     public string UsernameSuffix { get; }
@@ -47,24 +45,37 @@ public record GenerateTokenCommand
     /// <param name="usernameSuffix">The suffix to append to the current username.</param>
     /// <param name="expiresOn">The custom expiration date (UTC).</param>
     /// <param name="permissions">The list of permissions to grant to the token.</param>
+    /// <exception cref="ArgumentException">Thrown when usernameSuffix is null/empty or permissions contain invalid values.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when permissions is empty.</exception>
     public GenerateTokenCommand(string usernameSuffix, DateTime expiresOn, List<string> permissions)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(usernameSuffix);
         ArgumentNullException.ThrowIfNull(permissions);
-        if (permissions.Count == 0)
-        {
-            throw new ArgumentException($"At least one permission is required. Got: {permissions.Count} permission(s).", nameof(permissions));
-        }
+        ArgumentOutOfRangeException.ThrowIfLessThan(permissions.Count, 1);
+        ValidatePermissions(permissions);
         UsernameSuffix = usernameSuffix;
         ExpiresOn = expiresOn;
         Permissions = permissions;
+    }
+
+    private static void ValidatePermissions(List<string> permissions)
+    {
+        var validPermissions = Auth.Permissions.GetAll();
+        var invalidPermissions = permissions.Where(p => !validPermissions.Contains(p)).ToList();
+
+        if (invalidPermissions.Count > 0)
+        {
+            throw new ArgumentException(
+                $"Invalid permissions: {string.Join(", ", invalidPermissions)}. Valid permissions are: {string.Join(", ", validPermissions)}.",
+                nameof(permissions));
+        }
     }
 }
 
 /// <summary>
 /// Command to revoke a generated token by its JTI (JWT ID).
 /// </summary>
-public record RevokeTokenCommand
+public sealed record RevokeTokenCommand
 {
     /// <summary>The JWT ID of the token to revoke.</summary>
     public Guid Jti { get; }
@@ -75,10 +86,7 @@ public record RevokeTokenCommand
     /// <param name="jti">The JWT ID of the token to revoke.</param>
     public RevokeTokenCommand(Guid jti)
     {
-        if (jti == Guid.Empty)
-        {
-            throw new ArgumentException($"Jti cannot be empty: '{jti}'.", nameof(jti));
-        }
+        ArgumentOutOfRangeException.ThrowIfEqual(jti, Guid.Empty);
         Jti = jti;
     }
 }

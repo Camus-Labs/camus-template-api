@@ -3,7 +3,7 @@ namespace emc.camus.application.ApiInfo;
 /// <summary>
 /// Filter for querying API information by version.
 /// </summary>
-public record ApiInfoFilter
+public sealed record ApiInfoFilter
 {
     /// <summary>The API version to retrieve (e.g., "1.0", "2.0").</summary>
     public string Version { get; }

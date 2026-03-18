@@ -1,3 +1,5 @@
+using emc.camus.application.Common;
+
 namespace emc.camus.application.ApiInfo;
 
 /// <summary>
@@ -33,17 +35,16 @@ public class ApiInfoService
     /// <returns>View containing API information for the requested version</returns>
     /// <exception cref="KeyNotFoundException">Thrown when the requested version is not found in the repository</exception>
     /// <exception cref="InvalidOperationException">Thrown when database operations fail</exception>
-    public virtual async Task<ApiInfoView> GetByVersionAsync(ApiInfoFilter filter)
+    public virtual async Task<ApiInfoDetailView> GetByVersionAsync(ApiInfoFilter filter)
     {
         ArgumentNullException.ThrowIfNull(filter);
-
         try
         {
             // Call repository to get domain entity (KeyNotFoundException bubbles up)
             var apiInfo = await _repository.GetByVersionAsync(filter.Version);
 
             // Convert domain entity to application result
-            return new ApiInfoView(
+            return new ApiInfoDetailView(
                 apiInfo.Version,
                 apiInfo.Status,
                 apiInfo.Features
@@ -63,33 +64,6 @@ public class ApiInfoService
     }
 
     /// <summary>
-    /// Retrieves all available API versions and their information.
-    /// </summary>
-    /// <returns>Collection of views containing API information for all versions</returns>
-    /// <exception cref="InvalidOperationException">Thrown when database operations fail</exception>
-    public virtual async Task<IEnumerable<ApiInfoView>> GetAllAsync()
-    {
-        try
-        {
-            // Call repository to get domain entities
-            var apiInfos = await _repository.GetAllAsync();
-
-            // Convert domain entities to application results
-            return apiInfos.Select(apiInfo => new ApiInfoView(
-                apiInfo.Version,
-                apiInfo.Status,
-                apiInfo.Features
-            ));
-        }
-        catch (Exception ex)
-        {
-            // Wrap infrastructure failures with business context
-            throw new InvalidOperationException(
-                "Failed to retrieve API information due to a system error.", ex);
-        }
-    }
-
-    /// <summary>
     /// Initializes the API info repository to load API data.
     /// Should be called during application startup.
     /// </summary>
@@ -101,6 +75,10 @@ public class ApiInfoService
         try
         {
             _repository.Initialize();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException)
+        {
+            throw;
         }
         catch (Exception ex)
         {

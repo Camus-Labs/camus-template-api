@@ -4,7 +4,6 @@ using Asp.Versioning;
 using Swashbuckle.AspNetCore.Annotations;
 using emc.camus.application.Observability;
 using emc.camus.application.Auth;
-using emc.camus.application.Common;
 using Microsoft.AspNetCore.Authorization;
 using emc.camus.application.RateLimiting;
 using emc.camus.api.Models.Requests.V2;
@@ -35,26 +34,21 @@ namespace emc.camus.api.Controllers
     [ApiController]
     public class AuthController : ApiControllerBase
     {
-        private readonly ILogger<AuthController> _logger;
         private readonly IActivitySourceWrapper _activitySource;
         private readonly AuthService _authService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AuthController"/> class.
         /// </summary>
-        /// <param name="logger">Logger for AuthController.</param>
         /// <param name="activitySource">Activity source for OpenTelemetry tracing.</param>
         /// <param name="authService">Authentication service for credential validation and token generation.</param>
         public AuthController(
-            ILogger<AuthController> logger,
             IActivitySourceWrapper activitySource,
             AuthService authService)
         {
-            ArgumentNullException.ThrowIfNull(logger);
             ArgumentNullException.ThrowIfNull(activitySource);
             ArgumentNullException.ThrowIfNull(authService);
 
-            _logger = logger;
             _activitySource = activitySource;
             _authService = authService;
         }
@@ -209,7 +203,7 @@ namespace emc.camus.api.Controllers
                 });
 
                 // Map route inputs to Application Command
-                var command = AuthMappingExtensions.ToRevokeTokenCommand(jti);
+                var command = Mapping.V2.AuthMappingExtensions.ToRevokeTokenCommand(jti);
                 var result = await _authService.RevokeTokenAsync(command);
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>

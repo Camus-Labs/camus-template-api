@@ -6,8 +6,6 @@ applyTo: "src/Api/**/*.cs"
 
 1. Scope Compliance
 
-    - [ ] Controllers call application services with Application-layer types only (`*Command`, `*Filter`,
-          `PaginationParams`) — never raw primitives or API models
     - [ ] `[FromBody]` / `[FromQuery]` parameters converted via extension methods on the request type (`ToCommand()`,
           `ToFilter()`, `ToPaginationParams()`)
     - [ ] Primitive route parameters converted via static mapper methods (e.g.,
@@ -48,5 +46,6 @@ applyTo: "src/Api/**/*.cs"
 
 4. Observability
 
-    - [ ] Controllers call `SetRequestTags` with one or more keys
-    - [ ] Controllers call `SetResponseTags` with one or more keys
+    - [ ] Controllers create spans via `StartActivityAndRunAsync`
+    - [ ] Controllers set `SetRequestTags` from input values received before calling the application service
+    - [ ] Controllers set `SetResponseTags` for output values returned from application services

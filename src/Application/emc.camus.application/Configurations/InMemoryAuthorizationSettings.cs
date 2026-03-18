@@ -10,12 +10,12 @@ public class InMemoryAuthorizationSettings
     /// <summary>
     /// Gets or sets the list of role definitions.
     /// </summary>
-    public List<RoleConfig> Roles { get; set; } = new();
+    public List<RoleSettings> Roles { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the list of user definitions.
     /// </summary>
-    public List<UserConfig> Users { get; set; } = new();
+    public List<UserSettings> Users { get; set; } = new();
 
     /// <summary>
     /// Validates the in-memory authorization settings.
@@ -33,7 +33,7 @@ public class InMemoryAuthorizationSettings
     {
         if (Roles == null || Roles.Count == 0)
         {
-            throw new InvalidOperationException("At least one role must be defined in Authorization.InMemory.Roles.");
+            throw new InvalidOperationException($"At least one role must be defined in Authorization.InMemory.Roles. Got: {Roles?.Count ?? 0} role(s).");
         }
 
         var roleNames = new HashSet<string>();
@@ -55,7 +55,7 @@ public class InMemoryAuthorizationSettings
     {
         if (Users == null || Users.Count == 0)
         {
-            throw new InvalidOperationException("At least one user must be defined in Authorization.InMemory.Users.");
+            throw new InvalidOperationException($"At least one user must be defined in Authorization.InMemory.Users. Got: {Users?.Count ?? 0} user(s).");
         }
 
         var availableRoles = Roles.Select(r => r.Name).ToList();

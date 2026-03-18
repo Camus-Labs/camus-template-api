@@ -53,6 +53,7 @@ namespace emc.camus.api.Metrics
         public void RecordError(string errorCode, int httpStatus, string path)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(errorCode);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(httpStatus);
             ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
             try

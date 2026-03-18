@@ -26,11 +26,11 @@ public static class ApiInfoMappingExtensions
     }
 
     /// <summary>
-    /// Converts an ApiInfoView (Application layer) to ApiInfoResponse (API V1 layer).
+    /// Converts an ApiInfoDetailView (Application layer) to ApiInfoResponse (API V1 layer).
     /// </summary>
     /// <param name="view">The application view to convert</param>
     /// <returns>API response DTO</returns>
-    public static ApiInfoResponse ToResponse(this ApiInfoView view)
+    public static ApiInfoResponse ToResponse(this ApiInfoDetailView view)
     {
         return new ApiInfoResponse
         {

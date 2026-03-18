@@ -81,20 +81,6 @@ public class IMApiInfoRepository : IApiInfoRepository
         return Task.FromResult(apiInfo);
     }
 
-    /// <summary>
-    /// Gets all available API versions.
-    /// </summary>
-    /// <returns>A list of all ApiInfo objects.</returns>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when the repository has not been initialized.
-    /// </exception>
-    public Task<List<ApiInfo>> GetAllAsync()
-    {
-        EnsureInitialized();
-
-        return Task.FromResult(_apiInfoByVersion.Values.ToList());
-    }
-
     private void EnsureInitialized()
     {
         if (!_initialized)

@@ -241,8 +241,7 @@ namespace emc.camus.api.Middleware
             // Normalize path to route template to ensure low-cardinality metric labels
             var endpoint = context.GetEndpoint();
             var routePattern = (endpoint as Microsoft.AspNetCore.Routing.RouteEndpoint)?.RoutePattern?.RawText
-                ?? problemDetails.Instance
-                ?? "unknown";
+                ?? "unresolved";
 
             // Record error metrics (fire-and-forget telemetry)
             _errorMetrics.RecordError(errorCode, problemDetails.Status ?? (int)HttpStatusCode.InternalServerError, routePattern);

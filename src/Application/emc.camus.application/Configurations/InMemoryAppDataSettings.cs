@@ -8,7 +8,7 @@ public class InMemoryAppDataSettings
     /// <summary>
     /// Gets or sets the list of API info definitions.
     /// </summary>
-    public List<ApiInfoConfig> ApiInfos { get; set; } = new();
+    public List<ApiInfoSettings> ApiInfos { get; set; } = new();
 
     /// <summary>
     /// Validates the in-memory application data settings.

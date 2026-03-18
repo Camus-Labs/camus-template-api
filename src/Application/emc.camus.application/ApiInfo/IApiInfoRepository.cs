@@ -24,10 +24,4 @@ public interface IApiInfoRepository
     /// Thrown when the specified version is not found.
     /// </exception>
     Task<domain.Auth.ApiInfo> GetByVersionAsync(string version);
-
-    /// <summary>
-    /// Gets all available API versions.
-    /// </summary>
-    /// <returns>A list of all ApiInfo objects.</returns>
-    Task<List<domain.Auth.ApiInfo>> GetAllAsync();
 }

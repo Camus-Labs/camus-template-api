@@ -108,33 +108,6 @@ public class PSApiInfoRepository : IApiInfoRepository
         return result.ToEntity();
     }
 
-    /// <summary>
-    /// Gets all available API versions from the database.
-    /// </summary>
-    /// <returns>A list of all ApiInfo objects.</returns>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when the repository has not been initialized.
-    /// </exception>
-    public async Task<List<ApiInfo>> GetAllAsync()
-    {
-        EnsureInitialized();
-
-        using var connection = await _connectionFactory.CreateConnectionAsync();
-
-        const string sql = @"
-            SELECT
-                name,
-                version,
-                status,
-                features
-            FROM camus.api_info
-            ORDER BY version";
-
-        var results = await connection.QueryAsync<ApiInfoModel>(sql);
-
-        return results.Select(r => r.ToEntity()).ToList();
-    }
-
     private void EnsureInitialized()
     {
         if (!_initialized)
