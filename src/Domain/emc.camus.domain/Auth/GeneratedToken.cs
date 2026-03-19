@@ -70,7 +70,7 @@ public class GeneratedToken
     /// <exception cref="ArgumentNullException">Thrown when creator is null.</exception>
     /// <exception cref="ArgumentException">Thrown when suffix is null/empty or contains invalid characters.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when suffix exceeds max length, jti is empty, permissions is empty, or expiresOn is outside the valid range.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when requested permissions are not a subset of the creator's permissions.</exception>
+    /// <exception cref="DomainException">Thrown when requested permissions are not a subset of the creator's permissions.</exception>
     public GeneratedToken(
         User creator,
         string suffix,
