@@ -34,6 +34,9 @@ namespace emc.camus.security.apikey.Handlers
             ApiKeySettings settings)
             : base(options, logger, encoder)
         {
+            ArgumentNullException.ThrowIfNull(secretProvider);
+            ArgumentNullException.ThrowIfNull(settings);
+
             _secretProvider = secretProvider;
             _settings = settings;
         }

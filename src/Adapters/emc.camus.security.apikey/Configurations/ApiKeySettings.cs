@@ -15,10 +15,12 @@ namespace emc.camus.security.apikey.Configurations
         /// </summary>
         public const string DefaultUsername = "ApiKeyUser";
 
+        private const string DefaultApiKeySecretName = "XApiKey";
+
         /// <summary>
         /// Secret name for the API key used in authentication.
         /// </summary>
-        public string ApiKeySecretName { get; set; } = "XApiKey";
+        public string ApiKeySecretName { get; set; } = DefaultApiKeySecretName;
 
         /// <summary>
         /// Validates the API Key settings configuration.
