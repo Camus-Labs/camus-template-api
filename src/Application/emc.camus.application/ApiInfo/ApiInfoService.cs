@@ -76,10 +76,6 @@ public class ApiInfoService
         {
             _repository.Initialize();
         }
-        catch (Exception ex) when (ex is InvalidOperationException)
-        {
-            throw;
-        }
         catch (Exception ex)
         {
             throw new InvalidOperationException(

@@ -4,6 +4,7 @@ using System.Security.Claims;
 using emc.camus.application.Common;
 using emc.camus.application.Observability;
 using emc.camus.domain.Auth;
+using emc.camus.domain.Exceptions;
 
 namespace emc.camus.application.Auth;
 
@@ -240,7 +241,7 @@ public class AuthService
                 currentUsername,
                 generatedToken.TokenUsername);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or DomainException)
         {
             // Let validation and domain exceptions bubble up
             throw;
@@ -364,7 +365,7 @@ public class AuthService
                 throw;
             }
         }
-        catch (Exception ex) when (ex is KeyNotFoundException or UnauthorizedAccessException or InvalidOperationException)
+        catch (Exception ex) when (ex is KeyNotFoundException or UnauthorizedAccessException or DomainException)
         {
             throw;
         }
@@ -387,10 +388,6 @@ public class AuthService
         try
         {
             _userRepository.Initialize();
-        }
-        catch (Exception ex) when (ex is InvalidOperationException)
-        {
-            throw;
         }
         catch (Exception ex)
         {

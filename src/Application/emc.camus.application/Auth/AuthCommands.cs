@@ -50,6 +50,7 @@ public sealed record GenerateTokenCommand
     public GenerateTokenCommand(string usernameSuffix, DateTime expiresOn, List<string> permissions)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(usernameSuffix);
+        ArgumentOutOfRangeException.ThrowIfEqual(expiresOn, default);
         ArgumentNullException.ThrowIfNull(permissions);
         ArgumentOutOfRangeException.ThrowIfLessThan(permissions.Count, 1);
         ValidatePermissions(permissions);
