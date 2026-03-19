@@ -13,7 +13,6 @@ namespace emc.camus.api.Metrics
     [ExcludeFromCodeCoverage]
     public partial class ErrorMetrics : IDisposable
     {
-        private const string MetricNameErrorResponses = "error_responses_total";
         private readonly Meter _meter;
         private readonly Counter<long> _errorResponsesCounter;
         private readonly ILogger<ErrorMetrics> _logger;
@@ -36,7 +35,7 @@ namespace emc.camus.api.Metrics
 
             // Counter for all error responses
             _errorResponsesCounter = _meter.CreateCounter<long>(
-                name: MetricNameErrorResponses,
+                name: "error_responses_total",
                 unit: "responses",
                 description: "Total number of error responses returned by the application");
 

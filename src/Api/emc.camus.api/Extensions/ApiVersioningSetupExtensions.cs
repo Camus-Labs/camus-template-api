@@ -10,16 +10,6 @@ namespace emc.camus.api.Extensions
     public static class ApiVersioningSetupExtensions
     {
         /// <summary>
-        /// The name of the HTTP header used to specify the API version.
-        /// </summary>
-        private const string ApiVersionHeaderName = "Api-Version";
-
-        /// <summary>
-        /// The format string for API version group names in documentation.
-        /// </summary>
-        private const string ApiVersionGroupNameFormat = "'v'VVV";
-
-        /// <summary>
         /// Registers API versioning services with URL segment and header-based version readers.
         /// Configures default version (1.0) and API explorer for documentation generation.
         /// </summary>
@@ -37,11 +27,11 @@ namespace emc.camus.api.Extensions
                 options.ReportApiVersions = true;
                 options.ApiVersionReader = ApiVersionReader.Combine(
                     new UrlSegmentApiVersionReader(),
-                    new HeaderApiVersionReader(ApiVersionHeaderName)
+                    new HeaderApiVersionReader("Api-Version")
                 );
             }).AddApiExplorer(options =>
             {
-                options.GroupNameFormat = ApiVersionGroupNameFormat;
+                options.GroupNameFormat = "'v'VVV";
                 options.SubstituteApiVersionInUrl = true;
             });
 
