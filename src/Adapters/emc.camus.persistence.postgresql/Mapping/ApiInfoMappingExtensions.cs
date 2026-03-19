@@ -16,9 +16,9 @@ public static class ApiInfoMappingExtensions
     public static ApiInfo ToEntity(this ApiInfoModel model)
     {
         return ApiInfo.Reconstitute(
-            name: !string.IsNullOrWhiteSpace(model.Name) ? model.Name : "My Basic API",
+            name: model.Name,
             version: model.Version,
             status: model.Status,
-            features: model.Features?.Count > 0 ? model.Features : new List<string>());
+            features: model.Features ?? new List<string>());
     }
 }

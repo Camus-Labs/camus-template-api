@@ -5,7 +5,6 @@ using emc.camus.application.Common;
 using emc.camus.domain.Auth;
 using emc.camus.persistence.postgresql.Mapping;
 using emc.camus.persistence.postgresql.Models;
-using Npgsql;
 
 namespace emc.camus.persistence.postgresql.Repositories;
 
@@ -16,7 +15,16 @@ namespace emc.camus.persistence.postgresql.Repositories;
 public class PSGeneratedTokenRepository : IGeneratedTokenRepository
 {
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Creates a new generated token record in the database.
+    /// Validates that the creator user exists before inserting.
+    /// </summary>
+    /// <param name="connection">The database connection.</param>
+    /// <param name="generatedToken">The generated token domain entity.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when connection or generatedToken is null.</exception>
+    /// <exception cref="KeyNotFoundException">Thrown when the creator user does not exist.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the database operation fails.</exception>
     public async Task CreateAsync(IDbConnection connection, GeneratedToken generatedToken)
     {
         ArgumentNullException.ThrowIfNull(connection);
@@ -24,11 +32,11 @@ public class PSGeneratedTokenRepository : IGeneratedTokenRepository
 
         const string sql = @"
             INSERT INTO camus.generated_tokens (
-                jti, creator_user_id, creator_username, token_username, 
+                jti, creator_user_id, creator_username, token_username,
                 permissions, expires_on, is_revoked
             )
             VALUES (
-                @Jti, @CreatorUserId, @CreatorUsername, @TokenUsername, 
+                @Jti, @CreatorUserId, @CreatorUsername, @TokenUsername,
                 @Permissions, @ExpiresOn, @IsRevoked
             )";
 
@@ -50,8 +58,8 @@ public class PSGeneratedTokenRepository : IGeneratedTokenRepository
         ArgumentNullException.ThrowIfNull(connection);
 
         const string sql = @"
-            SELECT 
-                jti, creator_user_id, creator_username, token_username, 
+            SELECT
+                jti, creator_user_id, creator_username, token_username,
                 permissions, expires_on, created_at, is_revoked, revoked_at
             FROM camus.generated_tokens
             WHERE jti = @Jti";
@@ -90,8 +98,8 @@ public class PSGeneratedTokenRepository : IGeneratedTokenRepository
             {whereClause}";
 
         var dataSql = $@"
-            SELECT 
-                jti, creator_user_id, creator_username, token_username, 
+            SELECT
+                jti, creator_user_id, creator_username, token_username,
                 permissions, expires_on, created_at, is_revoked, revoked_at
             FROM camus.generated_tokens
             {whereClause}

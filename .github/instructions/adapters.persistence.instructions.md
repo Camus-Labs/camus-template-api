@@ -12,7 +12,9 @@ applyTo: "src/Adapters/emc.camus.persistence.postgresql/**/*.cs"
 
 2. Type Conventions & Lifecycle
 
-    - [ ] Repository sets `created_by`/`updated_by` from `IUserContext` on INSERT and UPDATE
+    - [ ] Repository sets `created_by`/`updated_by` from `IUserContext` via database session variable
+          (`app.current_username`) — `NpgsqlConnectionFactory.SetSessionContextAsync` propagates the value
+          on connection open, and database triggers populate the audit columns automatically
     - [ ] `Create` accepts a domain entity and extracts fields for INSERT — no domain entity instantiation
           inside the repository
     - [ ] `Update/Save` accepts a domain entity and persists mutated state

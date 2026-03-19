@@ -1,7 +1,6 @@
 using System.Data;
 using Dapper;
 using emc.camus.application.Common;
-using Microsoft.Extensions.Logging;
 
 namespace emc.camus.persistence.postgresql.Repositories;
 
@@ -21,7 +20,7 @@ public class PSActionAuditRepository : IActionAuditRepository
         IUserContext userContext)
     {
         ArgumentNullException.ThrowIfNull(userContext);
-        
+
         _userContext = userContext;
     }
 
@@ -62,7 +61,7 @@ public class PSActionAuditRepository : IActionAuditRepository
         });
 
         return auditId;
-        
+
     }
 
     /// <summary>

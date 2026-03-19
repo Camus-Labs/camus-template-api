@@ -5,7 +5,6 @@ using emc.camus.application.Common;
 using emc.camus.domain.Auth;
 using emc.camus.persistence.postgresql.Mapping;
 using emc.camus.persistence.postgresql.Models;
-using Microsoft.Extensions.Logging;
 
 namespace emc.camus.persistence.postgresql.Repositories;
 

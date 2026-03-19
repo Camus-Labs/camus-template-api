@@ -6,7 +6,7 @@ using emc.camus.application.Common;
 using emc.camus.application.Configurations;
 using emc.camus.application.ApiInfo;
 using emc.camus.application.Auth;
-using emc.camus.persistence.postgresql.Data;
+using emc.camus.persistence.postgresql.Services;
 using emc.camus.persistence.postgresql.Repositories;
 using System.Diagnostics.CodeAnalysis;
 

@@ -23,5 +23,3 @@ applyTo: "src/Adapters/**/*.cs"
 
     - [ ] Adapter-specific exceptions preserve the inner exception when wrapping technology failures
     - [ ] Adapter-specific exception messages include the operation name that failed
-    - [ ] No infrastructure internals exposed to domain or application layers (e.g., connection objects,
-          storage-layer data representations, hash values)

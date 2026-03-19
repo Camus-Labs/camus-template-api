@@ -19,6 +19,6 @@ public static class RoleMappingExtensions
             id: model.Id,
             name: model.Name,
             description: model.Description,
-            permissions: model.Permissions?.Where(p => !string.IsNullOrWhiteSpace(p)).ToList() ?? new List<string>());
+            permissions: model.Permissions?.ToList() ?? new List<string>());
     }
 }

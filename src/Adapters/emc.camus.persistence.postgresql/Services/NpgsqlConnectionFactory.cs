@@ -3,10 +3,9 @@ using Dapper;
 using emc.camus.application.Common;
 using emc.camus.application.Configurations;
 using emc.camus.application.Secrets;
-using Microsoft.Extensions.Logging;
 using Npgsql;
 
-namespace emc.camus.persistence.postgresql.Data;
+namespace emc.camus.persistence.postgresql.Services;
 
 /// <summary>
 /// PostgreSQL implementation of database connection factory using Npgsql.
