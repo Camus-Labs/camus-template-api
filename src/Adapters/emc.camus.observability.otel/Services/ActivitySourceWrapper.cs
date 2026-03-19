@@ -12,13 +12,6 @@ namespace emc.camus.observability.otel.Services
     {
         private readonly ActivitySource _activitySource;
 
-        private const string TagOperationType = "operation.type";
-        private const string TagOtelStatusCode = "otel.status_code";
-        private const string TagOtelStatusDescription = "otel.status_description";
-        private const string StatusUnset = "UNSET";
-        private const string StatusOk = "OK";
-        private const string StatusError = "ERROR";
-
         /// <summary>
         /// Initializes a new instance of the <see cref="ActivitySourceWrapper"/> class.
         /// </summary>
@@ -46,9 +39,9 @@ namespace emc.camus.observability.otel.Services
             var activity = _activitySource.StartActivity(name);
             if (activity != null)
             {
-                activity.SetTag(TagOperationType, operationType.ToString().ToLowerInvariant());
+                activity.SetTag("operation.type", operationType.ToString().ToLowerInvariant());
                 // Use standard OpenTelemetry status codes: start as UNSET
-                activity.SetTag(TagOtelStatusCode, StatusUnset);
+                activity.SetTag("otel.status_code", "UNSET");
             }
             return activity;
         }
@@ -112,7 +105,7 @@ namespace emc.camus.observability.otel.Services
         {
             if (activity == null) return;
             // Set OpenTelemetry span status via standard tag
-            activity.SetTag(TagOtelStatusCode, StatusOk);
+            activity.SetTag("otel.status_code", "OK");
         }
 
         /// <summary>
@@ -124,8 +117,8 @@ namespace emc.camus.observability.otel.Services
         {
             ArgumentNullException.ThrowIfNull(ex);
             if (activity == null) return;
-            activity.SetTag(TagOtelStatusCode, StatusError);
-            activity.SetTag(TagOtelStatusDescription, ex.Message);
+            activity.SetTag("otel.status_code", "ERROR");
+            activity.SetTag("otel.status_description", ex.Message);
             // Add an 'exception' event with attributes for better trace correlation
             var exceptionTags = new ActivityTagsCollection
             {

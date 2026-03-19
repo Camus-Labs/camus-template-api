@@ -33,7 +33,8 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
     - [ ] Configuration classes live in `Configurations/` folder of the layer they configure
     - [ ] Enums for type-safe options — exception: validated strings for framework-mandated identifiers
     - [ ] `Validate{Property}()` methods called from a central `Validate()` method
-    - [ ] Each property has its own validation method
+    - [ ] Each property has its own validation method — exception: properties whose type is inherently
+          constrained
     - [ ] Validation constants as `private const` fields
     - [ ] Property validation throws `InvalidOperationException` (invalid object state) — never `ArgumentException`
           (`ArgumentException` is reserved for bad method/constructor parameters)

@@ -20,11 +20,6 @@ namespace emc.camus.observability.otel.Telemetry
     [ExcludeFromCodeCoverage]
     public static class TracerProviderBuilderExtensions
     {
-        private const string TagEndUserAuthenticated = "enduser.authenticated";
-        private const string TagEndUserId = "enduser.id";
-        private const string TagHttpRouteController = "http.route.controller";
-        private const string TagHttpRouteVersion = "http.route.version";
-
         /// <summary>
         /// Sets resource attributes for the tracing provider.
         /// </summary>
@@ -74,12 +69,12 @@ namespace emc.camus.observability.otel.Telemetry
         private static void EnrichWithHttpRequest(Activity activity, HttpRequest request)
         {
             var isAuthenticated = request.HttpContext.User?.Identity?.IsAuthenticated ?? false;
-            activity.SetTag(TagEndUserAuthenticated, isAuthenticated);
+            activity.SetTag("enduser.authenticated", isAuthenticated);
 
             var endUser = request.HttpContext.User?.Identity?.Name;
             if (!string.IsNullOrWhiteSpace(endUser))
             {
-                activity.SetTag(TagEndUserId, endUser);
+                activity.SetTag("enduser.id", endUser);
             }
         }
 
@@ -93,13 +88,13 @@ namespace emc.camus.observability.otel.Telemetry
             var controller = routeData?.Values["controller"]?.ToString();
             if (!string.IsNullOrWhiteSpace(controller))
             {
-                activity.SetTag(TagHttpRouteController, controller);
+                activity.SetTag("http.route.controller", controller);
             }
 
             var version = routeData?.Values["version"]?.ToString();
             if (!string.IsNullOrWhiteSpace(version))
             {
-                activity.SetTag(TagHttpRouteVersion, version);
+                activity.SetTag("http.route.version", version);
             }
         }
         

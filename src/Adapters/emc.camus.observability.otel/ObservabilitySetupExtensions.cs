@@ -19,11 +19,6 @@ namespace emc.camus.observability.otel
     [ExcludeFromCodeCoverage]
     public static class ObservabilitySetupExtensions
     {
-        private const string DefaultServiceName = "unknown-service-name";
-        private const string DefaultServiceVersion = "unknown-service-version";
-        private const string DefaultEnvironmentName = "unknown-environment";
-        private const string DefaultInstanceId = "unknown-instance-id";
-
         /// <summary>
         /// Configures observability for the application, including logging (Serilog), tracing, and metrics (OpenTelemetry).
         /// Sets up resource attributes, exporters, and ensures logs are flushed on shutdown.
@@ -42,10 +37,10 @@ namespace emc.camus.observability.otel
             string environmentName)
         {
             var configuration = builder.Configuration;
-            var normalizedServiceName = string.IsNullOrWhiteSpace(serviceName) ? DefaultServiceName : serviceName.Trim();
-            var normalizedServiceVersion = string.IsNullOrWhiteSpace(serviceVersion) ? DefaultServiceVersion : serviceVersion.Trim();
-            var normalizedEnvironmentName = string.IsNullOrWhiteSpace(environmentName) ? DefaultEnvironmentName : environmentName.Trim();
-            var normalizedInstanceId = string.IsNullOrWhiteSpace(instanceId) ? DefaultInstanceId : instanceId.Trim();
+            var normalizedServiceName = string.IsNullOrWhiteSpace(serviceName) ? "unknown-service-name" : serviceName.Trim();
+            var normalizedServiceVersion = string.IsNullOrWhiteSpace(serviceVersion) ? "unknown-service-version" : serviceVersion.Trim();
+            var normalizedEnvironmentName = string.IsNullOrWhiteSpace(environmentName) ? "unknown-environment" : environmentName.Trim();
+            var normalizedInstanceId = string.IsNullOrWhiteSpace(instanceId) ? "unknown-instance-id" : instanceId.Trim();
 
             // Parse OpenTelemetry settings once from configuration
             var settings = configuration.GetSection(OpenTelemetrySettings.ConfigurationSectionName).Get<OpenTelemetrySettings>() ?? new OpenTelemetrySettings();
