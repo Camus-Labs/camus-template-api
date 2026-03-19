@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using emc.camus.application.Observability;
 
-namespace emc.camus.observability.otel.Telemetry
+namespace emc.camus.observability.otel.Services
 {
     /// <summary>
     /// OpenTelemetry-based implementation of activity source wrapper for distributed tracing.
@@ -39,6 +39,8 @@ namespace emc.camus.observability.otel.Telemetry
         /// <returns>The started activity with standard tags set.</returns>
         public Activity? StartActivity(string name, OperationType operationType)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
             var activity = _activitySource.StartActivity(name);
             if (activity != null)
             {
@@ -55,7 +57,10 @@ namespace emc.camus.observability.otel.Telemetry
         /// <param name="activity">The activity to add request tags to.</param>
         /// <param name="tags">Dictionary of tag key-value pairs to add with 'request.' prefix.</param>
         public void SetRequestTags(Activity? activity, IDictionary<string, object?> tags)
-            => SetTagsWithPrefix(activity, tags, "request");
+        {
+            ArgumentNullException.ThrowIfNull(tags);
+            SetTagsWithPrefix(activity, tags, "request");
+        }
 
         /// <summary>
         /// Sets tags on the activity, prefixing each key with 'execution.'
@@ -63,7 +68,10 @@ namespace emc.camus.observability.otel.Telemetry
         /// <param name="activity">The activity to add execution tags to.</param>
         /// <param name="tags">Dictionary of tag key-value pairs to add with 'execution.' prefix.</param>
         public void SetExecutionTags(Activity? activity, IDictionary<string, object?> tags)
-            => SetTagsWithPrefix(activity, tags, "execution");
+        {
+            ArgumentNullException.ThrowIfNull(tags);
+            SetTagsWithPrefix(activity, tags, "execution");
+        }
 
         /// <summary>
         /// Sets tags on the activity, prefixing each key with 'response.'
@@ -71,7 +79,10 @@ namespace emc.camus.observability.otel.Telemetry
         /// <param name="activity">The activity to add response tags to.</param>
         /// <param name="tags">Dictionary of tag key-value pairs to add with 'response.' prefix.</param>
         public void SetResponseTags(Activity? activity, IDictionary<string, object?> tags)
-            => SetTagsWithPrefix(activity, tags, "response");
+        {
+            ArgumentNullException.ThrowIfNull(tags);
+            SetTagsWithPrefix(activity, tags, "response");
+        }
 
         /// <summary>
         /// Helper method to set tags with a required prefix.
@@ -81,7 +92,7 @@ namespace emc.camus.observability.otel.Telemetry
         /// <param name="prefix">Required prefix to prepend to each tag key.</param>
         private static void SetTagsWithPrefix(Activity? activity, IDictionary<string, object?> tags, string prefix)
         {
-            if (activity != null && tags != null)
+            if (activity != null)
             {
                 foreach (var tag in tags)
                 {
@@ -110,14 +121,15 @@ namespace emc.camus.observability.otel.Telemetry
         public void ActivityFailed(Activity? activity, Exception ex)
         {
             if (activity == null) return;
+            ArgumentNullException.ThrowIfNull(ex);
             activity.SetTag(TagOtelStatusCode, StatusError);
-            activity.SetTag(TagOtelStatusDescription, ex?.Message);
+            activity.SetTag(TagOtelStatusDescription, ex.Message);
             // Add an 'exception' event with attributes for better trace correlation
             var exceptionTags = new ActivityTagsCollection
             {
-                { "exception.type", ex?.GetType().FullName },
-                { "exception.message", ex?.Message },
-                { "exception.stacktrace", ex?.StackTrace ?? string.Empty }
+                { "exception.type", ex.GetType().FullName },
+                { "exception.message", ex.Message },
+                { "exception.stacktrace", ex.StackTrace ?? string.Empty }
             };
             activity.AddEvent(new ActivityEvent("exception", DateTimeOffset.UtcNow, exceptionTags));
         }
@@ -133,6 +145,9 @@ namespace emc.camus.observability.otel.Telemetry
         /// <returns>The result of the executed function.</returns>
         public async Task<T> StartActivityAndRunAsync<T>(string name, OperationType operationType, Func<Activity?, Task<T>> func)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(name);
+            ArgumentNullException.ThrowIfNull(func);
+
             using var activity = StartActivity(name, operationType);
             try
             {

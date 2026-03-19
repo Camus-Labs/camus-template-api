@@ -26,6 +26,11 @@ namespace emc.camus.observability.otel.Telemetry
             string instanceId, 
             string environmentName)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceVersion);
+            ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(environmentName);
+
             return ResourceBuilder.CreateDefault()
                 .AddService(serviceName, serviceVersion)
                 .AddAttributes(new[]

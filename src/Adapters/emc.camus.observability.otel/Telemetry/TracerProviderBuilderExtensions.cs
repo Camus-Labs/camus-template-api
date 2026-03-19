@@ -48,6 +48,13 @@ namespace emc.camus.observability.otel.Telemetry
         /// <summary>
         /// Adds ASP.NET Core instrumentation to the tracing provider, including enrichment for authentication and routing.
         /// </summary>
+        /// <remarks>
+        /// Accepted architectural exception: The enrichment callbacks reference HttpRequest/HttpResponse types
+        /// from Microsoft.AspNetCore.Http. These types are required by the OpenTelemetry SDK's
+        /// AspNetCoreInstrumentationOptions enrichment delegates. Moving them to the Api layer would force
+        /// the Api to depend directly on OpenTelemetry SDK types, creating worse coupling. The HTTP types
+        /// are already transitively available through the OpenTelemetry.Instrumentation.AspNetCore package.
+        /// </remarks>
         /// <param name="builder">The tracing provider builder.</param>
         /// <returns>The configured tracing provider builder.</returns>
         public static TracerProviderBuilder AddAspNetCoreInstrumentationWithEnrichment(

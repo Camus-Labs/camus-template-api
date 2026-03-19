@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using emc.camus.observability.otel.Configurations;
 using emc.camus.observability.otel.Logging;
 using emc.camus.observability.otel.Telemetry;
+using emc.camus.observability.otel.Services;
 using emc.camus.observability.otel.Middleware;
 using emc.camus.application.Observability;
 

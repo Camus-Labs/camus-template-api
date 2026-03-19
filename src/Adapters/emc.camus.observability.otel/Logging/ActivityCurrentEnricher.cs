@@ -16,6 +16,9 @@ namespace emc.camus.observability.otel.Logging
         /// <param name="propertyFactory">Factory for creating log event properties.</param>
         public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
         {
+            ArgumentNullException.ThrowIfNull(logEvent);
+            ArgumentNullException.ThrowIfNull(propertyFactory);
+
             var activity = Activity.Current;
             if (activity == null)
             {

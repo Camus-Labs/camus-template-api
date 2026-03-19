@@ -5,6 +5,8 @@ namespace emc.camus.observability.otel.Configurations
     /// </summary>
     public class ConsoleSettings
     {
+        private const string DefaultOutputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] (trace_id={trace_id} span_id={span_id}) {Message:lj}{NewLine}{Exception}";
+
         /// <summary>
         /// Gets or sets whether console logging is enabled. Defaults to true.
         /// </summary>
@@ -13,7 +15,7 @@ namespace emc.camus.observability.otel.Configurations
         /// <summary>
         /// Gets or sets the output template for console logs. Defaults to a format that includes trace context.
         /// </summary>
-        public string OutputTemplate { get; set; } = "[{Timestamp:HH:mm:ss} {Level:u3}] (trace_id={trace_id} span_id={span_id}) {Message:lj}{NewLine}{Exception}";
+        public string OutputTemplate { get; set; } = DefaultOutputTemplate;
 
         /// <summary>
         /// Validates the console settings configuration.
