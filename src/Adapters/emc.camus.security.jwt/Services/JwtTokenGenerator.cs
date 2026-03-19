@@ -40,6 +40,8 @@ public class JwtTokenGenerator : ITokenGenerator
     /// <returns>An <see cref="AuthToken"/> containing the generated token and expiration information.</returns>
     public AuthToken GenerateToken(Guid userId, string username, IEnumerable<Claim>? additionalClaims = null)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(username);
+
         var jti = Guid.NewGuid();
         var expiresOn = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
 

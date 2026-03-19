@@ -40,6 +40,14 @@ public class PSGeneratedTokenRepository : IGeneratedTokenRepository
                 @Permissions, @ExpiresOn, @IsRevoked
             )";
 
+        const string fkCheckSql = "SELECT EXISTS (SELECT 1 FROM camus.users WHERE id = @CreatorUserId)";
+        var creatorExists = await connection.ExecuteScalarAsync<bool>(fkCheckSql, new { generatedToken.CreatorUserId });
+
+        if (!creatorExists)
+        {
+            throw new KeyNotFoundException($"Creator user with ID '{generatedToken.CreatorUserId}' not found.");
+        }
+
         await connection.ExecuteAsync(sql, new
         {
             generatedToken.Jti,
@@ -52,7 +60,13 @@ public class PSGeneratedTokenRepository : IGeneratedTokenRepository
         });
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Retrieves a generated token from PostgreSQL by its JTI (JWT ID).
+    /// </summary>
+    /// <param name="connection">The database connection.</param>
+    /// <param name="jti">The JWT ID to search for.</param>
+    /// <returns>The generated token if found, otherwise <see langword="null"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/> is null.</exception>
     public async Task<GeneratedToken?> GetByJtiAsync(IDbConnection connection, Guid jti)
     {
         ArgumentNullException.ThrowIfNull(connection);
@@ -74,7 +88,16 @@ public class PSGeneratedTokenRepository : IGeneratedTokenRepository
         return result.ToEntity();
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Retrieves a paged list of generated tokens from PostgreSQL for a specific creator user.
+    /// Supports optional filtering by revocation and expiration status.
+    /// </summary>
+    /// <param name="connection">The database connection.</param>
+    /// <param name="creatorUserId">The user ID of the creator.</param>
+    /// <param name="pagination">Pagination parameters (page number and page size).</param>
+    /// <param name="filter">Optional filter criteria for excluding revoked or expired tokens.</param>
+    /// <returns>A paged result containing the matching tokens and pagination metadata.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/> or <paramref name="pagination"/> is null.</exception>
     public async Task<PagedResult<GeneratedToken>> GetPagedByCreatorUserIdAsync(IDbConnection connection, Guid creatorUserId, PaginationParams pagination, GeneratedTokenFilter? filter = null)
     {
         ArgumentNullException.ThrowIfNull(connection);
@@ -126,7 +149,15 @@ public class PSGeneratedTokenRepository : IGeneratedTokenRepository
         return new PagedResult<GeneratedToken>(items, totalCount, pagination.Page, pagination.PageSize);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Persists the current state of a generated token to PostgreSQL (e.g., after revocation).
+    /// Updates the revocation status and timestamp.
+    /// </summary>
+    /// <param name="connection">The database connection.</param>
+    /// <param name="generatedToken">The generated token domain entity with updated state.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/> or <paramref name="generatedToken"/> is null.</exception>
+    /// <exception cref="KeyNotFoundException">Thrown when no token with the specified JTI exists.</exception>
     public async Task SaveAsync(IDbConnection connection, GeneratedToken generatedToken)
     {
         ArgumentNullException.ThrowIfNull(connection);
