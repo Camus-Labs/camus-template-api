@@ -40,6 +40,8 @@ namespace emc.camus.observability.otel.Services
         public Activity? StartActivity(string name, OperationType operationType)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(name);
+            if (!Enum.IsDefined(operationType))
+                throw new ArgumentOutOfRangeException(nameof(operationType), operationType, "Invalid operation type.");
 
             var activity = _activitySource.StartActivity(name);
             if (activity != null)
@@ -120,8 +122,8 @@ namespace emc.camus.observability.otel.Services
         /// <param name="ex">The exception that caused the failure.</param>
         public void ActivityFailed(Activity? activity, Exception ex)
         {
-            if (activity == null) return;
             ArgumentNullException.ThrowIfNull(ex);
+            if (activity == null) return;
             activity.SetTag(TagOtelStatusCode, StatusError);
             activity.SetTag(TagOtelStatusDescription, ex.Message);
             // Add an 'exception' event with attributes for better trace correlation
@@ -146,6 +148,8 @@ namespace emc.camus.observability.otel.Services
         public async Task<T> StartActivityAndRunAsync<T>(string name, OperationType operationType, Func<Activity?, Task<T>> func)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(name);
+            if (!Enum.IsDefined(operationType))
+                throw new ArgumentOutOfRangeException(nameof(operationType), operationType, "Invalid operation type.");
             ArgumentNullException.ThrowIfNull(func);
 
             using var activity = StartActivity(name, operationType);

@@ -61,8 +61,6 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
 
     - [ ] No business rules or domain logic outside `Domain/`
     - [ ] No direct infrastructure access outside `Adapters/`
-    - [ ] No HTTP runtime objects (`HttpContext`, `HttpRequest`, `HttpResponse`) or endpoint definitions outside `Api/`
-          — exception: adapter-specific middleware registered through the adapter's setup extension
     - [ ] No layer orchestration (coordinating domain entities and port calls) outside `Application/`
     - [ ] No middleware or DI registration outside `Api/` and `Adapters/`
     - [ ] No inline/nested DTO or model classes
