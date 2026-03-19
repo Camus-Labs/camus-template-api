@@ -1,7 +1,6 @@
 using System.Data;
 using emc.camus.application.Auth;
 using emc.camus.application.Configurations;
-using emc.camus.application.Common;
 using emc.camus.application.Secrets;
 using emc.camus.domain.Auth;
 using Microsoft.Extensions.Logging;
@@ -16,39 +15,22 @@ public partial class IMUserRepository : IUserRepository
 {
     private readonly InMemoryAuthorizationSettings _settings;
     private readonly ISecretProvider _secretProvider;
-    private readonly ILogger<IMUserRepository> _logger;
     private List<Role> _roles = new();
     private Dictionary<string, (User User, string PasswordSecretName)> _usersByUsername = new();
     private bool _initialized;
-
-    [LoggerMessage(Level = LogLevel.Warning,
-        Message = "IMUserRepository already initialized. Skipping.")]
-    private partial void LogAlreadyInitialized();
-
-    [LoggerMessage(Level = LogLevel.Warning,
-        Message = "User not found for username: {Username}")]
-    private partial void LogUserNotFound(string username);
-
-    [LoggerMessage(Level = LogLevel.Warning,
-        Message = "Invalid password for user: {Username}")]
-    private partial void LogInvalidPassword(string username);
-
-    [LoggerMessage(Level = LogLevel.Information,
-        Message = "Authentication successful for user: {Username}")]
-    private partial void LogAuthenticationSuccessful(string username);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="IMUserRepository"/> class.
     /// </summary>
     /// <param name="settings">Authorization settings containing role and user definitions.</param>
     /// <param name="secretProvider">Provider for retrieving stored secrets.</param>
-    /// <param name="logger">Logger for repository events.</param>
     public IMUserRepository(
         AuthorizationSettings settings,
-        ISecretProvider secretProvider,
-        ILogger<IMUserRepository> logger)
+        ISecretProvider secretProvider)
     {
-        _logger = logger;
+        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(secretProvider);
+
         _settings = settings.InMemory;
         _secretProvider = secretProvider;
     }
@@ -65,8 +47,7 @@ public partial class IMUserRepository : IUserRepository
     {
         if (_initialized)
         {
-            LogAlreadyInitialized();
-            return;
+            throw new InvalidOperationException("IMUserRepository already initialized.");
         }
 
         // Load roles from configuration
@@ -139,7 +120,6 @@ public partial class IMUserRepository : IUserRepository
         // Find user by username (O(1) lookup)
         if (!_usersByUsername.TryGetValue(username, out var userEntry))
         {
-            LogUserNotFound(username);
             throw new UnauthorizedAccessException("The provided credentials are invalid. User not found.");
         }
 
@@ -150,11 +130,8 @@ public partial class IMUserRepository : IUserRepository
         // Note: In production, this should use secure password hashing (bcrypt, Argon2, etc.)
         if (passwordFromSecret != password)
         {
-            LogInvalidPassword(userEntry.User.Username);
             throw new UnauthorizedAccessException("The provided credentials are invalid. Username and password mismatch.");
         }
-
-        LogAuthenticationSuccessful(userEntry.User.Username);
 
         return Task.FromResult(userEntry.User);
     }

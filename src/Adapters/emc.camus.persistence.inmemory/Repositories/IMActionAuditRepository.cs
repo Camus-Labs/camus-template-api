@@ -31,7 +31,15 @@ public partial class IMActionAuditRepository : IActionAuditRepository
         _logger = logger;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Logs an action to the application logs instead of persisting to a database.
+    /// The connection parameter is ignored in this in-memory implementation.
+    /// </summary>
+    /// <param name="connection">The database connection (ignored for in-memory implementation).</param>
+    /// <param name="actionTitle">A short title describing the action.</param>
+    /// <param name="actionSummary">Optional detailed summary of what was done.</param>
+    /// <returns>A dummy audit entry ID of 0.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="actionTitle"/> is null or whitespace.</exception>
     public Task<long> LogActionAsync(
         IDbConnection connection,
         string actionTitle,
@@ -45,7 +53,19 @@ public partial class IMActionAuditRepository : IActionAuditRepository
         return Task.FromResult(0L);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Logs a system action to the application logs with explicit user information instead of persisting to a database.
+    /// The connection parameter is ignored in this in-memory implementation.
+    /// </summary>
+    /// <param name="connection">The database connection (ignored for in-memory implementation).</param>
+    /// <param name="userId">The user ID performing the action (null for system operations).</param>
+    /// <param name="username">The username performing the action.</param>
+    /// <param name="actionTitle">A short title describing the action.</param>
+    /// <param name="actionSummary">Optional detailed summary of what was done.</param>
+    /// <returns>A dummy audit entry ID of 0.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="username"/> or <paramref name="actionTitle"/> is null or whitespace.
+    /// </exception>
     public Task<long> LogSystemActionAsync(
         IDbConnection connection,
         Guid? userId,

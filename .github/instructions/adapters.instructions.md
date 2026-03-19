@@ -6,10 +6,11 @@ applyTo: "src/Adapters/**/*.cs"
 
 1. Scope Compliance
 
-    - [ ] File implements an Application-layer interface (port), or is a configuration, extension, or mapping
-          class consumed by one that does
+    - [ ] File implements an Application-layer interface (port), or is a configuration, extension, mapping,
+          or `internal` helper class consumed by one that does
     - [ ] External service clients wrap a single SDK or service
-    - [ ] Adapter-internal interfaces are `internal` — `public` interfaces belong in Application
+    - [ ] Adapter-internal types (classes and interfaces) not consumed outside the adapter are `internal sealed`
+          — `public` interfaces belong in Application
     - [ ] Middleware is adapter-specific and not shared across adapters
 
 2. Type Conventions & Lifecycle

@@ -13,26 +13,30 @@ namespace emc.camus.secrets.dapr.Configurations
         private const int MinPort = 1;
         private const int MaxPort = 65535;
         private const int MaxTimeoutSeconds = 300;
+        private const string DefaultBaseHost = "localhost";
+        private const string DefaultHttpPort = "3500";
+        private const string DefaultSecretStoreName = "default-secret-store";
+        private const int DefaultTimeoutSeconds = 30;
 
         /// <summary>
         /// Gets or sets the base URL for the Dapr sidecar. Defaults to "localhost".
         /// </summary>
-        public string BaseHost { get; set; } = "localhost";
+        public string BaseHost { get; set; } = DefaultBaseHost;
 
         /// <summary>
         /// Gets or sets the HTTP port for the Dapr sidecar. Defaults to "3500".
         /// </summary>
-        public string HttpPort { get; set; } = "3500";
+        public string HttpPort { get; set; } = DefaultHttpPort;
 
         /// <summary>
         /// Gets or sets the name of the Dapr secret store. Defaults to "default-secret-store".
         /// </summary>
-        public string SecretStoreName { get; set; } = "default-secret-store";
+        public string SecretStoreName { get; set; } = DefaultSecretStoreName;
 
         /// <summary>
         /// Gets or sets the HTTP request timeout in seconds. Defaults to 30 seconds.
         /// </summary>
-        public int TimeoutSeconds { get; set; } = 30;
+        public int TimeoutSeconds { get; set; } = DefaultTimeoutSeconds;
 
         /// <summary>
         /// Gets or sets the list of secret names to load at startup.

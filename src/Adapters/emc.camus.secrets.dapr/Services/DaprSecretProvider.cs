@@ -17,12 +17,13 @@ namespace emc.camus.secrets.dapr.Services
     {
         private const int MaxRetryAttempts = 3;
         private const int RetryBaseDelayMilliseconds = 500;
+        private const int RetryBackoffExponentialBase = 2;
         private const string DaprProtocol = "http://";
         private const string DaprSecretsApiPath = "/v1.0/secrets/";
         private const string TimeoutErrorIndicator = "timeout";
         private const string ConnectionErrorIndicator = "connection";
         private const string NetworkErrorIndicator = "network";
-        
+
         private readonly ILogger<DaprSecretProvider> _logger;
         private readonly HttpClient _httpClient;
         private readonly DaprSecretProviderSettings _settings;
@@ -40,15 +41,15 @@ namespace emc.camus.secrets.dapr.Services
             Message = "Empty response received for secret '{SecretName}'")]
         private partial void LogEmptySecretResponse(string secretName);
 
-        [LoggerMessage(Level = LogLevel.Error,
+        [LoggerMessage(Level = LogLevel.Warning,
             Message = "Failed to deserialize secret '{SecretName}' response: {ResponseContent}")]
         private partial void LogDeserializationFailed(Exception ex, string secretName, string responseContent);
 
-        [LoggerMessage(Level = LogLevel.Error,
+        [LoggerMessage(Level = LogLevel.Warning,
             Message = "Transient error on final attempt loading secret '{SecretName}'. Max retries exhausted.")]
         private partial void LogTransientErrorExhausted(Exception ex, string secretName);
 
-        [LoggerMessage(Level = LogLevel.Error,
+        [LoggerMessage(Level = LogLevel.Warning,
             Message = "Non-retryable error loading secret '{SecretName}' (attempt {Attempt}).")]
         private partial void LogNonRetryableError(Exception ex, string secretName, int attempt);
 
@@ -67,24 +68,27 @@ namespace emc.camus.secrets.dapr.Services
             _httpClient = httpClient;
             _logger = logger;
             _settings = settings;
-           
+
             var baseUrl = $"{DaprProtocol}{_settings.BaseHost}:{_settings.HttpPort}";
-            
+
             // Configure HttpClient with adapter-specific settings
             _httpClient.BaseAddress = new Uri($"{baseUrl}{DaprSecretsApiPath}{_settings.SecretStoreName}/");
             _httpClient.Timeout = TimeSpan.FromSeconds(_settings.TimeoutSeconds);
         }
-        
+
         /// <summary>
         /// Loads the specified secrets from the Dapr secret store asynchronously.
         /// </summary>
         /// <param name="secretNames">A collection of secret names to load.</param>
         /// <returns>A task representing the asynchronous load operation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="secretNames"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when one or more secrets fail to load.</exception>
         public async Task LoadSecretsAsync(IEnumerable<string> secretNames)
         {
-            // Filter out null/empty names - settings validation ensures this won't be empty at startup
-            var secretNamesList = secretNames?.Where(s => !string.IsNullOrWhiteSpace(s)).ToList() ?? new List<string>();
-            
+            ArgumentNullException.ThrowIfNull(secretNames);
+
+            var secretNamesList = secretNames.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+
             if (secretNamesList.Count == 0)
             {
                 return;
@@ -95,10 +99,10 @@ namespace emc.camus.secrets.dapr.Services
             {
                 await LoadSingleSecretWithRetryAsync(secretName);
             }
-           
+
             var successCount = _secrets.Count;
             var failureCount = secretNamesList.Count - successCount;
-            
+
             if (failureCount > 0)
             {
                 var failedSecrets = secretNamesList.Except(_secrets.Keys).ToList();
@@ -120,7 +124,7 @@ namespace emc.camus.secrets.dapr.Services
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
-            // Try to get the secret value from the in-memory cache 
+            // Try to get the secret value from the in-memory cache
 
             if (_secrets.TryGetValue(name, out var value))
             {
@@ -130,7 +134,7 @@ namespace emc.camus.secrets.dapr.Services
             LogSecretNotFoundInCache(name, _secrets.Count);
             return null;
         }
-        
+
         /// <summary>
         /// Loads a single secret from the Dapr secret store via HTTP.
         /// </summary>
@@ -144,19 +148,19 @@ namespace emc.camus.secrets.dapr.Services
         {
             // Use relative URL - BaseAddress is configured in constructor
             using var response = await _httpClient.GetAsync(secretName);
-           
+
             // Handle 404 as acceptable - secret doesn't exist
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 LogSecretNotFoundInStore(secretName, _settings.SecretStoreName);
                 return;
             }
-           
+
             // Ensure success status for other status codes
             response.EnsureSuccessStatusCode();
-           
+
             var responseContent = await response.Content.ReadAsStringAsync();
-           
+
             if (string.IsNullOrWhiteSpace(responseContent))
             {
                 LogEmptySecretResponse(secretName);
@@ -174,7 +178,7 @@ namespace emc.camus.secrets.dapr.Services
                 throw; // Re-throw to trigger retry logic
             }
         }
-        
+
         /// <summary>
         /// Parses the Dapr secret response JSON and stores the secret value in the in-memory cache.
         /// </summary>
@@ -189,25 +193,25 @@ namespace emc.camus.secrets.dapr.Services
         {
             // Dapr returns JSON: { "secretName": "value" }
             var secretData = JsonSerializer.Deserialize<Dictionary<string, string>>(responseContent);
-            
+
             if (secretData == null)
             {
                 throw new InvalidOperationException($"Secret '{secretName}' response was null after deserialization");
             }
-            
+
             if (!secretData.TryGetValue(secretName, out var secretValue))
             {
                 throw new InvalidOperationException($"Secret '{secretName}' not found in response dictionary. Available keys: {string.Join(", ", secretData.Keys)}");
             }
-            
+
             if (string.IsNullOrWhiteSpace(secretValue))
             {
                 throw new InvalidOperationException($"Secret '{secretName}' contains empty or whitespace-only value");
             }
-            
+
             _secrets[secretName] = secretValue;
         }
-        
+
         /// <summary>
         /// Determines whether an HTTP request exception represents a transient error that can be retried.
         /// </summary>
@@ -223,7 +227,7 @@ namespace emc.camus.secrets.dapr.Services
                    ex.Message.Contains(ConnectionErrorIndicator, StringComparison.OrdinalIgnoreCase) ||
                    ex.Message.Contains(NetworkErrorIndicator, StringComparison.OrdinalIgnoreCase);
         }
-        
+
         /// <summary>
         /// Loads a single secret with exponential backoff retry logic for transient errors.
         /// </summary>
@@ -241,17 +245,17 @@ namespace emc.camus.secrets.dapr.Services
                 try
                 {
                     await LoadSingleSecretAsync(secretName);
-                    return; // Success, exit retry loop
+                    return; // Success
                 }
                 catch (HttpRequestException ex) when (IsTransientError(ex) && attempt < MaxRetryAttempts)
                 {
-                    var delay = TimeSpan.FromMilliseconds(RetryBaseDelayMilliseconds * Math.Pow(2, attempt));
+                    var delay = TimeSpan.FromMilliseconds(RetryBaseDelayMilliseconds * Math.Pow(RetryBackoffExponentialBase, attempt));
 
                     await Task.Delay(delay);
                 }
                 catch (HttpRequestException ex) when (IsTransientError(ex))
                 {
-                    // Transient error on final attempt - let loop exit naturally
+                    // Transient error on final attempt - re-throw to caller
                     LogTransientErrorExhausted(ex, secretName);
                 }
                 catch (Exception ex)

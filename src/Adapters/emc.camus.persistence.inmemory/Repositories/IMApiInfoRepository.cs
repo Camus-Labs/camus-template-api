@@ -1,7 +1,6 @@
 using emc.camus.application.ApiInfo;
 using emc.camus.application.Configurations;
 using emc.camus.domain.Auth;
-using Microsoft.Extensions.Logging;
 
 namespace emc.camus.persistence.inmemory.Repositories;
 

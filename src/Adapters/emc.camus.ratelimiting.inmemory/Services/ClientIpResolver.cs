@@ -8,7 +8,7 @@ namespace emc.camus.ratelimiting.inmemory.Services
     /// Checks X-Forwarded-For and X-Real-IP headers for multi-instance deployments behind reverse proxies.
     /// Critical for nginx, Azure LB, CloudFlare, etc.
     /// </summary>
-    public partial class ClientIpResolver
+    internal sealed partial class ClientIpResolver
     {
         private const string XForwardedForHeader = "X-Forwarded-For";
         private const string XRealIpHeader = "X-Real-IP";
@@ -30,7 +30,13 @@ namespace emc.camus.ratelimiting.inmemory.Services
             _logger = logger;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Resolves the client IP address from the HTTP context, checking proxy headers first.
+        /// </summary>
+        /// <param name="context">The HTTP context to resolve the IP address from.</param>
+        /// <returns>The resolved client IP address as a string.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client IP address cannot be determined from any source.</exception>
         public string GetClientIpAddress(HttpContext context)
         {
             ArgumentNullException.ThrowIfNull(context);

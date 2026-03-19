@@ -35,6 +35,7 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
 
         private const int MinSegmentsPerWindow = 1;
         private const int MaxSegmentsPerWindow = 20;
+        private const int DefaultSegmentsPerWindow = 5;
 
         /// <summary>
         /// Number of segments per window for sliding window algorithm.
@@ -42,18 +43,18 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
         /// This is a global setting applied to all policies.
         /// Default: 5 segments (recommended: 3-10)
         /// </summary>
-        public int SegmentsPerWindow { get; set; } = 5;
+        public int SegmentsPerWindow { get; set; } = DefaultSegmentsPerWindow;
 
         /// <summary>
         /// Named rate limit policies. Each policy defines permit limit and window.
         /// Endpoints can specify which policy to use via [RateLimit(RateLimitPolicies.PolicyName)] attribute.
         /// A "default" policy is required and will be used for endpoints without explicit policy.
         /// </summary>
-        public Dictionary<string, RateLimitPolicy> Policies { get; set; } = new()
+        public Dictionary<string, RateLimitPolicySettings> Policies { get; set; } = new()
         {
-            { RateLimitPolicies.Default, new RateLimitPolicy { PermitLimit = 250, WindowSeconds = 60 } },
-            { RateLimitPolicies.Strict, new RateLimitPolicy { PermitLimit = 50, WindowSeconds = 60 } },
-            { RateLimitPolicies.Relaxed, new RateLimitPolicy { PermitLimit = 500, WindowSeconds = 60 } }
+            { RateLimitPolicies.Default, new RateLimitPolicySettings { PermitLimit = 250, WindowSeconds = 60 } },
+            { RateLimitPolicies.Strict, new RateLimitPolicySettings { PermitLimit = 50, WindowSeconds = 60 } },
+            { RateLimitPolicies.Relaxed, new RateLimitPolicySettings { PermitLimit = 500, WindowSeconds = 60 } }
         };
 
         /// <summary>
@@ -95,7 +96,7 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
             }
         }
 
-        private static void ValidatePolicy(string policyName, RateLimitPolicy policy)
+        private static void ValidatePolicy(string policyName, RateLimitPolicySettings policy)
         {
             if (string.IsNullOrWhiteSpace(policyName))
                 throw new InvalidOperationException("Policy name cannot be null or empty");
