@@ -32,10 +32,6 @@ namespace emc.camus.migrations.dbup
             Message = "Database is up to date. No migrations needed.")]
         private static partial void LogDatabaseUpToDate(ILogger logger);
 
-        [LoggerMessage(Level = LogLevel.Warning,
-            Message = "Database migration failed")]
-        private static partial void LogMigrationFailed(ILogger logger, Exception ex);
-
         [LoggerMessage(Level = LogLevel.Information,
             Message = "Database migrations completed successfully")]
         private static partial void LogMigrationCompleted(ILogger logger);
@@ -161,7 +157,6 @@ namespace emc.camus.migrations.dbup
 
                 if (!result.Successful)
                 {
-                    LogMigrationFailed(logger, result.Error);
                     throw new InvalidOperationException($"Database migration failed: {result.Error.Message}", result.Error);
                 }
 

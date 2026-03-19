@@ -3,7 +3,6 @@ using emc.camus.application.Auth;
 using emc.camus.application.Configurations;
 using emc.camus.application.Secrets;
 using emc.camus.domain.Auth;
-using Microsoft.Extensions.Logging;
 
 namespace emc.camus.persistence.inmemory.Repositories;
 
@@ -11,7 +10,7 @@ namespace emc.camus.persistence.inmemory.Repositories;
 /// In-memory implementation of user repository that loads configuration from settings.
 /// This is a temporary implementation for development/testing. In production, replace with database implementation.
 /// </summary>
-public partial class IMUserRepository : IUserRepository
+public class IMUserRepository : IUserRepository
 {
     private readonly InMemoryAuthorizationSettings _settings;
     private readonly ISecretProvider _secretProvider;

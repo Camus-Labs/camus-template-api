@@ -25,8 +25,11 @@ public class IMTokenRevocationCache : ITokenRevocationCache
     /// </summary>
     /// <param name="jti">The JWT ID to check.</param>
     /// <returns><see langword="true"/> if the token is revoked and not yet expired; otherwise <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="jti"/> is <see cref="Guid.Empty"/>.</exception>
     public bool IsRevoked(Guid jti)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(jti, Guid.Empty);
+
         if (_revokedTokens.TryGetValue(jti, out var expiresOn))
         {
             if (expiresOn <= DateTime.UtcNow)
@@ -45,8 +48,11 @@ public class IMTokenRevocationCache : ITokenRevocationCache
     /// </summary>
     /// <param name="jti">The JWT ID to revoke.</param>
     /// <param name="expiresOn">The token's expiration date, used for cache eviction.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="jti"/> is <see cref="Guid.Empty"/>.</exception>
     public void Revoke(Guid jti, DateTime expiresOn)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(jti, Guid.Empty);
+
         if (expiresOn > DateTime.UtcNow)
         {
             _revokedTokens.TryAdd(jti, expiresOn);
