@@ -1,10 +1,10 @@
-using System.Data;
 using Dapper;
 using emc.camus.application.Auth;
 using emc.camus.application.Common;
 using emc.camus.domain.Auth;
 using emc.camus.persistence.postgresql.Mapping;
 using emc.camus.persistence.postgresql.Models;
+using emc.camus.persistence.postgresql.Services;
 
 namespace emc.camus.persistence.postgresql.Repositories;
 
@@ -12,23 +12,35 @@ namespace emc.camus.persistence.postgresql.Repositories;
 /// Repository for managing generated tokens in PostgreSQL.
 /// Provides entity-centric methods to persist and retrieve custom generated tokens with permissions.
 /// </summary>
-public class PSGeneratedTokenRepository : IGeneratedTokenRepository
+internal sealed class PSGeneratedTokenRepository : IGeneratedTokenRepository
 {
+    private readonly PSUnitOfWork _unitOfWork;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PSGeneratedTokenRepository"/> class.
+    /// </summary>
+    /// <param name="unitOfWork">Unit of work for accessing the shared database connection.</param>
+    public PSGeneratedTokenRepository(PSUnitOfWork unitOfWork)
+    {
+        ArgumentNullException.ThrowIfNull(unitOfWork);
+
+        _unitOfWork = unitOfWork;
+    }
 
     /// <summary>
     /// Creates a new generated token record in the database.
     /// Validates that the creator user exists before inserting.
     /// </summary>
-    /// <param name="connection">The database connection.</param>
     /// <param name="generatedToken">The generated token domain entity.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when connection or generatedToken is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when generatedToken is null.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when the creator user does not exist.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the database operation fails.</exception>
-    public async Task CreateAsync(IDbConnection connection, GeneratedToken generatedToken)
+    public async Task CreateAsync(GeneratedToken generatedToken)
     {
-        ArgumentNullException.ThrowIfNull(connection);
         ArgumentNullException.ThrowIfNull(generatedToken);
+
+        var connection = await _unitOfWork.GetConnectionAsync();
 
         const string sql = @"
             INSERT INTO camus.generated_tokens (
@@ -63,13 +75,11 @@ public class PSGeneratedTokenRepository : IGeneratedTokenRepository
     /// <summary>
     /// Retrieves a generated token from PostgreSQL by its JTI (JWT ID).
     /// </summary>
-    /// <param name="connection">The database connection.</param>
     /// <param name="jti">The JWT ID to search for.</param>
     /// <returns>The generated token if found, otherwise <see langword="null"/>.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/> is null.</exception>
-    public async Task<GeneratedToken?> GetByJtiAsync(IDbConnection connection, Guid jti)
+    public async Task<GeneratedToken?> GetByJtiAsync(Guid jti)
     {
-        ArgumentNullException.ThrowIfNull(connection);
+        var connection = await _unitOfWork.GetConnectionAsync();
 
         const string sql = @"
             SELECT
@@ -92,16 +102,16 @@ public class PSGeneratedTokenRepository : IGeneratedTokenRepository
     /// Retrieves a paged list of generated tokens from PostgreSQL for a specific creator user.
     /// Supports optional filtering by revocation and expiration status.
     /// </summary>
-    /// <param name="connection">The database connection.</param>
     /// <param name="creatorUserId">The user ID of the creator.</param>
     /// <param name="pagination">Pagination parameters (page number and page size).</param>
     /// <param name="filter">Optional filter criteria for excluding revoked or expired tokens.</param>
     /// <returns>A paged result containing the matching tokens and pagination metadata.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/> or <paramref name="pagination"/> is null.</exception>
-    public async Task<PagedResult<GeneratedToken>> GetPagedByCreatorUserIdAsync(IDbConnection connection, Guid creatorUserId, PaginationParams pagination, GeneratedTokenFilter? filter = null)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="pagination"/> is null.</exception>
+    public async Task<PagedResult<GeneratedToken>> GetPagedByCreatorUserIdAsync(Guid creatorUserId, PaginationParams pagination, GeneratedTokenFilter? filter = null)
     {
-        ArgumentNullException.ThrowIfNull(connection);
         ArgumentNullException.ThrowIfNull(pagination);
+
+        var connection = await _unitOfWork.GetConnectionAsync();
 
         var whereClause = "WHERE creator_user_id = @CreatorUserId";
 
@@ -153,15 +163,15 @@ public class PSGeneratedTokenRepository : IGeneratedTokenRepository
     /// Persists the current state of a generated token to PostgreSQL (e.g., after revocation).
     /// Updates the revocation status and timestamp.
     /// </summary>
-    /// <param name="connection">The database connection.</param>
     /// <param name="generatedToken">The generated token domain entity with updated state.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/> or <paramref name="generatedToken"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="generatedToken"/> is null.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when no token with the specified JTI exists.</exception>
-    public async Task SaveAsync(IDbConnection connection, GeneratedToken generatedToken)
+    public async Task SaveAsync(GeneratedToken generatedToken)
     {
-        ArgumentNullException.ThrowIfNull(connection);
         ArgumentNullException.ThrowIfNull(generatedToken);
+
+        var connection = await _unitOfWork.GetConnectionAsync();
 
         const string sql = @"
             UPDATE camus.generated_tokens

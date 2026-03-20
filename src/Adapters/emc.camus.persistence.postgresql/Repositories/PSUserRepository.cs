@@ -6,26 +6,32 @@ using emc.camus.application.Common;
 using emc.camus.domain.Auth;
 using emc.camus.persistence.postgresql.Mapping;
 using emc.camus.persistence.postgresql.Models;
+using emc.camus.persistence.postgresql.Services;
 
 namespace emc.camus.persistence.postgresql.Repositories;
 
 /// <summary>
 /// PostgreSQL implementation of user repository using Dapper and BCrypt for password hashing.
 /// </summary>
-public class PSUserRepository : IUserRepository
+internal sealed class PSUserRepository : IUserRepository
 {
+    private readonly PSUnitOfWork _unitOfWork;
     private readonly IConnectionFactory _connectionFactory;
     private bool _initialized;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PSUserRepository"/> class.
     /// </summary>
-    /// <param name="connectionFactory">Factory for creating database connections.</param>
+    /// <param name="unitOfWork">Unit of work for accessing the shared database connection.</param>
+    /// <param name="connectionFactory">Factory for creating database connections (used only during initialization).</param>
     public PSUserRepository(
+        PSUnitOfWork unitOfWork,
         IConnectionFactory connectionFactory)
     {
+        ArgumentNullException.ThrowIfNull(unitOfWork);
         ArgumentNullException.ThrowIfNull(connectionFactory);
 
+        _unitOfWork = unitOfWork;
         _connectionFactory = connectionFactory;
     }
 
@@ -86,9 +92,8 @@ public class PSUserRepository : IUserRepository
 
     /// <summary>
     /// Validates user credentials by looking up the username in the database and verifying
-    /// the password against the stored bcrypt hash using an external connection (for transactions).
+    /// the password against the stored bcrypt hash.
     /// </summary>
-    /// <param name="connection">The database connection to use for the operation.</param>
     /// <param name="username">The username to validate.</param>
     /// <param name="password">The password to validate.</param>
     /// <returns>The authenticated user with roles.</returns>
@@ -98,13 +103,14 @@ public class PSUserRepository : IUserRepository
     /// <exception cref="UnauthorizedAccessException">
     /// Thrown when credentials are invalid (empty, user not found, or wrong password).
     /// </exception>
-    public async Task<User> ValidateCredentialsAsync(IDbConnection connection, string username, string password)
+    public async Task<User> ValidateCredentialsAsync(string username, string password)
     {
         EnsureInitialized();
 
-        ArgumentNullException.ThrowIfNull(connection);
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
         ArgumentException.ThrowIfNullOrWhiteSpace(password);
+
+        var connection = await _unitOfWork.GetConnectionAsync();
 
         // Get user with password hash
         const string userSql = @"
@@ -165,18 +171,17 @@ public class PSUserRepository : IUserRepository
     }
 
     /// <summary>
-    /// Retrieves a user by their unique identifier with roles using an external connection.
+    /// Retrieves a user by their unique identifier with roles.
     /// </summary>
-    /// <param name="connection">The database connection to use for the operation.</param>
     /// <param name="userId">The unique identifier of the user to retrieve.</param>
     /// <returns>The User if found, otherwise null.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the repository has not been initialized.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when the user is not found.</exception>
-    public async Task<User> GetByIdAsync(IDbConnection connection, Guid userId)
+    public async Task<User> GetByIdAsync(Guid userId)
     {
         EnsureInitialized();
 
-        ArgumentNullException.ThrowIfNull(connection);
+        var connection = await _unitOfWork.GetConnectionAsync();
 
         const string userSql = @"
             SELECT id, username
@@ -211,14 +216,13 @@ public class PSUserRepository : IUserRepository
     /// <summary>
     /// Updates the last login timestamp for a user.
     /// </summary>
-    /// <param name="connection">The database connection to use for the operation.</param>
     /// <param name="userId">The ID of the user to update.</param>
     /// <returns>Task representing the asynchronous operation.</returns>
-    public async Task UpdateLastLoginAsync(IDbConnection connection, Guid userId)
+    public async Task UpdateLastLoginAsync(Guid userId)
     {
         EnsureInitialized();
 
-        ArgumentNullException.ThrowIfNull(connection);
+        var connection = await _unitOfWork.GetConnectionAsync();
 
         const string updateSql = @"
             UPDATE camus.users

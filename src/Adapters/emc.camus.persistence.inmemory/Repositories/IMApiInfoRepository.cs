@@ -1,27 +1,27 @@
 using emc.camus.application.ApiInfo;
-using emc.camus.application.Configurations;
 using emc.camus.domain.Auth;
+using emc.camus.persistence.inmemory.Configurations;
 
 namespace emc.camus.persistence.inmemory.Repositories;
 
 /// <summary>
 /// In-memory implementation of API info repository that loads configuration from settings.
 /// </summary>
-public class IMApiInfoRepository : IApiInfoRepository
+internal sealed class IMApiInfoRepository : IApiInfoRepository
 {
-    private readonly InMemoryAppDataSettings _settings;
+    private readonly InMemoryModelSettings _settings;
     private Dictionary<string, ApiInfo> _apiInfoByVersion = new();
     private bool _initialized;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="IMApiInfoRepository"/> class.
     /// </summary>
-    /// <param name="settings">Application data settings containing API info definitions.</param>
+    /// <param name="settings">In-memory model settings containing API info definitions.</param>
     public IMApiInfoRepository(
-        AppDataSettings settings)
+        InMemoryModelSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
-        _settings = settings.InMemory;
+        _settings = settings;
     }
 
     /// <summary>

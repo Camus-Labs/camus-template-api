@@ -4,7 +4,7 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
     /// Represents a single rate limit policy with permit limit and time window.
     /// Each policy defines how many requests are allowed within a specific time window.
     /// </summary>
-    public class RateLimitPolicySettings
+    internal sealed class RateLimitPolicySettings
     {
         private const int MinPermitLimit = 1;
         private const int MaxPermitLimit = 100000;

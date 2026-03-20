@@ -13,7 +13,7 @@ namespace emc.camus.secrets.dapr.Services
     /// <remarks>
     /// This implementation loads secrets from a Dapr sidecar using HTTP requests and caches them in memory.
     /// </remarks>
-    public partial class DaprSecretProvider : ISecretProvider
+    internal sealed partial class DaprSecretProvider : ISecretProvider
     {
         private const int MaxRetryAttempts = 3;
         private const int RetryBaseDelayMilliseconds = 500;

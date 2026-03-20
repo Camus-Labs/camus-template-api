@@ -3,7 +3,7 @@ namespace emc.camus.secrets.dapr.Configurations
     /// <summary>
     /// Configuration settings for the Dapr secret provider.
     /// </summary>
-    public class DaprSecretProviderSettings
+    internal sealed class DaprSecretProviderSettings
     {
         /// <summary>
         /// The configuration section name for Dapr secret provider settings.

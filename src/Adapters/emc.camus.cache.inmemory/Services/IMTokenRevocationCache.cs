@@ -15,7 +15,7 @@ namespace emc.camus.cache.inmemory.Services;
 /// Eviction strategy: expired tokens are removed lazily during <see cref="IsRevoked"/> lookups.
 /// No background cleanup thread is used, keeping the implementation simple and predictable.
 /// </remarks>
-public class IMTokenRevocationCache : ITokenRevocationCache
+internal sealed class IMTokenRevocationCache : ITokenRevocationCache
 {
     private readonly ConcurrentDictionary<Guid, DateTime> _revokedTokens = new();
 

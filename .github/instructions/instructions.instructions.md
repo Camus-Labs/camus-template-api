@@ -19,7 +19,7 @@ applyTo: ".github/instructions/**"
     - [ ] Each check is one falsifiable statement — can be verified true or false against a file
     - [ ] Active voice, declarative ("No business logic" not "Should avoid business logic")
     - [ ] Inline examples, when present, appear in parentheses (e.g., `rule (example)`)
-    - [ ] Rationale or contrast after em-dash (e.g., `rule — rationale`)
+    - [ ] Rationale or contrast, when present, after em-dash (e.g., `rule — rationale`)
     - [ ] No vague qualifiers ("as needed", "consider", "optionally", "when appropriate")
     - [ ] No aspirational checks that cannot be mechanically verified
 
@@ -29,7 +29,7 @@ applyTo: ".github/instructions/**"
     - [ ] Cross-cutting checks in `csharp.instructions.md` — layer-specific checks in layer files
     - [ ] Specialized instruction files (e.g., `adapters.persistence.instructions.md`) do not restate parent file
           checks (`adapters.instructions.md`)
-    - [ ] Checks reference concrete boundaries, not other instruction files
+    - [ ] Checks reference concrete code/file boundaries — not other instruction files for rule delegation
 
 4. Section Naming
 

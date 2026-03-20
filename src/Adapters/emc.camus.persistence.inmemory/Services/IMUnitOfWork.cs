@@ -1,0 +1,58 @@
+using emc.camus.application.Common;
+using Microsoft.Extensions.Logging;
+
+namespace emc.camus.persistence.inmemory.Services;
+
+/// <summary>
+/// No-op unit of work for the in-memory persistence adapter.
+/// All transaction operations are skipped because in-memory data does not require transactional guarantees.
+/// </summary>
+internal sealed partial class IMUnitOfWork : IUnitOfWork
+{
+    private readonly ILogger<IMUnitOfWork> _logger;
+
+    [LoggerMessage(Level = LogLevel.Debug,
+        Message = "In-memory unit of work: {Operation} skipped — no database connection required.")]
+    private partial void LogSkippedOperation(string operation);
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IMUnitOfWork"/> class.
+    /// </summary>
+    /// <param name="logger">Logger for unit of work events.</param>
+    public IMUnitOfWork(ILogger<IMUnitOfWork> logger)
+    {
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// No-op: in-memory persistence does not require transactions.
+    /// </summary>
+    /// <returns>A completed task.</returns>
+    public Task BeginTransactionAsync()
+    {
+        LogSkippedOperation("BeginTransaction");
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// No-op: in-memory persistence does not require transactions.
+    /// </summary>
+    /// <returns>A completed task.</returns>
+    public Task CommitAsync()
+    {
+        LogSkippedOperation("Commit");
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// No-op: in-memory persistence does not require transactions.
+    /// </summary>
+    /// <returns>A completed task.</returns>
+    public Task RollbackAsync()
+    {
+        LogSkippedOperation("Rollback");
+        return Task.CompletedTask;
+    }
+}

@@ -16,7 +16,8 @@ Runs ordered, embedded SQL scripts against PostgreSQL at application startup. Tr
 
 ## ✨ Features
 
-- 📦 **Embedded SQL Scripts** — Migration files compiled into the assembly from `src/Infrastructure/database/migrations/`
+- 📦 **Embedded SQL Scripts** — Migration files compiled into the assembly
+  from `src/Infrastructure/database/migrations/`
 - 🔐 **Secret-Based Credentials** — Admin credentials fetched via `ISecretProvider` at startup
 - 🔁 **Idempotent** — Already-applied scripts are skipped automatically
 - 📋 **Schema Versioning** — Applied migrations tracked in `public.camus_schemaversions`
@@ -61,6 +62,7 @@ See `DatabaseMigrationSetupExtensions` in this adapter for the full registration
 
 | Setting | Required | Description |
 | ------- | -------- | ----------- |
+| `DBUpSettings.Enabled` | ✅ | Enable or disable migrations; when `false`, registration and execution are no-ops; default: `false` |
 | `DBUpSettings.AdminSecretName` | ✅ | Secret name for DB admin username |
 | `DBUpSettings.PasswordSecretName` | ✅ | Secret name for DB admin password |
 | `DatabaseSettings.Host` | ✅ | PostgreSQL server hostname |

@@ -42,44 +42,39 @@ namespace emc.camus.migrations.dbup
 
         /// <summary>
         /// Registers database migration configuration and validates settings.
+        /// Skips registration when <see cref="DBUpSettings.Enabled"/> is <c>false</c>.
         /// </summary>
         /// <param name="builder">The web application builder.</param>
         /// <returns>The web application builder for method chaining.</returns>
         public static WebApplicationBuilder AddDatabaseMigrations(this WebApplicationBuilder builder)
         {
-            // Load and validate DBUpSettings
+            // Load DBUpSettings — skip if missing or disabled
             var migrationsSettings = builder.Configuration
                 .GetSection(DBUpSettings.ConfigurationSectionName)
-                .Get<DBUpSettings>();
-
-            if (migrationsSettings == null)
-            {
-                throw new InvalidOperationException(
-                    $"DBUpSettings configuration is missing. Ensure '{DBUpSettings.ConfigurationSectionName}' section is present in configuration.");
-            }
+                .Get<DBUpSettings>() ?? new DBUpSettings();
 
             migrationsSettings.Validate();
+
             builder.Services.AddSingleton(migrationsSettings);
 
-            // Load and validate DatabaseSettings
-            var dbSettings = builder.Configuration
-                .GetSection(DatabaseSettings.ConfigurationSectionName)
-                .Get<DatabaseSettings>();
-
-            if (dbSettings == null)
+            if (!migrationsSettings.Enabled)
             {
-                throw new InvalidOperationException(
-                    $"DatabaseSettings configuration is missing. Ensure '{DatabaseSettings.ConfigurationSectionName}' section is present in configuration.");
+                return builder;
             }
 
-            dbSettings.Validate();
+            // DatabaseSettings must be registered by PersistenceSetupExtensions before migrations
+            if (!builder.Services.Any(s => s.ServiceType == typeof(DatabaseSettings)))
+            {
+                throw new InvalidOperationException(
+                    "DatabaseSettings is not registered in DI. Ensure AddPersistence() with database provider is called before AddDatabaseMigrations().");
+            }
 
             return builder;
         }
 
         /// <summary>
         /// Runs database migrations on application startup.
-        /// Uses DatabaseSettings from root configuration for Host/Port/Database.
+        /// Uses DatabaseSettings from configuration for Host/Port/Database.
         /// Uses DBUpSettings for admin credentials.
         /// Supports both static connection strings and secret-based credentials.
         /// Tracking table stored in public.camus_schemaversions for portability.
@@ -89,11 +84,14 @@ namespace emc.camus.migrations.dbup
         /// <returns>The web application for method chaining.</returns>
         public static WebApplication UseDatabaseMigrations(this WebApplication app, ILogger logger)
         {
-            // Get settings from DI (registered in AddDatabaseMigrations)
+            // Skip migrations if disabled
             var migrationsSettings = app.Services.GetRequiredService<DBUpSettings>();
-            var dbSettings = app.Configuration
-                .GetSection(DatabaseSettings.ConfigurationSectionName)
-                .Get<DatabaseSettings>()!;
+            if (!migrationsSettings.Enabled)
+            {
+                return app;
+            }
+
+            var dbSettings = app.Services.GetRequiredService<DatabaseSettings>();
 
             try
             {
@@ -125,7 +123,7 @@ namespace emc.camus.migrations.dbup
                         $"Database admin password secret '{migrationsSettings.PasswordSecretName}' not found or empty");
                 }
 
-                // Build connection string using DatabaseSettings structure with admin credentials
+                // Build connection string using DatabaseSettings with admin credentials
                 var connectionString = $"Host={dbSettings.Host};Port={dbSettings.Port};Database={dbSettings.Database};Username={adminUsername};Password={adminPassword}";
 
                 if (!string.IsNullOrWhiteSpace(dbSettings.AdditionalParameters))

@@ -1,6 +1,6 @@
 using emc.camus.application.Auth;
 
-namespace emc.camus.application.Configurations;
+namespace emc.camus.persistence.inmemory.Configurations;
 
 /// <summary>
 /// Configuration for a role definition.
@@ -51,7 +51,7 @@ public class RoleSettings
             throw new InvalidOperationException($"Role '{Name}' must have at least one permission.");
         }
 
-        var validPermissions = Auth.Permissions.GetAll();
+        var validPermissions = emc.camus.application.Auth.Permissions.GetAll();
         var invalidPermissions = Permissions.Where(p => !validPermissions.Contains(p)).ToList();
 
         if (invalidPermissions.Count > 0)

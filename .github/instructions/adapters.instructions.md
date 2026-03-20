@@ -9,7 +9,7 @@ applyTo: "src/Adapters/**/*.cs"
     - [ ] File implements an Application-layer interface (port), or is a configuration, extension, mapping,
           or `internal` helper class consumed by one that does
     - [ ] External service clients wrap a single SDK or service
-    - [ ] Adapter-internal types (classes and interfaces) not consumed outside the adapter are `internal sealed`
+    - [ ] Adapter-internal types (classes and interfaces) not consumed outside the adapter are `internal`
           — `public` interfaces belong in Application
     - [ ] Middleware is adapter-specific and not shared across adapters
 

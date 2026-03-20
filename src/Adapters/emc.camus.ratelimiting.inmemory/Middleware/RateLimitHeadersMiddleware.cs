@@ -16,7 +16,7 @@ namespace emc.camus.ratelimiting.inmemory.Middleware
     /// - Track usage and plan requests accordingly
     /// This follows industry standard practice (GitHub, Twitter, Stripe APIs).
     /// </remarks>
-    public class RateLimitHeadersMiddleware
+    internal sealed class RateLimitHeadersMiddleware
     {
         private readonly RequestDelegate _next;
 

@@ -1,4 +1,4 @@
-namespace emc.camus.application.Configurations;
+namespace emc.camus.persistence.inmemory.Configurations;
 
 /// <summary>
 /// Configuration for a user definition.

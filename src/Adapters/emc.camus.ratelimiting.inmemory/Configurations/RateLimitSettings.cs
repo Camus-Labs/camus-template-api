@@ -26,7 +26,7 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
     ///   "relaxed": { "PermitLimit": 1000, "WindowSeconds": 60 }
     /// }
     /// </summary>
-    public class RateLimitSettings
+    internal sealed class RateLimitSettings
     {
         /// <summary>
         /// The configuration section name for rate limit settings.

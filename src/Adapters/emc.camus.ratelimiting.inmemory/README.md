@@ -52,15 +52,15 @@ dotnet add reference ../../Adapters/emc.camus.ratelimiting.inmemory/emc.camus.ra
 
 **2. Configure in `Program.cs`:**
 
-1. Call `builder.AddMemoryRateLimiting(serviceName)` to register rate limiting services
+1. Call `builder.AddInMemoryRateLimiting(serviceName)` to register rate limiting services
 2. Call `app.UseForwardedHeaders()` to process proxy headers (must come before rate limiting)
-3. Call `app.UseMemoryRateLimiting()` to apply the middleware before authentication
+3. Call `app.UseInMemoryRateLimiting()` to apply the middleware before authentication
 
 See `InMemoryRateLimitingSetupExtensions` in this adapter for the full registration API and `Program.cs` for
 the wiring order.
 
 ⚠️ **Critical**: If deploying behind a reverse proxy, `UseForwardedHeaders()` must be called **before**
-`UseMemoryRateLimiting()`. Without it, all requests from the same proxy share one rate limit.
+`UseInMemoryRateLimiting()`. Without it, all requests from the same proxy share one rate limit.
 
 ## Configuration
 
@@ -142,8 +142,10 @@ requests is available via response headers (`RateLimit-Limit`, `RateLimit-Reset`
 To migrate to Redis-based distributed rate limiting:
 
 1. Install the Redis adapter package (`emc.camus.ratelimiting.redis`)
-2. Replace `AddMemoryRateLimiting` / `UseMemoryRateLimiting` calls with `AddRedisRateLimiting` / `UseRedisRateLimiting`
-3. Add a `RedisConnectionString` property to the `RateLimitSettings` configuration section
+2. Replace `AddInMemoryRateLimiting` / `UseInMemoryRateLimiting` calls
+   with `AddRedisRateLimiting` / `UseRedisRateLimiting`
+3. Add a `RedisConnectionString` property to the `RateLimitSettings`
+   configuration section
 
 ## Response Headers
 
@@ -219,10 +221,10 @@ Following clean architecture principles:
 
 The adapter registers rate limiting services via two extension methods in `InMemoryRateLimitingSetupExtensions.cs`:
 
-1. **`builder.AddMemoryRateLimiting(serviceName)`** — Reads `RateLimitSettings` from
+1. **`builder.AddInMemoryRateLimiting(serviceName)`** — Reads `RateLimitSettings` from
    configuration, validates policies, and registers the ASP.NET Core sliding-window rate limiter
    with IP-based partitioning.
-2. **`app.UseMemoryRateLimiting()`** — Activates the rate limiting middleware. Must be called
+2. **`app.UseInMemoryRateLimiting()`** — Activates the rate limiting middleware. Must be called
    **before** authentication middleware and **after** `UseForwardedHeaders()` when behind a proxy.
 
 ---

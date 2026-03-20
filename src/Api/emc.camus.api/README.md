@@ -21,12 +21,14 @@ in `Extensions/`.
 
 - 🌐 **API Versioning** — URL-segment and header-based versioning (v1, v2)
 - 🔐 **Authentication & Authorization** — JWT Bearer and API Key schemes with permission-based policies
-- 🛡️ **Global Error Handling** — Centralized exception-to-ProblemDetails middleware with configurable error-code mapping
+- 🛡️ **Global Error Handling** — Centralized exception-to-ProblemDetails
+  middleware with configurable error-code mapping
 - 📊 **Observability** — OpenTelemetry tracing, metrics, and structured logging wired at startup
 - ⚡ **Rate Limiting** — IP-based sliding-window policies (default, strict, relaxed)
 - 📝 **Swagger / OpenAPI** — Auto-generated documentation with typed examples and security schemes
 - 🔄 **CORS** — Configurable cross-origin policy
-- 🗄️ **Persistence Selection** — InMemory or PostgreSQL chosen per feature via configuration
+- 🗄️ **Persistence Selection** — InMemory or PostgreSQL chosen globally via
+  `DataPersistenceSettings.Provider` configuration
 - 🔑 **Secret Management** — Dapr-based secret provider loaded at startup
 
 ---
@@ -85,7 +87,7 @@ in the pipeline to capture exceptions from all downstream components. Refer to t
     "AllowedOrigins": ["https://app.camus.com/"],
     "AllowedMethods": ["GET", "POST"],
     "AllowedHeaders": ["Content-Type", "Authorization", "Api-Key"],
-    "ExposedHeaders": ["Trace-Id", "Username", "Retry-After"],
+    "ExposedHeaders": ["Content-Type", "Trace-Id", "Username", "Retry-After", "RateLimit-Limit", "RateLimit-Reset", "RateLimit-Policy", "RateLimit-Window"],
     "AllowCredentials": true,
     "PreflightMaxAgeMinutes": 5
   }
@@ -134,9 +136,9 @@ Each adapter exposes a pair of extension methods consumed in `Program.cs`:
 | Cache | `AddInMemoryCache()` | — |
 | JWT Auth | `AddJwtAuthentication()` | — |
 | API Key Auth | `AddApiKeyAuthentication()` | — |
-| Authorization | `AddAuthorizationWithData()` | `UseAuthorizationWithData()` |
+| Authorization | `AddAuthorizationPolicies()` | `UseAuthorizationPolicies()` |
 | App Services | `AddApplicationServices()` | `UseApplicationServices()` |
-| App Data | `AddAppData()` | `UseAppData()` |
+| Persistence | `AddPersistence()` | `UsePersistence()` |
 
 ### Controllers
 

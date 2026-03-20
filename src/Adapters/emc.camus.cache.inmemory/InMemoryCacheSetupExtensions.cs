@@ -21,7 +21,7 @@ public static class InMemoryCacheSetupExtensions
     /// <returns>The web application builder for method chaining.</returns>
     public static WebApplicationBuilder AddInMemoryCache(this WebApplicationBuilder builder)
     {
-        builder.Services.TryAddSingleton<ITokenRevocationCache, IMTokenRevocationCache>();
+        builder.Services.AddSingleton<ITokenRevocationCache, IMTokenRevocationCache>();
 
         return builder;
     }

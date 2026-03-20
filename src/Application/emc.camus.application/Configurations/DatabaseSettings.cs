@@ -18,11 +18,6 @@ public class DatabaseSettings
     public const string ConfigurationSectionName = "DatabaseSettings";
 
     /// <summary>
-    /// Gets or sets the database provider type.
-    /// </summary>
-    public DatabaseProvider Provider { get; set; } = DatabaseProvider.PostgreSQL;
-
-    /// <summary>
     /// Gets or sets the database host (e.g., localhost, db.example.com).
     /// Required when using secret-based credentials.
     /// </summary>
@@ -66,21 +61,12 @@ public class DatabaseSettings
     /// </exception>
     public void Validate()
     {
-        ValidateProvider();
         ValidateHost();
         ValidatePort();
         ValidateDatabase();
         ValidateUserSecretName();
         ValidatePasswordSecretName();
         ValidateAdditionalParameters();
-    }
-
-    private void ValidateProvider()
-    {
-        if (!Enum.IsDefined(Provider))
-        {
-            throw new InvalidOperationException($"Invalid database provider: {Provider}.");
-        }
     }
 
     private void ValidateHost()

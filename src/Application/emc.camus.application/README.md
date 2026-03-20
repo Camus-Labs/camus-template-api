@@ -4,8 +4,8 @@
 [Architecture Guide](../../../docs/architecture.md)
 
 The Application layer defines **shared contracts** (interfaces, attributes, exceptions, and constants)
-consumed by the API layer and infrastructure adapters. This layer contains **zero implementations** -
-only abstractions that enable clean architecture and dependency inversion.
+consumed by the API layer and infrastructure adapters. It also contains concrete application services
+(`AuthService`, `ApiInfoService`) that orchestrate repository and adapter calls.
 
 ---
 
@@ -58,7 +58,7 @@ Secret management contracts:
 
 - **`ISecretProvider`** - Interface for secret retrieval (implemented by `emc.camus.secrets.dapr`)
 
-### `Generic/`
+### `Common/`
 
 Application-wide constants:
 
@@ -67,6 +67,16 @@ Application-wide constants:
 - **`Headers`** - Custom HTTP header name constants (`X-Api-Key`, `X-Trace-Id`, rate limit
   headers)
 - **`MediaTypes`** - Custom media type constants (`application/problem+json`)
+
+### `Configurations/`
+
+Configuration types used by persistence and infrastructure:
+
+- **`DataPersistenceSettings`** — Global persistence provider selection
+  (`InMemory` or `PostgreSQL`)
+- **`DatabaseSettings`** — PostgreSQL connection parameters
+  (Host, Port, Database, UserSecretName, PasswordSecretName)
+- **`PersistenceProvider`** — Enum: `InMemory`, `PostgreSQL`
 
 ### `Exceptions/`
 
@@ -142,7 +152,7 @@ See `RateLimitAttribute` and `RateLimitPolicies` in the `RateLimiting` namespace
 ### Using Error Codes
 
 Set `exception.Data[ErrorCodes.ErrorCodeKey]` to a constant from `ErrorCodes` (e.g., `ErrorCodes.InvalidCredentials`)
-to surface machine-readable error codes in API responses. See `ErrorCodes.cs` in the `Generic` namespace.
+to surface machine-readable error codes in API responses. See `ErrorCodes.cs` in the `Common` namespace.
 
 ### Using Authentication Schemes
 
@@ -193,9 +203,16 @@ See [RateLimitPolicies.cs](RateLimiting/RateLimitPolicies.cs) for complete polic
 
 ## Configuration
 
-The Application layer defines contracts and constants only — it has no runtime configuration of its own. Adapter
-projects that implement these interfaces provide their own configuration (e.g., connection strings, secret store
-settings). See individual adapter READMEs for configuration details.
+The following configuration types are defined in the Application layer:
+
+- **`DataPersistenceSettings`** — Selects the global persistence provider
+  (`InMemory` or `PostgreSQL`). Section name: `DataPersistenceSettings`.
+- **`DatabaseSettings`** — PostgreSQL connection parameters
+  (Host, Port, Database, UserSecretName, PasswordSecretName).
+  Section name: `DatabaseSettings`.
+
+Adapter projects that implement these interfaces provide their own
+additional configuration. See individual adapter READMEs for details.
 
 ---
 
@@ -212,8 +229,8 @@ injection. See the extension methods in `src/Api/emc.camus.api/Extensions/` for 
 | Symptom | Likely Cause |
 | ------- | ------------ |
 | `MissingMethodException` on interface call | Adapter project not referenced or DI registration missing |
-| `RateLimitAttribute` has no effect | Rate limiting adapter not registered — call `builder.AddRateLimiting()` |
-| `ErrorCodes` constant not found | Missing `using emc.camus.application.Generic;` directive |
+| `RateLimitAttribute` has no effect | Rate limiting adapter not registered — call `builder.AddInMemoryRateLimiting(serviceName)` |
+| `ErrorCodes` constant not found | Missing `using emc.camus.application.Common;` directive |
 
 ---
 

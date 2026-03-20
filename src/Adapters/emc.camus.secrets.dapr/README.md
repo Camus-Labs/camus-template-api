@@ -39,7 +39,7 @@ In `appsettings.json`:
 
 ```json
 {
-  "DaprSecretProvider": {
+  "DaprSecretProviderSettings": {
     "BaseHost": "localhost",
     "HttpPort": "3500",
     "SecretStoreName": "default-secret-store",
@@ -95,7 +95,7 @@ Update your production settings to reference the appropriate secret store:
 
 ```json
 {
-  "DaprSecretProvider": {
+  "DaprSecretProviderSettings": {
     "BaseHost": "localhost",
     "HttpPort": "3500",
     "SecretStoreName": "azurekeyvault",
@@ -149,7 +149,7 @@ running Dapr sidecar.
 
 The adapter registers the Dapr secret provider via two extension methods in `DaprSecretsSetupExtensions.cs`:
 
-1. **`builder.AddDaprSecrets()`** — Reads `DaprSecretProvider` settings from configuration and
+1. **`builder.AddDaprSecrets()`** — Reads `DaprSecretProviderSettings` from configuration and
    registers `DaprSecretProvider` as the `ISecretProvider` singleton.
 2. **`app.UseDaprSecrets()`** — Resolves `ISecretProvider` from DI and calls `Initialize()` to
    fetch all configured secrets at startup (fail-fast pattern).
@@ -162,7 +162,7 @@ Call `AddDaprSecrets()` before any adapter that depends on `ISecretProvider` (e.
 
 | Symptom | Likely Cause |
 | ------- | ------------ |
-| `DaprSecretProvider configuration is missing` | Missing `DaprSecretProvider` section in `appsettings.json` |
+| `DaprSecretProviderSettings configuration is missing` | Missing `DaprSecretProviderSettings` section in `appsettings.json` |
 | `Failed to retrieve secret 'X'` | Secret name mismatch or Dapr sidecar not running |
 | Connection refused on port 3500 | Dapr sidecar not started — run `dapr run` or check container setup |
 | Secrets empty in production | Secret store component name doesn't match `SecretStoreName` setting |

@@ -46,24 +46,24 @@ builder.AddInMemoryRateLimiting(SERVICE_NAME);
 // Step 7: Configure Secrets Provider using Dapr Adapter
 builder.AddDaprSecrets();
 
-// Step 8: Configure database migrations (depends on secrets for DB credentials)
+// Step 8: Configure data persistence (depends on secrets for DB credentials)
+builder.AddPersistence();
+
+// Step 9: Configure database migrations (depends on persistence settings)
 builder.AddDatabaseMigrations();
 
-// Step 9: Configure in-memory cache (token revocation denylist)
+// Step 10: Configure in-memory cache (token revocation denylist)
 builder.AddInMemoryCache();
 
-// Step 10: Configure Authentication using Security Adapters (depends on secrets)
+// Step 11: Configure Authentication using Security Adapters (depends on secrets)
 builder.AddJwtAuthentication();
 builder.AddApiKeyAuthentication();
 
-// Step 11: Configure authorization policies and user repository (depends on authentication)
-builder.AddAuthorizationWithData();
+// Step 12: Configure authorization policies (depends on authentication)
+builder.AddAuthorizationPolicies();
 
-// Step 12: Configure application services (IUserContext, etc.)
+// Step 13: Configure application services (IUserContext, etc.)
 builder.AddApplicationServices();
-
-// Step 13: Configure application data (depends on IUserContext for audit)
-builder.AddAppData();
 
 // Step 14: Build App Builder
 var app = builder.Build();
@@ -114,13 +114,13 @@ app.UseDatabaseMigrations(startupLogger);
 // Step 25: Add Authentication and Authorization
 app.UseAuthentication();
 
-// Step 26: Initialize authorization data (load users/roles)
-app.UseAuthorizationWithData();
+// Step 26: Apply authorization middleware
+app.UseAuthorizationPolicies();
 
-// Step 27: Initialize application data (load API info)
-app.UseAppData();
+// Step 27: Initialize persistence-dependent data (load API info)
+app.UsePersistence();
 
-// Step 28: Apply application services (adds User-Id header + endpoint routing)
+// Step 28: Apply application services (adds Username header + endpoint routing)
 app.UseApplicationServices();
 
 

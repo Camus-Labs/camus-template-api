@@ -50,3 +50,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Multi-model concurrent reviewer agents for code, documentation, agents, and prompts
 - Review prompt templates for code, documentation, agent, and prompt compliance
 - GitHub Actions workflows for CI, dependency vulnerability scanning, Markdown lint, Docker lint, and version check
+- Unit of work pattern for transactional and shared connections on pstgresql adapter

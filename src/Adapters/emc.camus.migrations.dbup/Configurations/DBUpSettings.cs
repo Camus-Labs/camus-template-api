@@ -4,7 +4,7 @@ namespace emc.camus.migrations.dbup.Configurations;
 /// Configuration settings for DbUp database migrations.
 /// Uses DatabaseSettings for Host/Port/Database configuration.
 /// </summary>
-public class DBUpSettings
+internal sealed class DBUpSettings
 {
     private const int MaxSecretNameLength = 200;
 
@@ -14,14 +14,22 @@ public class DBUpSettings
     public const string ConfigurationSectionName = "DBUpSettings";
 
     /// <summary>
+    /// Gets or sets a value indicating whether database migrations are enabled.
+    /// When <c>false</c>, <see cref="DatabaseMigrationSetupExtensions.AddDatabaseMigrations"/>
+    /// and <see cref="DatabaseMigrationSetupExtensions.UseDatabaseMigrations"/> are no-ops.
+    /// Default: <c>false</c>.
+    /// </summary>
+    public bool Enabled { get; set; }
+
+    /// <summary>
     /// Gets or sets the name of the secret containing the database admin username.
-    /// Required.
+    /// Required when <see cref="Enabled"/> is <c>true</c>.
     /// </summary>
     public string AdminSecretName { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the name of the secret containing the database admin password.
-    /// Required.
+    /// Required when <see cref="Enabled"/> is <c>true</c>.
     /// </summary>
     public string PasswordSecretName { get; set; } = string.Empty;
 
@@ -33,6 +41,11 @@ public class DBUpSettings
     /// </exception>
     public void Validate()
     {
+        if (!Enabled)
+        {
+            return;
+        }
+
         ValidateAdminSecretName();
         ValidatePasswordSecretName();
     }

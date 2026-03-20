@@ -20,8 +20,6 @@ namespace emc.camus.api.Extensions
         /// <returns>The web application builder for method chaining.</returns>
         public static WebApplicationBuilder AddApplicationServices(this WebApplicationBuilder builder)
         {
-            ArgumentNullException.ThrowIfNull(builder);
-
             // Register HTTP Context Accessor (required for accessing current user in services)
             builder.Services.AddHttpContextAccessor();
 

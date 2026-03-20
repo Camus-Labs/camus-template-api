@@ -30,19 +30,25 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ### 3. Environment Configuration
 
-Create `.env` file:
+Override configuration via environment variables using the `__` separator:
 
 ```env
 # Database
-DATABASE_CONNECTION_STRING=Host=db;Database=camus;Username=user;Password=pass
+DatabaseSettings__Host=db
+DatabaseSettings__Port=5432
+DatabaseSettings__Database=camus
+DatabaseSettings__UserSecretName=DBUser
+DatabaseSettings__PasswordSecretName=DBSecret
+
+# Persistence provider
+DataPersistenceSettings__Provider=PostgreSQL
 
 # Observability
 APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=your-key
-
-# Security
-JWT_PRIVATE_KEY_PATH=/certs/certificate.pem
-API_KEY=your-secure-api-key-here
 ```
+
+Secrets (JWT private key, API key, DB passwords) are managed through Dapr secret stores —
+see [Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md) for details.
 
 ## Azure Container Apps
 
@@ -122,8 +128,10 @@ The application uses Dapr for secret management. Configure appropriate secret st
 Configure a Dapr Azure Key Vault component and update `appsettings.Production.json` with `SecretStoreName`
 set to `"azurekeyvault"`.
 
-See [Dapr Components README — Production Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
-for the component YAML template and [Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md)
+See [Dapr Components README — Production
+Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
+for the component YAML template and
+[Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md)
 for the application settings structure.
 
 ### AWS Secrets Manager
@@ -131,8 +139,10 @@ for the application settings structure.
 Configure a Dapr AWS Secrets Manager component and update `appsettings.Production.json` with `SecretStoreName`
 set to `"awssecretsmanager"`.
 
-See [Dapr Components README — Production Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
-for the component YAML template and [Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md)
+See [Dapr Components README — Production
+Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
+for the component YAML template and
+[Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md)
 for the application settings structure.
 
 **Deployment Steps:**

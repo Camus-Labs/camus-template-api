@@ -49,7 +49,7 @@ src/
 ├── Domain/                                 # 💼 Business Core
 │   └── emc.camus.domain/
 │       ├── Auth/                          # Authentication models
-│       └── Generic/                       # Base entities
+│       └── Exceptions/                    # Domain exceptions
 │
 ├── Adapters/                              # 🔌 Infrastructure
 │   ├── emc.camus.persistence.postgresql/  # Database adapter

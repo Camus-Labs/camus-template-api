@@ -13,20 +13,20 @@ namespace emc.camus.persistence.postgresql.Services;
 /// automatic audit field population via database triggers.
 /// Supports both static connection strings and secret-based credentials.
 /// </summary>
-public class NpgsqlConnectionFactory : IConnectionFactory
+public class PSConnectionFactory : IConnectionFactory
 {
     private readonly string _connectionString;
     private readonly IUserContext _userContext;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="NpgsqlConnectionFactory"/> class.
+    /// Initializes a new instance of the <see cref="PSConnectionFactory"/> class.
     /// </summary>
     /// <param name="settings">Database settings containing connection configuration.</param>
     /// <param name="userContext">User context for audit tracking.</param>
     /// <param name="secretProvider">Secret provider for fetching credentials.</param>
     /// <exception cref="ArgumentNullException">Thrown when settings, userContext, or secretProvider is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when secrets cannot be retrieved.</exception>
-    public NpgsqlConnectionFactory(
+    public PSConnectionFactory(
         DatabaseSettings settings,
         IUserContext userContext,
         ISecretProvider secretProvider)
@@ -36,7 +36,7 @@ public class NpgsqlConnectionFactory : IConnectionFactory
         ArgumentNullException.ThrowIfNull(secretProvider);
 
         _userContext = userContext;
-        
+
         // Build connection string from secret-based credentials
         _connectionString = BuildConnectionString(settings, secretProvider);
     }
@@ -68,7 +68,7 @@ public class NpgsqlConnectionFactory : IConnectionFactory
 
         // Build connection string from components
         var connectionString = $"Host={settings.Host};Port={settings.Port};Database={settings.Database};Username={username};Password={password}";
-        
+
         if (!string.IsNullOrWhiteSpace(settings.AdditionalParameters))
         {
             connectionString += $";{settings.AdditionalParameters}";
@@ -92,10 +92,10 @@ public class NpgsqlConnectionFactory : IConnectionFactory
         {
             var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync();
-            
+
             // Set session variables for audit triggers
             await SetSessionContextAsync(connection);
-            
+
             return connection;
         }
         catch (Exception ex)

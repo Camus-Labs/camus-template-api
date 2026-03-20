@@ -30,15 +30,17 @@ and user authorization data persistence.
 
 ### 1. Setup Database
 
-Create a PostgreSQL database and run the schema script:
+Create a PostgreSQL database and apply schema migrations via the DbUp adapter:
 
 ```bash
 # Create database
 createdb camus
-
-# Run schema script
-psql -U postgres -d camus -f src/Adapters/emc.camus.persistence.postgresql/schema.sql
 ```
+
+Schema is managed via the
+[DbUp migrations adapter](../emc.camus.migrations.dbup/README.md) — migration
+scripts run automatically at application startup when `DBUpSettings.Enabled`
+is `true`.
 
 ### 2. Configure Application Settings
 
@@ -46,44 +48,34 @@ In `appsettings.json`:
 
 ```json
 {
-  "AppDataSettings": {
-    "Provider": "Database",
-    "Database": {
-      "Provider": "PostgreSQL",
-      "ConnectionString": "Host=localhost;Database=camus;Username=postgres;Password=yourpassword"
-    }
+  "DataPersistenceSettings": {
+    "Provider": "PostgreSQL"
   },
-  "Authorization": {
-    "Provider": "Database",
-    "Database": {
-      "Provider": "PostgreSQL",
-      "ConnectionString": "Host=localhost;Database=camus;Username=postgres;Password=yourpassword"
-    }
+  "DatabaseSettings": {
+    "Host": "localhost",
+    "Port": 5432,
+    "Database": "camus",
+    "UserSecretName": "DBUser",
+    "PasswordSecretName": "DBSecret",
+    "AdditionalParameters": "Timeout=30;Pooling=true;SslMode=Require"
   }
 }
 ```
 
-**Environment Variables (Recommended for Production):**
-
-```bash
-AppDataSettings__Provider=Database
-AppDataSettings__Database__ConnectionString="Host=prod-db.example.com;Database=camus;Username=app_user;Password=***"
-Authorization__Provider=Database
-Authorization__Database__ConnectionString="Host=prod-db.example.com;Database=camus;Username=app_user;Password=***"
-```
+See [DatabaseSettings](../../../src/Application/emc.camus.application/Configurations/DatabaseSettings.cs)
+for the full property reference.
 
 ### 3. Application Wiring
 
-The repositories are automatically registered when you set the provider to `Database`. The API extensions handle the
-dependency injection:
+The repositories are registered via `PersistenceSetupExtensions` in the API layer:
 
-- `builder.AddAppData()` registers `PSApiInfoRepository`
-- `builder.AddAuthorization()` registers `PSUserRepository`
-- `app.UseAppDataSetup()` initializes and validates the database
-- `app.UseAuthorizationSetup()` initializes and validates the database
+- `builder.AddPersistence()` routes to `AddPostgreSqlPersistence()` when
+  `DataPersistenceSettings.Provider` is `PostgreSQL`
+- `app.UsePersistence()` initializes `AuthService` and `ApiInfoService`
+  at startup
 
-See `AppDataSetupExtensions` and `AuthorizationSetupExtensions` in `src/Api/emc.camus.api/Extensions/` for the
-wiring details.
+See `PersistenceSetupExtensions` in
+`src/Api/emc.camus.api/Extensions/` for the wiring details.
 
 ---
 
@@ -126,7 +118,7 @@ Manages user authentication and authorization:
          ├─────────────────────┤  ├─────────────────────┤
          │ id (PK)             │  │ id (PK)             │
          │ role_id (FK)        │  │ username (UQ)       │
-         │ permission          │  │ password_secret_name│
+         │ permission          │  │ password_hash       │
          └─────────────────────┘  └──────────┬──────────┘
                                              │
                                   ┌──────────▼──────────┐
@@ -142,22 +134,9 @@ Manages user authentication and authorization:
 
 ## 📊 Database Schema Management
 
-### Using the Provided Schema
-
-The `schema.sql` file includes:
-
-- ✅ Table creation with proper indexes
-- ✅ Foreign key constraints
-- ✅ Sample data for development
-- ✅ Verification queries
-
-```bash
-# Apply schema
-psql -U postgres -d camus -f schema.sql
-
-# Verify tables
-psql -U postgres -d camus -c "\dt"
-```
+Schema is managed via the [DbUp migrations adapter](../emc.camus.migrations.dbup/README.md).
+Migration scripts live in `src/Infrastructure/database/migrations/` and run automatically at
+application startup when `DBUpSettings.Enabled` is `true`.
 
 ### Schema Features
 
@@ -173,12 +152,9 @@ psql -U postgres -d camus -c "\dt"
 
 ### Password Storage
 
-- ❌ **Never** store actual passwords in the database
-- ✅ Store only secret references (`password_secret_name`)
-- ✅ Retrieve actual passwords from secret provider (Dapr, Azure Key Vault, etc.)
-
-Store only secret reference names (e.g., `password_secret_name`) in the database — never store raw passwords. Retrieve
-actual credentials from the secret provider at runtime.
+Passwords are stored as bcrypt hashes in the `password_hash` column.
+The `PSUserRepository.ValidateCredentialsAsync` method verifies
+credentials against the stored hash at runtime.
 
 ### Connection String Security
 
@@ -219,15 +195,15 @@ See test projects in `src/Test/` for integration test patterns.
 
 ## Integration
 
-This adapter integrates through extension methods defined in the API layer:
+This adapter integrates through extension methods in the API layer:
 
-- `builder.AddAppData()` — registers `PSApiInfoRepository` when AppData provider is `Database`
-- `builder.AddAuthorization()` — registers `PSUserRepository` when Authorization provider is `Database`
-- `app.UseAppDataSetup()` — initializes and validates the database connection at startup
-- `app.UseAuthorizationSetup()` — initializes and validates the database connection at startup
+- `builder.AddPersistence()` routes to `AddPostgreSqlPersistence()` when
+  `DataPersistenceSettings.Provider` is `PostgreSQL`
+- `app.UsePersistence()` initializes `AuthService` and `ApiInfoService`
+  at startup
 
-See `AppDataSetupExtensions` and `AuthorizationSetupExtensions` in `src/Api/emc.camus.api/Extensions/` for the
-full wiring details.
+See `PersistenceSetupExtensions` in
+`src/Api/emc.camus.api/Extensions/` for the full wiring details.
 
 ---
 
@@ -251,7 +227,7 @@ Failed to open database connection
 Required table 'api_info' does not exist
 ```
 
-- Run the schema script: `psql -d camus -f schema.sql`
+- Run the schema script: see [DbUp migrations adapter](../emc.camus.migrations.dbup/README.md)
 - Verify you're connecting to the correct database
 
 #### Secret Retrieval Errors
@@ -280,7 +256,7 @@ When adding new repositories:
 
 1. Create interface in `emc.camus.application`
 2. Implement repository in this adapter
-3. Create corresponding database tables in `schema.sql`
+3. Add a new DbUp migration script for new tables
 4. Update README with new tables and usage
 5. Add integration tests
 
@@ -303,7 +279,8 @@ Part of Camus API Template - See main repository for license information.
 
 ## 🔧 Configuration Options
 
-See the `appsettings.json` configuration example in the Quick Start section above for connection and pooling settings.
+See [DatabaseSettings](../../../src/Application/emc.camus.application/Configurations/DatabaseSettings.cs)
+for the full property reference.
 
 ---
 

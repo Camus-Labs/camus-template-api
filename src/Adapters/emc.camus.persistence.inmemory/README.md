@@ -18,7 +18,6 @@ scenarios where a database is not required.
 ## ✨ Features
 
 - 🗄️ **Configuration-Driven** — API info and user data loaded from `appsettings.json`
-- 🎯 **Feature Flags** — Register only the repositories you need (`Auth`, `AppData`, or `All`)
 - 🔐 **Secret Provider Integration** — User credentials retrieved from `ISecretProvider`
 - 📝 **Audit Logging** — No-op audit repository that logs to application logs instead of a database
 - 🔄 **Interface-Based** — Implements `IUserRepository`, `IApiInfoRepository`, and `IActionAuditRepository`
@@ -30,74 +29,58 @@ scenarios where a database is not required.
 
 ### Register in Program.cs
 
-Call `builder.AddInMemoryPersistence()` to register in-memory persistence services. Pass `PersistenceFeatures` flags to
-control which repositories are registered. See `InMemoryPersistenceSetupExtensions` in this adapter for the full
-registration API.
-
-```text
-PersistenceFeatures.All     → Registers Auth + AppData repositories
-PersistenceFeatures.Auth    → Registers IUserRepository only
-PersistenceFeatures.AppData → Registers IApiInfoRepository only
-```
-
-The `IActionAuditRepository` is always registered regardless of the feature flags.
+Call `builder.AddInMemoryPersistence()` to register all in-memory persistence services.
+See `InMemoryPersistenceSetupExtensions` in this adapter for the full registration API.
 
 ---
 
 ## ⚙️ Configuration
 
-### Application Data (`AppDataSettings`)
+The adapter reads from two configuration sections in `appsettings.json`:
 
-In `appsettings.json`:
+### Data Persistence Provider (`DataPersistenceSettings`)
 
 ```json
 {
-  "AppDataSettings": {
-    "Provider": "InMemory",
-    "InMemory": {
-      "ApiInfos": [
-        {
-          "Name": "Camus API - 1.0 Release",
-          "Version": "1.0",
-          "Status": "Available",
-          "Features": [
-            "Basic API Information",
-            "Public Endpoints"
-          ]
-        }
-      ]
-    }
+  "DataPersistenceSettings": {
+    "Provider": "InMemory"
   }
 }
 ```
 
-### Authorization (`AuthorizationSettings`)
-
-In `appsettings.json`:
+### In-Memory Models (`InMemoryModelSettings`)
 
 ```json
 {
-  "AuthorizationSettings": {
-    "Provider": "InMemory",
-    "InMemory": {
-      "Roles": [
-        {
-          "Name": "Admin",
-          "Permissions": ["token.create", "api.read", "api.write"]
-        },
-        {
-          "Name": "ReadOnly",
-          "Permissions": ["api.read"]
-        }
-      ],
-      "Users": [
-        {
-          "UsernameSecretName": "AdminUser",
-          "PasswordSecretName": "AdminSecret",
-          "Roles": ["Admin"]
-        }
-      ]
-    }
+  "InMemoryModelSettings": {
+    "Roles": [
+      {
+        "Name": "Admin",
+        "Permissions": ["token.create", "api.read", "api.write"]
+      },
+      {
+        "Name": "ReadOnly",
+        "Permissions": ["api.read"]
+      }
+    ],
+    "Users": [
+      {
+        "UsernameSecretName": "AdminUser",
+        "PasswordSecretName": "AdminSecret",
+        "Roles": ["Admin"]
+      }
+    ],
+    "ApiInfos": [
+      {
+        "Name": "Camus API - 1.0 Release",
+        "Version": "1.0",
+        "Status": "Available",
+        "Features": [
+          "Basic API Information",
+          "Public Endpoints"
+        ]
+      }
+    ]
   }
 }
 ```
@@ -148,9 +131,9 @@ In `appsettings.json`:
 
 The adapter registers via the extension method in `InMemoryPersistenceSetupExtensions.cs`:
 
-- **`builder.AddInMemoryPersistence(features)`** — Registers in-memory repository implementations as singletons based on
-  the `PersistenceFeatures` flags. Always registers `IActionAuditRepository`. Conditionally registers `IUserRepository`
-  (when `Auth` flag is set) and `IApiInfoRepository` (when `AppData` flag is set).
+- **`builder.AddInMemoryPersistence()`** — Registers all in-memory
+  repository implementations as singletons: `IUserRepository`,
+  `IApiInfoRepository`, `IActionAuditRepository`, and `IUnitOfWork`.
 
 Both `IMUserRepository` and `IMApiInfoRepository` require explicit initialization at startup via their `Initialize()`
 methods to load data from configuration and secrets.
@@ -162,9 +145,9 @@ methods to load data from configuration and secrets.
 | Symptom | Likely Cause |
 | ------- | ------------ |
 | `Repository not initialized. Call Initialize() first.` | `Initialize()` not called at startup for the repository |
-| `Failed to retrieve username from secret` | Secret name in `AuthorizationSettings` doesn't match a secret in the store |
+| `Failed to retrieve username from secret` | Secret name in `InMemoryModelSettings` doesn't match a secret in the store |
 | `Duplicate API version` | Two entries in `ApiInfos` share the same `Version` value |
-| `API info not found for version` | Requested version not defined in `AppDataSettings.InMemory.ApiInfos` |
+| `API info not found for version` | Requested version not defined in `InMemoryModelSettings.ApiInfos` |
 | Data lost after restart | Expected behavior — in-memory storage does not persist across restarts |
 | `IMApiInfoRepository already initialized` | `Initialize()` called more than once |
 

@@ -1,8 +1,7 @@
-using System.Data;
 using emc.camus.application.Auth;
-using emc.camus.application.Configurations;
 using emc.camus.application.Secrets;
 using emc.camus.domain.Auth;
+using emc.camus.persistence.inmemory.Configurations;
 
 namespace emc.camus.persistence.inmemory.Repositories;
 
@@ -10,9 +9,9 @@ namespace emc.camus.persistence.inmemory.Repositories;
 /// In-memory implementation of user repository that loads configuration from settings.
 /// This is a temporary implementation for development/testing. In production, replace with database implementation.
 /// </summary>
-public class IMUserRepository : IUserRepository
+internal sealed class IMUserRepository : IUserRepository
 {
-    private readonly InMemoryAuthorizationSettings _settings;
+    private readonly InMemoryModelSettings _settings;
     private readonly ISecretProvider _secretProvider;
     private List<Role> _roles = new();
     private Dictionary<string, (User User, string PasswordSecretName)> _usersByUsername = new();
@@ -21,16 +20,16 @@ public class IMUserRepository : IUserRepository
     /// <summary>
     /// Initializes a new instance of the <see cref="IMUserRepository"/> class.
     /// </summary>
-    /// <param name="settings">Authorization settings containing role and user definitions.</param>
+    /// <param name="settings">In-memory model settings containing role and user definitions.</param>
     /// <param name="secretProvider">Provider for retrieving stored secrets.</param>
     public IMUserRepository(
-        AuthorizationSettings settings,
+        InMemoryModelSettings settings,
         ISecretProvider secretProvider)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(secretProvider);
 
-        _settings = settings.InMemory;
+        _settings = settings;
         _secretProvider = secretProvider;
     }
 
@@ -97,9 +96,8 @@ public class IMUserRepository : IUserRepository
 
     /// <summary>
     /// Validates user credentials by looking up the username in the in-memory store and comparing
-    /// the password with the value retrieved from the secret provider (connection parameter ignored).
+    /// the password with the value retrieved from the secret provider.
     /// </summary>
-    /// <param name="connection">The database connection (ignored for in-memory implementation).</param>
     /// <param name="username">The username to validate.</param>
     /// <param name="password">The password to validate.</param>
     /// <returns>The authenticated user with roles.</returns>
@@ -109,7 +107,7 @@ public class IMUserRepository : IUserRepository
     /// <exception cref="UnauthorizedAccessException">
     /// Thrown when credentials are invalid (empty, user not found, or wrong password).
     /// </exception>
-    public Task<User> ValidateCredentialsAsync(IDbConnection connection, string username, string password)
+    public Task<User> ValidateCredentialsAsync(string username, string password)
     {
         EnsureInitialized();
 
@@ -136,14 +134,13 @@ public class IMUserRepository : IUserRepository
     }
 
     /// <summary>
-    /// Retrieves a user by their unique identifier from the in-memory store (connection parameter ignored).
+    /// Retrieves a user by their unique identifier from the in-memory store.
     /// </summary>
-    /// <param name="connection">The database connection (ignored for in-memory implementation).</param>
     /// <param name="userId">The unique identifier of the user to retrieve.</param>
     /// <returns>The User with roles.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the repository has not been initialized.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when the user is not found.</exception>
-    public Task<User> GetByIdAsync(IDbConnection connection, Guid userId)
+    public Task<User> GetByIdAsync(Guid userId)
     {
         EnsureInitialized();
 
@@ -159,10 +156,9 @@ public class IMUserRepository : IUserRepository
     /// <summary>
     /// Updates the last login timestamp for a user (no-op for in-memory implementation).
     /// </summary>
-    /// <param name="connection">The database connection (ignored for in-memory implementation).</param>
     /// <param name="userId">The ID of the user to update.</param>
     /// <returns>Task representing the asynchronous operation.</returns>
-    public Task UpdateLastLoginAsync(IDbConnection connection, Guid userId)
+    public Task UpdateLastLoginAsync(Guid userId)
     {
         // In-memory implementation doesn't persist last login timestamp
         return Task.CompletedTask;

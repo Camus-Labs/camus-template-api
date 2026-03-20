@@ -17,8 +17,6 @@ namespace emc.camus.api.Extensions
         /// <returns>The web application builder for method chaining.</returns>
         public static WebApplicationBuilder AddApiVersioning(this WebApplicationBuilder builder)
         {
-            ArgumentNullException.ThrowIfNull(builder);
-
             // Configure API versioning
             builder.Services.AddApiVersioning(options =>
             {

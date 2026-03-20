@@ -1,4 +1,3 @@
-using System.Data;
 using System.Diagnostics;
 using System.Security.Claims;
 using emc.camus.application.Common;
@@ -11,7 +10,7 @@ namespace emc.camus.application.Auth;
 /// <summary>
 /// Provides authentication services including credential validation and token generation.
 /// Validates credentials via user repository and generates tokens for authenticated users.
-/// Manages database transactions and audit logging for authentication operations when available.
+/// Manages transactions via IUnitOfWork and audit logging for authentication operations.
 /// </summary>
 public class AuthService
 {
@@ -21,7 +20,7 @@ public class AuthService
     private readonly ITokenRevocationCache _tokenRevocationCache;
     private readonly IUserContext _userContext;
     private readonly IActivitySourceWrapper _activitySource;
-    private readonly IConnectionFactory? _connectionFactory;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IGeneratedTokenRepository? _generatedTokenRepository;
 
     /// <summary>
@@ -33,8 +32,8 @@ public class AuthService
     /// <param name="tokenRevocationCache">Cache for tracking revoked token JTIs.</param>
     /// <param name="userContext">Context for accessing current authenticated user information.</param>
     /// <param name="activitySource">Activity source for distributed tracing telemetry.</param>
-    /// <param name="connectionFactory">Optional: Factory for creating database connections (for transactional operations).</param>
-    /// <param name="generatedTokenRepository">Optional: Repository for managing generated tokens (requires connectionFactory).</param>
+    /// <param name="unitOfWork">Unit of work for managing transactional boundaries.</param>
+    /// <param name="generatedTokenRepository">Optional: Repository for managing generated tokens.</param>
     public AuthService(
         IUserRepository userRepository,
         ITokenGenerator tokenGenerator,
@@ -42,7 +41,7 @@ public class AuthService
         ITokenRevocationCache tokenRevocationCache,
         IUserContext userContext,
         IActivitySourceWrapper activitySource,
-        IConnectionFactory? connectionFactory = null,
+        IUnitOfWork unitOfWork,
         IGeneratedTokenRepository? generatedTokenRepository = null)
     {
         ArgumentNullException.ThrowIfNull(userRepository);
@@ -51,21 +50,21 @@ public class AuthService
         ArgumentNullException.ThrowIfNull(tokenRevocationCache);
         ArgumentNullException.ThrowIfNull(userContext);
         ArgumentNullException.ThrowIfNull(activitySource);
+        ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _userRepository = userRepository;
         _tokenGenerator = tokenGenerator;
-        _connectionFactory = connectionFactory;
         _auditRepository = auditRepository;
         _generatedTokenRepository = generatedTokenRepository;
         _tokenRevocationCache = tokenRevocationCache;
         _userContext = userContext;
         _activitySource = activitySource;
+        _unitOfWork = unitOfWork;
     }
 
     /// <summary>
     /// Authenticates user credentials and generates a token.
-    /// When IConnectionFactory is available, manages transaction and audit logging.
-    /// Otherwise, performs simple credential validation.
+    /// Manages transaction and audit logging via the unit of work.
     /// </summary>
     /// <param name="command">The authentication command containing username and password.</param>
     /// <returns>Authentication result with token, expiration, and user information.</returns>
@@ -76,75 +75,46 @@ public class AuthService
         ArgumentNullException.ThrowIfNull(command);
         try
         {
-            AuthToken token;
-            // If connection factory is available, use transactional approach
-            if (_connectionFactory != null)
+            await _unitOfWork.BeginTransactionAsync();
+
+            try
             {
-                using var connection = await _connectionFactory.CreateConnectionAsync();
-                using var transaction = connection.BeginTransaction();
-
-                try
-                {
-                    // Validate credentials via repository (UnauthorizedAccessException bubbles up)
-                    var user = await _userRepository.ValidateCredentialsAsync(connection, command.Username, command.Password);
-
-                    _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
-                    {
-                        { "user_id", user.Id }
-                    });
-
-                    // Update last login timestamp
-                    await _userRepository.UpdateLastLoginAsync(connection, user.Id);
-
-                    // Generate token with user's permissions
-                    token = _tokenGenerator.GenerateToken(user.Id, user.Username, user.ToPermissionClaims());
-
-                    // Log successful login audit
-                    await _auditRepository.LogSystemActionAsync(
-                        connection,
-                        user.Id,
-                        user.Username,
-                        "user.login.success",
-                        $"Successful login. Token expires: {token.ExpiresOn:yyyy-MM-dd HH:mm:ss} UTC");
-
-                    // Commit transaction
-                    transaction.Commit();
-                }
-                catch (Exception)
-                {
-                    // Rollback on infrastructure failures
-                    transaction.Rollback();
-                    throw;
-                }
-            }
-            else
-            {
-                // Simple validation without transaction (e.g., InMemory provider)
-                var user = await _userRepository.ValidateCredentialsAsync(null!, command.Username, command.Password);
+                var user = await _userRepository.ValidateCredentialsAsync(command.Username, command.Password);
 
                 _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
                 {
                     { "user_id", user.Id }
                 });
 
-                // Generate token with user's permissions
-                token = _tokenGenerator.GenerateToken(user.Id, user.Username, user.ToPermissionClaims());
-            }
+                await _userRepository.UpdateLastLoginAsync(user.Id);
 
-            // Return immutable result
-            return new AuthenticateUserResult(
-                token.Token,
-                token.ExpiresOn
-            );
+                var token = _tokenGenerator.GenerateToken(user.Id, user.Username, user.ToPermissionClaims());
+
+                await _auditRepository.LogSystemActionAsync(
+                    user.Id,
+                    user.Username,
+                    "user.login.success",
+                    $"Successful login. Token expires: {token.ExpiresOn:yyyy-MM-dd HH:mm:ss} UTC");
+
+                await _unitOfWork.CommitAsync();
+
+                return new AuthenticateUserResult(
+                    token.Token,
+                    token.ExpiresOn
+                );
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or KeyNotFoundException)
         {
-            // Let domain exceptions bubble up with their original context
             throw;
         }
         catch (Exception ex)
         {
-            // Wrap infrastructure failures with business context
             throw new InvalidOperationException(
                 $"Authentication failed due to a system error. Username: {command.Username}", ex);
         }
@@ -153,7 +123,7 @@ public class AuthService
     /// <summary>
     /// Generates a custom token with specified permissions and expiration for an authenticated user.
     /// Validates and restricts permissions to those possessed by the current user.
-    /// Stores the generated token metadata in the database for audit and tracking.
+    /// Stores the generated token metadata via the unit of work for audit and tracking.
     /// </summary>
     /// <param name="command">The generate token command with suffix, expiration, and permissions.</param>
     /// <returns>Token generation result with token details and permissions.</returns>
@@ -163,7 +133,6 @@ public class AuthService
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        // Extract current user information from context
         var currentUserId = _userContext.GetCurrentUserId()
             ?? throw new InvalidOperationException("User ID is not available. Ensure the user is authenticated.");
         var currentUsername = _userContext.GetCurrentUsername()
@@ -176,64 +145,48 @@ public class AuthService
                 { "requestor_user_id", currentUserId }
             });
 
-            // Open a single connection for both read and write operations
-            using var connection = _connectionFactory != null
-                ? await _connectionFactory.CreateConnectionAsync()
-                : null!;
-            var creator = await _userRepository.GetByIdAsync(connection, currentUserId);
+            var creator = await _userRepository.GetByIdAsync(currentUserId);
 
-            AuthToken token;
-
-            // Build additional claims for the custom token
             var additionalClaims = command.Permissions
                 .Select(p => new Claim(Permissions.ClaimType, p))
                 .ToList();
 
-            // Construct domain entity — enforces suffix format and permission subset invariants
             var generatedToken = new GeneratedToken(
                 creator,
                 command.UsernameSuffix,
                 command.Permissions,
                 command.ExpiresOn);
 
-            // Generate token with custom JTI and expiration
-            token = _tokenGenerator.GenerateToken(
+            var token = _tokenGenerator.GenerateToken(
                 currentUserId,
                 generatedToken.TokenUsername,
                 generatedToken.Jti,
                 command.ExpiresOn,
                 additionalClaims);
 
-            // If connection factory and token repository are available, use transactional approach
-            if (_connectionFactory != null && _generatedTokenRepository != null)
+            if (_generatedTokenRepository != null)
             {
-                using var transaction = connection.BeginTransaction();
+                await _unitOfWork.BeginTransactionAsync();
 
                 try
                 {
-                    // Store generated token (entity-centric: repo owns lifecycle defaults)
-                    await _generatedTokenRepository.CreateAsync(connection, generatedToken);
+                    await _generatedTokenRepository.CreateAsync(generatedToken);
 
-                    // Log token generation audit
                     await _auditRepository.LogSystemActionAsync(
-                        connection,
                         currentUserId,
                         currentUsername,
                         "token.generate.success",
                         $"Generated token for '{generatedToken.TokenUsername}' with permissions: {string.Join(", ", command.Permissions)}. Expires: {command.ExpiresOn:yyyy-MM-dd HH:mm:ss} UTC");
 
-                    // Commit transaction
-                    transaction.Commit();
+                    await _unitOfWork.CommitAsync();
                 }
                 catch (Exception)
                 {
-                    // Rollback on infrastructure failures
-                    transaction.Rollback();
+                    await _unitOfWork.RollbackAsync();
                     throw;
                 }
             }
 
-            // Return result
             return new GenerateTokenResult(
                 token.Token,
                 token.ExpiresOn,
@@ -243,12 +196,10 @@ public class AuthService
         }
         catch (Exception ex) when (ex is ArgumentException or DomainException)
         {
-            // Let validation and domain exceptions bubble up
             throw;
         }
         catch (Exception ex)
         {
-            // Wrap infrastructure failures with business context
             throw new InvalidOperationException(
                 $"Token generation failed due to a system error. User: {_userContext.GetCurrentUsername()}", ex);
         }
@@ -268,9 +219,9 @@ public class AuthService
         var currentUserId = _userContext.GetCurrentUserId()
             ?? throw new InvalidOperationException("User ID is not available. Ensure the user is authenticated.");
 
-        if (_connectionFactory == null || _generatedTokenRepository == null)
+        if (_generatedTokenRepository == null)
         {
-            throw new InvalidOperationException("Token retrieval requires a database connection and token repository.");
+            throw new InvalidOperationException("Token retrieval requires a token repository.");
         }
         try
         {
@@ -279,9 +230,7 @@ public class AuthService
                 { "user_id", currentUserId }
             });
 
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-
-            var pagedTokens = await _generatedTokenRepository.GetPagedByCreatorUserIdAsync(connection, currentUserId, pagination, filter);
+            var pagedTokens = await _generatedTokenRepository.GetPagedByCreatorUserIdAsync(currentUserId, pagination, filter);
 
             var items = pagedTokens.Items.Select(t => t.ToSummaryView()).ToList();
 
@@ -304,6 +253,7 @@ public class AuthService
     /// Updates the in-memory revocation cache so the token is immediately rejected.
     /// </summary>
     /// <param name="command">The revoke token command containing the JTI.</param>
+    /// <returns>A summary view of the revoked token.</returns>
     /// <exception cref="InvalidOperationException">Thrown when user context is unavailable or database operations fail.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when the token is not found.</exception>
     /// <exception cref="UnauthorizedAccessException">Thrown when the user is not the creator of the token.</exception>
@@ -317,9 +267,9 @@ public class AuthService
         var currentUsername = _userContext.GetCurrentUsername()
             ?? throw new InvalidOperationException("Username is not available. Ensure the user is authenticated.");
 
-        if (_connectionFactory == null || _generatedTokenRepository == null)
+        if (_generatedTokenRepository == null)
         {
-            throw new InvalidOperationException("Token revocation requires a database connection and token repository.");
+            throw new InvalidOperationException("Token revocation requires a token repository.");
         }
 
         try
@@ -329,39 +279,33 @@ public class AuthService
                 { "requestor_username", currentUsername },
                 { "requestor_user_id", currentUserId }
             });
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var transaction = connection.BeginTransaction();
+
+            await _unitOfWork.BeginTransactionAsync();
 
             try
             {
-                // Load entity from persistence
-                var generatedToken = await _generatedTokenRepository.GetByJtiAsync(connection, jti)
+                var generatedToken = await _generatedTokenRepository.GetByJtiAsync(jti)
                     ?? throw new KeyNotFoundException($"Generated token with JTI '{jti}' not found.");
 
-                // Mutate domain entity (enforces ownership + single-revoke invariants)
                 generatedToken.Revoke(currentUserId);
 
-                // Save mutated entity
-                await _generatedTokenRepository.SaveAsync(connection, generatedToken);
+                await _generatedTokenRepository.SaveAsync(generatedToken);
 
-                // Update in-memory revocation cache
                 _tokenRevocationCache.Revoke(jti, generatedToken.ExpiresOn);
 
-                // Audit log
                 await _auditRepository.LogSystemActionAsync(
-                    connection,
                     currentUserId,
                     currentUsername,
                     "token.revoke.success",
                     $"Revoked token '{generatedToken.TokenUsername}' (JTI: {jti}).");
 
-                transaction.Commit();
+                await _unitOfWork.CommitAsync();
 
                 return generatedToken.ToSummaryView();
             }
             catch (Exception)
             {
-                transaction.Rollback();
+                await _unitOfWork.RollbackAsync();
                 throw;
             }
         }

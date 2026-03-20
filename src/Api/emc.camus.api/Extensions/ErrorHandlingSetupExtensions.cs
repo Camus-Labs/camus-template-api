@@ -20,23 +20,22 @@ namespace emc.camus.api.Extensions
         /// <returns>The web application builder for method chaining.</returns>
         public static WebApplicationBuilder AddErrorHandling(this WebApplicationBuilder builder, string serviceName)
         {
-            ArgumentNullException.ThrowIfNull(builder);
             ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
 
             // Load and validate error handling settings
             var settings = builder.Configuration
                 .GetSection(ErrorHandlingSettings.ConfigurationSectionName)
                 .Get<ErrorHandlingSettings>() ?? new ErrorHandlingSettings();
-            
+
             settings.Validate();
-            
+
             // Register settings as singleton
             builder.Services.AddSingleton(settings);
-            
+
             // Register error metrics
-            builder.Services.AddSingleton(sp => 
+            builder.Services.AddSingleton(sp =>
                 new ErrorMetrics(serviceName, sp.GetRequiredService<ILogger<ErrorMetrics>>()));
-            
+
             return builder;
         }
 
@@ -48,8 +47,6 @@ namespace emc.camus.api.Extensions
         /// <returns>The web application instance for method chaining.</returns>
         public static WebApplication UseErrorHandling(this WebApplication app)
         {
-            ArgumentNullException.ThrowIfNull(app);
-
             app.UseMiddleware<ExceptionHandlingMiddleware>();
             return app;
         }
