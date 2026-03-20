@@ -14,7 +14,7 @@ namespace emc.camus.observability.otel.Logging;
 /// Supported log exporters: OTLP (default, via Collector), Loki (via Collector), Console.
 /// </summary>
 [ExcludeFromCodeCoverage]
-public static class HostBuilderExtensions
+internal static class HostBuilderExtensions
 {
     /// <summary>
     /// Configures Serilog for the host with OpenTelemetry integration.

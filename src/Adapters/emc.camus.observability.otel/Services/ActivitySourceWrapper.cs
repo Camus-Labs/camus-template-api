@@ -8,7 +8,7 @@ namespace emc.camus.observability.otel.Services
     /// <summary>
     /// OpenTelemetry-based implementation of activity source wrapper for distributed tracing.
     /// </summary>
-    public class ActivitySourceWrapper : IActivitySourceWrapper
+    internal sealed class ActivitySourceWrapper : IActivitySourceWrapper
     {
         private readonly ActivitySource _activitySource;
 

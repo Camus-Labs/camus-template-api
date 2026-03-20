@@ -143,6 +143,7 @@ internal sealed class IMUserRepository : IUserRepository
     public Task<User> GetByIdAsync(Guid userId)
     {
         EnsureInitialized();
+        ArgumentOutOfRangeException.ThrowIfEqual(userId, Guid.Empty);
 
         var user = _usersByUsername.Values
             .Where(entry => entry.User.Id == userId)
@@ -160,6 +161,8 @@ internal sealed class IMUserRepository : IUserRepository
     /// <returns>Task representing the asynchronous operation.</returns>
     public Task UpdateLastLoginAsync(Guid userId)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(userId, Guid.Empty);
+
         // In-memory implementation doesn't persist last login timestamp
         return Task.CompletedTask;
     }

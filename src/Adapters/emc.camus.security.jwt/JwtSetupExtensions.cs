@@ -42,8 +42,7 @@ namespace emc.camus.security.jwt
             {
                 var secretProvider = provider.GetRequiredService<ISecretProvider>();
                 var jwtSettings = provider.GetRequiredService<JwtSettings>();
-                var pem = secretProvider.GetSecret(jwtSettings.RsaPrivateKeySecretName)
-                    ?? throw new InvalidOperationException($"RSA private key '{jwtSettings.RsaPrivateKeySecretName}' not found in secrets");
+                var pem = secretProvider.GetSecret(jwtSettings.RsaPrivateKeySecretName);
 
                 var rsa = RSA.Create();
                 rsa.ImportFromPem(pem.ToCharArray());

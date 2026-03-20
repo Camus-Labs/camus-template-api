@@ -28,6 +28,9 @@ internal sealed class UserSettings
     /// Validates the user configuration against available roles.
     /// </summary>
     /// <param name="availableRoles">List of valid role names.</param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="availableRoles"/> is null.
+    /// </exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when any property is invalid.
     /// </exception>

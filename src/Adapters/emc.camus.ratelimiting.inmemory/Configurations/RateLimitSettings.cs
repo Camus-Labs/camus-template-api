@@ -37,6 +37,15 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
         private const int MaxSegmentsPerWindow = 20;
         private const int DefaultSegmentsPerWindow = 5;
 
+        private static readonly string[] DefaultExemptPaths = new[] { "/health", "/ready", "/alive", "/swagger" };
+
+        private static readonly Dictionary<string, RateLimitPolicySettings> DefaultPolicies = new()
+        {
+            { RateLimitPolicies.Default, new RateLimitPolicySettings { PermitLimit = 250, WindowSeconds = 60 } },
+            { RateLimitPolicies.Strict, new RateLimitPolicySettings { PermitLimit = 50, WindowSeconds = 60 } },
+            { RateLimitPolicies.Relaxed, new RateLimitPolicySettings { PermitLimit = 500, WindowSeconds = 60 } }
+        };
+
         /// <summary>
         /// Number of segments per window for sliding window algorithm.
         /// Higher values provide smoother rate limiting but use more memory.
@@ -50,18 +59,13 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
         /// Endpoints can specify which policy to use via [RateLimit(RateLimitPolicies.PolicyName)] attribute.
         /// A "default" policy is required and will be used for endpoints without explicit policy.
         /// </summary>
-        public Dictionary<string, RateLimitPolicySettings> Policies { get; set; } = new()
-        {
-            { RateLimitPolicies.Default, new RateLimitPolicySettings { PermitLimit = 250, WindowSeconds = 60 } },
-            { RateLimitPolicies.Strict, new RateLimitPolicySettings { PermitLimit = 50, WindowSeconds = 60 } },
-            { RateLimitPolicies.Relaxed, new RateLimitPolicySettings { PermitLimit = 500, WindowSeconds = 60 } }
-        };
+        public Dictionary<string, RateLimitPolicySettings> Policies { get; set; } = DefaultPolicies;
 
         /// <summary>
         /// List of path prefixes that are exempt from rate limiting (e.g., health checks, metrics).
         /// Paths are case-insensitive and matched using StartsWith.
         /// </summary>
-        public string[] ExemptPaths { get; set; } = new[] { "/health", "/ready", "/alive", "/swagger" };
+        public string[] ExemptPaths { get; set; } = DefaultExemptPaths;
 
         /// <summary>
         /// Validates the rate limit configuration at startup.

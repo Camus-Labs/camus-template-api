@@ -49,9 +49,11 @@ internal sealed class IMTokenRevocationCache : ITokenRevocationCache
     /// <param name="jti">The JWT ID to revoke.</param>
     /// <param name="expiresOn">The token's expiration date, used for cache eviction.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="jti"/> is <see cref="Guid.Empty"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="expiresOn"/> is <see langword="default"/>.</exception>
     public void Revoke(Guid jti, DateTime expiresOn)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(jti, Guid.Empty);
+        ArgumentOutOfRangeException.ThrowIfEqual(expiresOn, default);
 
         if (expiresOn > DateTime.UtcNow)
         {

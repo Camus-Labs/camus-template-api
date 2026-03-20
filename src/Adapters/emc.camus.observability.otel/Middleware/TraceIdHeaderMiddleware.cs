@@ -9,7 +9,7 @@ namespace emc.camus.observability.otel.Middleware
     /// requests with traces. Uses Activity.Current.TraceId when available, falling
     /// back to HttpContext.TraceIdentifier.
     /// </summary>
-    public sealed class TraceIdHeaderMiddleware
+    internal sealed class TraceIdHeaderMiddleware
     {
         private readonly RequestDelegate _next;
 

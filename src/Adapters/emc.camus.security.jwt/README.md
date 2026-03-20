@@ -34,7 +34,13 @@ add JWT Bearer authentication. Enable the standard authentication/authorization 
 
 See `JwtSetupExtensions` in this adapter for the full registration API.
 
-### 2. Configure Settings
+See [Configuration](#%EF%B8%8F-configuration) below for settings and secret requirements.
+
+---
+
+## ⚙️ Configuration
+
+### Settings
 
 In `appsettings.json`:
 
@@ -48,7 +54,7 @@ In `appsettings.json`:
 }
 ```
 
-### 3. Required Secrets
+### Required Secrets
 
 The adapter retrieves the RSA private key from your `ISecretProvider`:
 
@@ -67,21 +73,21 @@ secret provider configuration.
 
 ## 🔐 Token Generation
 
-### Using IJwtTokenGenerator
+### Using ITokenGenerator
 
-The adapter provides `IJwtTokenGenerator` for token generation. Inject it into your authentication controller
+The adapter provides `ITokenGenerator` for token generation. Inject it into your authentication controller
 along with `ISecretProvider`. Validate credentials against secrets, build a `GenerateTokenCommand` with desired
-claims, and call `GenerateToken(command)` to produce a `GenerateTokenResult` containing the token string and
+claims, and call `GenerateToken(command)` to produce an `AuthToken` containing the token string and
 expiration.
 
 **Key Points:**
 
-- ✅ Inject `IJwtTokenGenerator` via constructor
+- ✅ Inject `ITokenGenerator` via constructor
 - ✅ Token generation is handled by the adapter
 - ✅ Add custom claims as needed (roles, permissions, etc.)
-- ✅ Returns `GenerateTokenResult` with token and expiration
+- ✅ Returns `AuthToken` with token and expiration
 
-See `JwtSetupExtensions` and `IJwtTokenGenerator` in this adapter for API details, and the auth controller in
+See `JwtSetupExtensions` and `ITokenGenerator` in this adapter for API details, and the auth controller in
 `src/Api/emc.camus.api/Controllers/` for the wiring example.
 
 ---
@@ -226,7 +232,7 @@ for complete error code definitions.
                 │ depends on
 ┌───────────────▼──────────────────────┐
 │       Adapter Layer                  │
-│  JwtAuthenticationSetupExtensions    │
+│  JwtSetupExtensions                  │
 │  (uses ISecretProvider for keys)    │
 └───────────────┬──────────────────────┘
                 │

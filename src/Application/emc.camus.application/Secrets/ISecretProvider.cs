@@ -16,7 +16,7 @@ namespace emc.camus.application.Secrets
         /// Retrieves the value of a loaded secret by name.
         /// </summary>
         /// <param name="name">The name of the secret to retrieve.</param>
-        /// <returns>The secret value if found; otherwise, <c>null</c>.</returns>
-        string? GetSecret(string name);
+        /// <returns>The secret value.</returns>
+        string GetSecret(string name);
     }
 }

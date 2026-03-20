@@ -47,7 +47,7 @@ Camus follows **Hexagonal Architecture (Ports & Adapters)** pattern with clean s
 
 **Key Namespaces:**
 
-- `Auth/` - Authentication interfaces (`IJwtTokenGenerator`)
+- `Auth/` - Authentication interfaces (`ITokenGenerator`)
 - `Observability/` - Telemetry interfaces (`IActivitySourceWrapper`)
 - `Secrets/` - Secret management interfaces (`ISecretProvider`)
 - `RateLimiting/` - Rate limit attribute and policy constants

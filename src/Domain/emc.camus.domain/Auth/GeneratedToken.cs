@@ -82,7 +82,7 @@ public class GeneratedToken
         ValidateSuffix(suffix);
         ValidatePermissions(permissions);
         ValidatePermissionSubset(permissions, creator);
-        ValidateExpirationDate(expiresOn);
+        ValidateExpiresOn(expiresOn);
 
         if (jti.HasValue)
             ArgumentOutOfRangeException.ThrowIfEqual(jti.Value, Guid.Empty);
@@ -147,6 +147,8 @@ public class GeneratedToken
     /// <exception cref="DomainException">Thrown when the acting user is not the creator of the token or when the token is already revoked.</exception>
     public void Revoke(Guid actingUserId)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(actingUserId, Guid.Empty);
+
         if (actingUserId != CreatorUserId)
         {
             throw new DomainException($"User '{actingUserId}' cannot revoke token '{Jti}' — creator is '{CreatorUserId}'.");
@@ -175,7 +177,7 @@ public class GeneratedToken
     /// </summary>
     /// <param name="expiresOn">The expiration date to validate.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when expiresOn is outside the valid range.</exception>
-    private static void ValidateExpirationDate(DateTime expiresOn)
+    private static void ValidateExpiresOn(DateTime expiresOn)
     {
         var now = DateTime.UtcNow;
         var minExpiration = now.AddHours(1);

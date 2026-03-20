@@ -5,7 +5,7 @@ namespace emc.camus.documentation.swagger.Configurations
     /// <summary>
     /// Configuration settings for Swagger/OpenAPI documentation.
     /// </summary>
-    public class SwaggerSettings
+    internal sealed class SwaggerSettings
     {
         /// <summary>
         /// The configuration section name for Swagger settings.

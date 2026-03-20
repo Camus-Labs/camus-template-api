@@ -3,7 +3,7 @@ namespace emc.camus.security.apikey.Configurations
     /// <summary>
     /// Configuration settings for API Key authentication.
     /// </summary>
-    public class ApiKeySettings
+    internal sealed class ApiKeySettings
     {
         /// <summary>
         /// The configuration section name for API Key settings.

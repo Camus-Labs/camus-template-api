@@ -10,7 +10,7 @@ namespace emc.camus.observability.otel.Logging
     /// Hosted service to ensure Serilog logs are flushed on application shutdown, preventing log loss.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public sealed class SerilogFlushHostedService : IHostedService
+    internal sealed class SerilogFlushHostedService : IHostedService
     {
         /// <summary>
         /// No-op on start; required by IHostedService.

@@ -13,7 +13,7 @@ namespace emc.camus.security.apikey.Handlers
     /// <summary>
     /// Authentication handler for validating API Key requests using a secret provider.
     /// </summary>
-    public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    internal sealed class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
         private readonly ISecretProvider _secretProvider;
         private readonly ApiKeySettings _settings;

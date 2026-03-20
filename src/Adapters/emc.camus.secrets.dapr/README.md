@@ -50,7 +50,7 @@ In `appsettings.json`:
 
 ### 3. Use in Your Code
 
-Inject `ISecretProvider` from the Application layer via constructor injection. Call `GetSecretAsync(secretName)`
+Inject `ISecretProvider` from the Application layer via constructor injection. Call `GetSecret(secretName)`
 to retrieve a secret value at runtime.
 
 See `ISecretProvider` in `src/Application/emc.camus.application/Secrets/` for the interface contract.
@@ -151,7 +151,7 @@ The adapter registers the Dapr secret provider via two extension methods in `Dap
 
 1. **`builder.AddDaprSecrets()`** — Reads `DaprSecretProviderSettings` from configuration and
    registers `DaprSecretProvider` as the `ISecretProvider` singleton.
-2. **`app.UseDaprSecrets()`** — Resolves `ISecretProvider` from DI and calls `Initialize()` to
+2. **`app.UseDaprSecrets()`** — Resolves `ISecretProvider` from DI and calls `LoadSecretsAsync()` to
    fetch all configured secrets at startup (fail-fast pattern).
 
 Call `AddDaprSecrets()` before any adapter that depends on `ISecretProvider` (e.g., JWT, API Key, migrations).

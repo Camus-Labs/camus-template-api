@@ -6,7 +6,7 @@ namespace emc.camus.observability.otel.Configurations
     /// Defines default values for OTLP (OpenTelemetry Protocol) configuration.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public static class OtlpDefaults
+    internal static class OtlpDefaults
     {
         /// <summary>
         /// Default OTLP endpoint for traces, metrics, and logs.

@@ -33,7 +33,7 @@ The Application layer serves as the **contracts layer** between API/Adapters and
 
 Authentication-related contracts:
 
-- **`IJwtTokenGenerator`** - Interface for JWT token generation (implemented by `emc.camus.security.jwt`)
+- **`ITokenGenerator`** - Interface for JWT token generation (implemented by `emc.camus.security.jwt`)
 - **`GenerateTokenResult`** - Token generation result model
 - **`AuthenticationSchemes`** - Authentication scheme name constants (`Bearer`, `ApiKey`)
 
@@ -99,7 +99,7 @@ Custom exceptions:
 
 **Examples from this project:**
 
-- **`IJwtTokenGenerator`** - ✅ In Application (consumed by API `AuthController`)
+- **`ITokenGenerator`** - ✅ In Application (consumed by API `AuthController`)
 - **`ISecretProvider`** - ✅ In Application (consumed by multiple adapters: JWT, ApiKey)
 - **`IActivitySourceWrapper`** - ✅ In Application (consumed by API middleware and potentially multiple adapters)
 
@@ -126,7 +126,7 @@ Application interfaces are implemented in the following adapters:
 
 | Interface | Implementation | Adapter Project |
 | --------- | -------------- | --------------- |
-| `IJwtTokenGenerator` | `JwtTokenGenerator` | `emc.camus.security.jwt` |
+| `ITokenGenerator` | `JwtTokenGenerator` | `emc.camus.security.jwt` |
 | `ISecretProvider` | `DaprSecretProvider` | `emc.camus.secrets.dapr` |
 | `IActivitySourceWrapper` | `ActivitySourceWrapper` | `emc.camus.observability.otel` |
 
@@ -211,8 +211,8 @@ The following configuration types are defined in the Application layer:
   (Host, Port, Database, UserSecretName, PasswordSecretName).
   Section name: `DatabaseSettings`.
 
-Adapter projects that implement these interfaces provide their own
-additional configuration. See individual adapter READMEs for details.
+Adapter projects that implement these interfaces provide their own additional configuration. See individual adapter
+READMEs for details.
 
 ---
 

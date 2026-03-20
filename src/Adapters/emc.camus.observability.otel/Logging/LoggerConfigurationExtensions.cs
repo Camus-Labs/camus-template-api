@@ -16,7 +16,7 @@ namespace emc.camus.observability.otel.Logging
     /// Includes enrichers, console logging, and OpenTelemetry log export.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public static class LoggerConfigurationExtensions
+    internal static class LoggerConfigurationExtensions
     {
         /// <summary>
         /// Adds default enrichers to the Serilog logger configuration, including log context and activity enrichment.

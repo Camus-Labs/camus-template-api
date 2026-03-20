@@ -3,7 +3,7 @@ namespace emc.camus.security.jwt.Configurations;
 /// <summary>
 /// Configuration settings for JWT authentication.
 /// </summary>
-public class JwtSettings
+internal class JwtSettings
 {
     /// <summary>
     /// The configuration section name for JWT settings.

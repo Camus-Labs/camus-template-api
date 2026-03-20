@@ -45,8 +45,9 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
 
     - [ ] LogDebug only for branching decisions, intermediate computation results, and cache key construction
     - [ ] LogInformation only for: startup/shutdown, state transitions, admin operations, scheduled jobs
-    - [ ] LogWarning only for degraded-but-recoverable conditions — fallback activation, retry attempts, threshold
-          proximity, deprecated code-path execution
+    - [ ] LogWarning only for degraded-but-recoverable conditions and security-relevant rejections — fallback
+          activation, retry attempts, threshold proximity, deprecated code-path execution, rate-limit rejections,
+          authentication failures
     - [ ] LogError only at catch-and-terminate boundaries (global error-handling middleware, background job runners) —
           not in service methods that re-throw
 
