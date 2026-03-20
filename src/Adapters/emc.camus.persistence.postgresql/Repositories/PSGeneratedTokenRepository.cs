@@ -34,8 +34,8 @@ internal sealed class PSGeneratedTokenRepository : IGeneratedTokenRepository
     /// <param name="generatedToken">The generated token domain entity.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     /// <exception cref="ArgumentNullException">Thrown when generatedToken is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when a token with the same JTI already exists.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when the creator user does not exist.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the database operation fails.</exception>
     public async Task CreateAsync(GeneratedToken generatedToken)
     {
         ArgumentNullException.ThrowIfNull(generatedToken);
@@ -51,6 +51,14 @@ internal sealed class PSGeneratedTokenRepository : IGeneratedTokenRepository
                 @Jti, @CreatorUserId, @CreatorUsername, @TokenUsername,
                 @Permissions, @ExpiresOn, @IsRevoked
             )";
+
+        const string jtiCheckSql = "SELECT EXISTS (SELECT 1 FROM camus.generated_tokens WHERE jti = @Jti)";
+        var jtiExists = await connection.ExecuteScalarAsync<bool>(jtiCheckSql, new { generatedToken.Jti });
+
+        if (jtiExists)
+        {
+            throw new InvalidOperationException($"A generated token with JTI '{generatedToken.Jti}' already exists.");
+        }
 
         const string fkCheckSql = "SELECT EXISTS (SELECT 1 FROM camus.users WHERE id = @CreatorUserId)";
         var creatorExists = await connection.ExecuteScalarAsync<bool>(fkCheckSql, new { generatedToken.CreatorUserId });

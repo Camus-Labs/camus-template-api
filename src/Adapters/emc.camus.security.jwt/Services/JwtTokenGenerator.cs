@@ -10,7 +10,7 @@ namespace emc.camus.security.jwt.Services;
 /// <summary>
 /// Provides JWT token generation functionality using RSA signing.
 /// </summary>
-internal class JwtTokenGenerator : ITokenGenerator
+internal sealed class JwtTokenGenerator : ITokenGenerator
 {
     private readonly JwtSettings _jwtSettings;
     private readonly SigningCredentials _signingCredentials;
@@ -64,7 +64,7 @@ internal class JwtTokenGenerator : ITokenGenerator
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
         ArgumentOutOfRangeException.ThrowIfEqual(jti, Guid.Empty);
         ArgumentOutOfRangeException.ThrowIfEqual(expiresOn, default);
-        
+
         // Build claims list
         var claims = new List<Claim>
         {

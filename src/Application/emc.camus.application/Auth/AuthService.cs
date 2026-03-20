@@ -139,12 +139,6 @@ public class AuthService
             ?? throw new InvalidOperationException("Username is not available. Ensure the user is authenticated.");
         try
         {
-            _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
-            {
-                { "requestor_username", currentUsername },
-                { "requestor_user_id", currentUserId }
-            });
-
             var creator = await _userRepository.GetByIdAsync(currentUserId);
 
             var additionalClaims = command.Permissions
@@ -172,9 +166,7 @@ public class AuthService
                 {
                     await _generatedTokenRepository.CreateAsync(generatedToken);
 
-                    await _auditRepository.LogSystemActionAsync(
-                        currentUserId,
-                        currentUsername,
+                    await _auditRepository.LogActionAsync(
                         "token.generate.success",
                         $"Generated token for '{generatedToken.TokenUsername}' with permissions: {string.Join(", ", command.Permissions)}. Expires: {command.ExpiresOn:yyyy-MM-dd HH:mm:ss} UTC");
 
@@ -293,9 +285,7 @@ public class AuthService
 
                 _tokenRevocationCache.Revoke(jti, generatedToken.ExpiresOn);
 
-                await _auditRepository.LogSystemActionAsync(
-                    currentUserId,
-                    currentUsername,
+                await _auditRepository.LogActionAsync(
                     "token.revoke.success",
                     $"Revoked token '{generatedToken.TokenUsername}' (JTI: {jti}).");
 

@@ -50,7 +50,7 @@ public class ApiInfoService
                 apiInfo.Features
             );
         }
-        catch (Exception ex) when (ex is KeyNotFoundException)
+        catch (Exception ex) when (ex is KeyNotFoundException or ArgumentException)
         {
             // Let domain exceptions bubble up with their original context
             throw;

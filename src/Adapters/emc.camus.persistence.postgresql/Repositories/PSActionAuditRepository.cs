@@ -49,8 +49,19 @@ internal sealed class PSActionAuditRepository : IActionAuditRepository
         var username = _userContext.GetCurrentUsername();
         var traceId = _userContext.GetCurrentTraceId();
 
+        if (userId.HasValue)
+        {
+            const string fkCheckSql = "SELECT EXISTS (SELECT 1 FROM camus.users WHERE id = @UserId)";
+            var userExists = await connection.ExecuteScalarAsync<bool>(fkCheckSql, new { UserId = userId.Value });
+
+            if (!userExists)
+            {
+                throw new KeyNotFoundException($"User with ID '{userId.Value}' not found.");
+            }
+        }
+
         const string sql = @"
-            INSERT INTO action_audit (user_id, user_name, trace_id, action_title, action_summary)
+            INSERT INTO camus.action_audit (user_id, user_name, trace_id, action_title, action_summary)
             VALUES (@UserId, @Username, @TraceId, @ActionTitle, @ActionSummary)
             RETURNING id";
 
@@ -87,6 +98,17 @@ internal sealed class PSActionAuditRepository : IActionAuditRepository
         var connection = await _unitOfWork.GetConnectionAsync();
 
         var traceId = _userContext.GetCurrentTraceId();
+
+        if (userId.HasValue)
+        {
+            const string fkCheckSql = "SELECT EXISTS (SELECT 1 FROM camus.users WHERE id = @UserId)";
+            var userExists = await connection.ExecuteScalarAsync<bool>(fkCheckSql, new { UserId = userId.Value });
+
+            if (!userExists)
+            {
+                throw new KeyNotFoundException($"User with ID '{userId.Value}' not found.");
+            }
+        }
 
         const string sql = @"
             INSERT INTO camus.action_audit (user_id, user_name, trace_id, action_title, action_summary)
