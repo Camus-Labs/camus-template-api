@@ -4,7 +4,7 @@ namespace emc.camus.persistence.postgresql.Models;
 /// Data model representing roles table structure in PostgreSQL with associated permissions.
 /// Used by Dapper for ORM mapping from JOIN queries.
 /// </summary>
-public class RoleModel
+internal sealed class RoleModel
 {
     /// <summary>
     /// Gets or sets the role's unique identifier.

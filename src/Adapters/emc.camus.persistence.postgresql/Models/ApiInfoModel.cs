@@ -4,7 +4,7 @@ namespace emc.camus.persistence.postgresql.Models;
 /// Data model representing api_info table structure in PostgreSQL.
 /// Used by Dapper for ORM mapping.
 /// </summary>
-public class ApiInfoModel
+internal sealed class ApiInfoModel
 {
     /// <summary>
     /// Gets or sets the API name.

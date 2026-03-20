@@ -30,6 +30,7 @@ namespace emc.camus.documentation.swagger.Configurations
         {
             ValidateVersion();
             ValidateTitle();
+            ValidateDescription();
         }
 
         private void ValidateVersion()
@@ -42,6 +43,12 @@ namespace emc.camus.documentation.swagger.Configurations
         {
             if (string.IsNullOrWhiteSpace(Title))
                 throw new InvalidOperationException("Title cannot be null or empty");
+        }
+
+        private void ValidateDescription()
+        {
+            if (string.IsNullOrWhiteSpace(Description))
+                throw new InvalidOperationException("Description cannot be null or empty");
         }
     }
 }

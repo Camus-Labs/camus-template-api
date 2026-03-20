@@ -3,7 +3,7 @@ namespace emc.camus.persistence.inmemory.Configurations;
 /// <summary>
 /// Configuration for a user definition.
 /// </summary>
-public class UserSettings
+internal sealed class UserSettings
 {
     private const int MaxSecretNameLength = 50;
 

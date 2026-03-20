@@ -6,7 +6,7 @@ namespace emc.camus.persistence.postgresql.Mapping;
 /// <summary>
 /// Provides extension methods for mapping between UserModel (database) and User (domain).
 /// </summary>
-public static class UserMappingExtensions
+internal static class UserMappingExtensions
 {
     /// <summary>
     /// Maps a UserModel and collection of RoleModels to a User domain entity.

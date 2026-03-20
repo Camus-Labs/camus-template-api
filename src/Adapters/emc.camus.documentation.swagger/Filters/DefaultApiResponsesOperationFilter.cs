@@ -12,7 +12,7 @@ namespace emc.camus.documentation.swagger.Filters
     /// <summary>
     /// Operation filter to add default API responses for common error scenarios using ProblemDetails.
     /// </summary>
-    public class DefaultApiResponsesOperationFilter : IOperationFilter
+    internal sealed class DefaultApiResponsesOperationFilter : IOperationFilter
     {
         /// <summary>
         /// Applies the operation filter to add default API responses.
@@ -22,6 +22,9 @@ namespace emc.camus.documentation.swagger.Filters
         /// <param name="context">The operation filter context.</param>
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
+            ArgumentNullException.ThrowIfNull(operation);
+            ArgumentNullException.ThrowIfNull(context);
+
             var schema = context.SchemaGenerator.GenerateSchema(typeof(ProblemDetails), context.SchemaRepository);
 
             // Single examples for most status codes

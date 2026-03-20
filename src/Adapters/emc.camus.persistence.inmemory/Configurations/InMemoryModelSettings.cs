@@ -7,7 +7,7 @@ namespace emc.camus.persistence.inmemory.Configurations;
 /// Contains all domain data (roles, users, API info) loaded from configuration
 /// when the application uses in-memory storage instead of a database.
 /// </summary>
-public class InMemoryModelSettings
+internal sealed class InMemoryModelSettings
 {
     /// <summary>
     /// Gets the configuration section name for in-memory model settings.

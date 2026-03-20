@@ -6,7 +6,7 @@ namespace emc.camus.persistence.postgresql.Mapping;
 /// <summary>
 /// Provides extension methods for mapping between RoleModel (database) and Role (domain).
 /// </summary>
-public static class RoleMappingExtensions
+internal static class RoleMappingExtensions
 {
     /// <summary>
     /// Maps a RoleModel to a Role domain entity.

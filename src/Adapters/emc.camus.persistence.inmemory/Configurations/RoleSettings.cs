@@ -5,7 +5,7 @@ namespace emc.camus.persistence.inmemory.Configurations;
 /// <summary>
 /// Configuration for a role definition.
 /// </summary>
-public class RoleSettings
+internal sealed class RoleSettings
 {
     private const int MaxRoleNameLength = 50;
 

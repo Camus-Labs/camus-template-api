@@ -6,7 +6,7 @@ namespace emc.camus.persistence.postgresql.Mapping;
 /// <summary>
 /// Provides extension methods for mapping between GeneratedTokenModel (database) and GeneratedToken (domain).
 /// </summary>
-public static class GeneratedTokenMappingExtensions
+internal static class GeneratedTokenMappingExtensions
 {
     /// <summary>
     /// Maps a GeneratedTokenModel to a GeneratedToken domain entity.

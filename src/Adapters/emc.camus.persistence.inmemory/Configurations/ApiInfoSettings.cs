@@ -3,7 +3,7 @@ namespace emc.camus.persistence.inmemory.Configurations;
 /// <summary>
 /// Configuration for an API info entry.
 /// </summary>
-public class ApiInfoSettings
+internal sealed class ApiInfoSettings
 {
     /// <summary>
     /// Gets or sets the name of the API.

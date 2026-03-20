@@ -4,7 +4,7 @@ namespace emc.camus.persistence.postgresql.Models;
 /// Data model representing generated_tokens table structure in PostgreSQL.
 /// Used by Dapper for ORM mapping.
 /// </summary>
-public class GeneratedTokenModel
+internal sealed class GeneratedTokenModel
 {
     /// <summary>
     /// Gets or sets the JWT ID — primary identifier for the token.

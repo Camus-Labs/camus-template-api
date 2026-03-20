@@ -11,7 +11,7 @@ namespace emc.camus.persistence.postgresql.Repositories;
 /// <summary>
 /// PostgreSQL implementation of API info repository using Dapper.
 /// </summary>
-public class PSApiInfoRepository : IApiInfoRepository
+internal sealed class PSApiInfoRepository : IApiInfoRepository
 {
     private readonly IConnectionFactory _connectionFactory;
     private bool _initialized;

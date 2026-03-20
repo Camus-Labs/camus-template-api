@@ -6,7 +6,7 @@ namespace emc.camus.persistence.postgresql.Mapping;
 /// <summary>
 /// Provides extension methods for mapping between ApiInfoModel (database) and ApiInfo (domain).
 /// </summary>
-public static class ApiInfoMappingExtensions
+internal static class ApiInfoMappingExtensions
 {
     /// <summary>
     /// Maps an ApiInfoModel to an ApiInfo domain entity.

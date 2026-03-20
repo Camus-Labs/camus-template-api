@@ -13,7 +13,7 @@ namespace emc.camus.persistence.postgresql.Services;
 /// automatic audit field population via database triggers.
 /// Supports both static connection strings and secret-based credentials.
 /// </summary>
-public class PSConnectionFactory : IConnectionFactory
+internal sealed class PSConnectionFactory : IConnectionFactory
 {
     private readonly string _connectionString;
     private readonly IUserContext _userContext;

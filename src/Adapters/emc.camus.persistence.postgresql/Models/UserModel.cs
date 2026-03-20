@@ -4,7 +4,7 @@ namespace emc.camus.persistence.postgresql.Models;
 /// Data model representing users table structure in PostgreSQL.
 /// Used by Dapper for ORM mapping.
 /// </summary>
-public class UserModel
+internal sealed class UserModel
 {
     /// <summary>
     /// Gets or sets the user's unique identifier.
