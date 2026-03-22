@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="emc.camus.security.apikey.test" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- ASP.NET Core Authentication -->
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>

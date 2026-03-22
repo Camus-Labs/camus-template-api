@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="emc.camus.security.jwt.test" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Authentication & Authorization -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.13" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />

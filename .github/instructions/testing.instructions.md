@@ -9,7 +9,8 @@ applyTo: "src/Test/**"
     - [ ] xUnit + FluentAssertions + Moq — no other test/assertion/mocking frameworks
     - [ ] Arrange-Act-Assert (AAA) pattern with `// Arrange`, `// Act`, `// Assert` comments
     - [ ] Test names: `MethodName_Scenario_ExpectedResult` or `Given_When_Then`
-    - [ ] Each test method contains one `// Act` step
+    - [ ] Each test method contains one `// Act` step — multiple assertions on the same act result belong in one
+          test, not split into separate methods
     - [ ] Tests are deterministic — no random values, no `DateTime.Now`, no `Guid.NewGuid()`
     - [ ] Tests are isolated — no shared mutable state, no static mutable fields, no `IClassFixture<T>` mutation
           across tests
