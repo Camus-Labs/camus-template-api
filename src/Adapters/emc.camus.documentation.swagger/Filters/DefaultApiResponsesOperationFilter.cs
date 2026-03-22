@@ -6,12 +6,14 @@ using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using emc.camus.application.Common;
+using System.Diagnostics.CodeAnalysis;
 
 namespace emc.camus.documentation.swagger.Filters
 {
     /// <summary>
     /// Operation filter to add default API responses for common error scenarios using ProblemDetails.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     internal sealed class DefaultApiResponsesOperationFilter : IOperationFilter
     {
         /// <summary>
