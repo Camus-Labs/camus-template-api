@@ -16,10 +16,12 @@ applyTo: "src/Test/**"
           across tests
     - [ ] No reflection or access to private/internal members — assert on public return values, thrown exceptions,
           or mock interactions
+    - [ ] No tests for trivial code (e.g., plain auto-properties, simple DTOs with no logic, compiler-guaranteed
+          behavior) — covered indirectly through tests that exercise real behavior
 
 2. Mocking
 
-    - [ ] Mocks only for external dependencies (database, HTTP, file system)
+    - [ ] Mocks only for external dependencies (e.g., database, HTTP, file system)
     - [ ] Domain logic NOT mocked — test real implementations
     - [ ] Application services mocked when testing controllers
     - [ ] Adapters mocked when testing application layer
