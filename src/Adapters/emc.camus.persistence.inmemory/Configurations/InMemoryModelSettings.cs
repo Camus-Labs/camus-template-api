@@ -71,10 +71,18 @@ internal sealed class InMemoryModelSettings
         }
 
         var availableRoles = Roles.Select(r => r.Name).ToList();
+        var usernameSecretNames = new HashSet<string>();
 
         foreach (var user in Users)
         {
             user.Validate(availableRoles);
+
+            if (usernameSecretNames.Contains(user.UsernameSecretName))
+            {
+                throw new InvalidOperationException($"Duplicate UsernameSecretName: {user.UsernameSecretName}");
+            }
+
+            usernameSecretNames.Add(user.UsernameSecretName);
         }
     }
 

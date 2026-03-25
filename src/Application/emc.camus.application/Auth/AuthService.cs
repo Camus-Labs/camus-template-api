@@ -90,7 +90,7 @@ public class AuthService
 
                 var token = _tokenGenerator.GenerateToken(user.Id, user.Username, user.ToPermissionClaims());
 
-                await _auditRepository.LogSystemActionAsync(
+                await _auditRepository.LogActionAsync(
                     user.Id,
                     user.Username,
                     "user.login.success",
@@ -166,7 +166,7 @@ public class AuthService
                 {
                     await _generatedTokenRepository.CreateAsync(generatedToken);
 
-                    await _auditRepository.LogActionAsync(
+                    await _auditRepository.LogCurrentUserActionAsync(
                         "token.generate.success",
                         $"Generated token for '{generatedToken.TokenUsername}' with permissions: {string.Join(", ", command.Permissions)}. Expires: {command.ExpiresOn:yyyy-MM-dd HH:mm:ss} UTC");
 
@@ -285,7 +285,7 @@ public class AuthService
 
                 _tokenRevocationCache.Revoke(jti, generatedToken.ExpiresOn);
 
-                await _auditRepository.LogActionAsync(
+                await _auditRepository.LogCurrentUserActionAsync(
                     "token.revoke.success",
                     $"Revoked token '{generatedToken.TokenUsername}' (JTI: {jti}).");
 

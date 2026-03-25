@@ -10,10 +10,7 @@ namespace emc.camus.persistence.inmemory.Repositories;
 internal sealed partial class IMActionAuditRepository : IActionAuditRepository
 {
     private readonly ILogger<IMActionAuditRepository> _logger;
-
-    [LoggerMessage(Level = LogLevel.Information,
-        Message = "Audit Log: {ActionTitle} - {ActionSummary}")]
-    private partial void LogAuditAction(string actionTitle, string actionSummary);
+    private readonly IUserContext _userContext;
 
     [LoggerMessage(Level = LogLevel.Information,
         Message = "System Audit Log: {Username} ({UserId}) - {ActionTitle} - {ActionSummary}")]
@@ -23,57 +20,64 @@ internal sealed partial class IMActionAuditRepository : IActionAuditRepository
     /// Initializes a new instance of the <see cref="IMActionAuditRepository"/> class.
     /// </summary>
     /// <param name="logger">Logger for repository events.</param>
-    public IMActionAuditRepository(ILogger<IMActionAuditRepository> logger)
+    /// <param name="userContext">User context for capturing current user information.</param>
+    public IMActionAuditRepository(
+        ILogger<IMActionAuditRepository> logger,
+        IUserContext userContext)
     {
         ArgumentNullException.ThrowIfNull(logger);
-        
+        ArgumentNullException.ThrowIfNull(userContext);
+
         _logger = logger;
+        _userContext = userContext;
     }
 
     /// <summary>
-    /// Logs an action to the application logs instead of persisting to a database.
+    /// Logs an action to the application logs using the current authenticated user context.
+    /// This method captures the current user context automatically.
     /// </summary>
     /// <param name="actionTitle">A short title describing the action.</param>
-    /// <param name="actionSummary">Optional detailed summary of what was done.</param>
+    /// <param name="actionSummary">A detailed summary of what was done.</param>
     /// <returns>A dummy audit entry ID of 0.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="actionTitle"/> is null or whitespace.</exception>
-    public Task<long> LogActionAsync(
+    public Task<long> LogCurrentUserActionAsync(
         string actionTitle,
-        string? actionSummary = null)
+        string actionSummary)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(actionTitle);
-        // Log to application logs instead of database
-        LogAuditAction(actionTitle, actionSummary ?? "No details");
+        var userId = _userContext.GetCurrentUserId()
+            ?? throw new InvalidOperationException("User ID is not available. Ensure the user is authenticated.");
+        var username = _userContext.GetCurrentUsername()
+            ?? throw new InvalidOperationException("Username is not available. Ensure the user is authenticated.");
 
-        // Return a dummy ID
-        return Task.FromResult(0L);
+        return LogActionAsync(userId, username, actionTitle, actionSummary);
     }
 
     /// <summary>
-    /// Logs a system action to the application logs with explicit user information instead of persisting to a database.
+    /// Logs an action to the application logs with explicit user information.
     /// </summary>
-    /// <param name="userId">The user ID performing the action (null for system operations).</param>
+    /// <param name="userId">The user ID performing the action.</param>
     /// <param name="username">The username performing the action.</param>
     /// <param name="actionTitle">A short title describing the action.</param>
-    /// <param name="actionSummary">Optional detailed summary of what was done.</param>
+    /// <param name="actionSummary">A detailed summary of what was done.</param>
     /// <returns>A dummy audit entry ID of 0.</returns>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="username"/> or <paramref name="actionTitle"/> is null or whitespace.
     /// </exception>
-    public Task<long> LogSystemActionAsync(
-        Guid? userId,
+    public Task<long> LogActionAsync(
+        Guid userId,
         string username,
         string actionTitle,
-        string? actionSummary = null)
+        string actionSummary)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
         ArgumentException.ThrowIfNullOrWhiteSpace(actionTitle);
+        ArgumentException.ThrowIfNullOrWhiteSpace(actionSummary);
         // Log to application logs instead of database
         LogSystemAuditAction(
             username,
-            userId?.ToString() ?? "System",
+            userId.ToString(),
             actionTitle,
-            actionSummary ?? "No details");
+            actionSummary);
 
         // Return a dummy ID
         return Task.FromResult(0L);

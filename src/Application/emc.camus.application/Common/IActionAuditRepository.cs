@@ -7,27 +7,27 @@ namespace emc.camus.application.Common;
 public interface IActionAuditRepository
 {
     /// <summary>
-    /// Writes an action to the audit log.
-    /// Captures the current user context and trace ID automatically.
+    /// Writes an action to the audit log using the current authenticated user context.
+    /// Captures the current user ID, username, and trace ID automatically.
     /// </summary>
     /// <param name="actionTitle">A short title describing the action.</param>
-    /// <param name="actionSummary">Optional detailed summary of what was done.</param>
+    /// <param name="actionSummary">A detailed summary of what was done.</param>
     /// <returns>The ID of the created audit entry.</returns>
-    Task<long> LogActionAsync(
+    Task<long> LogCurrentUserActionAsync(
         string actionTitle,
-        string? actionSummary = null);
+        string actionSummary);
 
     /// <summary>
-    /// Writes an action to the audit log with explicit user information (for system operations).
+    /// Writes an action to the audit log with explicit user information.
     /// </summary>
-    /// <param name="userId">The user ID performing the action (null for system operations).</param>
+    /// <param name="userId">The user ID performing the action.</param>
     /// <param name="username">The username performing the action.</param>
     /// <param name="actionTitle">A short title describing the action.</param>
-    /// <param name="actionSummary">Optional detailed summary of what was done.</param>
+    /// <param name="actionSummary">A detailed summary of what was done.</param>
     /// <returns>The ID of the created audit entry.</returns>
-    Task<long> LogSystemActionAsync(
-        Guid? userId,
+    Task<long> LogActionAsync(
+        Guid userId,
         string username,
         string actionTitle,
-        string? actionSummary = null);
+        string actionSummary);
 }
