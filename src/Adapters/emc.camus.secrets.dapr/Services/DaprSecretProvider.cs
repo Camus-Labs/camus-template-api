@@ -42,16 +42,22 @@ namespace emc.camus.secrets.dapr.Services
         /// <param name="secretNames">A collection of secret names to load.</param>
         /// <returns>A task representing the asynchronous load operation.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="secretNames"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when any secret name is null or whitespace.</exception>
         /// <exception cref="InvalidOperationException">Thrown when a secret is not found, empty, or cannot be parsed.</exception>
         public async Task LoadSecretsAsync(IEnumerable<string> secretNames)
         {
             ArgumentNullException.ThrowIfNull(secretNames);
 
-            var secretNamesList = secretNames.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+            var secretNamesList = secretNames.ToList();
 
             if (secretNamesList.Count == 0)
             {
                 return;
+            }
+
+            if (secretNamesList.Any(s => string.IsNullOrWhiteSpace(s)))
+            {
+                throw new ArgumentException("Secret names cannot contain null or whitespace entries.", nameof(secretNames));
             }
 
             foreach (var secretName in secretNamesList)

@@ -18,6 +18,8 @@ applyTo: "src/Test/**"
           or mock interactions
     - [ ] No tests for trivial code (e.g., plain auto-properties, simple DTOs with no logic, compiler-guaranteed
           behavior) — covered indirectly through tests that exercise real behavior
+    - [ ] Reusable test values as `private const` or `private static readonly` fields — assertions reference these
+          constants instead of inline literals to keep a single source of truth
 
 2. Mocking
 
