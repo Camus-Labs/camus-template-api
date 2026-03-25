@@ -64,12 +64,18 @@ namespace emc.camus.observability.otel.Configurations
         {
             if (DisabledMetrics == null)
                 throw new InvalidOperationException("DisabledMetrics cannot be null");
+
+            if (DisabledMetrics.Any(string.IsNullOrWhiteSpace))
+                throw new InvalidOperationException("DisabledMetrics cannot contain null or empty entries");
         }
 
         private void ValidateDisabledMeters()
         {
             if (DisabledMeters == null)
                 throw new InvalidOperationException("DisabledMeters cannot be null");
+
+            if (DisabledMeters.Any(string.IsNullOrWhiteSpace))
+                throw new InvalidOperationException("DisabledMeters cannot contain null or empty entries");
         }
     }
 }
