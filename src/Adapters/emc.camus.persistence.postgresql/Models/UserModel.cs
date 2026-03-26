@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.persistence.postgresql.Models;
 
 /// <summary>
 /// Data model representing users table structure in PostgreSQL.
 /// Used by Dapper for ORM mapping.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal sealed class UserModel
 {
     /// <summary>

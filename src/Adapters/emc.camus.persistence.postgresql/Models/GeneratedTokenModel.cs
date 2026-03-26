@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.persistence.postgresql.Models;
 
 /// <summary>
 /// Data model representing generated_tokens table structure in PostgreSQL.
 /// Used by Dapper for ORM mapping.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal sealed class GeneratedTokenModel
 {
     /// <summary>

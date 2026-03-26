@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.persistence.postgresql.Models;
 
 /// <summary>
 /// Data model representing roles table structure in PostgreSQL with associated permissions.
 /// Used by Dapper for ORM mapping from JOIN queries.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal sealed class RoleModel
 {
     /// <summary>

@@ -42,42 +42,6 @@ internal sealed class PSConnectionFactory : IConnectionFactory
     }
 
     /// <summary>
-    /// Builds the complete connection string using credentials from secret provider.
-    /// </summary>
-    /// <param name="settings">Database settings containing connection configuration.</param>
-    /// <param name="secretProvider">Secret provider to fetch credentials.</param>
-    /// <returns>The complete PostgreSQL connection string.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when secrets cannot be retrieved.</exception>
-    private static string BuildConnectionString(DatabaseSettings settings, ISecretProvider secretProvider)
-    {
-        // Fetch credentials from secret provider
-        var username = secretProvider.GetSecret(settings.UserSecretName);
-        var password = secretProvider.GetSecret(settings.PasswordSecretName);
-
-        if (string.IsNullOrWhiteSpace(username))
-        {
-            throw new InvalidOperationException(
-                $"Database username secret '{settings.UserSecretName}' not found or empty");
-        }
-
-        if (string.IsNullOrWhiteSpace(password))
-        {
-            throw new InvalidOperationException(
-                $"Database password secret '{settings.PasswordSecretName}' not found or empty");
-        }
-
-        // Build connection string from components
-        var connectionString = $"Host={settings.Host};Port={settings.Port};Database={settings.Database};Username={username};Password={password}";
-
-        if (!string.IsNullOrWhiteSpace(settings.AdditionalParameters))
-        {
-            connectionString += $";{settings.AdditionalParameters}";
-        }
-
-        return connectionString;
-    }
-
-    /// <summary>
     /// Creates and opens a new PostgreSQL database connection with user context set.
     /// Session variable app.current_username is automatically configured for audit triggers
     /// to populate created_by and updated_by fields with the authenticated user's username.
@@ -120,6 +84,42 @@ internal sealed class PSConnectionFactory : IConnectionFactory
                 "SET app.current_username = @Username;",
                 new { Username = username });
         }
+    }
+
+    /// <summary>
+    /// Builds the complete connection string using credentials from secret provider.
+    /// </summary>
+    /// <param name="settings">Database settings containing connection configuration.</param>
+    /// <param name="secretProvider">Secret provider to fetch credentials.</param>
+    /// <returns>The complete PostgreSQL connection string.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when secrets cannot be retrieved.</exception>
+    private static string BuildConnectionString(DatabaseSettings settings, ISecretProvider secretProvider)
+    {
+        // Fetch credentials from secret provider
+        var username = secretProvider.GetSecret(settings.UserSecretName);
+        var password = secretProvider.GetSecret(settings.PasswordSecretName);
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            throw new InvalidOperationException(
+                $"Database username secret '{settings.UserSecretName}' not found or empty");
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            throw new InvalidOperationException(
+                $"Database password secret '{settings.PasswordSecretName}' not found or empty");
+        }
+
+        // Build connection string from components
+        var connectionString = $"Host={settings.Host};Port={settings.Port};Database={settings.Database};Username={username};Password={password}";
+
+        if (!string.IsNullOrWhiteSpace(settings.AdditionalParameters))
+        {
+            connectionString += $";{settings.AdditionalParameters}";
+        }
+
+        return connectionString;
     }
 }
 
