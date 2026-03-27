@@ -36,11 +36,14 @@ internal sealed class PSActionAuditRepository : IActionAuditRepository
     /// <param name="actionTitle">A short title describing the action (e.g., "User Login", "Role Assigned").</param>
     /// <param name="actionSummary">A detailed summary of what was done.</param>
     /// <returns>The ID of the created audit entry.</returns>
-    /// <exception cref="ArgumentException">Thrown when actionTitle is empty or whitespace.</exception>
+    /// <exception cref="ArgumentException">Thrown when actionTitle or actionSummary is null, empty, or whitespace.</exception>
     public async Task<long> LogCurrentUserActionAsync(
         string actionTitle,
         string actionSummary)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(actionTitle);
+        ArgumentException.ThrowIfNullOrWhiteSpace(actionSummary);
+
         var userId = _userContext.GetCurrentUserId()
             ?? throw new InvalidOperationException("User ID is not available. Ensure the user is authenticated.");
         var username = _userContext.GetCurrentUsername()

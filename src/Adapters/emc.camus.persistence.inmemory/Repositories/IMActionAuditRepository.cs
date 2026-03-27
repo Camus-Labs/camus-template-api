@@ -44,6 +44,9 @@ internal sealed partial class IMActionAuditRepository : IActionAuditRepository
         string actionTitle,
         string actionSummary)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(actionTitle);
+        ArgumentException.ThrowIfNullOrWhiteSpace(actionSummary);
+
         var userId = _userContext.GetCurrentUserId()
             ?? throw new InvalidOperationException("User ID is not available. Ensure the user is authenticated.");
         var username = _userContext.GetCurrentUsername()
@@ -69,6 +72,7 @@ internal sealed partial class IMActionAuditRepository : IActionAuditRepository
         string actionTitle,
         string actionSummary)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(userId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
         ArgumentException.ThrowIfNullOrWhiteSpace(actionTitle);
         ArgumentException.ThrowIfNullOrWhiteSpace(actionSummary);

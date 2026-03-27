@@ -15,7 +15,8 @@ public class AuthServiceTests
     private const string ValidPassword = "password123";
     private const string ValidToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test-token";
     private static readonly DateTime ValidExpiration = new(2099, 12, 31, 23, 59, 59, DateTimeKind.Utc);
-    private static readonly DateTime ValidTokenExpiration = DateTime.UtcNow.AddMonths(6);
+    private static readonly DateTime ValidTokenExpiration = new(2099, 6, 15, 12, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime ValidCreatedAt = new(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc);
     private static readonly Guid ValidJti = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
     private readonly Mock<IUserRepository> _userRepositoryMock = new();
@@ -448,7 +449,7 @@ public class AuthServiceTests
         var token = GeneratedToken.Reconstitute(
             ValidJti, ValidUserId, ValidUsername, "admin-token1",
             ["api.read"], ValidExpiration,
-            new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), false, null);
+            ValidCreatedAt, false, null);
         var pagedTokens = new PagedResult<GeneratedToken>([token], 1, 1, 25);
 
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
@@ -543,7 +544,7 @@ public class AuthServiceTests
         var token = GeneratedToken.Reconstitute(
             ValidJti, ValidUserId, ValidUsername, "admin-token1",
             ["api.read"], ValidExpiration,
-            new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), false, null);
+            ValidCreatedAt, false, null);
 
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
         _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
@@ -639,7 +640,7 @@ public class AuthServiceTests
         var token = GeneratedToken.Reconstitute(
             ValidJti, differentUserId, "otheruser", "otheruser-token1",
             ["api.read"], ValidExpiration,
-            new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), false, null);
+            ValidCreatedAt, false, null);
 
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
         _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
@@ -663,7 +664,7 @@ public class AuthServiceTests
         var token = GeneratedToken.Reconstitute(
             ValidJti, ValidUserId, ValidUsername, "admin-token1",
             ["api.read"], ValidExpiration,
-            new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), false, null);
+            ValidCreatedAt, false, null);
 
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
         _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);

@@ -3,7 +3,7 @@ namespace emc.camus.observability.otel.Configurations
     /// <summary>
     /// Configuration settings for OpenTelemetry metrics.
     /// </summary>
-    public class MetricsSettings
+    internal sealed class MetricsSettings
     {
 
         /// <summary>

@@ -3,7 +3,7 @@ namespace emc.camus.observability.otel.Configurations
     /// <summary>
     /// Configuration settings for OpenTelemetry logs.
     /// </summary>
-    public class LogsSettings
+    internal sealed class LogsSettings
     {
 
         /// <summary>

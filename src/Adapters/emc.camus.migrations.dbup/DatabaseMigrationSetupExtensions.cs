@@ -84,6 +84,8 @@ namespace emc.camus.migrations.dbup
         /// <returns>The web application for method chaining.</returns>
         public static WebApplication UseDatabaseMigrations(this WebApplication app, ILogger logger)
         {
+            ArgumentNullException.ThrowIfNull(logger);
+
             // Skip migrations if disabled
             var migrationsSettings = app.Services.GetRequiredService<DBUpSettings>();
             if (!migrationsSettings.Enabled)

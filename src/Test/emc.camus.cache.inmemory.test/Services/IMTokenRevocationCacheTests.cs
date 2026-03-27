@@ -7,7 +7,8 @@ public class IMTokenRevocationCacheTests
 {
     private static readonly Guid ValidJti = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly Guid AnotherJti = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-    private static readonly DateTime FutureExpiry = DateTime.UtcNow.AddHours(1);
+    private static readonly DateTime FutureExpiry = new(2099, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime PastExpiry = new(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     private readonly IMTokenRevocationCache _cache = new();
 
@@ -105,10 +106,9 @@ public class IMTokenRevocationCacheTests
     {
         // Arrange
         var jti = ValidJti;
-        var pastExpiry = DateTime.UtcNow.AddHours(-1);
 
         // Act
-        _cache.Revoke(jti, pastExpiry);
+        _cache.Revoke(jti, PastExpiry);
 
         // Assert
         _cache.IsRevoked(jti).Should().BeFalse();

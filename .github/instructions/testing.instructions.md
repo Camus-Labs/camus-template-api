@@ -22,8 +22,9 @@ applyTo: "src/Test/**"
           or mock interactions
     - [ ] No tests for trivial code (e.g., plain auto-properties, simple DTOs with no logic, compiler-guaranteed
           behavior) — covered indirectly through tests that exercise real behavior
-    - [ ] Reusable test values as `private const` or `private static readonly` fields — assertions reference these
-          constants instead of inline literals to keep a single source of truth
+    - [ ] Reusable arrange values (IDs, names, domain constants) as `private const` or `private static readonly`
+          fields to keep a single source of truth — assertion-only literals (wildcard patterns, parameter names)
+          stay inline
     - [ ] No logic in tests — no `if`, `else`, `switch`, `for`, `foreach`, `while`, or `try`/`catch` in test
           methods — tests are linear Arrange-Act-Assert sequences
     - [ ] Async test methods return `Task` — not `async void`

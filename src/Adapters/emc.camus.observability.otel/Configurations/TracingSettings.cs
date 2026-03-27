@@ -3,7 +3,7 @@ namespace emc.camus.observability.otel.Configurations
     /// <summary>
     /// Configuration settings for OpenTelemetry tracing.
     /// </summary>
-    public class TracingSettings
+    internal sealed class TracingSettings
     {
 
         /// <summary>

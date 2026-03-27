@@ -5,6 +5,10 @@ namespace emc.camus.application.test.Common;
 
 public class PagedResultTests
 {
+    private const int DefaultTotalCount = 50;
+    private const int DefaultPage = 1;
+    private const int DefaultPageSize = 25;
+
     // --- Constructor ---
 
     [Fact]
@@ -12,9 +16,9 @@ public class PagedResultTests
     {
         // Arrange
         var items = new List<string> { "item1", "item2" };
-        var totalCount = 50;
-        var page = 1;
-        var pageSize = 25;
+        var totalCount = DefaultTotalCount;
+        var page = DefaultPage;
+        var pageSize = DefaultPageSize;
 
         // Act
         var result = new PagedResult<string>(items, totalCount, page, pageSize);
@@ -96,57 +100,35 @@ public class PagedResultTests
 
     // --- HasNextPage ---
 
-    [Fact]
-    public void HasNextPage_OnFirstPageWithMultiplePages_ReturnsTrue()
+    [Theory]
+    [InlineData(DefaultTotalCount, 1, DefaultPageSize, true)]
+    [InlineData(DefaultTotalCount, 2, DefaultPageSize, false)]
+    public void HasNextPage_VariousPages_ReturnsExpectedResult(int totalCount, int page, int pageSize, bool expected)
     {
         // Arrange
-        var result = new PagedResult<string>([], 50, 1, 25);
+        var result = new PagedResult<string>([], totalCount, page, pageSize);
 
         // Act
         var hasNext = result.HasNextPage;
 
         // Assert
-        hasNext.Should().BeTrue();
-    }
-
-    [Fact]
-    public void HasNextPage_OnLastPage_ReturnsFalse()
-    {
-        // Arrange
-        var result = new PagedResult<string>([], 50, 2, 25);
-
-        // Act
-        var hasNext = result.HasNextPage;
-
-        // Assert
-        hasNext.Should().BeFalse();
+        hasNext.Should().Be(expected);
     }
 
     // --- HasPreviousPage ---
 
-    [Fact]
-    public void HasPreviousPage_OnFirstPage_ReturnsFalse()
+    [Theory]
+    [InlineData(DefaultTotalCount, 1, DefaultPageSize, false)]
+    [InlineData(DefaultTotalCount, 2, DefaultPageSize, true)]
+    public void HasPreviousPage_VariousPages_ReturnsExpectedResult(int totalCount, int page, int pageSize, bool expected)
     {
         // Arrange
-        var result = new PagedResult<string>([], 50, 1, 25);
+        var result = new PagedResult<string>([], totalCount, page, pageSize);
 
         // Act
         var hasPrevious = result.HasPreviousPage;
 
         // Assert
-        hasPrevious.Should().BeFalse();
-    }
-
-    [Fact]
-    public void HasPreviousPage_OnSecondPage_ReturnsTrue()
-    {
-        // Arrange
-        var result = new PagedResult<string>([], 50, 2, 25);
-
-        // Act
-        var hasPrevious = result.HasPreviousPage;
-
-        // Assert
-        hasPrevious.Should().BeTrue();
+        hasPrevious.Should().Be(expected);
     }
 }
