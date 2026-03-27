@@ -15,7 +15,7 @@ public class AuthServiceTests
     private const string ValidPassword = "password123";
     private const string ValidToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test-token";
     private static readonly DateTime ValidExpiration = new(2099, 12, 31, 23, 59, 59, DateTimeKind.Utc);
-    private static readonly DateTime ValidTokenExpiration = new(2099, 6, 15, 12, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime ValidTokenExpiration = DateTime.UtcNow.AddMonths(6);
     private static readonly DateTime ValidCreatedAt = new(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc);
     private static readonly Guid ValidJti = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
@@ -730,4 +730,5 @@ public class AuthServiceTests
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*Failed to initialize*authentication*");
     }
+
 }

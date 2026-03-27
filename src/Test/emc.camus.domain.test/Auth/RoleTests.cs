@@ -8,7 +8,7 @@ public class RoleTests
     private static readonly Guid ValidId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private const string ValidName = "Admin";
     private const string ValidDescription = "Administrator role";
-    private readonly List<string> ValidPermissions = ["read", "write"];
+    private static readonly List<string> ValidPermissions = ["read", "write"];
 
     // --- Constructor ---
 

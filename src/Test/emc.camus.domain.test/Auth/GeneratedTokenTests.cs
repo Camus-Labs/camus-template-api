@@ -10,7 +10,7 @@ public class GeneratedTokenTests
     private const string ValidCreatorUsername = "admin";
     private const string ValidSuffix = "token1";
     private const string ValidTokenUsername = "admin-token1";
-    private readonly List<string> ValidPermissions = ["read", "write"];
+    private static readonly List<string> ValidPermissions = ["read", "write"];
     private static readonly DateTime ValidExpiration = DateTime.UtcNow.AddMonths(6);
 
     private static User CreateCreator(Guid? id = null, string username = ValidCreatorUsername, List<string>? permissions = null)
@@ -48,6 +48,7 @@ public class GeneratedTokenTests
     [Fact]
     public void Constructor_NullCreator_ThrowsArgumentNullException()
     {
+        // Arrange
         // Act
         var act = () => new GeneratedToken(null!, ValidSuffix, ValidPermissions, ValidExpiration);
 

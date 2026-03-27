@@ -8,8 +8,8 @@ public class UserTests
     private static readonly Guid ValidId = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     private const string ValidUsername = "testuser";
 
-    private readonly string[] ExpectedReadWritePermissions = ["read", "write"];
-    private readonly string[] ExpectedReadWriteDeletePermissions = ["read", "write", "delete"];
+    private static readonly string[] ExpectedReadWritePermissions = ["read", "write"];
+    private static readonly string[] ExpectedReadWriteDeletePermissions = ["read", "write", "delete"];
 
     private static Role CreateRole(string name = "Admin") =>
         Role.Reconstitute(

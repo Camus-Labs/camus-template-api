@@ -7,7 +7,7 @@ public class ApiInfoTests
 {
     private const string ValidVersion = "1.0.0";
     private const string ValidStatus = "Available";
-    private readonly List<string> ValidFeatures = ["auth", "rate-limiting"];
+    private static readonly List<string> ValidFeatures = ["auth", "rate-limiting"];
 
     // --- Constructor ---
 

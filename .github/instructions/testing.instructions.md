@@ -11,7 +11,9 @@ applyTo: "src/Test/**"
     - [ ] Test names: `MethodName_Scenario_ExpectedResult` or `Given_When_Then`
     - [ ] Each test method contains one `// Act` step — multiple assertions on the same act result belong in one
           test, not split into separate methods
-    - [ ] Tests are deterministic — no random values, no `DateTime.Now`, no `Guid.NewGuid()`
+    - [ ] Tests are deterministic — no random values, no `DateTime.Now`, no `Guid.NewGuid()` — exception:
+          `DateTime.UtcNow` is allowed when testing time-relative domain validation (e.g., expiration windows) where
+          the margin between the test value and the validation boundary is large enough to prevent flakiness
     - [ ] Tests are isolated — no shared mutable state, no static mutable fields, no `IClassFixture<T>` mutation
           across tests
     - [ ] `[Theory]` when multiple scenarios share the same logic with only different input values — do not duplicate
