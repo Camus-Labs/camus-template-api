@@ -7,51 +7,27 @@ public class ErrorCodeMappingRuleTests
 {
     // --- Validate: Valid Rules ---
 
-    [Fact]
-    public void Validate_TypeAndErrorCode_Succeeds()
+    public static IEnumerable<object[]> ValidRules()
     {
-        // Arrange
-        var rule = new ErrorCodeMappingRule
+        yield return new object[]
         {
-            Type = "ArgumentException",
-            ErrorCode = "bad_request"
+            new ErrorCodeMappingRule { Type = "ArgumentException", ErrorCode = "bad_request" }
         };
-
-        // Act
-        var act = () => rule.Validate(0);
-
-        // Assert
-        act.Should().NotThrow();
+        yield return new object[]
+        {
+            new ErrorCodeMappingRule { Pattern = "not.?found", ErrorCode = "not_found" }
+        };
+        yield return new object[]
+        {
+            new ErrorCodeMappingRule { Type = "UnauthorizedAccessException", Pattern = "jwt.*expired", ErrorCode = "jwt_token_expired" }
+        };
     }
 
-    [Fact]
-    public void Validate_PatternAndErrorCode_Succeeds()
+    [Theory]
+    [MemberData(nameof(ValidRules))]
+    public void Validate_ValidRule_Succeeds(ErrorCodeMappingRule rule)
     {
         // Arrange
-        var rule = new ErrorCodeMappingRule
-        {
-            Pattern = "not.?found",
-            ErrorCode = "not_found"
-        };
-
-        // Act
-        var act = () => rule.Validate(0);
-
-        // Assert
-        act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void Validate_TypePatternAndErrorCode_Succeeds()
-    {
-        // Arrange
-        var rule = new ErrorCodeMappingRule
-        {
-            Type = "UnauthorizedAccessException",
-            Pattern = "jwt.*expired",
-            ErrorCode = "jwt_token_expired"
-        };
-
         // Act
         var act = () => rule.Validate(0);
 

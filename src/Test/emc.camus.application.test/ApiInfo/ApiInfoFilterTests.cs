@@ -5,15 +5,13 @@ namespace emc.camus.application.test.ApiInfo;
 
 public class ApiInfoFilterTests
 {
-    private const string ValidVersion = "1.0";
-
     // --- Constructor ---
 
     [Fact]
     public void Constructor_ValidVersion_SetsProperty()
     {
         // Arrange
-        var version = ValidVersion;
+        var version = "1.0";
 
         // Act
         var filter = new ApiInfoFilter(version);

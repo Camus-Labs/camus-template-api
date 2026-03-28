@@ -81,63 +81,25 @@ public class HttpUserContextTests
         result.Should().Be(FixedUserId);
     }
 
-    [Fact]
-    public void GetCurrentUserId_UnauthenticatedUser_ReturnsNull()
+    public static IEnumerable<object[]> GetCurrentUserId_NullScenarios()
     {
-        // Arrange
-        var context = CreateContext();
+        yield return new object[] { CreateContext() };
+        yield return new object[] { CreateContext(hasHttpContext: false) };
 
-        // Act
-        var result = context.GetCurrentUserId();
+        var nonGuidUser = new ClaimsPrincipal(
+            new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "not-a-guid") }, "TestAuth"));
+        yield return new object[] { CreateContext(nonGuidUser) };
 
-        // Assert
-        result.Should().BeNull();
+        var missingIdUser = new ClaimsPrincipal(
+            new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, "testuser") }, "TestAuth"));
+        yield return new object[] { CreateContext(missingIdUser) };
     }
 
-    [Fact]
-    public void GetCurrentUserId_NullHttpContext_ReturnsNull()
+    [Theory]
+    [MemberData(nameof(GetCurrentUserId_NullScenarios))]
+    public void GetCurrentUserId_UserIdNotAvailable_ReturnsNull(HttpUserContext context)
     {
         // Arrange
-        var context = CreateContext(hasHttpContext: false);
-
-        // Act
-        var result = context.GetCurrentUserId();
-
-        // Assert
-        result.Should().BeNull();
-    }
-
-    [Fact]
-    public void GetCurrentUserId_NonGuidNameIdentifier_ReturnsNull()
-    {
-        // Arrange
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, "not-a-guid")
-        };
-        var identity = new ClaimsIdentity(claims, "TestAuth");
-        var user = new ClaimsPrincipal(identity);
-        var context = CreateContext(user);
-
-        // Act
-        var result = context.GetCurrentUserId();
-
-        // Assert
-        result.Should().BeNull();
-    }
-
-    [Fact]
-    public void GetCurrentUserId_MissingNameIdentifierClaim_ReturnsNull()
-    {
-        // Arrange
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.Name, "testuser")
-        };
-        var identity = new ClaimsIdentity(claims, "TestAuth");
-        var user = new ClaimsPrincipal(identity);
-        var context = CreateContext(user);
-
         // Act
         var result = context.GetCurrentUserId();
 
@@ -161,25 +123,17 @@ public class HttpUserContextTests
         result.Should().Be("admin");
     }
 
-    [Fact]
-    public void GetCurrentUsername_UnauthenticatedUser_ReturnsNull()
+    public static IEnumerable<object[]> GetCurrentUsername_NullScenarios()
     {
-        // Arrange
-        var context = CreateContext();
-
-        // Act
-        var result = context.GetCurrentUsername();
-
-        // Assert
-        result.Should().BeNull();
+        yield return new object[] { CreateContext() };
+        yield return new object[] { CreateContext(hasHttpContext: false) };
     }
 
-    [Fact]
-    public void GetCurrentUsername_NullHttpContext_ReturnsNull()
+    [Theory]
+    [MemberData(nameof(GetCurrentUsername_NullScenarios))]
+    public void GetCurrentUsername_UsernameNotAvailable_ReturnsNull(HttpUserContext context)
     {
         // Arrange
-        var context = CreateContext(hasHttpContext: false);
-
         // Act
         var result = context.GetCurrentUsername();
 
@@ -204,26 +158,18 @@ public class HttpUserContextTests
         result.Should().BeEquivalentTo(permissions);
     }
 
-    [Fact]
-    public void GetCurrentPermissions_AuthenticatedUserWithoutPermissions_ReturnsEmptyList()
+    public static IEnumerable<object[]> GetCurrentPermissions_EmptyScenarios()
     {
-        // Arrange
-        var user = CreateAuthenticatedUser();
-        var context = CreateContext(user);
-
-        // Act
-        var result = context.GetCurrentPermissions();
-
-        // Assert
-        result.Should().BeEmpty();
+        yield return new object[] { CreateContext(CreateAuthenticatedUser()) };
+        yield return new object[] { CreateContext() };
     }
 
-    [Fact]
-    public void GetCurrentPermissions_UnauthenticatedUser_ReturnsEmptyList()
+    [Theory]
+    [MemberData(nameof(GetCurrentPermissions_EmptyScenarios))]
+    public void GetCurrentPermissions_PermissionsNotAvailable_ReturnsEmptyList(
+        HttpUserContext context)
     {
         // Arrange
-        var context = CreateContext();
-
         // Act
         var result = context.GetCurrentPermissions();
 

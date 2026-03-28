@@ -5,15 +5,13 @@ namespace emc.camus.application.test.Auth;
 
 public class RevokeTokenCommandTests
 {
-    private static readonly Guid ValidJti = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-
     // --- Constructor ---
 
     [Fact]
     public void Constructor_ValidJti_SetsProperty()
     {
         // Arrange
-        var jti = ValidJti;
+        var jti = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
         // Act
         var command = new RevokeTokenCommand(jti);

@@ -7,7 +7,6 @@ public class AuthTokenTests
 {
     private const string ValidToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test-token";
     private static readonly DateTime FutureExpiration = new(2099, 12, 31, 23, 59, 59, DateTimeKind.Utc);
-    private static readonly DateTime PastExpiration = new(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     // --- Constructor ---
 
@@ -45,7 +44,7 @@ public class AuthTokenTests
     public void Constructor_PastExpiration_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
-        var pastDate = PastExpiration;
+        var pastDate = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         // Act
         var act = () => new AuthToken(ValidToken, pastDate);

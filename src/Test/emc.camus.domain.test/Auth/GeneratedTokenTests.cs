@@ -10,8 +10,9 @@ public class GeneratedTokenTests
     private const string ValidCreatorUsername = "admin";
     private const string ValidSuffix = "token1";
     private const string ValidTokenUsername = "admin-token1";
-    private static readonly List<string> ValidPermissions = ["read", "write"];
+    private static readonly IReadOnlyList<string> ValidPermissions = ["read", "write"];
     private static readonly DateTime ValidExpiration = DateTime.UtcNow.AddMonths(6);
+    private static readonly Guid ValidJti = new("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee");
 
     private static User CreateCreator(Guid? id = null, string username = ValidCreatorUsername, List<string>? permissions = null)
     {
@@ -50,7 +51,7 @@ public class GeneratedTokenTests
     {
         // Arrange
         // Act
-        var act = () => new GeneratedToken(null!, ValidSuffix, ValidPermissions, ValidExpiration);
+        var act = () => new GeneratedToken(null!, ValidSuffix, ValidPermissions.ToList(), ValidExpiration);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -67,7 +68,7 @@ public class GeneratedTokenTests
         var creator = CreateCreator();
 
         // Act
-        var act = () => new GeneratedToken(creator, suffix!, ValidPermissions, ValidExpiration);
+        var act = () => new GeneratedToken(creator, suffix!, ValidPermissions.ToList(), ValidExpiration);
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -82,7 +83,7 @@ public class GeneratedTokenTests
         var longSuffix = new string('a', 21);
 
         // Act
-        var act = () => new GeneratedToken(creator, longSuffix, ValidPermissions, ValidExpiration);
+        var act = () => new GeneratedToken(creator, longSuffix, ValidPermissions.ToList(), ValidExpiration);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -99,7 +100,7 @@ public class GeneratedTokenTests
         var creator = CreateCreator();
 
         // Act
-        var act = () => new GeneratedToken(creator, suffix, ValidPermissions, ValidExpiration);
+        var act = () => new GeneratedToken(creator, suffix, ValidPermissions.ToList(), ValidExpiration);
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -152,30 +153,21 @@ public class GeneratedTokenTests
             .WithMessage("*cannot grant*write*");
     }
 
-    [Fact]
-    public void Constructor_ExpirationTooSoon_ThrowsArgumentOutOfRangeException()
+    public static TheoryData<DateTime> InvalidExpirationDates => new()
+    {
+        new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+        DateTime.UtcNow.AddYears(1).AddDays(1)
+    };
+
+    [Theory]
+    [MemberData(nameof(InvalidExpirationDates))]
+    public void Constructor_InvalidExpiration_ThrowsArgumentOutOfRangeException(DateTime expiration)
     {
         // Arrange
         var creator = CreateCreator();
-        var tooSoon = DateTime.UtcNow.AddMinutes(30);
 
         // Act
-        var act = () => new GeneratedToken(creator, ValidSuffix, ValidPermissions, tooSoon);
-
-        // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>()
-            .And.ParamName.Should().Be("expiresOn");
-    }
-
-    [Fact]
-    public void Constructor_ExpirationTooFar_ThrowsArgumentOutOfRangeException()
-    {
-        // Arrange
-        var creator = CreateCreator();
-        var tooFar = DateTime.UtcNow.AddYears(1).AddDays(1);
-
-        // Act
-        var act = () => new GeneratedToken(creator, ValidSuffix, ValidPermissions, tooFar);
+        var act = () => new GeneratedToken(creator, ValidSuffix, ValidPermissions.ToList(), expiration);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -188,11 +180,11 @@ public class GeneratedTokenTests
     public void Reconstitute_ValidData_RebuildsAllFields()
     {
         // Arrange
-        var jti = new Guid("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee");
+        var jti = ValidJti;
         var creatorUserId = ValidCreatorUserId;
         var creatorUsername = ValidCreatorUsername;
         var tokenUsername = ValidTokenUsername;
-        var permissions = ValidPermissions;
+        var permissions = ValidPermissions.ToList();
         var expiresOn = ValidExpiration;
         var createdAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var isRevoked = true;
@@ -217,10 +209,10 @@ public class GeneratedTokenTests
     public void Reconstitute_NotRevoked_SetsRevokedAtToNull()
     {
         // Arrange
-        var jti = new Guid("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee");
+        var jti = ValidJti;
 
         // Act
-        var token = GeneratedToken.Reconstitute(jti, ValidCreatorUserId, ValidCreatorUsername, ValidTokenUsername, ValidPermissions, ValidExpiration,
+        var token = GeneratedToken.Reconstitute(jti, ValidCreatorUserId, ValidCreatorUsername, ValidTokenUsername, ValidPermissions.ToList(), ValidExpiration,
             new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc), false, null);
 
         // Assert
@@ -242,6 +234,7 @@ public class GeneratedTokenTests
 
         // Assert
         token.IsRevoked.Should().BeTrue();
+        token.RevokedAt.Should().NotBeNull();
     }
 
     [Fact]
@@ -297,9 +290,9 @@ public class GeneratedTokenTests
         // Arrange
         var expiresOn = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var token = GeneratedToken.Reconstitute(
-            new Guid("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
+            ValidJti,
             ValidCreatorUserId, ValidCreatorUsername, ValidTokenUsername,
-            ValidPermissions, expiresOn,
+            ValidPermissions.ToList(), expiresOn,
             new DateTime(2023, 12, 1, 0, 0, 0, DateTimeKind.Utc), false, null);
 
         // Act

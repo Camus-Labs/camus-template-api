@@ -15,11 +15,6 @@ namespace emc.camus.api.test.Controllers;
 
 public class AuthControllerTests
 {
-    private static readonly DateTime FixedExpiration = new(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc);
-    private static readonly DateTime FixedCreatedAt = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-    private static readonly Guid FixedJti = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    private static readonly Guid FixedUserId = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-
     private readonly Mock<IActivitySourceWrapper> _mockActivitySource;
     private readonly Mock<AuthService> _mockAuthService;
     private readonly AuthController _controller;
@@ -67,27 +62,23 @@ public class AuthControllerTests
 
     // --- Constructor ---
 
-    [Fact]
-    public void Constructor_NullActivitySource_ThrowsArgumentNullException()
+    public static IEnumerable<object?[]> Constructor_NullDependencyScenarios()
     {
-        // Arrange
-        var mockService = CreateMockAuthService();
+        var activitySource = new Mock<IActivitySourceWrapper>().Object;
+        var authService = CreateMockAuthService().Object;
 
-        // Act
-        var act = () => new AuthController(null!, mockService.Object);
-
-        // Assert
-        act.Should().Throw<ArgumentNullException>();
+        yield return new object?[] { null, authService };
+        yield return new object?[] { activitySource, null };
     }
 
-    [Fact]
-    public void Constructor_NullAuthService_ThrowsArgumentNullException()
+    [Theory]
+    [MemberData(nameof(Constructor_NullDependencyScenarios))]
+    public void Constructor_NullDependency_ThrowsArgumentNullException(
+        IActivitySourceWrapper? activitySource, AuthService? authService)
     {
         // Arrange
-        var mockActivitySource = new Mock<IActivitySourceWrapper>();
-
         // Act
-        var act = () => new AuthController(mockActivitySource.Object, null!);
+        var act = () => new AuthController(activitySource!, authService!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -104,7 +95,7 @@ public class AuthControllerTests
             Username = "testuser",
             Password = "securepass"
         };
-        var authResult = new AuthenticateUserResult("jwt-token-value", FixedExpiration);
+        var authResult = new AuthenticateUserResult("jwt-token-value", new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc));
 
         _mockAuthService
             .Setup(s => s.AuthenticateAsync(It.IsAny<AuthenticateUserCommand>()))
@@ -117,7 +108,7 @@ public class AuthControllerTests
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
         var apiResponse = okResult.Value.Should().BeOfType<ApiResponse<AuthenticateUserResponse>>().Subject;
         apiResponse.Data!.Token.Should().Be("jwt-token-value");
-        apiResponse.Data.ExpiresOn.Should().Be(FixedExpiration);
+        apiResponse.Data.ExpiresOn.Should().Be(authResult.ExpiresOn);
         apiResponse.Message.Should().Contain("authenticated successfully");
 
         _mockActivitySource.Verify(
@@ -137,13 +128,13 @@ public class AuthControllerTests
         var request = new GenerateTokenRequest
         {
             UsernameSuffix = "ci-deploy",
-            ExpiresOn = FixedExpiration,
+            ExpiresOn = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
             Permissions = new List<string> { "api.read" }
         };
         var generateResult = new GenerateTokenResult(
             "generated-token",
-            FixedExpiration,
-            FixedUserId,
+            request.ExpiresOn,
+            Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
             "adminuser",
             "adminuser-ci-deploy");
 
@@ -158,7 +149,7 @@ public class AuthControllerTests
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
         var apiResponse = okResult.Value.Should().BeOfType<ApiResponse<GenerateTokenResponse>>().Subject;
         apiResponse.Data!.Token.Should().Be("generated-token");
-        apiResponse.Data.ExpiresOn.Should().Be(FixedExpiration);
+        apiResponse.Data.ExpiresOn.Should().Be(generateResult.ExpiresOn);
         apiResponse.Data.TokenUsername.Should().Be("adminuser-ci-deploy");
         apiResponse.Message.Should().Contain("Token generated successfully");
     }
@@ -177,10 +168,11 @@ public class AuthControllerTests
             ExcludeExpired = false
         };
 
+        var jti = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var view = new GeneratedTokenSummaryView(
-            FixedJti, "admin-token1",
+            jti, "admin-token1",
             new List<string> { "api.read" },
-            FixedExpiration, FixedCreatedAt,
+            new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc), new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             false, null, true);
 
         var pagedResult = new PagedResult<GeneratedTokenSummaryView>(
@@ -199,7 +191,7 @@ public class AuthControllerTests
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
         var apiResponse = okResult.Value.Should().BeOfType<ApiResponse<PagedResponse<GeneratedTokenSummaryDto>>>().Subject;
         apiResponse.Data!.Items.Should().ContainSingle();
-        apiResponse.Data.Items[0].Jti.Should().Be(FixedJti);
+        apiResponse.Data.Items[0].Jti.Should().Be(jti);
         apiResponse.Data.Items[0].TokenUsername.Should().Be("admin-token1");
         apiResponse.Data.TotalCount.Should().Be(1);
     }
@@ -235,10 +227,11 @@ public class AuthControllerTests
     {
         // Arrange
         var revokedAt = new DateTime(2026, 6, 15, 12, 0, 0, DateTimeKind.Utc);
+        var jti = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var view = new GeneratedTokenSummaryView(
-            FixedJti, "admin-token1",
+            jti, "admin-token1",
             new List<string> { "api.read" },
-            FixedExpiration, FixedCreatedAt,
+            new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc), new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             true, revokedAt, false);
 
         _mockAuthService
@@ -246,12 +239,12 @@ public class AuthControllerTests
             .ReturnsAsync(view);
 
         // Act
-        var result = await _controller.RevokeToken(FixedJti);
+        var result = await _controller.RevokeToken(jti);
 
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
         var apiResponse = okResult.Value.Should().BeOfType<ApiResponse<GeneratedTokenSummaryDto>>().Subject;
-        apiResponse.Data!.Jti.Should().Be(FixedJti);
+        apiResponse.Data!.Jti.Should().Be(jti);
         apiResponse.Data.IsRevoked.Should().BeTrue();
         apiResponse.Data.RevokedAt.Should().Be(revokedAt);
         apiResponse.Message.Should().Contain("Token revoked successfully");

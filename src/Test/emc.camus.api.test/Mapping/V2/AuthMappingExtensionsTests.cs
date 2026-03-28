@@ -7,11 +7,6 @@ namespace emc.camus.api.test.Mapping.V2;
 
 public class AuthMappingExtensionsTests
 {
-    private static readonly DateTime FixedExpiration = new(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc);
-    private static readonly DateTime FixedCreatedAt = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-    private static readonly Guid FixedJti = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    private static readonly Guid FixedUserId = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-
     // --- ToCommand (AuthenticateUserRequest) ---
 
     [Fact]
@@ -28,8 +23,8 @@ public class AuthMappingExtensionsTests
         var command = request.ToCommand();
 
         // Assert
-        command.Username.Should().Be("testuser");
-        command.Password.Should().Be("securepass");
+        command.Username.Should().Be(request.Username);
+        command.Password.Should().Be(request.Password);
     }
 
     // --- ToResponse (AuthenticateUserResult) ---
@@ -38,14 +33,14 @@ public class AuthMappingExtensionsTests
     public void ToResponse_AuthenticateUserResult_MapsTokenAndExpiration()
     {
         // Arrange
-        var result = new AuthenticateUserResult("jwt-token-value", FixedExpiration);
+        var result = new AuthenticateUserResult("jwt-token-value", new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc));
 
         // Act
         var response = result.ToResponse();
 
         // Assert
-        response.Token.Should().Be("jwt-token-value");
-        response.ExpiresOn.Should().Be(FixedExpiration);
+        response.Token.Should().Be(result.Token);
+        response.ExpiresOn.Should().Be(result.ExpiresOn);
     }
 
     // --- ToCommand (GenerateTokenRequest) ---
@@ -57,7 +52,7 @@ public class AuthMappingExtensionsTests
         var request = new GenerateTokenRequest
         {
             UsernameSuffix = "ci-deploy",
-            ExpiresOn = FixedExpiration,
+            ExpiresOn = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
             Permissions = new List<string> { "api.read", "api.write" }
         };
 
@@ -65,9 +60,9 @@ public class AuthMappingExtensionsTests
         var command = request.ToCommand();
 
         // Assert
-        command.UsernameSuffix.Should().Be("ci-deploy");
-        command.ExpiresOn.Should().Be(FixedExpiration);
-        command.Permissions.Should().BeEquivalentTo(new List<string> { "api.read", "api.write" });
+        command.UsernameSuffix.Should().Be(request.UsernameSuffix);
+        command.ExpiresOn.Should().Be(request.ExpiresOn);
+        command.Permissions.Should().BeEquivalentTo(request.Permissions);
     }
 
     // --- ToResponse (GenerateTokenResult) ---
@@ -78,8 +73,8 @@ public class AuthMappingExtensionsTests
         // Arrange
         var result = new GenerateTokenResult(
             "generated-token",
-            FixedExpiration,
-            FixedUserId,
+            new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
+            new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
             "adminuser",
             "adminuser-ci-deploy");
 
@@ -87,9 +82,9 @@ public class AuthMappingExtensionsTests
         var response = result.ToResponse();
 
         // Assert
-        response.Token.Should().Be("generated-token");
-        response.ExpiresOn.Should().Be(FixedExpiration);
-        response.TokenUsername.Should().Be("adminuser-ci-deploy");
+        response.Token.Should().Be(result.Token);
+        response.ExpiresOn.Should().Be(result.ExpiresOn);
+        response.TokenUsername.Should().Be(result.TokenUsername);
     }
 
     // --- ToDto (GeneratedTokenSummaryView) ---
@@ -100,11 +95,11 @@ public class AuthMappingExtensionsTests
         // Arrange
         var revokedAt = new DateTime(2026, 6, 15, 12, 0, 0, DateTimeKind.Utc);
         var view = new GeneratedTokenSummaryView(
-            jti: FixedJti,
+            jti: new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
             tokenUsername: "admin-token1",
             permissions: new List<string> { "api.read" },
-            expiresOn: FixedExpiration,
-            createdAt: FixedCreatedAt,
+            expiresOn: new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
+            createdAt: new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             isRevoked: true,
             revokedAt: revokedAt,
             isValid: false);
@@ -113,11 +108,11 @@ public class AuthMappingExtensionsTests
         var dto = view.ToDto();
 
         // Assert
-        dto.Jti.Should().Be(FixedJti);
-        dto.TokenUsername.Should().Be("admin-token1");
-        dto.Permissions.Should().BeEquivalentTo(new List<string> { "api.read" });
-        dto.ExpiresOn.Should().Be(FixedExpiration);
-        dto.CreatedAt.Should().Be(FixedCreatedAt);
+        dto.Jti.Should().Be(view.Jti);
+        dto.TokenUsername.Should().Be(view.TokenUsername);
+        dto.Permissions.Should().BeEquivalentTo(view.Permissions);
+        dto.ExpiresOn.Should().Be(view.ExpiresOn);
+        dto.CreatedAt.Should().Be(view.CreatedAt);
         dto.IsRevoked.Should().BeTrue();
         dto.RevokedAt.Should().Be(revokedAt);
         dto.IsValid.Should().BeFalse();
@@ -128,11 +123,11 @@ public class AuthMappingExtensionsTests
     {
         // Arrange
         var view = new GeneratedTokenSummaryView(
-            jti: FixedJti,
+            jti: new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
             tokenUsername: "admin-token1",
             permissions: new List<string> { "api.read" },
-            expiresOn: FixedExpiration,
-            createdAt: FixedCreatedAt,
+            expiresOn: new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
+            createdAt: new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             isRevoked: false,
             revokedAt: null,
             isValid: true);
@@ -186,12 +181,12 @@ public class AuthMappingExtensionsTests
     public void ToRevokeTokenCommand_ValidJti_CreatesCommand()
     {
         // Arrange
-        var jti = FixedJti;
+        var jti = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
         // Act
         var command = emc.camus.api.Mapping.V2.AuthMappingExtensions.ToRevokeTokenCommand(jti);
 
         // Assert
-        command.Jti.Should().Be(FixedJti);
+        command.Jti.Should().Be(jti);
     }
 }

@@ -19,21 +19,21 @@ public class CorsSettingsTests
         };
     }
 
-    private static readonly string[] ExpectedDefaultMethods = new[] { "GET", "POST" };
-
     // --- Defaults ---
 
     [Fact]
     public void Constructor_Default_SetsExpectedDefaults()
     {
         // Arrange
+        string[] expectedMethods = ["GET", "POST"];
+
         // Act
         var settings = new CorsSettings();
 
         // Assert
         settings.PolicyName.Should().Be("DefaultCorsPolicy");
         settings.AllowedOrigins.Should().BeEmpty();
-        settings.AllowedMethods.Should().BeEquivalentTo(ExpectedDefaultMethods);
+        settings.AllowedMethods.Should().BeEquivalentTo(expectedMethods);
         settings.AllowedHeaders.Should().HaveCount(3);
         settings.ExposedHeaders.Should().HaveCount(7);
         settings.AllowCredentials.Should().BeFalse();
@@ -187,27 +187,19 @@ public class CorsSettingsTests
 
     // --- Validate: AllowedMethods ---
 
-    [Fact]
-    public void Validate_NullAllowedMethods_ThrowsInvalidOperationException()
+    public static IEnumerable<object?[]> InvalidAllowedMethods()
     {
-        // Arrange
-        var settings = CreateValidSettings();
-        settings.AllowedMethods = null!;
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*at least one*HTTP method*");
+        yield return new object?[] { null };
+        yield return new object?[] { Array.Empty<string>() };
     }
 
-    [Fact]
-    public void Validate_EmptyAllowedMethods_ThrowsInvalidOperationException()
+    [Theory]
+    [MemberData(nameof(InvalidAllowedMethods))]
+    public void Validate_NullOrEmptyAllowedMethods_ThrowsInvalidOperationException(string[]? allowedMethods)
     {
         // Arrange
         var settings = CreateValidSettings();
-        settings.AllowedMethods = Array.Empty<string>();
+        settings.AllowedMethods = allowedMethods!;
 
         // Act
         var act = () => settings.Validate();
@@ -253,27 +245,14 @@ public class CorsSettingsTests
 
     // --- Validate: PreflightMaxAge ---
 
-    [Fact]
-    public void Validate_PreflightMaxAgeBelowMinimum_ThrowsInvalidOperationException()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(86401)]
+    public void Validate_PreflightMaxAgeOutOfRange_ThrowsInvalidOperationException(int maxAge)
     {
         // Arrange
         var settings = CreateValidSettings();
-        settings.PreflightMaxAgeMinutes = 0;
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*PreflightMaxAgeMinutes*must be between*");
-    }
-
-    [Fact]
-    public void Validate_PreflightMaxAgeAboveMaximum_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var settings = CreateValidSettings();
-        settings.PreflightMaxAgeMinutes = 86401;
+        settings.PreflightMaxAgeMinutes = maxAge;
 
         // Act
         var act = () => settings.Validate();

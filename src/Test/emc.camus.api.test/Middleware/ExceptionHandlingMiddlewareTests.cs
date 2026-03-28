@@ -90,109 +90,52 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         problemDetails.Detail.Should().Be("Invalid parameter value");
     }
 
-    // --- KeyNotFoundException ---
+    // --- Exception-to-StatusCode mapping ---
 
-    [Fact]
-    public async Task InvokeAsync_KeyNotFoundException_Returns404NotFound()
+    public static IEnumerable<object[]> ExceptionToStatusCodeMappings()
+    {
+        yield return new object[] { new KeyNotFoundException("Resource not found"), HttpStatusCode.NotFound };
+        yield return new object[] { new UnauthorizedAccessException("Access denied"), HttpStatusCode.Unauthorized };
+        yield return new object[] { new RateLimitExceededException("strict", 10, 60, 30, 1234567890), HttpStatusCode.TooManyRequests };
+    }
+
+    [Theory]
+    [MemberData(nameof(ExceptionToStatusCodeMappings))]
+    public async Task InvokeAsync_MappedException_ReturnsExpectedStatusCode(
+        Exception exception, HttpStatusCode expectedStatusCode)
     {
         // Arrange
         var context = CreateHttpContext();
-        var middleware = CreateMiddleware(_ => throw new KeyNotFoundException("Resource not found"));
+        var middleware = CreateMiddleware(_ => throw exception);
 
         // Act
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.StatusCode.Should().Be((int)HttpStatusCode.NotFound);
+        context.Response.StatusCode.Should().Be((int)expectedStatusCode);
 
         var problemDetails = await GetProblemDetailsFromResponse(context);
-        problemDetails.Status.Should().Be((int)HttpStatusCode.NotFound);
+        problemDetails.Status.Should().Be((int)expectedStatusCode);
     }
 
-    // --- UnauthorizedAccessException ---
+    // --- InvalidOperationException mapped by message ---
 
-    [Fact]
-    public async Task InvokeAsync_UnauthorizedAccessException_Returns401Unauthorized()
+    [Theory]
+    [InlineData("Token not found in repository", HttpStatusCode.NotFound)]
+    [InlineData("Insufficient permission to perform action", HttpStatusCode.Forbidden)]
+    [InlineData("Duplicate entry detected", HttpStatusCode.Conflict)]
+    public async Task InvokeAsync_InvalidOperationException_ReturnsExpectedStatusCode(
+        string message, HttpStatusCode expectedStatusCode)
     {
         // Arrange
         var context = CreateHttpContext();
-        var middleware = CreateMiddleware(_ => throw new UnauthorizedAccessException("Access denied"));
+        var middleware = CreateMiddleware(_ => throw new InvalidOperationException(message));
 
         // Act
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.StatusCode.Should().Be((int)HttpStatusCode.Unauthorized);
-
-        var problemDetails = await GetProblemDetailsFromResponse(context);
-        problemDetails.Status.Should().Be((int)HttpStatusCode.Unauthorized);
-    }
-
-    // --- RateLimitExceededException ---
-
-    [Fact]
-    public async Task InvokeAsync_RateLimitExceededException_Returns429TooManyRequests()
-    {
-        // Arrange
-        var context = CreateHttpContext();
-        var middleware = CreateMiddleware(_ => throw new RateLimitExceededException("strict", 10, 60, 30, 1234567890));
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        context.Response.StatusCode.Should().Be((int)HttpStatusCode.TooManyRequests);
-
-        var problemDetails = await GetProblemDetailsFromResponse(context);
-        problemDetails.Status.Should().Be((int)HttpStatusCode.TooManyRequests);
-    }
-
-    // --- InvalidOperationException with "not found" ---
-
-    [Fact]
-    public async Task InvokeAsync_InvalidOperationExceptionNotFound_Returns404()
-    {
-        // Arrange
-        var context = CreateHttpContext();
-        var middleware = CreateMiddleware(_ => throw new InvalidOperationException("Token not found in repository"));
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        context.Response.StatusCode.Should().Be((int)HttpStatusCode.NotFound);
-    }
-
-    // --- InvalidOperationException with "permission" ---
-
-    [Fact]
-    public async Task InvokeAsync_InvalidOperationExceptionPermission_Returns403Forbidden()
-    {
-        // Arrange
-        var context = CreateHttpContext();
-        var middleware = CreateMiddleware(_ => throw new InvalidOperationException("Insufficient permission to perform action"));
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        context.Response.StatusCode.Should().Be((int)HttpStatusCode.Forbidden);
-    }
-
-    // --- InvalidOperationException (generic) ---
-
-    [Fact]
-    public async Task InvokeAsync_InvalidOperationExceptionGeneric_Returns409Conflict()
-    {
-        // Arrange
-        var context = CreateHttpContext();
-        var middleware = CreateMiddleware(_ => throw new InvalidOperationException("Duplicate entry detected"));
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        context.Response.StatusCode.Should().Be((int)HttpStatusCode.Conflict);
+        context.Response.StatusCode.Should().Be((int)expectedStatusCode);
     }
 
     // --- Unhandled Exception ---
@@ -271,30 +214,28 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
 
     // --- Error Code Resolution ---
 
-    [Fact]
-    public async Task InvokeAsync_JwtExpiredPattern_ResolvesJwtTokenExpiredErrorCode()
+    public static IEnumerable<object[]> ExceptionToErrorCodeMappings()
     {
-        // Arrange
-        var context = CreateHttpContext();
-        var middleware = CreateMiddleware(
-            _ => throw new UnauthorizedAccessException("JWT token expired at 2026-01-01"));
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        var problemDetails = await GetProblemDetailsFromResponse(context);
-        problemDetails.Extensions.Should().ContainKey("error");
-        problemDetails.Extensions["error"]!.ToString().Should().Be(ErrorCodes.JwtTokenExpired);
+        yield return new object[]
+        {
+            new UnauthorizedAccessException("JWT token expired at 2026-01-01"),
+            ErrorCodes.JwtTokenExpired
+        };
+        yield return new object[]
+        {
+            new RateLimitExceededException("strict", 10, 60, 30, 1234567890),
+            ErrorCodes.RateLimitExceeded
+        };
     }
 
-    [Fact]
-    public async Task InvokeAsync_RateLimitException_ResolvesRateLimitErrorCode()
+    [Theory]
+    [MemberData(nameof(ExceptionToErrorCodeMappings))]
+    public async Task InvokeAsync_MappedException_ResolvesExpectedErrorCode(
+        Exception exception, string expectedErrorCode)
     {
         // Arrange
         var context = CreateHttpContext();
-        var middleware = CreateMiddleware(
-            _ => throw new RateLimitExceededException("strict", 10, 60, 30, 1234567890));
+        var middleware = CreateMiddleware(_ => throw exception);
 
         // Act
         await middleware.InvokeAsync(context);
@@ -302,7 +243,7 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         // Assert
         var problemDetails = await GetProblemDetailsFromResponse(context);
         problemDetails.Extensions.Should().ContainKey("error");
-        problemDetails.Extensions["error"]!.ToString().Should().Be(ErrorCodes.RateLimitExceeded);
+        problemDetails.Extensions["error"]!.ToString().Should().Be(expectedErrorCode);
     }
 
     // --- ExplicitErrorCode in Exception.Data ---
@@ -389,62 +330,33 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
 
     // --- Constructor Validation ---
 
-    [Fact]
-    public void Constructor_NullLogger_ThrowsArgumentNullException()
+    public static IEnumerable<object?[]> Constructor_NullDependencyScenarios()
     {
-        // Arrange
-        RequestDelegate next = _ => Task.CompletedTask;
-        var environment = new Mock<IHostEnvironment>();
+        var logger = new Mock<ILogger<ExceptionHandlingMiddleware>>().Object;
+        var environment = new Mock<IHostEnvironment>().Object;
         var options = Options.Create(new ErrorHandlingSettings());
+        var metricsLogger = new Mock<ILogger<ErrorMetrics>>();
+        var errorMetrics = new ErrorMetrics("test-service", metricsLogger.Object);
 
-        // Act
-        var act = () => new ExceptionHandlingMiddleware(next, null!, environment.Object, options, _errorMetrics);
-
-        // Assert
-        act.Should().Throw<ArgumentNullException>();
+        yield return new object?[] { null, environment, options, errorMetrics };
+        yield return new object?[] { logger, null, options, errorMetrics };
+        yield return new object?[] { logger, environment, null, errorMetrics };
+        yield return new object?[] { logger, environment, options, null };
     }
 
-    [Fact]
-    public void Constructor_NullEnvironment_ThrowsArgumentNullException()
+    [Theory]
+    [MemberData(nameof(Constructor_NullDependencyScenarios))]
+    public void Constructor_NullDependency_ThrowsArgumentNullException(
+        ILogger<ExceptionHandlingMiddleware>? logger,
+        IHostEnvironment? environment,
+        IOptions<ErrorHandlingSettings>? options,
+        ErrorMetrics? errorMetrics)
     {
         // Arrange
         RequestDelegate next = _ => Task.CompletedTask;
-        var logger = new Mock<ILogger<ExceptionHandlingMiddleware>>();
-        var options = Options.Create(new ErrorHandlingSettings());
 
         // Act
-        var act = () => new ExceptionHandlingMiddleware(next, logger.Object, null!, options, _errorMetrics);
-
-        // Assert
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
-    public void Constructor_NullSettings_ThrowsArgumentNullException()
-    {
-        // Arrange
-        RequestDelegate next = _ => Task.CompletedTask;
-        var logger = new Mock<ILogger<ExceptionHandlingMiddleware>>();
-        var environment = new Mock<IHostEnvironment>();
-
-        // Act
-        var act = () => new ExceptionHandlingMiddleware(next, logger.Object, environment.Object, null!, _errorMetrics);
-
-        // Assert
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
-    public void Constructor_NullErrorMetrics_ThrowsArgumentNullException()
-    {
-        // Arrange
-        RequestDelegate next = _ => Task.CompletedTask;
-        var logger = new Mock<ILogger<ExceptionHandlingMiddleware>>();
-        var environment = new Mock<IHostEnvironment>();
-        var options = Options.Create(new ErrorHandlingSettings());
-
-        // Act
-        var act = () => new ExceptionHandlingMiddleware(next, logger.Object, environment.Object, options, null!);
+        var act = () => new ExceptionHandlingMiddleware(next, logger!, environment!, options!, errorMetrics!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();

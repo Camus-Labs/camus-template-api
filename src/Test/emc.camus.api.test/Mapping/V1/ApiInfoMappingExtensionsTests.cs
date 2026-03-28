@@ -12,10 +12,8 @@ public class ApiInfoMappingExtensionsTests
     public void ToFilter_ValidVersion_CreatesFilterWithVersion()
     {
         // Arrange
-        var version = "2.0";
-
         // Act
-        var filter = ApiInfoMappingExtensions.ToFilter(version);
+        var filter = ApiInfoMappingExtensions.ToFilter("2.0");
 
         // Assert
         filter.Version.Should().Be("2.0");

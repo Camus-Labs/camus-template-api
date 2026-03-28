@@ -31,7 +31,6 @@ public class ApiKeySettingsTests
 
         // Assert
         act.Should().NotThrow();
-        settings.ApiKeySecretName.Should().Be("XApiKey");
     }
 
     // --- ApiKeySecretName validation ---

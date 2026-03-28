@@ -1,3 +1,4 @@
+using System.Linq;
 using FluentAssertions;
 using emc.camus.application.Auth;
 
@@ -7,7 +8,6 @@ public class GenerateTokenCommandTests
 {
     private const string ValidSuffix = "token1";
     private static readonly DateTime ValidExpiration = new(2099, 6, 15, 12, 0, 0, DateTimeKind.Utc);
-    private static readonly List<string> ValidPermissions = [Permissions.ApiRead, Permissions.ApiWrite];
 
     // --- Constructor ---
 
@@ -36,7 +36,7 @@ public class GenerateTokenCommandTests
     {
         // Arrange
         // Act
-        var act = () => new GenerateTokenCommand(suffix!, ValidExpiration, ValidPermissions);
+        var act = () => new GenerateTokenCommand(suffix!, ValidExpiration, [Permissions.ApiRead]);
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -50,7 +50,7 @@ public class GenerateTokenCommandTests
         var defaultDate = default(DateTime);
 
         // Act
-        var act = () => new GenerateTokenCommand(ValidSuffix, defaultDate, ValidPermissions);
+        var act = () => new GenerateTokenCommand(ValidSuffix, defaultDate, [Permissions.ApiRead]);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -83,33 +83,24 @@ public class GenerateTokenCommandTests
             .And.ParamName.Should().Be("permissions.Count");
     }
 
-    [Fact]
-    public void Constructor_InvalidPermissions_ThrowsArgumentException()
+    [Theory]
+    [MemberData(nameof(InvalidPermissionsTestCases))]
+    public void Constructor_InvalidPermissions_ThrowsArgumentException(
+        List<string> permissions, string expectedInvalidPermission)
     {
         // Arrange
-        var invalidPermissions = new List<string> { "invalid.permission" };
-
         // Act
-        var act = () => new GenerateTokenCommand(ValidSuffix, ValidExpiration, invalidPermissions);
+        var act = () => new GenerateTokenCommand(ValidSuffix, ValidExpiration, permissions);
 
         // Assert
         act.Should().Throw<ArgumentException>()
-            .WithMessage("*Invalid permissions*invalid.permission*")
+            .WithMessage($"*Invalid permissions*{expectedInvalidPermission}*")
             .And.ParamName.Should().Be("permissions");
     }
 
-    [Fact]
-    public void Constructor_MixedValidAndInvalidPermissions_ThrowsArgumentException()
+    public static TheoryData<List<string>, string> InvalidPermissionsTestCases => new()
     {
-        // Arrange
-        var mixedPermissions = new List<string> { Permissions.ApiRead, "nonexistent.perm" };
-
-        // Act
-        var act = () => new GenerateTokenCommand(ValidSuffix, ValidExpiration, mixedPermissions);
-
-        // Assert
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("*Invalid permissions*nonexistent.perm*")
-            .And.ParamName.Should().Be("permissions");
-    }
+        { new List<string> { "invalid.permission" }, "invalid.permission" },
+        { new List<string> { Permissions.ApiRead, "nonexistent.perm" }, "nonexistent.perm" }
+    };
 }

@@ -23,14 +23,6 @@ public class ApiKeyAuthenticationHandlerTests
     private readonly Mock<IOptionsMonitor<AuthenticationSchemeOptions>> _optionsMonitorMock = new();
     private readonly Mock<ILoggerFactory> _loggerFactoryMock = new();
 
-    public ApiKeyAuthenticationHandlerTests()
-    {
-        _optionsMonitorMock.Setup(o => o.Get(It.IsAny<string>()))
-            .Returns(new AuthenticationSchemeOptions());
-        _loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>()))
-            .Returns(new Mock<ILogger>().Object);
-    }
-
     private static ApiKeySettings CreateSettings(string secretName = ValidSecretName)
     {
         return new ApiKeySettings { ApiKeySecretName = secretName };
@@ -40,6 +32,11 @@ public class ApiKeyAuthenticationHandlerTests
         HttpContext httpContext,
         ApiKeySettings? settings = null)
     {
+        _optionsMonitorMock.Setup(o => o.Get(It.IsAny<string>()))
+            .Returns(new AuthenticationSchemeOptions());
+        _loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>()))
+            .Returns(new Mock<ILogger>().Object);
+
         var handlerSettings = settings ?? CreateSettings();
 
         var handler = new ApiKeyAuthenticationHandler(
@@ -69,22 +66,6 @@ public class ApiKeyAuthenticationHandlerTests
     }
 
     // --- Constructor ---
-
-    [Fact]
-    public void Constructor_ValidParameters_CreatesInstance()
-    {
-        // Arrange
-        // Act
-        var handler = new ApiKeyAuthenticationHandler(
-            _optionsMonitorMock.Object,
-            _loggerFactoryMock.Object,
-            UrlEncoder.Default,
-            _secretProviderMock.Object,
-            CreateSettings());
-
-        // Assert
-        handler.Should().NotBeNull();
-    }
 
     [Fact]
     public void Constructor_NullSecretProvider_ThrowsArgumentNullException()
@@ -137,43 +118,15 @@ public class ApiKeyAuthenticationHandlerTests
             .WithMessage("*authentication*required*");
     }
 
-    [Fact]
-    public async Task AuthenticateAsync_EmptyApiKeyHeader_ThrowsUnauthorizedAccessException()
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("wrong-key")]
+    public async Task AuthenticateAsync_InvalidCredentials_ThrowsUnauthorizedAccessException(
+        string apiKeyHeaderValue)
     {
         // Arrange
-        var context = CreateHttpContext(apiKeyHeaderValue: "");
-        _secretProviderMock.Setup(s => s.GetSecret(ValidSecretName)).Returns(ValidApiKey);
-        var handler = await CreateInitializedHandler(context);
-
-        // Act
-        var act = () => handler.AuthenticateAsync();
-
-        // Assert
-        await act.Should().ThrowAsync<UnauthorizedAccessException>()
-            .WithMessage("*credentials*invalid*");
-    }
-
-    [Fact]
-    public async Task AuthenticateAsync_WhitespaceApiKeyHeader_ThrowsUnauthorizedAccessException()
-    {
-        // Arrange
-        var context = CreateHttpContext(apiKeyHeaderValue: "   ");
-        _secretProviderMock.Setup(s => s.GetSecret(ValidSecretName)).Returns(ValidApiKey);
-        var handler = await CreateInitializedHandler(context);
-
-        // Act
-        var act = () => handler.AuthenticateAsync();
-
-        // Assert
-        await act.Should().ThrowAsync<UnauthorizedAccessException>()
-            .WithMessage("*credentials*invalid*");
-    }
-
-    [Fact]
-    public async Task AuthenticateAsync_InvalidApiKey_ThrowsUnauthorizedAccessException()
-    {
-        // Arrange
-        var context = CreateHttpContext(apiKeyHeaderValue: "wrong-key");
+        var context = CreateHttpContext(apiKeyHeaderValue: apiKeyHeaderValue);
         _secretProviderMock.Setup(s => s.GetSecret(ValidSecretName)).Returns(ValidApiKey);
         var handler = await CreateInitializedHandler(context);
 

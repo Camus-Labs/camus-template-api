@@ -8,12 +8,17 @@ using emc.camus.security.jwt.Services;
 
 namespace emc.camus.security.jwt.test.Services;
 
-public class JwtTokenGeneratorTests
+public class JwtTokenGeneratorTests : IDisposable
 {
     private static readonly Guid ValidUserId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly Guid ValidJti = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    private static readonly DateTime ValidExpiresOn = new(2099, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     private const string ValidUsername = "testuser";
+    private const string TestRoleValue = "Admin";
+    private const string CustomClaimType = "custom-claim";
+    private const string CustomClaimValue = "custom-value";
 
+    private readonly RSA _rsa;
     private readonly JwtSettings _jwtSettings;
     private readonly SigningCredentials _signingCredentials;
 
@@ -23,12 +28,18 @@ public class JwtTokenGeneratorTests
         {
             Issuer = "https://test-issuer.com/",
             Audience = "https://test-audience.com/",
-            ExpirationMinutes = 30
+            ExpirationMinutes = 60
         };
 
-        var rsa = RSA.Create(2048);
-        var rsaKey = new RsaSecurityKey(rsa);
+        _rsa = RSA.Create(2048);
+        var rsaKey = new RsaSecurityKey(_rsa);
         _signingCredentials = new SigningCredentials(rsaKey, SecurityAlgorithms.RsaSha256);
+    }
+
+    public void Dispose()
+    {
+        _rsa.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     private JwtTokenGenerator CreateGenerator() =>
@@ -131,8 +142,8 @@ public class JwtTokenGeneratorTests
         var handler = new JwtSecurityTokenHandler();
         var additionalClaims = new List<Claim>
         {
-            new Claim(ClaimTypes.Role, "Admin"),
-            new Claim("custom-claim", "custom-value")
+            new Claim(ClaimTypes.Role, TestRoleValue),
+            new Claim(CustomClaimType, CustomClaimValue)
         };
 
         // Act
@@ -140,8 +151,8 @@ public class JwtTokenGeneratorTests
         var token = handler.ReadJwtToken(result.Token);
 
         // Assert
-        token.Claims.Should().Contain(c => c.Type == ClaimTypes.Role && c.Value == "Admin");
-        token.Claims.Should().Contain(c => c.Type == "custom-claim" && c.Value == "custom-value");
+        token.Claims.Should().Contain(c => c.Type == ClaimTypes.Role && c.Value == TestRoleValue);
+        token.Claims.Should().Contain(c => c.Type == CustomClaimType && c.Value == CustomClaimValue);
     }
 
     [Fact]
@@ -164,10 +175,9 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
-        var expiresOn = DateTime.UtcNow.AddMinutes(30);
 
         // Act
-        var act = () => generator.GenerateToken(Guid.Empty, ValidUsername, ValidJti, expiresOn);
+        var act = () => generator.GenerateToken(Guid.Empty, ValidUsername, ValidJti, ValidExpiresOn);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -183,10 +193,9 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
-        var expiresOn = DateTime.UtcNow.AddMinutes(30);
 
         // Act
-        var act = () => generator.GenerateToken(ValidUserId, username!, ValidJti, expiresOn);
+        var act = () => generator.GenerateToken(ValidUserId, username!, ValidJti, ValidExpiresOn);
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -198,10 +207,9 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
-        var expiresOn = DateTime.UtcNow.AddMinutes(30);
 
         // Act
-        var act = () => generator.GenerateToken(ValidUserId, ValidUsername, Guid.Empty, expiresOn);
+        var act = () => generator.GenerateToken(ValidUserId, ValidUsername, Guid.Empty, ValidExpiresOn);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -230,15 +238,14 @@ public class JwtTokenGeneratorTests
         // Arrange
         var generator = CreateGenerator();
         var handler = new JwtSecurityTokenHandler();
-        var expiresOn = DateTime.UtcNow.AddMinutes(30);
 
         // Act
-        var result = generator.GenerateToken(ValidUserId, ValidUsername, ValidJti, expiresOn);
+        var result = generator.GenerateToken(ValidUserId, ValidUsername, ValidJti, ValidExpiresOn);
         var token = handler.ReadJwtToken(result.Token);
 
         // Assert
         result.Token.Should().NotBeNullOrWhiteSpace();
-        result.ExpiresOn.Should().BeCloseTo(expiresOn, TimeSpan.FromSeconds(1));
+        result.ExpiresOn.Should().Be(ValidExpiresOn);
         token.Issuer.Should().Be(_jwtSettings.Issuer);
         token.Audiences.Should().ContainSingle().Which.Should().Be(_jwtSettings.Audience);
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Jti && c.Value == ValidJti.ToString());
@@ -255,20 +262,19 @@ public class JwtTokenGeneratorTests
         // Arrange
         var generator = CreateGenerator();
         var handler = new JwtSecurityTokenHandler();
-        var expiresOn = DateTime.UtcNow.AddMinutes(30);
         var additionalClaims = new List<Claim>
         {
-            new Claim(ClaimTypes.Role, "Admin"),
-            new Claim("custom-claim", "custom-value")
+            new Claim(ClaimTypes.Role, TestRoleValue),
+            new Claim(CustomClaimType, CustomClaimValue)
         };
 
         // Act
-        var result = generator.GenerateToken(ValidUserId, ValidUsername, ValidJti, expiresOn, additionalClaims);
+        var result = generator.GenerateToken(ValidUserId, ValidUsername, ValidJti, ValidExpiresOn, additionalClaims);
         var token = handler.ReadJwtToken(result.Token);
 
         // Assert
-        token.Claims.Should().Contain(c => c.Type == ClaimTypes.Role && c.Value == "Admin");
-        token.Claims.Should().Contain(c => c.Type == "custom-claim" && c.Value == "custom-value");
+        token.Claims.Should().Contain(c => c.Type == ClaimTypes.Role && c.Value == TestRoleValue);
+        token.Claims.Should().Contain(c => c.Type == CustomClaimType && c.Value == CustomClaimValue);
     }
 
     [Fact]
@@ -276,10 +282,9 @@ public class JwtTokenGeneratorTests
     {
         // Arrange
         var generator = CreateGenerator();
-        var expiresOn = DateTime.UtcNow.AddMinutes(30);
 
         // Act
-        var act = () => generator.GenerateToken(ValidUserId, ValidUsername, ValidJti, expiresOn, null);
+        var act = () => generator.GenerateToken(ValidUserId, ValidUsername, ValidJti, ValidExpiresOn, null);
 
         // Assert
         act.Should().NotThrow();

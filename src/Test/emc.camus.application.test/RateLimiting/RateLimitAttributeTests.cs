@@ -5,15 +5,13 @@ namespace emc.camus.application.test.RateLimiting;
 
 public class RateLimitAttributeTests
 {
-    private const string ValidPolicyName = "strict";
-
     // --- Constructor ---
 
     [Fact]
     public void Constructor_ValidPolicyName_SetsProperty()
     {
         // Arrange
-        var policyName = ValidPolicyName;
+        var policyName = "strict";
 
         // Act
         var attribute = new RateLimitAttribute(policyName);

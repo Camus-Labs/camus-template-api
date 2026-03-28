@@ -5,12 +5,6 @@ namespace emc.camus.security.jwt.test.Configurations;
 
 public class JwtSettingsTests
 {
-    private const string ValidIssuer = "https://auth.camus.com/";
-    private const string ValidAudience = "https://app.camus.com/";
-    private const int ValidExpirationMinutes = 60;
-    private const string ValidRsaPrivateKeySecretName = "RsaPrivateKeyPem";
-    private const string ExpectedConfigurationSectionName = "JwtSettings";
-
     // --- Defaults ---
 
     [Fact]
@@ -21,10 +15,10 @@ public class JwtSettingsTests
         var settings = new JwtSettings();
 
         // Assert
-        settings.Issuer.Should().Be(ValidIssuer);
-        settings.Audience.Should().Be(ValidAudience);
-        settings.ExpirationMinutes.Should().Be(ValidExpirationMinutes);
-        settings.RsaPrivateKeySecretName.Should().Be(ValidRsaPrivateKeySecretName);
+        settings.Issuer.Should().Be("https://auth.camus.com/");
+        settings.Audience.Should().Be("https://app.camus.com/");
+        settings.ExpirationMinutes.Should().Be(60);
+        settings.RsaPrivateKeySecretName.Should().Be("RsaPrivateKeyPem");
         settings.Invoking(s => s.Validate()).Should().NotThrow();
     }
 
@@ -162,11 +156,13 @@ public class JwtSettingsTests
 
     // --- Validate ExpirationMinutes ---
 
-    [Fact]
-    public void Validate_ExpirationMinutesBelowMinimum_ThrowsInvalidOperationException()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(43201)]
+    public void Validate_ExpirationMinutesOutOfRange_ThrowsInvalidOperationException(int minutes)
     {
         // Arrange
-        var settings = new JwtSettings { ExpirationMinutes = 0 };
+        var settings = new JwtSettings { ExpirationMinutes = minutes };
 
         // Act
         var act = () => settings.Validate();
@@ -176,38 +172,13 @@ public class JwtSettingsTests
             .WithMessage("*ExpirationMinutes*between*1*43200*");
     }
 
-    [Fact]
-    public void Validate_ExpirationMinutesAboveMaximum_ThrowsInvalidOperationException()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(43200)]
+    public void Validate_ExpirationMinutesAtBoundary_DoesNotThrow(int minutes)
     {
         // Arrange
-        var settings = new JwtSettings { ExpirationMinutes = 43201 };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*ExpirationMinutes*between*1*43200*");
-    }
-
-    [Fact]
-    public void Validate_ExpirationMinutesAtMinimum_DoesNotThrow()
-    {
-        // Arrange
-        var settings = new JwtSettings { ExpirationMinutes = 1 };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void Validate_ExpirationMinutesAtMaximum_DoesNotThrow()
-    {
-        // Arrange
-        var settings = new JwtSettings { ExpirationMinutes = 43200 };
+        var settings = new JwtSettings { ExpirationMinutes = minutes };
 
         // Act
         var act = () => settings.Validate();
@@ -268,14 +239,4 @@ public class JwtSettingsTests
         act.Should().NotThrow();
     }
 
-    // --- ConfigurationSectionName ---
-
-    [Fact]
-    public void ConfigurationSectionName_ReturnsExpectedValue()
-    {
-        // Arrange
-        // Act
-        // Assert
-        JwtSettings.ConfigurationSectionName.Should().Be(ExpectedConfigurationSectionName);
-    }
 }

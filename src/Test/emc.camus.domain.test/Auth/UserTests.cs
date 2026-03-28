@@ -8,9 +8,6 @@ public class UserTests
     private static readonly Guid ValidId = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     private const string ValidUsername = "testuser";
 
-    private static readonly string[] ExpectedReadWritePermissions = ["read", "write"];
-    private static readonly string[] ExpectedReadWriteDeletePermissions = ["read", "write", "delete"];
-
     private static Role CreateRole(string name = "Admin") =>
         Role.Reconstitute(
             new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"),
@@ -154,7 +151,8 @@ public class UserTests
         var permissions = user.GetPermissions();
 
         // Assert
-        permissions.Should().BeEquivalentTo(ExpectedReadWritePermissions);
+        var expected = new[] { "read", "write" };
+        permissions.Should().BeEquivalentTo(expected);
     }
 
     [Fact]
@@ -179,6 +177,7 @@ public class UserTests
         var permissions = user.GetPermissions();
 
         // Assert
-        permissions.Should().BeEquivalentTo(ExpectedReadWriteDeletePermissions);
+        var expected = new[] { "read", "write", "delete" };
+        permissions.Should().BeEquivalentTo(expected);
     }
 }

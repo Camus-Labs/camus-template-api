@@ -13,7 +13,7 @@ applyTo: "src/Test/**"
           test, not split into separate methods
     - [ ] Tests are deterministic — no random values, no `DateTime.Now`, no `Guid.NewGuid()` — exception:
           `DateTime.UtcNow` is allowed when testing time-relative domain validation (e.g., expiration windows) where
-          the margin between the test value and the validation boundary is large enough to prevent flakiness
+          the margin between the test value and the validation boundary is at least 1 hour
     - [ ] Tests are isolated — no shared mutable state, no static mutable fields, no `IClassFixture<T>` mutation
           across tests
     - [ ] `[Theory]` when multiple scenarios share the same logic with only different input values — do not duplicate
@@ -24,9 +24,9 @@ applyTo: "src/Test/**"
           or mock interactions
     - [ ] No tests for trivial code (e.g., plain auto-properties, simple DTOs with no logic, compiler-guaranteed
           behavior) — covered indirectly through tests that exercise real behavior
-    - [ ] Reusable arrange values (IDs, names, domain constants) as `private const` or `private static readonly`
-          fields to keep a single source of truth — assertion-only literals (wildcard patterns, parameter names)
-          stay inline
+    - [ ] Values shared between the constructor (or shared setup) and test assertions as `private const` or
+          `private static readonly` fields — all other values (single-method arrange/assert, constructor filler not
+          verified by any assertion, assertion-only literals) stay inline
     - [ ] No logic in tests — no `if`, `else`, `switch`, `for`, `foreach`, `while`, or `try`/`catch` in test
           methods — tests are linear Arrange-Act-Assert sequences
     - [ ] Async test methods return `Task` — not `async void`

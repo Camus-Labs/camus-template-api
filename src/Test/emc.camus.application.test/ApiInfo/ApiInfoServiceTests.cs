@@ -1,3 +1,4 @@
+using System.Linq;
 using FluentAssertions;
 using Moq;
 using emc.camus.application.ApiInfo;
@@ -9,7 +10,7 @@ public class ApiInfoServiceTests
 {
     private const string ValidVersion = "1.0";
     private const string ValidStatus = "Available";
-    private static readonly List<string> ValidFeatures = ["Auth", "Tokens"];
+    private static readonly IReadOnlyList<string> ValidFeatures = ["Auth", "Tokens"];
 
     private readonly Mock<IApiInfoRepository> _repositoryMock = new();
 
@@ -50,7 +51,7 @@ public class ApiInfoServiceTests
     {
         // Arrange
         var filter = new ApiInfoFilter(ValidVersion);
-        var apiInfo = new emc.camus.domain.Auth.ApiInfo(ValidVersion, ValidStatus, ValidFeatures);
+        var apiInfo = new emc.camus.domain.Auth.ApiInfo(ValidVersion, ValidStatus, ValidFeatures.ToList());
 
         _repositoryMock.Setup(r => r.GetByVersionAsync(ValidVersion)).ReturnsAsync(apiInfo);
 

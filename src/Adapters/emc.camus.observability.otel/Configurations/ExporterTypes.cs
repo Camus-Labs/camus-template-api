@@ -3,7 +3,7 @@ namespace emc.camus.observability.otel.Configurations
     /// <summary>
     /// Tracing exporter types for distributed tracing.
     /// </summary>
-    internal enum TracingExporter
+    public enum TracingExporter
     {
         /// <summary>
         /// OTLP exporter (OpenTelemetry Protocol).
@@ -24,7 +24,7 @@ namespace emc.camus.observability.otel.Configurations
     /// <summary>
     /// Metrics exporter types for application metrics.
     /// </summary>
-    internal enum MetricsExporter
+    public enum MetricsExporter
     {
         /// <summary>
         /// OTLP exporter (OpenTelemetry Protocol).
@@ -45,7 +45,7 @@ namespace emc.camus.observability.otel.Configurations
     /// <summary>
     /// Logs exporter types for structured logging.
     /// </summary>
-    internal enum LogsExporter
+    public enum LogsExporter
     {
         /// <summary>
         /// OTLP exporter (OpenTelemetry Protocol).

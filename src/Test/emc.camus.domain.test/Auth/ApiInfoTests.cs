@@ -7,7 +7,6 @@ public class ApiInfoTests
 {
     private const string ValidVersion = "1.0.0";
     private const string ValidStatus = "Available";
-    private static readonly List<string> ValidFeatures = ["auth", "rate-limiting"];
 
     // --- Constructor ---
 
@@ -122,7 +121,7 @@ public class ApiInfoTests
         var name = "Custom API";
         var version = ValidVersion;
         var status = ValidStatus;
-        var features = ValidFeatures;
+        var features = new List<string> { "auth", "rate-limiting" };
 
         // Act
         var apiInfo = ApiInfo.Reconstitute(name, version, status, features);

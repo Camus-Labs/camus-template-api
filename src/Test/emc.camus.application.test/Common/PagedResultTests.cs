@@ -35,7 +35,7 @@ public class PagedResultTests
     {
         // Arrange
         // Act
-        var act = () => new PagedResult<string>(null!, 10, 1, 25);
+        var act = () => new PagedResult<string>(null!, DefaultTotalCount, DefaultPage, DefaultPageSize);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -47,7 +47,7 @@ public class PagedResultTests
     {
         // Arrange
         // Act
-        var act = () => new PagedResult<string>([], -1, 1, 25);
+        var act = () => new PagedResult<string>([], -1, DefaultPage, DefaultPageSize);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -59,7 +59,7 @@ public class PagedResultTests
     {
         // Arrange
         // Act
-        var act = () => new PagedResult<string>([], 10, 0, 25);
+        var act = () => new PagedResult<string>([], DefaultTotalCount, 0, DefaultPageSize);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -71,7 +71,7 @@ public class PagedResultTests
     {
         // Arrange
         // Act
-        var act = () => new PagedResult<string>([], 10, 1, 0);
+        var act = () => new PagedResult<string>([], DefaultTotalCount, DefaultPage, 0);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()

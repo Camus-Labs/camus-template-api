@@ -7,7 +7,7 @@ public class GeneratedTokenSummaryViewTests
 {
     private static readonly Guid ValidJti = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private const string ValidTokenUsername = "admin-token1";
-    private static readonly IReadOnlyList<string> ValidPermissions = new List<string> { "api.read", "api.write" };
+    private static readonly IReadOnlyList<string> ValidPermissions = new List<string> { Permissions.ApiRead, Permissions.ApiWrite };
     private static readonly DateTime ValidExpiration = new(2099, 12, 31, 23, 59, 59, DateTimeKind.Utc);
     private static readonly DateTime ValidCreatedAt = new(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc);
 

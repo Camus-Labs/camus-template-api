@@ -8,7 +8,7 @@ public class RoleTests
     private static readonly Guid ValidId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private const string ValidName = "Admin";
     private const string ValidDescription = "Administrator role";
-    private static readonly List<string> ValidPermissions = ["read", "write"];
+    private static readonly IReadOnlyList<string> ValidPermissions = ["read", "write"];
 
     // --- Constructor ---
 
@@ -108,7 +108,7 @@ public class RoleTests
         var id = ValidId;
         var name = ValidName;
         var description = ValidDescription;
-        var permissions = ValidPermissions;
+        var permissions = ValidPermissions.ToList();
 
         // Act
         var role = Role.Reconstitute(id, name, description, permissions);
@@ -125,7 +125,7 @@ public class RoleTests
     {
         // Arrange
         // Act
-        var role = Role.Reconstitute(ValidId, ValidName, null, ValidPermissions);
+        var role = Role.Reconstitute(ValidId, ValidName, null, ValidPermissions.ToList());
 
         // Assert
         role.Description.Should().BeNull();

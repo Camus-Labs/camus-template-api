@@ -17,11 +17,6 @@ public class ApiInfoControllerTests
     private readonly Mock<ApiInfoService> _mockApiInfoService;
     private readonly ApiInfoController _controller;
 
-    private static readonly ApiInfoDetailView FixedDetailView = new(
-        "2.0",
-        "Active",
-        new List<string> { "auth", "versioning" });
-
     public ApiInfoControllerTests()
     {
         _mockActivitySource = new Mock<IActivitySourceWrapper>();
@@ -48,28 +43,24 @@ public class ApiInfoControllerTests
 
     // --- Constructor ---
 
-    [Fact]
-    public void Constructor_NullActivitySource_ThrowsArgumentNullException()
+    public static IEnumerable<object?[]> Constructor_NullDependencyScenarios()
     {
-        // Arrange
         var mockRepo = new Mock<IApiInfoRepository>();
-        var service = new Mock<ApiInfoService>(mockRepo.Object);
+        var activitySource = new Mock<IActivitySourceWrapper>().Object;
+        var service = new Mock<ApiInfoService>(mockRepo.Object).Object;
 
-        // Act
-        var act = () => new ApiInfoController(null!, service.Object);
-
-        // Assert
-        act.Should().Throw<ArgumentNullException>();
+        yield return new object?[] { null, service };
+        yield return new object?[] { activitySource, null };
     }
 
-    [Fact]
-    public void Constructor_NullApiInfoService_ThrowsArgumentNullException()
+    [Theory]
+    [MemberData(nameof(Constructor_NullDependencyScenarios))]
+    public void Constructor_NullDependency_ThrowsArgumentNullException(
+        IActivitySourceWrapper? activitySource, ApiInfoService? apiInfoService)
     {
         // Arrange
-        var mockActivitySource = new Mock<IActivitySourceWrapper>();
-
         // Act
-        var act = () => new ApiInfoController(mockActivitySource.Object, null!);
+        var act = () => new ApiInfoController(activitySource!, apiInfoService!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -81,9 +72,10 @@ public class ApiInfoControllerTests
     public async Task GetInfo_ValidRequest_ReturnsOkWithApiInfoResponseAndSetsActivityTags()
     {
         // Arrange
+        var detailView = new ApiInfoDetailView("2.0", "Active", new List<string> { "auth", "versioning" });
         _mockApiInfoService
             .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>()))
-            .ReturnsAsync(FixedDetailView);
+            .ReturnsAsync(detailView);
 
         // Act
         var result = await _controller.GetInfo();
@@ -91,9 +83,9 @@ public class ApiInfoControllerTests
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
         var apiResponse = okResult.Value.Should().BeOfType<ApiResponse<ApiInfoResponse>>().Subject;
-        apiResponse.Data!.Version.Should().Be("2.0");
-        apiResponse.Data.Status.Should().Be("Active");
-        apiResponse.Data.Features.Should().BeEquivalentTo(new List<string> { "auth", "versioning" });
+        apiResponse.Data!.Version.Should().Be(detailView.Version);
+        apiResponse.Data.Status.Should().Be(detailView.Status);
+        apiResponse.Data.Features.Should().BeEquivalentTo(detailView.Features);
         apiResponse.Message.Should().Contain("API information retrieved successfully");
 
         _mockActivitySource.Verify(
@@ -110,9 +102,10 @@ public class ApiInfoControllerTests
     public async Task GetInfoApiKey_ValidRequest_ReturnsOkWithApiInfoResponse()
     {
         // Arrange
+        var detailView = new ApiInfoDetailView("2.0", "Active", new List<string> { "auth", "versioning" });
         _mockApiInfoService
             .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>()))
-            .ReturnsAsync(FixedDetailView);
+            .ReturnsAsync(detailView);
 
         // Act
         var result = await _controller.GetInfoApiKey();
@@ -120,7 +113,7 @@ public class ApiInfoControllerTests
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
         var apiResponse = okResult.Value.Should().BeOfType<ApiResponse<ApiInfoResponse>>().Subject;
-        apiResponse.Data!.Version.Should().Be("2.0");
+        apiResponse.Data!.Version.Should().Be(detailView.Version);
     }
 
     // --- GetInfoJwt ---
@@ -129,9 +122,10 @@ public class ApiInfoControllerTests
     public async Task GetInfoJwt_ValidRequest_ReturnsOkWithApiInfoResponse()
     {
         // Arrange
+        var detailView = new ApiInfoDetailView("2.0", "Active", new List<string> { "auth", "versioning" });
         _mockApiInfoService
             .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>()))
-            .ReturnsAsync(FixedDetailView);
+            .ReturnsAsync(detailView);
 
         // Act
         var result = await _controller.GetInfoJwt();
@@ -139,6 +133,6 @@ public class ApiInfoControllerTests
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
         var apiResponse = okResult.Value.Should().BeOfType<ApiResponse<ApiInfoResponse>>().Subject;
-        apiResponse.Data!.Version.Should().Be("2.0");
+        apiResponse.Data!.Version.Should().Be(detailView.Version);
     }
 }
