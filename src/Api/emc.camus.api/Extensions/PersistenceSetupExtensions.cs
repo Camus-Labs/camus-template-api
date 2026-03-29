@@ -63,10 +63,10 @@ namespace emc.camus.api.Extensions
             // Services are scoped, so we need to create a scope to resolve them
             using (var scope = app.Services.CreateScope())
             {
-                var apiInfoService = scope.ServiceProvider.GetRequiredService<ApiInfoService>();
+                var apiInfoService = scope.ServiceProvider.GetRequiredService<IApiInfoService>();
                 apiInfoService.Initialize();
 
-                var authService = scope.ServiceProvider.GetRequiredService<AuthService>();
+                var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
                 authService.Initialize();
             }
 

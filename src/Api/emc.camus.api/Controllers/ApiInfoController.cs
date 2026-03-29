@@ -35,7 +35,7 @@ namespace emc.camus.api.Controllers
     public class ApiInfoController : ApiControllerBase
     {
         private readonly IActivitySourceWrapper _activitySource;
-        private readonly ApiInfoService _apiInfoService;
+        private readonly IApiInfoService _apiInfoService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ApiInfoController"/> class.
@@ -44,7 +44,7 @@ namespace emc.camus.api.Controllers
         /// <param name="apiInfoService">Application service for retrieving API information.</param>
         public ApiInfoController(
             IActivitySourceWrapper activitySource,
-            ApiInfoService apiInfoService)
+            IApiInfoService apiInfoService)
         {
             ArgumentNullException.ThrowIfNull(activitySource);
             ArgumentNullException.ThrowIfNull(apiInfoService);

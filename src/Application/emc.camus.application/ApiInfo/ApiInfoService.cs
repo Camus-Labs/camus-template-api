@@ -13,7 +13,7 @@ namespace emc.camus.application.ApiInfo;
 /// - Returns application view records (not domain entities)
 /// - Exceptions are handled by ExceptionHandlingMiddleware
 /// </remarks>
-public class ApiInfoService
+public class ApiInfoService : IApiInfoService
 {
     private readonly IApiInfoRepository _repository;
 

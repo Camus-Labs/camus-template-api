@@ -35,7 +35,7 @@ namespace emc.camus.api.Controllers
     public class AuthController : ApiControllerBase
     {
         private readonly IActivitySourceWrapper _activitySource;
-        private readonly AuthService _authService;
+        private readonly IAuthService _authService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AuthController"/> class.
@@ -44,7 +44,7 @@ namespace emc.camus.api.Controllers
         /// <param name="authService">Authentication service for credential validation and token generation.</param>
         public AuthController(
             IActivitySourceWrapper activitySource,
-            AuthService authService)
+            IAuthService authService)
         {
             ArgumentNullException.ThrowIfNull(activitySource);
             ArgumentNullException.ThrowIfNull(authService);
@@ -124,9 +124,7 @@ namespace emc.camus.api.Controllers
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
-                    { "token_username", result.TokenUsername },
-                    { "requestor_user_id", result.RequestorUserId },
-                    { "requestor_username", result.RequestorUsername}
+                    { "token_username", result.TokenUsername }
                 });
 
                 // Use base controller helper for standardized response

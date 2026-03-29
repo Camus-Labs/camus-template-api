@@ -27,8 +27,8 @@ namespace emc.camus.api.Extensions
             builder.Services.AddScoped<IUserContext, HttpUserContext>();
 
             // Register Authentication Service (business logic in Application layer)
-            builder.Services.AddScoped<AuthService>();
-            builder.Services.AddScoped<ApiInfoService>();
+            builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IApiInfoService, ApiInfoService>();
 
             // Add controllers
             builder.Services.AddControllers();

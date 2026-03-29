@@ -12,7 +12,7 @@ namespace emc.camus.application.Auth;
 /// Validates credentials via user repository and generates tokens for authenticated users.
 /// Manages transactions via IUnitOfWork and audit logging for authentication operations.
 /// </summary>
-public class AuthService
+public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly ITokenGenerator _tokenGenerator;
@@ -158,6 +158,11 @@ public class AuthService
                 command.ExpiresOn,
                 additionalClaims);
 
+            _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
+            {
+                { "generated_token_jti", generatedToken.Jti }
+            });
+
             if (_generatedTokenRepository != null)
             {
                 await _unitOfWork.BeginTransactionAsync();
@@ -217,11 +222,6 @@ public class AuthService
         }
         try
         {
-            _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
-            {
-                { "user_id", currentUserId }
-            });
-
             var pagedTokens = await _generatedTokenRepository.GetPagedByCreatorUserIdAsync(currentUserId, pagination, filter);
 
             var items = pagedTokens.Items.Select(t => t.ToSummaryView()).ToList();
@@ -266,12 +266,6 @@ public class AuthService
 
         try
         {
-            _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
-            {
-                { "requestor_username", currentUsername },
-                { "requestor_user_id", currentUserId }
-            });
-
             await _unitOfWork.BeginTransactionAsync();
 
             try

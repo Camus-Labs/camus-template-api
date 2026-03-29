@@ -16,7 +16,7 @@ namespace emc.camus.api.test.Controllers;
 public class AuthControllerTests
 {
     private readonly Mock<IActivitySourceWrapper> _mockActivitySource;
-    private readonly Mock<AuthService> _mockAuthService;
+    private readonly Mock<IAuthService> _mockAuthService;
     private readonly AuthController _controller;
 
     public AuthControllerTests()
@@ -30,7 +30,7 @@ public class AuthControllerTests
             .Returns<string, OperationType, Func<Activity?, Task<IActionResult>>>(
                 (_, _, func) => func(null));
 
-        _mockAuthService = CreateMockAuthService();
+        _mockAuthService = new Mock<IAuthService>();
 
         _controller = new AuthController(_mockActivitySource.Object, _mockAuthService.Object);
         _controller.ControllerContext = new ControllerContext
@@ -39,33 +39,12 @@ public class AuthControllerTests
         };
     }
 
-    private static Mock<AuthService> CreateMockAuthService()
-    {
-        var mockUserRepo = new Mock<IUserRepository>();
-        var mockTokenGen = new Mock<ITokenGenerator>();
-        var mockAuditRepo = new Mock<IActionAuditRepository>();
-        var mockTokenCache = new Mock<ITokenRevocationCache>();
-        var mockUserContext = new Mock<IUserContext>();
-        var mockActivitySrc = new Mock<IActivitySourceWrapper>();
-        var mockUnitOfWork = new Mock<IUnitOfWork>();
-
-        return new Mock<AuthService>(
-            mockUserRepo.Object,
-            mockTokenGen.Object,
-            mockAuditRepo.Object,
-            mockTokenCache.Object,
-            mockUserContext.Object,
-            mockActivitySrc.Object,
-            mockUnitOfWork.Object,
-            null);
-    }
-
     // --- Constructor ---
 
     public static IEnumerable<object?[]> Constructor_NullDependencyScenarios()
     {
         var activitySource = new Mock<IActivitySourceWrapper>().Object;
-        var authService = CreateMockAuthService().Object;
+        var authService = new Mock<IAuthService>().Object;
 
         yield return new object?[] { null, authService };
         yield return new object?[] { activitySource, null };
@@ -74,7 +53,7 @@ public class AuthControllerTests
     [Theory]
     [MemberData(nameof(Constructor_NullDependencyScenarios))]
     public void Constructor_NullDependency_ThrowsArgumentNullException(
-        IActivitySourceWrapper? activitySource, AuthService? authService)
+        IActivitySourceWrapper? activitySource, IAuthService? authService)
     {
         // Arrange
         // Act

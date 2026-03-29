@@ -14,7 +14,7 @@ namespace emc.camus.api.test.Controllers;
 public class ApiInfoControllerTests
 {
     private readonly Mock<IActivitySourceWrapper> _mockActivitySource;
-    private readonly Mock<ApiInfoService> _mockApiInfoService;
+    private readonly Mock<IApiInfoService> _mockApiInfoService;
     private readonly ApiInfoController _controller;
 
     public ApiInfoControllerTests()
@@ -28,8 +28,7 @@ public class ApiInfoControllerTests
             .Returns<string, OperationType, Func<Activity?, Task<IActionResult>>>(
                 (_, _, func) => func(null));
 
-        var mockRepo = new Mock<IApiInfoRepository>();
-        _mockApiInfoService = new Mock<ApiInfoService>(mockRepo.Object);
+        _mockApiInfoService = new Mock<IApiInfoService>();
 
         _controller = new ApiInfoController(_mockActivitySource.Object, _mockApiInfoService.Object);
 
@@ -45,9 +44,8 @@ public class ApiInfoControllerTests
 
     public static IEnumerable<object?[]> Constructor_NullDependencyScenarios()
     {
-        var mockRepo = new Mock<IApiInfoRepository>();
         var activitySource = new Mock<IActivitySourceWrapper>().Object;
-        var service = new Mock<ApiInfoService>(mockRepo.Object).Object;
+        var service = new Mock<IApiInfoService>().Object;
 
         yield return new object?[] { null, service };
         yield return new object?[] { activitySource, null };
@@ -56,7 +54,7 @@ public class ApiInfoControllerTests
     [Theory]
     [MemberData(nameof(Constructor_NullDependencyScenarios))]
     public void Constructor_NullDependency_ThrowsArgumentNullException(
-        IActivitySourceWrapper? activitySource, ApiInfoService? apiInfoService)
+        IActivitySourceWrapper? activitySource, IApiInfoService? apiInfoService)
     {
         // Arrange
         // Act

@@ -9,6 +9,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using emc.camus.observability.otel.Configurations;
 using System.Diagnostics;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using System.Diagnostics.CodeAnalysis;
 
@@ -71,10 +72,19 @@ namespace emc.camus.observability.otel.Telemetry
             var isAuthenticated = request.HttpContext.User?.Identity?.IsAuthenticated ?? false;
             activity.SetTag("enduser.authenticated", isAuthenticated);
 
-            var endUser = request.HttpContext.User?.Identity?.Name;
-            if (!string.IsNullOrWhiteSpace(endUser))
+            if (isAuthenticated)
             {
-                activity.SetTag("enduser.id", endUser);
+                var endUser = request.HttpContext.User?.Identity?.Name;
+                if (!string.IsNullOrWhiteSpace(endUser))
+                {
+                    activity.SetTag("enduser.name", endUser);
+                }
+
+                var subClaim = request.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier);
+                if (subClaim != null && Guid.TryParse(subClaim.Value, out _))
+                {
+                    activity.SetTag("enduser.id", subClaim.Value);
+                }
             }
         }
 
