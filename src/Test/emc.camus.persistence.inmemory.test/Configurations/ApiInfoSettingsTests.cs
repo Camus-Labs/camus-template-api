@@ -5,10 +5,6 @@ namespace emc.camus.persistence.inmemory.test.Configurations;
 
 public class ApiInfoSettingsTests
 {
-    private const string ValidName = "Test API";
-    private const string ValidVersion = "1.0";
-    private const string ValidStatus = "Available";
-
     // --- Validate ---
 
     [Fact]
@@ -17,9 +13,9 @@ public class ApiInfoSettingsTests
         // Arrange
         var settings = new ApiInfoSettings
         {
-            Name = ValidName,
-            Version = ValidVersion,
-            Status = ValidStatus,
+            Name = "Test API",
+            Version = "1.0",
+            Status = "Available",
             Features = new List<string> { "feature1" }
         };
 
@@ -40,8 +36,8 @@ public class ApiInfoSettingsTests
         var settings = new ApiInfoSettings
         {
             Name = name!,
-            Version = ValidVersion,
-            Status = ValidStatus
+            Version = "1.0",
+            Status = "Available"
         };
 
         // Act
@@ -61,9 +57,9 @@ public class ApiInfoSettingsTests
         // Arrange
         var settings = new ApiInfoSettings
         {
-            Name = ValidName,
+            Name = "Test API",
             Version = version!,
-            Status = ValidStatus
+            Status = "Available"
         };
 
         // Act
@@ -83,8 +79,8 @@ public class ApiInfoSettingsTests
         // Arrange
         var settings = new ApiInfoSettings
         {
-            Name = ValidName,
-            Version = ValidVersion,
+            Name = "Test API",
+            Version = "1.0",
             Status = status!
         };
 
@@ -102,9 +98,9 @@ public class ApiInfoSettingsTests
         // Arrange
         var settings = new ApiInfoSettings
         {
-            Name = ValidName,
-            Version = ValidVersion,
-            Status = ValidStatus,
+            Name = "Test API",
+            Version = "1.0",
+            Status = "Available",
             Features = null!
         };
 
@@ -122,9 +118,9 @@ public class ApiInfoSettingsTests
         // Arrange
         var settings = new ApiInfoSettings
         {
-            Name = ValidName,
-            Version = ValidVersion,
-            Status = ValidStatus,
+            Name = "Test API",
+            Version = "1.0",
+            Status = "Available",
             Features = new List<string>()
         };
 

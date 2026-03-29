@@ -10,8 +10,6 @@ namespace emc.camus.ratelimiting.inmemory.test.Services;
 public class ClientIpResolverTests
 {
     private const string ValidIpV4 = "192.168.1.1";
-    private const string ValidIpV6 = "::1";
-    private const string AnotherValidIpV4 = "10.0.0.1";
 
     private static ClientIpResolver CreateResolver() =>
         new(NullLogger<ClientIpResolver>.Instance);
@@ -73,82 +71,32 @@ public class ClientIpResolverTests
 
     // --- GetClientIpAddress: X-Forwarded-For ---
 
-    [Fact]
-    public void GetClientIpAddress_ValidForwardedFor_ReturnsFirstIp()
+    [Theory]
+    [InlineData("192.168.1.1", "192.168.1.1")]
+    [InlineData("192.168.1.1, 10.0.0.1", "192.168.1.1")]
+    [InlineData("::1", "::1")]
+    public void GetClientIpAddress_ValidForwardedFor_ReturnsExpectedIp(string forwardedFor, string expectedIp)
     {
         // Arrange
         var resolver = CreateResolver();
-        var context = CreateHttpContext(forwardedFor: ValidIpV4);
+        var context = CreateHttpContext(forwardedFor: forwardedFor);
 
         // Act
         var result = resolver.GetClientIpAddress(context);
 
         // Assert
-        result.Should().Be(ValidIpV4);
+        result.Should().Be(expectedIp);
     }
 
-    [Fact]
-    public void GetClientIpAddress_MultipleForwardedForIps_ReturnsFirstIp()
+    [Theory]
+    [InlineData("not-an-ip")]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void GetClientIpAddress_InvalidOrEmptyForwardedFor_FallsBackToRealIp(string forwardedFor)
     {
         // Arrange
         var resolver = CreateResolver();
-        var context = CreateHttpContext(forwardedFor: $"{ValidIpV4}, {AnotherValidIpV4}");
-
-        // Act
-        var result = resolver.GetClientIpAddress(context);
-
-        // Assert
-        result.Should().Be(ValidIpV4);
-    }
-
-    [Fact]
-    public void GetClientIpAddress_ForwardedForWithIpV6_ReturnsIpV6()
-    {
-        // Arrange
-        var resolver = CreateResolver();
-        var context = CreateHttpContext(forwardedFor: ValidIpV6);
-
-        // Act
-        var result = resolver.GetClientIpAddress(context);
-
-        // Assert
-        result.Should().Be(ValidIpV6);
-    }
-
-    [Fact]
-    public void GetClientIpAddress_InvalidForwardedFor_FallsBackToRealIp()
-    {
-        // Arrange
-        var resolver = CreateResolver();
-        var context = CreateHttpContext(forwardedFor: "not-an-ip", realIp: ValidIpV4);
-
-        // Act
-        var result = resolver.GetClientIpAddress(context);
-
-        // Assert
-        result.Should().Be(ValidIpV4);
-    }
-
-    [Fact]
-    public void GetClientIpAddress_EmptyForwardedFor_FallsBackToRealIp()
-    {
-        // Arrange
-        var resolver = CreateResolver();
-        var context = CreateHttpContext(forwardedFor: "", realIp: ValidIpV4);
-
-        // Act
-        var result = resolver.GetClientIpAddress(context);
-
-        // Assert
-        result.Should().Be(ValidIpV4);
-    }
-
-    [Fact]
-    public void GetClientIpAddress_WhitespaceOnlyForwardedFor_FallsBackToRealIp()
-    {
-        // Arrange
-        var resolver = CreateResolver();
-        var context = CreateHttpContext(forwardedFor: "   ", realIp: ValidIpV4);
+        var context = CreateHttpContext(forwardedFor: forwardedFor, realIp: ValidIpV4);
 
         // Act
         var result = resolver.GetClientIpAddress(context);
@@ -173,26 +121,14 @@ public class ClientIpResolverTests
         result.Should().Be(ValidIpV4);
     }
 
-    [Fact]
-    public void GetClientIpAddress_InvalidRealIp_FallsBackToRemoteIp()
+    [Theory]
+    [InlineData("not-valid")]
+    [InlineData("")]
+    public void GetClientIpAddress_InvalidOrEmptyRealIp_FallsBackToRemoteIp(string realIp)
     {
         // Arrange
         var resolver = CreateResolver();
-        var context = CreateHttpContext(realIp: "not-valid", remoteIp: IPAddress.Parse(ValidIpV4));
-
-        // Act
-        var result = resolver.GetClientIpAddress(context);
-
-        // Assert
-        result.Should().Be(ValidIpV4);
-    }
-
-    [Fact]
-    public void GetClientIpAddress_EmptyRealIp_FallsBackToRemoteIp()
-    {
-        // Arrange
-        var resolver = CreateResolver();
-        var context = CreateHttpContext(realIp: "", remoteIp: IPAddress.Parse(ValidIpV4));
+        var context = CreateHttpContext(realIp: realIp, remoteIp: IPAddress.Parse(ValidIpV4));
 
         // Act
         var result = resolver.GetClientIpAddress(context);
@@ -203,32 +139,25 @@ public class ClientIpResolverTests
 
     // --- GetClientIpAddress: Remote IP ---
 
-    [Fact]
-    public void GetClientIpAddress_RemoteIpOnly_ReturnsRemoteIp()
+    public static readonly IEnumerable<object[]> RemoteIpTestCases = new[]
+    {
+        new object[] { IPAddress.Parse("192.168.1.1"), "192.168.1.1" },
+        new object[] { IPAddress.IPv6Loopback, "::1" }
+    };
+
+    [Theory]
+    [MemberData(nameof(RemoteIpTestCases))]
+    public void GetClientIpAddress_RemoteIpOnly_ReturnsExpectedIp(IPAddress remoteIp, string expectedIp)
     {
         // Arrange
         var resolver = CreateResolver();
-        var context = CreateHttpContext(remoteIp: IPAddress.Parse(ValidIpV4));
+        var context = CreateHttpContext(remoteIp: remoteIp);
 
         // Act
         var result = resolver.GetClientIpAddress(context);
 
         // Assert
-        result.Should().Be(ValidIpV4);
-    }
-
-    [Fact]
-    public void GetClientIpAddress_RemoteIpV6_ReturnsIpV6()
-    {
-        // Arrange
-        var resolver = CreateResolver();
-        var context = CreateHttpContext(remoteIp: IPAddress.IPv6Loopback);
-
-        // Act
-        var result = resolver.GetClientIpAddress(context);
-
-        // Assert
-        result.Should().Be(ValidIpV6);
+        result.Should().Be(expectedIp);
     }
 
     // --- GetClientIpAddress: No IP Available ---
@@ -257,7 +186,7 @@ public class ClientIpResolverTests
         var resolver = CreateResolver();
         var context = CreateHttpContext(
             forwardedFor: ValidIpV4,
-            realIp: AnotherValidIpV4,
+            realIp: "10.0.0.1",
             remoteIp: IPAddress.Loopback);
 
         // Act
@@ -274,7 +203,7 @@ public class ClientIpResolverTests
         var resolver = CreateResolver();
         var context = CreateHttpContext(
             realIp: ValidIpV4,
-            remoteIp: IPAddress.Parse(AnotherValidIpV4));
+            remoteIp: IPAddress.Parse("10.0.0.1"));
 
         // Act
         var result = resolver.GetClientIpAddress(context);

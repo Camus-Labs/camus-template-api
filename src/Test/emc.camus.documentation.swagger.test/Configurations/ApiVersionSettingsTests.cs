@@ -5,10 +5,6 @@ namespace emc.camus.documentation.swagger.test.Configurations;
 
 public class ApiVersionSettingsTests
 {
-    private const string ValidVersion = "v1";
-    private const string ValidTitle = "My API";
-    private const string ValidDescription = "API description";
-
     // --- Validate (valid settings) ---
 
     [Fact]
@@ -89,9 +85,9 @@ public class ApiVersionSettingsTests
     {
         return new ApiVersionSettings
         {
-            Version = ValidVersion,
-            Title = ValidTitle,
-            Description = ValidDescription
+            Version = "v1",
+            Title = "My API",
+            Description = "API description"
         };
     }
 }

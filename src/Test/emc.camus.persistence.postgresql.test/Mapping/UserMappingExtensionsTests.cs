@@ -6,18 +6,16 @@ namespace emc.camus.persistence.postgresql.test.Mapping;
 
 public class UserMappingExtensionsTests
 {
-    private static readonly Guid ValidUserId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    private static readonly Guid ValidRoleId = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-
     // --- ToEntity ---
 
     [Fact]
     public void ToEntity_ValidModelWithRoles_MapsAllProperties()
     {
         // Arrange
+        var userId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var userModel = new UserModel
         {
-            Id = ValidUserId,
+            Id = userId,
             Username = "testuser"
         };
 
@@ -25,7 +23,7 @@ public class UserMappingExtensionsTests
         {
             new()
             {
-                Id = ValidRoleId,
+                Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
                 Name = "Admin",
                 Description = "Administrator",
                 Permissions = new List<string> { "read", "write" }
@@ -36,7 +34,7 @@ public class UserMappingExtensionsTests
         var entity = userModel.ToEntity(roleModels);
 
         // Assert
-        entity.Id.Should().Be(ValidUserId);
+        entity.Id.Should().Be(userId);
         entity.Username.Should().Be("testuser");
         entity.Roles.Should().ContainSingle();
         entity.Roles[0].Name.Should().Be("Admin");

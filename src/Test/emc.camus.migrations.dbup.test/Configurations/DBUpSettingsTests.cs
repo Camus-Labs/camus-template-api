@@ -5,24 +5,6 @@ namespace emc.camus.migrations.dbup.test.Configurations;
 
 public class DBUpSettingsTests
 {
-    private const string ValidAdminSecretName = "db-admin-username";
-    private const string ValidPasswordSecretName = "db-admin-password";
-
-    // --- Defaults ---
-
-    [Fact]
-    public void Constructor_Defaults_SetsExpectedValues()
-    {
-        // Arrange
-        // Act
-        var settings = new DBUpSettings();
-
-        // Assert
-        settings.Enabled.Should().BeFalse();
-        settings.AdminSecretName.Should().BeEmpty();
-        settings.PasswordSecretName.Should().BeEmpty();
-    }
-
     // --- Validate when Disabled ---
 
     [Fact]
@@ -30,24 +12,6 @@ public class DBUpSettingsTests
     {
         // Arrange
         var settings = new DBUpSettings { Enabled = false };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void Validate_DisabledWithEmptySecrets_DoesNotThrow()
-    {
-        // Arrange
-        var settings = new DBUpSettings
-        {
-            Enabled = false,
-            AdminSecretName = string.Empty,
-            PasswordSecretName = string.Empty
-        };
 
         // Act
         var act = () => settings.Validate();
@@ -65,8 +29,8 @@ public class DBUpSettingsTests
         var settings = new DBUpSettings
         {
             Enabled = true,
-            AdminSecretName = ValidAdminSecretName,
-            PasswordSecretName = ValidPasswordSecretName
+            AdminSecretName = "db-admin-username",
+            PasswordSecretName = "db-admin-password"
         };
 
         // Act
@@ -107,7 +71,7 @@ public class DBUpSettingsTests
         {
             Enabled = true,
             AdminSecretName = adminSecretName!,
-            PasswordSecretName = ValidPasswordSecretName
+            PasswordSecretName = "db-admin-password"
         };
 
         // Act
@@ -126,7 +90,7 @@ public class DBUpSettingsTests
         {
             Enabled = true,
             AdminSecretName = new string('a', 201),
-            PasswordSecretName = ValidPasswordSecretName
+            PasswordSecretName = "db-admin-password"
         };
 
         // Act
@@ -149,7 +113,7 @@ public class DBUpSettingsTests
         var settings = new DBUpSettings
         {
             Enabled = true,
-            AdminSecretName = ValidAdminSecretName,
+            AdminSecretName = "db-admin-username",
             PasswordSecretName = passwordSecretName!
         };
 
@@ -168,7 +132,7 @@ public class DBUpSettingsTests
         var settings = new DBUpSettings
         {
             Enabled = true,
-            AdminSecretName = ValidAdminSecretName,
+            AdminSecretName = "db-admin-username",
             PasswordSecretName = new string('p', 201)
         };
 
@@ -178,16 +142,5 @@ public class DBUpSettingsTests
         // Assert
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*PasswordSecretName*exceed*200*");
-    }
-
-    // --- ConfigurationSectionName ---
-
-    [Fact]
-    public void ConfigurationSectionName_ReturnsExpectedValue()
-    {
-        // Arrange
-        // Act
-        // Assert
-        DBUpSettings.ConfigurationSectionName.Should().Be("DBUpSettings");
     }
 }

@@ -7,8 +7,6 @@ namespace emc.camus.persistence.postgresql.test.Repositories;
 
 public class PSGeneratedTokenRepositoryTests
 {
-    private static readonly Guid ValidCreatorUserId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-
     private readonly Mock<IConnectionFactory> _mockConnectionFactory = new();
 
     private PSGeneratedTokenRepository CreateRepository()
@@ -58,7 +56,7 @@ public class PSGeneratedTokenRepositoryTests
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.GetPagedByCreatorUserIdAsync(ValidCreatorUserId, null!);
+        var act = () => repository.GetPagedByCreatorUserIdAsync(Guid.Empty, null!);
 
         // Assert
         (await act.Should().ThrowAsync<ArgumentNullException>())

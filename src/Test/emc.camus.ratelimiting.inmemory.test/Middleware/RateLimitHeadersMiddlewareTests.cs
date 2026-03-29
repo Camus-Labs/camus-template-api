@@ -138,7 +138,7 @@ public class RateLimitHeadersMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers.ContainsKey(Headers.RateLimitReset).Should().BeFalse();
+        context.Response.Headers.Should().NotContainKey(Headers.RateLimitReset);
     }
 
     // --- InvokeAsync: Reset Timestamp Calculation ---

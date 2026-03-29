@@ -2,6 +2,7 @@ using FluentAssertions;
 using emc.camus.application.Auth;
 using emc.camus.persistence.inmemory.Configurations;
 using emc.camus.persistence.inmemory.Repositories;
+using emc.camus.persistence.inmemory.test.Helpers;
 
 namespace emc.camus.persistence.inmemory.test.Repositories;
 
@@ -78,14 +79,14 @@ public class IMApiInfoRepositoryTests
         repository.Initialize();
 
         // Act
-        var result = await repository.GetByVersionAsync("1.0");
+        var result = await repository.GetByVersionAsync(InMemoryModelSettingsFactory.DefaultApiVersion);
 
         // Assert
         result.Should().NotBeNull();
-        result.Version.Should().Be("1.0");
-        result.Name.Should().Be("Test API");
-        result.Status.Should().Be("Available");
-        result.Features.Should().ContainSingle().Which.Should().Be("feature1");
+        result.Version.Should().Be(InMemoryModelSettingsFactory.DefaultApiVersion);
+        result.Name.Should().Be(InMemoryModelSettingsFactory.DefaultApiName);
+        result.Status.Should().Be(InMemoryModelSettingsFactory.DefaultApiStatus);
+        result.Features.Should().ContainSingle().Which.Should().Be(InMemoryModelSettingsFactory.DefaultApiFeature);
     }
 
     [Fact]
@@ -260,31 +261,6 @@ public class IMApiInfoRepositoryTests
 
     private static InMemoryModelSettings CreateValidSettings()
     {
-        return new InMemoryModelSettings
-        {
-            Roles = new List<RoleSettings>
-            {
-                new RoleSettings { Name = "admin", Permissions = new List<string> { Permissions.ApiRead } }
-            },
-            Users = new List<UserSettings>
-            {
-                new UserSettings
-                {
-                    UsernameSecretName = "user-secret",
-                    PasswordSecretName = "pass-secret",
-                    Roles = new List<string> { "admin" }
-                }
-            },
-            ApiInfos = new List<ApiInfoSettings>
-            {
-                new ApiInfoSettings
-                {
-                    Name = "Test API",
-                    Version = "1.0",
-                    Status = "Available",
-                    Features = new List<string> { "feature1" }
-                }
-            }
-        };
+        return InMemoryModelSettingsFactory.Create();
     }
 }

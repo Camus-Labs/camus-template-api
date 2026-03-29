@@ -5,13 +5,9 @@ namespace emc.camus.ratelimiting.inmemory.test.Configurations;
 
 public class RateLimitPolicySettingsTests
 {
-    private const string ValidPolicyName = "default";
-    private const int ValidPermitLimit = 100;
-    private const int ValidWindowSeconds = 60;
-
     private static RateLimitPolicySettings CreateSettings(
-        int permitLimit = ValidPermitLimit,
-        int windowSeconds = ValidWindowSeconds) =>
+        int permitLimit = 100,
+        int windowSeconds = 60) =>
         new()
         {
             PermitLimit = permitLimit,
@@ -30,7 +26,7 @@ public class RateLimitPolicySettingsTests
         var settings = CreateSettings(permitLimit: permitLimit);
 
         // Act
-        var act = () => settings.Validate(ValidPolicyName);
+        var act = () => settings.Validate("default");
 
         // Assert
         act.Should().NotThrow();
@@ -46,7 +42,7 @@ public class RateLimitPolicySettingsTests
         var settings = CreateSettings(windowSeconds: windowSeconds);
 
         // Act
-        var act = () => settings.Validate(ValidPolicyName);
+        var act = () => settings.Validate("default");
 
         // Assert
         act.Should().NotThrow();
@@ -64,7 +60,7 @@ public class RateLimitPolicySettingsTests
         var settings = CreateSettings(permitLimit: permitLimit);
 
         // Act
-        var act = () => settings.Validate(ValidPolicyName);
+        var act = () => settings.Validate("default");
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -97,7 +93,7 @@ public class RateLimitPolicySettingsTests
         var settings = CreateSettings(windowSeconds: windowSeconds);
 
         // Act
-        var act = () => settings.Validate(ValidPolicyName);
+        var act = () => settings.Validate("default");
 
         // Assert
         act.Should().Throw<InvalidOperationException>()

@@ -7,7 +7,10 @@ applyTo: "src/Application/**/*.cs"
 1. Scope Compliance
 
     - [ ] Custom attributes target cross-cutting concerns only (e.g., [RateLimit])
-    - [ ] Port interfaces abstract all infrastructure interactions
+    - [ ] Driven port interfaces abstract all infrastructure interactions (e.g., `IUserRepository`,
+          `ITokenGenerator`)
+    - [ ] Driving port interfaces abstract all application service contracts (e.g., `IAuthService`,
+          `IApiInfoService`) — concrete service classes implement these interfaces
     - [ ] Application services depend on port interfaces — never concrete adapter types
     - [ ] Constants target cross-cutting concerns only (e.g., ErrorCodes, Headers)
 

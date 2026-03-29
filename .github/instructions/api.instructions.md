@@ -10,9 +10,11 @@ applyTo: "src/Api/**/*.cs"
           `ToFilter()`, `ToPaginationParams()`)
     - [ ] Primitive route parameters converted via static mapper methods (e.g.,
           `AuthMappingExtensions.ToRevokeTokenCommand(jti)`) — never extension methods on built-in types
+    - [ ] Controllers depend on application service interfaces — never concrete service classes
     - [ ] Controllers return `Models/` types or `IActionResult` — no domain entities or Application views
     - [ ] Controller parameters use model binding attributes only (`[FromBody]`, `[FromQuery]`, `[FromRoute]`)
-    - [ ] DI registration lives in `Extensions/` folder as one `*SetupExtensions.cs` file per concern
+    - [ ] DI registration lives in `Extensions/` folder as one `*SetupExtensions.cs` file per feature area
+          (e.g., `AuthSetupExtensions`, `SwaggerSetupExtensions`, `ObservabilitySetupExtensions`)
     - [ ] `Infrastructure/` folder for framework-dependent service implementations (e.g., `HttpUserContext`
           implementing `IUserContext`) — distinct from `Models/` (data shapes) and `Mapping/` (converters)
 

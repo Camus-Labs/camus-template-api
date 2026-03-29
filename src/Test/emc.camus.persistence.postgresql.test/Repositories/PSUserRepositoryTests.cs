@@ -7,8 +7,6 @@ namespace emc.camus.persistence.postgresql.test.Repositories;
 
 public class PSUserRepositoryTests
 {
-    private static readonly Guid ValidUserId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-
     private readonly Mock<IConnectionFactory> _mockConnectionFactory = new();
 
     private PSUserRepository CreateRepository()
@@ -72,7 +70,7 @@ public class PSUserRepositoryTests
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.GetByIdAsync(ValidUserId);
+        var act = () => repository.GetByIdAsync(Guid.Empty);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -88,7 +86,7 @@ public class PSUserRepositoryTests
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.UpdateLastLoginAsync(ValidUserId);
+        var act = () => repository.UpdateLastLoginAsync(Guid.Empty);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()

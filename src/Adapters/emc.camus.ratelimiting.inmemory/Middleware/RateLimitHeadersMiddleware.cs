@@ -42,7 +42,7 @@ namespace emc.camus.ratelimiting.inmemory.Middleware
             // Add RFC-compliant IETF Draft headers
             // See: https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/
             context.Response.Headers[Headers.RateLimitLimit] = limit;
-            
+
             // Calculate reset timestamp (current time + window)
             if (int.TryParse(window, out var windowSeconds))
             {

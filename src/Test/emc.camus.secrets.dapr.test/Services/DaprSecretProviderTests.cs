@@ -3,6 +3,7 @@ using System.Text.Json;
 using FluentAssertions;
 using emc.camus.secrets.dapr.Configurations;
 using emc.camus.secrets.dapr.Services;
+using emc.camus.secrets.dapr.test.Helpers;
 
 namespace emc.camus.secrets.dapr.test.Services;
 
@@ -14,9 +15,13 @@ public class DaprSecretProviderTests
     private const int ValidTimeoutSeconds = 30;
     private const string ValidSecretName = "my-secret";
     private const string ValidSecretValue = "super-secret-value";
-    private const string AnotherSecretName = "another-secret";
-    private const string AnotherSecretValue = "another-secret-value";
     private static readonly string[] WhitespaceOnlyNames = new[] { "", "   " };
+    private static readonly string[] MixedValidAndWhitespaceNames = new[] { ValidSecretName, "  " };
+    public static TheoryData<string[]> WhitespaceContainingNames => new()
+    {
+        { WhitespaceOnlyNames },
+        { MixedValidAndWhitespaceNames }
+    };
 
     private static DaprSecretProviderSettings CreateValidSettings() => new()
     {
@@ -109,8 +114,8 @@ public class DaprSecretProviderTests
         var act = () => provider.LoadSecretsAsync(null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>()
-            .Where(ex => ex.ParamName == "secretNames");
+        (await act.Should().ThrowAsync<ArgumentNullException>())
+            .And.ParamName.Should().Be("secretNames");
     }
 
     [Fact]
@@ -126,33 +131,20 @@ public class DaprSecretProviderTests
         await act.Should().NotThrowAsync();
     }
 
-    [Fact]
-    public async Task LoadSecretsAsync_WhitespaceOnlyNames_ThrowsArgumentException()
+    [Theory]
+    [MemberData(nameof(WhitespaceContainingNames))]
+    public async Task LoadSecretsAsync_NamesContainingWhitespace_ThrowsArgumentException(string[] names)
     {
         // Arrange
         var provider = CreateProvider();
 
         // Act
-        var act = () => provider.LoadSecretsAsync(WhitespaceOnlyNames);
+        var act = () => provider.LoadSecretsAsync(names);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("*null*whitespace*")
-            .Where(ex => ex.ParamName == "secretNames");
-    }
-
-    [Fact]
-    public async Task LoadSecretsAsync_MixedValidAndWhitespaceNames_ThrowsArgumentException()
-    {
-        // Arrange
-        var provider = CreateProvider();
-
-        // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName, "  " });
-
-        // Assert
-        await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("*null*whitespace*");
+        (await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("*null*whitespace*"))
+            .And.ParamName.Should().Be("secretNames");
     }
 
     [Fact]
@@ -173,20 +165,22 @@ public class DaprSecretProviderTests
     public async Task LoadSecretsAsync_MultipleSecrets_LoadsAllSuccessfully()
     {
         // Arrange
+        var anotherSecretName = "another-secret";
+        var anotherSecretValue = "another-secret-value";
         var responses = new Dictionary<string, (HttpStatusCode, string)>
         {
             { ValidSecretName, (HttpStatusCode.OK, JsonSerializer.Serialize(new Dictionary<string, string> { { ValidSecretName, ValidSecretValue } })) },
-            { AnotherSecretName, (HttpStatusCode.OK, JsonSerializer.Serialize(new Dictionary<string, string> { { AnotherSecretName, AnotherSecretValue } })) }
+            { anotherSecretName, (HttpStatusCode.OK, JsonSerializer.Serialize(new Dictionary<string, string> { { anotherSecretName, anotherSecretValue } })) }
         };
         var handler = CreateMockHandler(responses);
         var provider = CreateProvider(handler: handler);
 
         // Act
-        await provider.LoadSecretsAsync(new[] { ValidSecretName, AnotherSecretName });
+        await provider.LoadSecretsAsync(new[] { ValidSecretName, anotherSecretName });
 
         // Assert
         provider.GetSecret(ValidSecretName).Should().Be(ValidSecretValue);
-        provider.GetSecret(AnotherSecretName).Should().Be(AnotherSecretValue);
+        provider.GetSecret(anotherSecretName).Should().Be(anotherSecretValue);
     }
 
     [Fact]
@@ -219,26 +213,13 @@ public class DaprSecretProviderTests
             .WithMessage("*Failed*load*secret*");
     }
 
-    [Fact]
-    public async Task LoadSecretsAsync_EmptyResponseContent_ThrowsInvalidOperationException()
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task LoadSecretsAsync_EmptyOrWhitespaceResponseContent_ThrowsInvalidOperationException(string responseContent)
     {
         // Arrange
-        var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, "");
-        var provider = CreateProvider(handler: handler);
-
-        // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName });
-
-        // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*Empty*response*");
-    }
-
-    [Fact]
-    public async Task LoadSecretsAsync_WhitespaceResponseContent_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, "   ");
+        var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, responseContent);
         var provider = CreateProvider(handler: handler);
 
         // Act
@@ -281,29 +262,14 @@ public class DaprSecretProviderTests
             .WithMessage("*not found*response*dictionary*");
     }
 
-    [Fact]
-    public async Task LoadSecretsAsync_EmptySecretValue_ThrowsInvalidOperationException()
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task LoadSecretsAsync_EmptyOrWhitespaceSecretValue_ThrowsInvalidOperationException(string secretValue)
     {
         // Arrange
         var responseContent = JsonSerializer.Serialize(
-            new Dictionary<string, string> { { ValidSecretName, "" } });
-        var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, responseContent);
-        var provider = CreateProvider(handler: handler);
-
-        // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName });
-
-        // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*empty*whitespace*");
-    }
-
-    [Fact]
-    public async Task LoadSecretsAsync_WhitespaceSecretValue_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var responseContent = JsonSerializer.Serialize(
-            new Dictionary<string, string> { { ValidSecretName, "   " } });
+            new Dictionary<string, string> { { ValidSecretName, secretValue } });
         var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, responseContent);
         var provider = CreateProvider(handler: handler);
 
@@ -377,61 +343,4 @@ public class DaprSecretProviderTests
         result.Should().Be(ValidSecretValue);
     }
 
-    // --- FakeHttpMessageHandler ---
-
-    private sealed class FakeHttpMessageHandler : HttpMessageHandler
-    {
-        private readonly HttpStatusCode? _statusCode;
-        private readonly string? _content;
-        private readonly Exception? _exception;
-        private readonly Dictionary<string, (HttpStatusCode statusCode, string content)>? _responses;
-
-        public FakeHttpMessageHandler(HttpStatusCode statusCode, string content)
-        {
-            _statusCode = statusCode;
-            _content = content;
-        }
-
-        public FakeHttpMessageHandler(Exception exception)
-        {
-            _exception = exception;
-        }
-
-        public FakeHttpMessageHandler(Dictionary<string, (HttpStatusCode statusCode, string content)> responses)
-        {
-            _responses = responses;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
-        {
-            if (_exception != null)
-            {
-                throw _exception;
-            }
-
-            if (_responses != null)
-            {
-                var secretName = request.RequestUri!.Segments.Last();
-                if (_responses.TryGetValue(secretName, out var response))
-                {
-                    return Task.FromResult(new HttpResponseMessage(response.statusCode)
-                    {
-                        Content = new StringContent(response.content)
-                    });
-                }
-
-                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound)
-                {
-                    Content = new StringContent("")
-                });
-            }
-
-            return Task.FromResult(new HttpResponseMessage(_statusCode!.Value)
-            {
-                Content = new StringContent(_content!)
-            });
-        }
-    }
 }

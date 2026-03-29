@@ -3,6 +3,7 @@ using emc.camus.application.Auth;
 using emc.camus.application.Secrets;
 using emc.camus.persistence.inmemory.Configurations;
 using emc.camus.persistence.inmemory.Repositories;
+using emc.camus.persistence.inmemory.test.Helpers;
 
 namespace emc.camus.persistence.inmemory.test.Repositories;
 
@@ -42,8 +43,8 @@ public class IMUserRepositoryTests
     public void Initialize_ValidSettings_DoesNotThrow()
     {
         // Arrange
-        SetupSecretProvider("admin-username", "adminuser");
-        SetupSecretProvider("admin-password", "adminpass");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
         var repository = new IMUserRepository(settings, _mockSecretProvider.Object);
 
@@ -58,8 +59,8 @@ public class IMUserRepositoryTests
     public void Initialize_CalledTwice_ThrowsInvalidOperationException()
     {
         // Arrange
-        SetupSecretProvider("admin-username", "adminuser");
-        SetupSecretProvider("admin-password", "adminpass");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
         var repository = new IMUserRepository(settings, _mockSecretProvider.Object);
         repository.Initialize();
@@ -72,12 +73,14 @@ public class IMUserRepositoryTests
             .WithMessage("*already initialized*");
     }
 
-    [Fact]
-    public void Initialize_MissingUsernameSecret_ThrowsInvalidOperationException()
+    [Theory]
+    [MemberData(nameof(MissingSecretData))]
+    public void Initialize_MissingSecret_ThrowsInvalidOperationException(
+        string usernameValue, string passwordValue, string expectedMessage)
     {
         // Arrange
-        SetupSecretProvider("admin-username", "");
-        SetupSecretProvider("admin-password", "adminpass");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, usernameValue);
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, passwordValue);
         var settings = CreateValidSettings();
         var repository = new IMUserRepository(settings, _mockSecretProvider.Object);
 
@@ -86,25 +89,14 @@ public class IMUserRepositoryTests
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*Failed to retrieve username*admin-username*");
+            .WithMessage(expectedMessage);
     }
 
-    [Fact]
-    public void Initialize_MissingPasswordSecret_ThrowsInvalidOperationException()
+    public static TheoryData<string, string, string> MissingSecretData => new()
     {
-        // Arrange
-        SetupSecretProvider("admin-username", "adminuser");
-        SetupSecretProvider("admin-password", "");
-        var settings = CreateValidSettings();
-        var repository = new IMUserRepository(settings, _mockSecretProvider.Object);
-
-        // Act
-        var act = () => repository.Initialize();
-
-        // Assert
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*Failed to retrieve password*admin-password*");
-    }
+        { "", "adminpass", $"*Failed to retrieve username*{InMemoryModelSettingsFactory.DefaultUsernameSecret}*" },
+        { "adminuser", "", $"*Failed to retrieve password*{InMemoryModelSettingsFactory.DefaultPasswordSecret}*" }
+    };
 
     // --- ValidateCredentialsAsync ---
 
@@ -112,8 +104,8 @@ public class IMUserRepositoryTests
     public async Task ValidateCredentialsAsync_ValidCredentials_ReturnsUser()
     {
         // Arrange
-        SetupSecretProvider("admin-username", "adminuser");
-        SetupSecretProvider("admin-password", "adminpass");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
         var repository = CreateInitializedRepository(settings);
 
@@ -123,41 +115,27 @@ public class IMUserRepositoryTests
         // Assert
         result.Should().NotBeNull();
         result.Username.Should().Be("adminuser");
-        result.Roles.Should().ContainSingle().Which.Name.Should().Be("admin");
+        result.Roles.Should().ContainSingle().Which.Name.Should().Be(InMemoryModelSettingsFactory.DefaultRoleName);
     }
 
-    [Fact]
-    public async Task ValidateCredentialsAsync_InvalidUsername_ThrowsUnauthorizedAccessException()
+    [Theory]
+    [InlineData("unknownuser", "adminpass", "*User not found*")]
+    [InlineData("adminuser", "wrongpassword", "*mismatch*")]
+    public async Task ValidateCredentialsAsync_InvalidCredentials_ThrowsUnauthorizedAccessException(
+        string username, string password, string expectedMessage)
     {
         // Arrange
-        SetupSecretProvider("admin-username", "adminuser");
-        SetupSecretProvider("admin-password", "adminpass");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
         var repository = CreateInitializedRepository(settings);
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync("unknownuser", "adminpass");
+        var act = () => repository.ValidateCredentialsAsync(username, password);
 
         // Assert
         await act.Should().ThrowAsync<UnauthorizedAccessException>()
-            .WithMessage("*User not found*");
-    }
-
-    [Fact]
-    public async Task ValidateCredentialsAsync_InvalidPassword_ThrowsUnauthorizedAccessException()
-    {
-        // Arrange
-        SetupSecretProvider("admin-username", "adminuser");
-        SetupSecretProvider("admin-password", "adminpass");
-        var settings = CreateValidSettings();
-        var repository = CreateInitializedRepository(settings);
-
-        // Act
-        var act = () => repository.ValidateCredentialsAsync("adminuser", "wrongpassword");
-
-        // Assert
-        await act.Should().ThrowAsync<UnauthorizedAccessException>()
-            .WithMessage("*mismatch*");
+            .WithMessage(expectedMessage);
     }
 
     [Fact]
@@ -182,8 +160,8 @@ public class IMUserRepositoryTests
     public async Task ValidateCredentialsAsync_InvalidUsernameParam_ThrowsArgumentException(string? username)
     {
         // Arrange
-        SetupSecretProvider("admin-username", "adminuser");
-        SetupSecretProvider("admin-password", "adminpass");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
         var repository = CreateInitializedRepository(settings);
 
@@ -201,8 +179,8 @@ public class IMUserRepositoryTests
     public async Task ValidateCredentialsAsync_InvalidPasswordParam_ThrowsArgumentException(string? password)
     {
         // Arrange
-        SetupSecretProvider("admin-username", "adminuser");
-        SetupSecretProvider("admin-password", "adminpass");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
         var repository = CreateInitializedRepository(settings);
 
@@ -219,8 +197,8 @@ public class IMUserRepositoryTests
     public async Task GetByIdAsync_ExistingUser_ReturnsUser()
     {
         // Arrange
-        SetupSecretProvider("admin-username", "adminuser");
-        SetupSecretProvider("admin-password", "adminpass");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
         var repository = CreateInitializedRepository(settings);
         var user = await repository.ValidateCredentialsAsync("adminuser", "adminpass");
@@ -238,8 +216,8 @@ public class IMUserRepositoryTests
     public async Task GetByIdAsync_NonExistingUser_ThrowsKeyNotFoundException()
     {
         // Arrange
-        SetupSecretProvider("admin-username", "adminuser");
-        SetupSecretProvider("admin-password", "adminpass");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
         var repository = CreateInitializedRepository(settings);
         var nonExistentId = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
@@ -256,8 +234,8 @@ public class IMUserRepositoryTests
     public async Task GetByIdAsync_EmptyGuid_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
-        SetupSecretProvider("admin-username", "adminuser");
-        SetupSecretProvider("admin-password", "adminpass");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
         var repository = CreateInitializedRepository(settings);
 
@@ -290,8 +268,8 @@ public class IMUserRepositoryTests
     public async Task UpdateLastLoginAsync_ValidUserId_CompletesSuccessfully()
     {
         // Arrange
-        SetupSecretProvider("admin-username", "adminuser");
-        SetupSecretProvider("admin-password", "adminpass");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
         var repository = CreateInitializedRepository(settings);
         var user = await repository.ValidateCredentialsAsync("adminuser", "adminpass");
@@ -307,8 +285,8 @@ public class IMUserRepositoryTests
     public async Task UpdateLastLoginAsync_EmptyGuid_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
-        SetupSecretProvider("admin-username", "adminuser");
-        SetupSecretProvider("admin-password", "adminpass");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
         var repository = CreateInitializedRepository(settings);
 
@@ -391,27 +369,7 @@ public class IMUserRepositoryTests
 
     private static InMemoryModelSettings CreateValidSettings()
     {
-        return new InMemoryModelSettings
-        {
-            Roles = new List<RoleSettings>
-            {
-                new RoleSettings
-                {
-                    Name = "admin",
-                    Permissions = new List<string> { Permissions.ApiRead, Permissions.ApiWrite }
-                }
-            },
-            Users = new List<UserSettings>
-            {
-                new UserSettings
-                {
-                    UsernameSecretName = "admin-username",
-                    PasswordSecretName = "admin-password",
-                    Roles = new List<string> { "admin" }
-                }
-            },
-            ApiInfos = new List<ApiInfoSettings>()
-        };
+        return InMemoryModelSettingsFactory.Create(apiInfos: new List<ApiInfoSettings>());
     }
 
     private static InMemoryModelSettings CreateSettingsWithMultipleUsers()

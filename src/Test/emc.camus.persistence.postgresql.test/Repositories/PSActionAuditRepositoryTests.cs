@@ -55,8 +55,6 @@ public class PSActionAuditRepositoryTests
     public async Task LogCurrentUserActionAsync_NullOrWhitespaceTitle_ThrowsArgumentException(string? actionTitle)
     {
         // Arrange
-        _mockUserContext.Setup(c => c.GetCurrentUserId()).Returns(Guid.Empty);
-        _mockUserContext.Setup(c => c.GetCurrentUsername()).Returns("testuser");
         var repository = CreateRepository();
 
         // Act

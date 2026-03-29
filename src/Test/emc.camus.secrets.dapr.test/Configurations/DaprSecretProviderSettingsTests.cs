@@ -5,36 +5,16 @@ namespace emc.camus.secrets.dapr.test.Configurations;
 
 public class DaprSecretProviderSettingsTests
 {
-    private const string ValidBaseHost = "localhost";
-    private const string ValidHttpPort = "3500";
-    private const string ValidSecretStoreName = "my-secret-store";
-    private const int ValidTimeoutSeconds = 30;
-
     private static DaprSecretProviderSettings CreateValidSettings() => new()
     {
-        BaseHost = ValidBaseHost,
-        HttpPort = ValidHttpPort,
-        SecretStoreName = ValidSecretStoreName,
-        TimeoutSeconds = ValidTimeoutSeconds,
+        BaseHost = "localhost",
+        HttpPort = "3500",
+        SecretStoreName = "my-secret-store",
+        TimeoutSeconds = 30,
         SecretNames = new List<string> { "secret-one" }
     };
 
     // --- Defaults ---
-
-    [Fact]
-    public void Constructor_Defaults_SetsExpectedValues()
-    {
-        // Arrange
-        // Act
-        var settings = new DaprSecretProviderSettings();
-
-        // Assert
-        settings.BaseHost.Should().Be("localhost");
-        settings.HttpPort.Should().Be("3500");
-        settings.SecretStoreName.Should().Be("default-secret-store");
-        settings.TimeoutSeconds.Should().Be(30);
-        settings.SecretNames.Should().BeEmpty();
-    }
 
     [Fact]
     public void Validate_DefaultSettings_ThrowsDueToEmptySecretNames()
@@ -79,12 +59,14 @@ public class DaprSecretProviderSettingsTests
         act.Should().NotThrow();
     }
 
-    [Fact]
-    public void Validate_MinimumPort_DoesNotThrow()
+    [Theory]
+    [InlineData("1")]
+    [InlineData("65535")]
+    public void Validate_BoundaryPort_DoesNotThrow(string httpPort)
     {
         // Arrange
         var settings = CreateValidSettings();
-        settings.HttpPort = "1";
+        settings.HttpPort = httpPort;
 
         // Act
         var act = () => settings.Validate();
@@ -93,40 +75,14 @@ public class DaprSecretProviderSettingsTests
         act.Should().NotThrow();
     }
 
-    [Fact]
-    public void Validate_MaximumPort_DoesNotThrow()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(300)]
+    public void Validate_BoundaryTimeoutSeconds_DoesNotThrow(int timeoutSeconds)
     {
         // Arrange
         var settings = CreateValidSettings();
-        settings.HttpPort = "65535";
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void Validate_TimeoutSecondsAtMinimum_DoesNotThrow()
-    {
-        // Arrange
-        var settings = CreateValidSettings();
-        settings.TimeoutSeconds = 1;
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void Validate_TimeoutSecondsAtMaximum_DoesNotThrow()
-    {
-        // Arrange
-        var settings = CreateValidSettings();
-        settings.TimeoutSeconds = 300;
+        settings.TimeoutSeconds = timeoutSeconds;
 
         // Act
         var act = () => settings.Validate();

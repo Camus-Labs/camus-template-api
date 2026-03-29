@@ -1,6 +1,7 @@
 using FluentAssertions;
 using emc.camus.application.Auth;
 using emc.camus.persistence.inmemory.Configurations;
+using emc.camus.persistence.inmemory.test.Helpers;
 
 namespace emc.camus.persistence.inmemory.test.Configurations;
 
@@ -12,7 +13,7 @@ public class InMemoryModelSettingsTests
     public void Validate_AllPropertiesValid_DoesNotThrow()
     {
         // Arrange
-        var settings = CreateValidSettings();
+        var settings = InMemoryModelSettingsFactory.Create();
 
         // Act
         var act = () => settings.Validate();
@@ -23,27 +24,13 @@ public class InMemoryModelSettingsTests
 
     // --- Validate Roles ---
 
-    [Fact]
-    public void Validate_NullRoles_ThrowsInvalidOperationException()
+    [Theory]
+    [MemberData(nameof(NullOrEmptyRolesData))]
+    public void Validate_NullOrEmptyRoles_ThrowsInvalidOperationException(object? roles)
     {
         // Arrange
-        var settings = CreateValidSettings();
-        settings.Roles = null!;
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*At least one role*must be defined*");
-    }
-
-    [Fact]
-    public void Validate_EmptyRoles_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var settings = CreateValidSettings();
-        settings.Roles = new List<RoleSettings>();
+        var settings = InMemoryModelSettingsFactory.Create();
+        settings.Roles = (roles as List<RoleSettings>)!;
 
         // Act
         var act = () => settings.Validate();
@@ -57,10 +44,10 @@ public class InMemoryModelSettingsTests
     public void Validate_DuplicateRoleName_ThrowsInvalidOperationException()
     {
         // Arrange
-        var settings = CreateValidSettings();
+        var settings = InMemoryModelSettingsFactory.Create();
         settings.Roles.Add(new RoleSettings
         {
-            Name = "admin",
+            Name = InMemoryModelSettingsFactory.DefaultRoleName,
             Permissions = new List<string> { Permissions.ApiWrite }
         });
 
@@ -69,14 +56,14 @@ public class InMemoryModelSettingsTests
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*Duplicate role name*admin*");
+            .WithMessage($"*Duplicate role name*{InMemoryModelSettingsFactory.DefaultRoleName}*");
     }
 
     [Fact]
     public void Validate_InvalidRoleSettings_ThrowsInvalidOperationException()
     {
         // Arrange
-        var settings = CreateValidSettings();
+        var settings = InMemoryModelSettingsFactory.Create();
         settings.Roles = new List<RoleSettings>
         {
             new RoleSettings { Name = "", Permissions = new List<string> { Permissions.ApiRead } }
@@ -91,27 +78,13 @@ public class InMemoryModelSettingsTests
 
     // --- Validate Users ---
 
-    [Fact]
-    public void Validate_NullUsers_ThrowsInvalidOperationException()
+    [Theory]
+    [MemberData(nameof(NullOrEmptyUsersData))]
+    public void Validate_NullOrEmptyUsers_ThrowsInvalidOperationException(object? users)
     {
         // Arrange
-        var settings = CreateValidSettings();
-        settings.Users = null!;
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*At least one user*must be defined*");
-    }
-
-    [Fact]
-    public void Validate_EmptyUsers_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var settings = CreateValidSettings();
-        settings.Users = new List<UserSettings>();
+        var settings = InMemoryModelSettingsFactory.Create();
+        settings.Users = (users as List<UserSettings>)!;
 
         // Act
         var act = () => settings.Validate();
@@ -125,12 +98,12 @@ public class InMemoryModelSettingsTests
     public void Validate_DuplicateUsernameSecretName_ThrowsInvalidOperationException()
     {
         // Arrange
-        var settings = CreateValidSettings();
+        var settings = InMemoryModelSettingsFactory.Create();
         settings.Users.Add(new UserSettings
         {
-            UsernameSecretName = "admin-username",
+            UsernameSecretName = InMemoryModelSettingsFactory.DefaultUsernameSecret,
             PasswordSecretName = "admin-password-2",
-            Roles = new List<string> { "admin" }
+            Roles = new List<string> { InMemoryModelSettingsFactory.DefaultRoleName }
         });
 
         // Act
@@ -138,14 +111,14 @@ public class InMemoryModelSettingsTests
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*Duplicate UsernameSecretName*admin-username*");
+            .WithMessage($"*Duplicate UsernameSecretName*{InMemoryModelSettingsFactory.DefaultUsernameSecret}*");
     }
 
     [Fact]
     public void Validate_UserWithInvalidRole_ThrowsInvalidOperationException()
     {
         // Arrange
-        var settings = CreateValidSettings();
+        var settings = InMemoryModelSettingsFactory.Create();
         settings.Users = new List<UserSettings>
         {
             new UserSettings
@@ -170,7 +143,7 @@ public class InMemoryModelSettingsTests
     public void Validate_NullApiInfos_ThrowsInvalidOperationException()
     {
         // Arrange
-        var settings = CreateValidSettings();
+        var settings = InMemoryModelSettingsFactory.Create();
         settings.ApiInfos = null!;
 
         // Act
@@ -185,7 +158,7 @@ public class InMemoryModelSettingsTests
     public void Validate_EmptyApiInfos_DoesNotThrow()
     {
         // Arrange
-        var settings = CreateValidSettings();
+        var settings = InMemoryModelSettingsFactory.Create();
         settings.ApiInfos = new List<ApiInfoSettings>();
 
         // Act
@@ -199,11 +172,11 @@ public class InMemoryModelSettingsTests
     public void Validate_DuplicateApiVersion_ThrowsInvalidOperationException()
     {
         // Arrange
-        var settings = CreateValidSettings();
+        var settings = InMemoryModelSettingsFactory.Create();
         settings.ApiInfos.Add(new ApiInfoSettings
         {
             Name = "Other API",
-            Version = "1.0",
+            Version = InMemoryModelSettingsFactory.DefaultApiVersion,
             Status = "Deprecated"
         });
 
@@ -212,14 +185,14 @@ public class InMemoryModelSettingsTests
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*Duplicate API version*1.0*");
+            .WithMessage($"*Duplicate API version*{InMemoryModelSettingsFactory.DefaultApiVersion}*");
     }
 
     [Fact]
     public void Validate_InvalidApiInfoSettings_ThrowsInvalidOperationException()
     {
         // Arrange
-        var settings = CreateValidSettings();
+        var settings = InMemoryModelSettingsFactory.Create();
         settings.ApiInfos = new List<ApiInfoSettings>
         {
             new ApiInfoSettings { Name = "", Version = "1.0", Status = "Available" }
@@ -236,7 +209,7 @@ public class InMemoryModelSettingsTests
     public void Validate_MultipleUniqueApiVersions_DoesNotThrow()
     {
         // Arrange
-        var settings = CreateValidSettings();
+        var settings = InMemoryModelSettingsFactory.Create();
         settings.ApiInfos.Add(new ApiInfoSettings
         {
             Name = "API v2",
@@ -251,37 +224,15 @@ public class InMemoryModelSettingsTests
         act.Should().NotThrow();
     }
 
-    private static InMemoryModelSettings CreateValidSettings()
+    public static IEnumerable<object?[]> NullOrEmptyRolesData() => new List<object?[]>
     {
-        return new InMemoryModelSettings
-        {
-            Roles = new List<RoleSettings>
-            {
-                new RoleSettings
-                {
-                    Name = "admin",
-                    Permissions = new List<string> { Permissions.ApiRead, Permissions.ApiWrite }
-                }
-            },
-            Users = new List<UserSettings>
-            {
-                new UserSettings
-                {
-                    UsernameSecretName = "admin-username",
-                    PasswordSecretName = "admin-password",
-                    Roles = new List<string> { "admin" }
-                }
-            },
-            ApiInfos = new List<ApiInfoSettings>
-            {
-                new ApiInfoSettings
-                {
-                    Name = "Test API",
-                    Version = "1.0",
-                    Status = "Available",
-                    Features = new List<string> { "feature1" }
-                }
-            }
-        };
-    }
+        new object?[] { null },
+        new object?[] { new List<RoleSettings>() }
+    };
+
+    public static IEnumerable<object?[]> NullOrEmptyUsersData() => new List<object?[]>
+    {
+        new object?[] { null },
+        new object?[] { new List<UserSettings>() }
+    };
 }

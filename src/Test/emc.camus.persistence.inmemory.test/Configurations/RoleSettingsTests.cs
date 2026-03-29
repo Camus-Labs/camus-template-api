@@ -6,8 +6,6 @@ namespace emc.camus.persistence.inmemory.test.Configurations;
 
 public class RoleSettingsTests
 {
-    private const string ValidRoleName = "admin";
-
     // --- Validate ---
 
     [Fact]
@@ -16,7 +14,7 @@ public class RoleSettingsTests
         // Arrange
         var settings = new RoleSettings
         {
-            Name = ValidRoleName,
+            Name = "admin",
             Permissions = new List<string> { Permissions.ApiRead }
         };
 
@@ -66,32 +64,15 @@ public class RoleSettingsTests
             .WithMessage("*Name*must not exceed*50*characters*");
     }
 
-    [Fact]
-    public void Validate_NullPermissions_ThrowsInvalidOperationException()
+    [Theory]
+    [MemberData(nameof(NullOrEmptyPermissionsData))]
+    public void Validate_NullOrEmptyPermissions_ThrowsInvalidOperationException(List<string>? permissions)
     {
         // Arrange
         var settings = new RoleSettings
         {
-            Name = ValidRoleName,
-            Permissions = null!
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*must have at least one permission*");
-    }
-
-    [Fact]
-    public void Validate_EmptyPermissions_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var settings = new RoleSettings
-        {
-            Name = ValidRoleName,
-            Permissions = new List<string>()
+            Name = "admin",
+            Permissions = permissions!
         };
 
         // Act
@@ -108,7 +89,7 @@ public class RoleSettingsTests
         // Arrange
         var settings = new RoleSettings
         {
-            Name = ValidRoleName,
+            Name = "admin",
             Permissions = new List<string> { "invalid.permission" }
         };
 
@@ -126,7 +107,7 @@ public class RoleSettingsTests
         // Arrange
         var settings = new RoleSettings
         {
-            Name = ValidRoleName,
+            Name = "admin",
             Permissions = new List<string> { Permissions.ApiRead, "nonexistent.perm" }
         };
 
@@ -144,7 +125,7 @@ public class RoleSettingsTests
         // Arrange
         var settings = new RoleSettings
         {
-            Name = ValidRoleName,
+            Name = "admin",
             Permissions = new List<string> { Permissions.ApiRead, Permissions.ApiWrite, Permissions.TokenCreate }
         };
 
@@ -154,4 +135,10 @@ public class RoleSettingsTests
         // Assert
         act.Should().NotThrow();
     }
+
+    public static IEnumerable<object?[]> NullOrEmptyPermissionsData() => new List<object?[]>
+    {
+        new object?[] { null },
+        new object?[] { new List<string>() }
+    };
 }

@@ -1,5 +1,4 @@
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using emc.camus.persistence.inmemory.Services;
 
@@ -7,8 +6,6 @@ namespace emc.camus.persistence.inmemory.test.Services;
 
 public class IMUnitOfWorkTests
 {
-    private readonly ILogger<IMUnitOfWork> _logger = NullLogger<IMUnitOfWork>.Instance;
-
     // --- Constructor ---
 
     [Fact]
@@ -25,10 +22,10 @@ public class IMUnitOfWorkTests
     // --- BeginTransactionAsync ---
 
     [Fact]
-    public async Task BeginTransactionAsync_CompletesSuccessfully()
+    public async Task BeginTransactionAsync_WhenCalled_CompletesSuccessfully()
     {
         // Arrange
-        var unitOfWork = new IMUnitOfWork(_logger);
+        var unitOfWork = new IMUnitOfWork(NullLogger<IMUnitOfWork>.Instance);
 
         // Act
         var act = () => unitOfWork.BeginTransactionAsync();
@@ -40,10 +37,10 @@ public class IMUnitOfWorkTests
     // --- CommitAsync ---
 
     [Fact]
-    public async Task CommitAsync_CompletesSuccessfully()
+    public async Task CommitAsync_WhenCalled_CompletesSuccessfully()
     {
         // Arrange
-        var unitOfWork = new IMUnitOfWork(_logger);
+        var unitOfWork = new IMUnitOfWork(NullLogger<IMUnitOfWork>.Instance);
 
         // Act
         var act = () => unitOfWork.CommitAsync();
@@ -55,10 +52,10 @@ public class IMUnitOfWorkTests
     // --- RollbackAsync ---
 
     [Fact]
-    public async Task RollbackAsync_CompletesSuccessfully()
+    public async Task RollbackAsync_WhenCalled_CompletesSuccessfully()
     {
         // Arrange
-        var unitOfWork = new IMUnitOfWork(_logger);
+        var unitOfWork = new IMUnitOfWork(NullLogger<IMUnitOfWork>.Instance);
 
         // Act
         var act = () => unitOfWork.RollbackAsync();

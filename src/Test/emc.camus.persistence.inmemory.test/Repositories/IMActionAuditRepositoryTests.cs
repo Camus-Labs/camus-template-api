@@ -1,25 +1,22 @@
 using emc.camus.application.Common;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
 using emc.camus.persistence.inmemory.Repositories;
 
 namespace emc.camus.persistence.inmemory.test.Repositories;
 
 public class IMActionAuditRepositoryTests
 {
-    private readonly ILogger<IMActionAuditRepository> _logger = NullLogger<IMActionAuditRepository>.Instance;
-    private readonly Mock<IUserContext> _userContextMock = new();
-
     // --- Constructor ---
 
     [Fact]
     public void Constructor_NullLogger_ThrowsArgumentNullException()
     {
         // Arrange
+        var userContextMock = new Mock<IUserContext>();
+
         // Act
-        var act = () => new IMActionAuditRepository(null!, _userContextMock.Object);
+        var act = () => new IMActionAuditRepository(null!, userContextMock.Object);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -30,7 +27,7 @@ public class IMActionAuditRepositoryTests
     {
         // Arrange
         // Act
-        var act = () => new IMActionAuditRepository(_logger, null!);
+        var act = () => new IMActionAuditRepository(NullLogger<IMActionAuditRepository>.Instance, null!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -42,9 +39,10 @@ public class IMActionAuditRepositoryTests
     public async Task LogCurrentUserActionAsync_ValidTitle_ReturnsZero()
     {
         // Arrange
-        _userContextMock.Setup(x => x.GetCurrentUserId()).Returns(Guid.Empty);
-        _userContextMock.Setup(x => x.GetCurrentUsername()).Returns("testuser");
-        var repository = new IMActionAuditRepository(_logger, _userContextMock.Object);
+        var userContextMock = new Mock<IUserContext>();
+        userContextMock.Setup(x => x.GetCurrentUserId()).Returns(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        userContextMock.Setup(x => x.GetCurrentUsername()).Returns("testuser");
+        var repository = new IMActionAuditRepository(NullLogger<IMActionAuditRepository>.Instance, userContextMock.Object);
 
         // Act
         var result = await repository.LogCurrentUserActionAsync("TestAction", "Test summary");
@@ -60,9 +58,8 @@ public class IMActionAuditRepositoryTests
     public async Task LogCurrentUserActionAsync_InvalidTitle_ThrowsArgumentException(string? title)
     {
         // Arrange
-        _userContextMock.Setup(x => x.GetCurrentUserId()).Returns(Guid.Empty);
-        _userContextMock.Setup(x => x.GetCurrentUsername()).Returns("testuser");
-        var repository = new IMActionAuditRepository(_logger, _userContextMock.Object);
+        var userContextMock = new Mock<IUserContext>();
+        var repository = new IMActionAuditRepository(NullLogger<IMActionAuditRepository>.Instance, userContextMock.Object);
 
         // Act
         var act = () => repository.LogCurrentUserActionAsync(title!, "Test summary");
@@ -77,7 +74,8 @@ public class IMActionAuditRepositoryTests
     public async Task LogActionAsync_ValidParameters_ReturnsZero()
     {
         // Arrange
-        var repository = new IMActionAuditRepository(_logger, _userContextMock.Object);
+        var userContextMock = new Mock<IUserContext>();
+        var repository = new IMActionAuditRepository(NullLogger<IMActionAuditRepository>.Instance, userContextMock.Object);
         var userId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
         // Act
@@ -94,7 +92,8 @@ public class IMActionAuditRepositoryTests
     public async Task LogActionAsync_InvalidUsername_ThrowsArgumentException(string? username)
     {
         // Arrange
-        var repository = new IMActionAuditRepository(_logger, _userContextMock.Object);
+        var userContextMock = new Mock<IUserContext>();
+        var repository = new IMActionAuditRepository(NullLogger<IMActionAuditRepository>.Instance, userContextMock.Object);
 
         // Act
         var act = () => repository.LogActionAsync(Guid.Empty, username!, "TestAction", "Test summary");
@@ -110,7 +109,8 @@ public class IMActionAuditRepositoryTests
     public async Task LogActionAsync_InvalidActionTitle_ThrowsArgumentException(string? title)
     {
         // Arrange
-        var repository = new IMActionAuditRepository(_logger, _userContextMock.Object);
+        var userContextMock = new Mock<IUserContext>();
+        var repository = new IMActionAuditRepository(NullLogger<IMActionAuditRepository>.Instance, userContextMock.Object);
 
         // Act
         var act = () => repository.LogActionAsync(Guid.Empty, "admin", title!, "Test summary");
@@ -126,7 +126,8 @@ public class IMActionAuditRepositoryTests
     public async Task LogActionAsync_InvalidActionSummary_ThrowsArgumentException(string? summary)
     {
         // Arrange
-        var repository = new IMActionAuditRepository(_logger, _userContextMock.Object);
+        var userContextMock = new Mock<IUserContext>();
+        var repository = new IMActionAuditRepository(NullLogger<IMActionAuditRepository>.Instance, userContextMock.Object);
 
         // Act
         var act = () => repository.LogActionAsync(Guid.Empty, "admin", "TestAction", summary!);

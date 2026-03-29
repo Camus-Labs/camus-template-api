@@ -6,9 +6,7 @@ namespace emc.camus.cache.inmemory.test.Services;
 public class IMTokenRevocationCacheTests
 {
     private static readonly Guid ValidJti = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    private static readonly Guid AnotherJti = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     private static readonly DateTime FutureExpiry = new(2099, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-    private static readonly DateTime PastExpiry = new(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     private readonly IMTokenRevocationCache _cache = new();
 
@@ -60,10 +58,11 @@ public class IMTokenRevocationCacheTests
     public void IsRevoked_DifferentTokenNotRevoked_ReturnsFalse()
     {
         // Arrange
+        var anotherJti = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
         _cache.Revoke(ValidJti, FutureExpiry);
 
         // Act
-        var result = _cache.IsRevoked(AnotherJti);
+        var result = _cache.IsRevoked(anotherJti);
 
         // Assert
         result.Should().BeFalse();
@@ -106,9 +105,10 @@ public class IMTokenRevocationCacheTests
     {
         // Arrange
         var jti = ValidJti;
+        var pastExpiry = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         // Act
-        _cache.Revoke(jti, PastExpiry);
+        _cache.Revoke(jti, pastExpiry);
 
         // Assert
         _cache.IsRevoked(jti).Should().BeFalse();

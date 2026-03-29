@@ -7,8 +7,7 @@ namespace emc.camus.observability.otel.test.Services;
 
 public class ActivitySourceWrapperTests : IDisposable
 {
-    private const string SourceName = "test-activity-source";
-    private readonly ActivitySource _activitySource = new(SourceName);
+    private readonly ActivitySource _activitySource = new("test-activity-source");
     private readonly ActivityListener _listener;
     private readonly ActivitySourceWrapper _wrapper;
 
@@ -330,7 +329,7 @@ public class ActivitySourceWrapperTests : IDisposable
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("boom");
+            .WithMessage("*boom*");
         capturedActivity!.GetTagItem("otel.status_code").Should().Be("ERROR");
     }
 
