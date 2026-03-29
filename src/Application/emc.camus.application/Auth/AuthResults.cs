@@ -36,12 +36,6 @@ public sealed record GenerateTokenResult
     /// <summary>The expiration date and time of the token (UTC).</summary>
     public DateTime ExpiresOn { get; }
 
-    /// <summary>The ID of the user who requested the token.</summary>
-    public Guid RequestorUserId { get; }
-
-    /// <summary>The username of the user who requested the token.</summary>
-    public string RequestorUsername { get; }
-
     /// <summary>The username associated with the token (includes suffix).</summary>
     public string TokenUsername { get; }
 
@@ -50,20 +44,14 @@ public sealed record GenerateTokenResult
     /// </summary>
     /// <param name="token">The generated authentication token.</param>
     /// <param name="expiresOn">The expiration date and time of the token (UTC).</param>
-    /// <param name="requestorUserId">The ID of the user who requested the token.</param>
-    /// <param name="requestorUsername">The username of the user who requested the token.</param>
     /// <param name="tokenUsername">The username associated with the token (includes suffix).</param>
-    public GenerateTokenResult(string token, DateTime expiresOn, Guid requestorUserId, string requestorUsername, string tokenUsername)
+    public GenerateTokenResult(string token, DateTime expiresOn, string tokenUsername)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
         ArgumentOutOfRangeException.ThrowIfEqual(expiresOn, default);
-        ArgumentOutOfRangeException.ThrowIfEqual(requestorUserId, Guid.Empty);
-        ArgumentException.ThrowIfNullOrWhiteSpace(requestorUsername);
         ArgumentException.ThrowIfNullOrWhiteSpace(tokenUsername);
         Token = token;
         ExpiresOn = expiresOn;
-        RequestorUserId = requestorUserId;
-        RequestorUsername = requestorUsername;
         TokenUsername = tokenUsername;
     }
 }

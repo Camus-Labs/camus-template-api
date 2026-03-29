@@ -26,6 +26,8 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
     - [ ] Validation methods throw exceptions — never return null/false
     - [ ] Multi-statement validation on non-settings classes as `private void Validate{Property}()` methods
     - [ ] Exception throw statements contain the offending value or the violated constraint
+    - [ ] Exception message expressions use only local variables, parameters, and constants — never method calls
+          or property accessors that can throw (avoids masking the original exception)
 
 3. Configuration Classes (`*Settings`)
 

@@ -113,8 +113,6 @@ public class AuthControllerTests
         var generateResult = new GenerateTokenResult(
             "generated-token",
             request.ExpiresOn,
-            Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-            "adminuser",
             "adminuser-ci-deploy");
 
         _mockAuthService

@@ -242,8 +242,6 @@ public class AuthServiceTests
         // Assert
         result.Token.Should().Be(ValidToken);
         result.ExpiresOn.Should().Be(ValidExpiration);
-        result.RequestorUserId.Should().Be(ValidUserId);
-        result.RequestorUsername.Should().Be(ValidUsername);
         result.TokenUsername.Should().Contain(ValidTokenSuffix);
     }
 

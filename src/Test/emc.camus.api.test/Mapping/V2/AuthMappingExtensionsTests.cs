@@ -74,8 +74,6 @@ public class AuthMappingExtensionsTests
         var result = new GenerateTokenResult(
             "generated-token",
             new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
-            new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-            "adminuser",
             "adminuser-ci-deploy");
 
         // Act

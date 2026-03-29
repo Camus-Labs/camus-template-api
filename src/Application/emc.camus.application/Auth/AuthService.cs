@@ -135,8 +135,7 @@ public class AuthService : IAuthService
 
         var currentUserId = _userContext.GetCurrentUserId()
             ?? throw new InvalidOperationException("User ID is not available. Ensure the user is authenticated.");
-        var currentUsername = _userContext.GetCurrentUsername()
-            ?? throw new InvalidOperationException("Username is not available. Ensure the user is authenticated.");
+
         try
         {
             var creator = await _userRepository.GetByIdAsync(currentUserId);
@@ -187,8 +186,6 @@ public class AuthService : IAuthService
             return new GenerateTokenResult(
                 token.Token,
                 token.ExpiresOn,
-                currentUserId,
-                currentUsername,
                 generatedToken.TokenUsername);
         }
         catch (Exception ex) when (ex is ArgumentException or DomainException)
@@ -198,7 +195,7 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             throw new InvalidOperationException(
-                $"Token generation failed due to a system error. User: {_userContext.GetCurrentUsername()}", ex);
+                $"Token generation failed due to a system error. User ID: {currentUserId}", ex);
         }
     }
 
@@ -256,8 +253,6 @@ public class AuthService : IAuthService
         var jti = command.Jti;
         var currentUserId = _userContext.GetCurrentUserId()
             ?? throw new InvalidOperationException("User ID is not available. Ensure the user is authenticated.");
-        var currentUsername = _userContext.GetCurrentUsername()
-            ?? throw new InvalidOperationException("Username is not available. Ensure the user is authenticated.");
 
         if (_generatedTokenRepository == null)
         {

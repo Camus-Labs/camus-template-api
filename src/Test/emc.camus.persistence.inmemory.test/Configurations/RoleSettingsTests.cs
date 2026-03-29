@@ -83,14 +83,16 @@ public class RoleSettingsTests
             .WithMessage("*must have at least one permission*");
     }
 
-    [Fact]
-    public void Validate_InvalidPermission_ThrowsInvalidOperationException()
+    [Theory]
+    [MemberData(nameof(InvalidPermissionsData))]
+    public void Validate_InvalidPermissions_ThrowsInvalidOperationException(
+        List<string> permissions, string expectedInvalidPermission)
     {
         // Arrange
         var settings = new RoleSettings
         {
             Name = "admin",
-            Permissions = new List<string> { "invalid.permission" }
+            Permissions = permissions
         };
 
         // Act
@@ -98,25 +100,7 @@ public class RoleSettingsTests
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*invalid permissions*invalid.permission*");
-    }
-
-    [Fact]
-    public void Validate_MixedValidAndInvalidPermissions_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var settings = new RoleSettings
-        {
-            Name = "admin",
-            Permissions = new List<string> { Permissions.ApiRead, "nonexistent.perm" }
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*invalid permissions*nonexistent.perm*");
+            .WithMessage($"*invalid permissions*{expectedInvalidPermission}*");
     }
 
     [Fact]
@@ -140,5 +124,11 @@ public class RoleSettingsTests
     {
         new object?[] { null },
         new object?[] { new List<string>() }
+    };
+
+    public static IEnumerable<object?[]> InvalidPermissionsData() => new List<object?[]>
+    {
+        new object?[] { new List<string> { "invalid.permission" }, "invalid.permission" },
+        new object?[] { new List<string> { Permissions.ApiRead, "nonexistent.perm" }, "nonexistent.perm" }
     };
 }
