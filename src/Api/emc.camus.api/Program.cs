@@ -76,45 +76,48 @@ Program.LogInstanceId(startupLogger, INSTANCE_ID);
 // Step 16: Configure transport security (forwarded headers, HSTS, HTTPS redirection)
 app.UseTransportSecurity();
 
-// Step 17: Enable observability middleware (adds Trace Id header to responses)
+// Step 17: Add security headers (X-Content-Type-Options, X-Frame-Options, CSP, Referrer-Policy)
+app.UseSecurityHeaders();
+
+// Step 18: Enable observability middleware (adds Trace Id header to responses)
 // Must be BEFORE exception handling so trace IDs are available in error logs
 app.UseObservability();
 
-// Step 18: Global exception handling middleware (catches auth, authz, and app exceptions)
+// Step 19: Global exception handling middleware (catches auth, authz, and app exceptions)
 // Must be EARLY in pipeline to catch exceptions from rate limiting, auth, etc.
 app.UseErrorHandling();
 
-// Step 19: Enable Swagger UI in development
+// Step 20: Enable Swagger UI in development
 app.UseSwaggerDocumentation();
 
-// Step 20: Apply CORS policy (before authentication to allow preflight requests)
+// Step 21: Apply CORS policy (before authentication to allow preflight requests)
 app.UseCorsPolicy();
 
-// Step 21: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
+// Step 22: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
 app.UseInMemoryRateLimiting();
 
-// Step 22: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
+// Step 23: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
 app.UseDaprSecrets();
 
-// Step 23: Run database migrations (creates schema and tables if needed)
+// Step 24: Run database migrations (creates schema and tables if needed)
 app.UseDatabaseMigrations(startupLogger);
 
-// Step 24: Add Authentication and Authorization
+// Step 25: Add Authentication and Authorization
 app.UseAuthentication();
 
-// Step 25: Apply authorization middleware
+// Step 26: Apply authorization middleware
 app.UseAuthorizationPolicies();
 
-// Step 26: Initialize persistence-dependent data (load API info)
+// Step 27: Initialize persistence-dependent data (load API info)
 app.UsePersistence();
 
-// Step 27: Apply application services (adds Username header + endpoint routing)
+// Step 28: Apply application services (adds Username header + endpoint routing)
 app.UseApplicationServices();
 
 
 Program.LogStartupComplete(startupLogger, SERVICE_NAME);
 
-// Step 28: Run the app
+// Step 29: Run the app
 await app.RunAsync();
 
 /// <summary>

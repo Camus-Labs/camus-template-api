@@ -39,20 +39,22 @@ namespace emc.camus.ratelimiting.inmemory.Middleware
             var limit = context.Items["RateLimit:Limit"]?.ToString() ?? "unknown";
             var window = context.Items["RateLimit:Window"]?.ToString() ?? "unknown";
 
+            var headers = context.Response.Headers;
+
             // Add RFC-compliant IETF Draft headers
             // See: https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/
-            context.Response.Headers[Headers.RateLimitLimit] = limit;
+            headers[Headers.RateLimitLimit] = limit;
 
             // Calculate reset timestamp (current time + window)
             if (int.TryParse(window, out var windowSeconds))
             {
                 var resetTimestamp = DateTimeOffset.UtcNow.AddSeconds(windowSeconds).ToUnixTimeSeconds();
-                context.Response.Headers[Headers.RateLimitReset] = resetTimestamp.ToString(CultureInfo.InvariantCulture);
+                headers[Headers.RateLimitReset] = resetTimestamp.ToString(CultureInfo.InvariantCulture);
             }
 
             // Add custom headers for additional context (backward compatibility)
-            context.Response.Headers[Headers.RateLimitPolicy] = policy;
-            context.Response.Headers[Headers.RateLimitWindow] = window;
+            headers[Headers.RateLimitPolicy] = policy;
+            headers[Headers.RateLimitWindow] = window;
 
             // Continue to next middleware
             await _next(context);

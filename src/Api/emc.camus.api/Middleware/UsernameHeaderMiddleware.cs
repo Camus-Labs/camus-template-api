@@ -47,9 +47,11 @@ public sealed class UsernameHeaderMiddleware
 
         context.Response.OnStarting(() =>
         {
-            if (!string.IsNullOrWhiteSpace(username) && !context.Response.Headers.ContainsKey(Headers.Username))
+            var headers = context.Response.Headers;
+
+            if (!string.IsNullOrWhiteSpace(username) && !headers.ContainsKey(Headers.Username))
             {
-                context.Response.Headers[Headers.Username] = username;
+                headers[Headers.Username] = username;
             }
             return Task.CompletedTask;
         });

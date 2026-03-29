@@ -14,6 +14,7 @@ using emc.camus.application.RateLimiting;
 using emc.camus.application.Common;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
 
 namespace emc.camus.ratelimiting.inmemory
 {
@@ -227,7 +228,7 @@ namespace emc.camus.ratelimiting.inmemory
             // RFC-compliant IETF Draft headers
             context.HttpContext.Response.Headers[Headers.RateLimitLimit] = policy.PermitLimit.ToString(CultureInfo.InvariantCulture);
             context.HttpContext.Response.Headers[Headers.RateLimitReset] = resetTimestamp.ToString(CultureInfo.InvariantCulture);
-            context.HttpContext.Response.Headers[Headers.RetryAfter] = retryAfterSeconds.ToString(CultureInfo.InvariantCulture);
+            context.HttpContext.Response.Headers[HeaderNames.RetryAfter] = retryAfterSeconds.ToString(CultureInfo.InvariantCulture);
 
             // Custom headers for additional context (backward compatibility)
             context.HttpContext.Response.Headers[Headers.RateLimitPolicy] = policyName;

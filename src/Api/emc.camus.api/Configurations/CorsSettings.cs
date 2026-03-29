@@ -47,7 +47,7 @@ namespace emc.camus.api.Configurations
         {
             HeaderNames.ContentType,
             Headers.TraceId,
-            Headers.RetryAfter,
+            HeaderNames.RetryAfter,
             Headers.RateLimitLimit,
             Headers.RateLimitReset,
             Headers.RateLimitPolicy,

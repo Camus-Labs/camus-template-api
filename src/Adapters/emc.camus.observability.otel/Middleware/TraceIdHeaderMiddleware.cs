@@ -32,9 +32,11 @@ namespace emc.camus.observability.otel.Middleware
             
             context.Response.OnStarting(() =>
             {
-                if (!string.IsNullOrWhiteSpace(traceId) && !context.Response.Headers.ContainsKey(Headers.TraceId))
+                var headers = context.Response.Headers;
+
+                if (!string.IsNullOrWhiteSpace(traceId) && !headers.ContainsKey(Headers.TraceId))
                 {
-                    context.Response.Headers[Headers.TraceId] = traceId;
+                    headers[Headers.TraceId] = traceId;
                 }
                 return Task.CompletedTask;
             });

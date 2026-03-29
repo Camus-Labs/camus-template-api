@@ -35,11 +35,6 @@ public static class Headers
     public const string RateLimitReset = "RateLimit-Reset";
 
     /// <summary>
-    /// Header name for retry-after seconds when rate limited.
-    /// </summary>
-    public const string RetryAfter = "Retry-After";
-
-    /// <summary>
     /// Header name for rate limit policy name applied.
     /// </summary>
     public const string RateLimitPolicy = "RateLimit-Policy";
