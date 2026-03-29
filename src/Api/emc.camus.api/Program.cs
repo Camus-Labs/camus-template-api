@@ -9,7 +9,6 @@ using emc.camus.secrets.dapr;
 using emc.camus.documentation.swagger;
 using emc.camus.ratelimiting.inmemory;
 using emc.camus.migrations.dbup;
-using Microsoft.AspNetCore.HttpOverrides;
 
 [assembly: ExcludeFromCodeCoverage]
 
@@ -74,53 +73,42 @@ var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 Program.LogServiceStarting(startupLogger, SERVICE_NAME, SERVICE_VERSION, ENV_NAME);
 Program.LogInstanceId(startupLogger, INSTANCE_ID);
 
-// Step 16: Configure forwarded headers for proxy/load balancer scenarios
-// This ensures X-Forwarded-For and X-Real-IP headers are properly processed
-// Critical for rate limiting to work correctly behind proxies (Azure LB, nginx, CloudFlare, etc.)
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
-    // In production, configure KnownProxies or KnownNetworks for security
-    // For now, trust all proxies (suitable for Azure App Service, k8s ingress)
-    ForwardLimit = null // Process all X-Forwarded-For entries
-});
+// Step 16: Configure transport security (forwarded headers, HSTS, HTTPS redirection)
+app.UseTransportSecurity();
 
-// Step 17: Enforce HTTPS (redirect HTTP to HTTPS)
-app.UseHttpsRedirection();
-
-// Step 18: Enable observability middleware (adds Trace Id header to responses)
+// Step 17: Enable observability middleware (adds Trace Id header to responses)
 // Must be BEFORE exception handling so trace IDs are available in error logs
 app.UseObservability();
 
-// Step 19: Global exception handling middleware (catches auth, authz, and app exceptions)
+// Step 18: Global exception handling middleware (catches auth, authz, and app exceptions)
 // Must be EARLY in pipeline to catch exceptions from rate limiting, auth, etc.
 app.UseErrorHandling();
 
-// Step 20: Enable Swagger UI in development
+// Step 19: Enable Swagger UI in development
 app.UseSwaggerDocumentation();
 
-// Step 21: Apply CORS policy (before authentication to allow preflight requests)
+// Step 20: Apply CORS policy (before authentication to allow preflight requests)
 app.UseCorsPolicy();
 
-// Step 22: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
+// Step 21: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
 app.UseInMemoryRateLimiting();
 
-// Step 23: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
+// Step 22: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
 app.UseDaprSecrets();
 
-// Step 24: Run database migrations (creates schema and tables if needed)
+// Step 23: Run database migrations (creates schema and tables if needed)
 app.UseDatabaseMigrations(startupLogger);
 
-// Step 25: Add Authentication and Authorization
+// Step 24: Add Authentication and Authorization
 app.UseAuthentication();
 
-// Step 26: Apply authorization middleware
+// Step 25: Apply authorization middleware
 app.UseAuthorizationPolicies();
 
-// Step 27: Initialize persistence-dependent data (load API info)
+// Step 26: Initialize persistence-dependent data (load API info)
 app.UsePersistence();
 
-// Step 28: Apply application services (adds Username header + endpoint routing)
+// Step 27: Apply application services (adds Username header + endpoint routing)
 app.UseApplicationServices();
 
 

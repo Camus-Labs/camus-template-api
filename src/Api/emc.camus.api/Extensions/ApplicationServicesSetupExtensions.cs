@@ -49,8 +49,6 @@ namespace emc.camus.api.Extensions
         /// </remarks>
         public static WebApplication UseApplicationServices(this WebApplication app)
         {
-            ArgumentNullException.ThrowIfNull(app);
-
             // Add Username header to responses (for observability and debugging)
             app.UseMiddleware<UsernameHeaderMiddleware>();
 
