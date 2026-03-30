@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Encodings.Web;
 using emc.camus.application.Secrets;
 using emc.camus.application.Auth;
@@ -60,7 +62,10 @@ namespace emc.camus.security.apikey.Handlers
             var providedApiKey = apiKeyHeaderValues.FirstOrDefault();
             var configuredApiKey = _secretProvider.GetSecret(_settings.ApiKeySecretName);
 
-            if (string.IsNullOrWhiteSpace(providedApiKey) || providedApiKey != configuredApiKey)
+            if (string.IsNullOrWhiteSpace(providedApiKey)
+                || !CryptographicOperations.FixedTimeEquals(
+                    Encoding.UTF8.GetBytes(providedApiKey),
+                    Encoding.UTF8.GetBytes(configuredApiKey)))
             {
                 throw new UnauthorizedAccessException("The provided credentials are invalid. API Key does not match the configured value.");
             }

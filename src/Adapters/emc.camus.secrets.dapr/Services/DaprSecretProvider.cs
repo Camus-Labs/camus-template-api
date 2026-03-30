@@ -100,7 +100,7 @@ namespace emc.camus.secrets.dapr.Services
 
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
-                    throw new InvalidOperationException($"Secret '{secretName}' not found in store '{_settings.SecretStoreName}'");
+                    throw new InvalidOperationException($"Failed to load secret '{secretName}': not found in store '{_settings.SecretStoreName}'");
                 }
 
                 response.EnsureSuccessStatusCode();
@@ -109,7 +109,7 @@ namespace emc.camus.secrets.dapr.Services
 
                 if (string.IsNullOrWhiteSpace(responseContent))
                 {
-                    throw new InvalidOperationException($"Empty response received for secret '{secretName}'");
+                    throw new InvalidOperationException($"Failed to load secret '{secretName}': empty response received");
                 }
 
                 ParseAndStoreSecret(secretName, responseContent);
@@ -141,17 +141,18 @@ namespace emc.camus.secrets.dapr.Services
 
             if (secretData == null)
             {
-                throw new InvalidOperationException($"Secret '{secretName}' response was null after deserialization");
+                throw new InvalidOperationException($"Failed to parse secret '{secretName}': response was null after deserialization");
             }
 
             if (!secretData.TryGetValue(secretName, out var secretValue))
             {
-                throw new InvalidOperationException($"Secret '{secretName}' not found in response dictionary. Available keys: {string.Join(", ", secretData.Keys)}");
+                var availableKeys = string.Join(", ", secretData.Keys);
+                throw new InvalidOperationException($"Failed to parse secret '{secretName}': key not found in response dictionary. Available keys: {availableKeys}");
             }
 
             if (string.IsNullOrWhiteSpace(secretValue))
             {
-                throw new InvalidOperationException($"Secret '{secretName}' contains empty or whitespace-only value");
+                throw new InvalidOperationException($"Failed to load secret '{secretName}': value is empty or whitespace-only");
             }
 
             _secrets[secretName] = secretValue;

@@ -14,6 +14,9 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
     - [ ] XML documentation on all public types and members
     - [ ] No `<inheritdoc />` — every public type and member has its own explicit XML documentation
     - [ ] No dead code — no unused private constructors, methods, fields, properties, or variables
+    - [ ] All async methods on interfaces and their implementations accept `CancellationToken ct = default` as the
+          last parameter — exception: fire-and-forget operations that must run to completion
+    - [ ] `CancellationToken` is forwarded to every awaited call that accepts one — never silently dropped
 
 2. Validation & Error Handling
 

@@ -17,6 +17,8 @@ applyTo: "src/Api/**/*.cs"
           (e.g., `AuthSetupExtensions`, `SwaggerSetupExtensions`, `ObservabilitySetupExtensions`)
     - [ ] `Infrastructure/` folder for framework-dependent service implementations (e.g., `HttpUserContext`
           implementing `IUserContext`) — distinct from `Models/` (data shapes) and `Mapping/` (converters)
+    - [ ] Controller actions accept `CancellationToken ct` (ASP.NET Core binds it to `HttpContext.RequestAborted`
+          automatically)
 
 2. Type Conventions & Lifecycle
 
