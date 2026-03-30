@@ -7,6 +7,7 @@ using emc.camus.application.Auth;
 using emc.camus.persistence.postgresql.Services;
 using emc.camus.persistence.postgresql.Repositories;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace emc.camus.persistence.postgresql
 {
@@ -16,6 +17,7 @@ namespace emc.camus.persistence.postgresql
     [ExcludeFromCodeCoverage]
     public static class PostgreSqlPersistenceSetupExtensions
     {
+        private static readonly string[] ReadyTag = new[] { "ready" };
         /// <summary>
         /// Adds PostgreSQL persistence services including connection factory, unit of work, and all repositories.
         /// </summary>
@@ -44,6 +46,27 @@ namespace emc.camus.persistence.postgresql
             builder.Services.AddScoped<IUserRepository, PSUserRepository>();
             builder.Services.AddScoped<IGeneratedTokenRepository, PSGeneratedTokenRepository>();
             builder.Services.AddScoped<IApiInfoRepository, PSApiInfoRepository>();
+
+            return builder;
+        }
+
+        /// <summary>
+        /// Registers a PostgreSQL health check tagged with "ready" for readiness probes.
+        /// Resolves <see cref="IConnectionFactory"/> at runtime to verify database connectivity.
+        /// </summary>
+        /// <param name="builder">The health checks builder.</param>
+        /// <returns>The health checks builder for method chaining.</returns>
+        public static IHealthChecksBuilder AddPostgreSqlHealthCheck(this IHealthChecksBuilder builder)
+        {
+            builder.Add(new HealthCheckRegistration(
+                "postgresql",
+                sp =>
+                {
+                    var connectionFactory = sp.GetRequiredService<IConnectionFactory>();
+                    return new PSHealthCheck(connectionFactory);
+                },
+                failureStatus: null,
+                tags: ReadyTag));
 
             return builder;
         }

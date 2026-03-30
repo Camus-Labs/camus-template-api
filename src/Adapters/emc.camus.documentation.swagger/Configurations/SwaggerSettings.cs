@@ -84,8 +84,11 @@ namespace emc.camus.documentation.swagger.Configurations
 
                 var validSchemes = AuthenticationSchemes.GetAll();
                 if (!validSchemes.Contains(scheme, StringComparer.OrdinalIgnoreCase))
+                {
+                    var validValues = string.Join(", ", validSchemes);
                     throw new InvalidOperationException(
-                        $"Invalid security scheme '{scheme}'. Valid values are: {string.Join(", ", validSchemes)} (case-insensitive)");
+                        $"Invalid security scheme '{scheme}'. Valid values are: {validValues} (case-insensitive)");
+                }
             }
         }
     }

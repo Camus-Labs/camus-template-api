@@ -22,33 +22,22 @@ public class DBUpSettingsTests
 
     // --- Validate when Enabled - Valid ---
 
-    [Fact]
-    public void Validate_EnabledWithValidSecrets_DoesNotThrow()
+    public static TheoryData<string, string> ValidSecretNameData => new()
+    {
+        { "db-admin-username", "db-admin-password" },
+        { new string('a', 200), new string('b', 200) }
+    };
+
+    [Theory]
+    [MemberData(nameof(ValidSecretNameData))]
+    public void Validate_EnabledWithValidSecrets_DoesNotThrow(string adminSecretName, string passwordSecretName)
     {
         // Arrange
         var settings = new DBUpSettings
         {
             Enabled = true,
-            AdminSecretName = "db-admin-username",
-            PasswordSecretName = "db-admin-password"
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void Validate_EnabledWithMaxLengthSecretNames_DoesNotThrow()
-    {
-        // Arrange
-        var settings = new DBUpSettings
-        {
-            Enabled = true,
-            AdminSecretName = new string('a', 200),
-            PasswordSecretName = new string('b', 200)
+            AdminSecretName = adminSecretName,
+            PasswordSecretName = passwordSecretName
         };
 
         // Act

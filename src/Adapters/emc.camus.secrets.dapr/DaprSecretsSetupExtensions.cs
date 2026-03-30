@@ -5,6 +5,7 @@ using emc.camus.application.Secrets;
 using emc.camus.secrets.dapr.Configurations;
 using emc.camus.secrets.dapr.Services;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace emc.camus.secrets.dapr
 {
@@ -14,6 +15,7 @@ namespace emc.camus.secrets.dapr
     [ExcludeFromCodeCoverage]
     public static class DaprSecretsSetupExtensions
     {
+        private static readonly string[] ReadyTag = new[] { "ready" };
         /// <summary>
         /// Adds Dapr secret provider services.
         /// </summary>
@@ -59,6 +61,27 @@ namespace emc.camus.secrets.dapr
             secretProvider.LoadSecretsAsync(settings.SecretNames).GetAwaiter().GetResult();
 
             return app;
+        }
+
+        /// <summary>
+        /// Registers a Dapr secret store health check tagged with "ready" for readiness probes.
+        /// Resolves <see cref="DaprSecretProvider"/> at runtime to verify secret store connectivity.
+        /// </summary>
+        /// <param name="builder">The health checks builder.</param>
+        /// <returns>The health checks builder for method chaining.</returns>
+        public static IHealthChecksBuilder AddDaprSecretHealthCheck(this IHealthChecksBuilder builder)
+        {
+            builder.Add(new HealthCheckRegistration(
+                "dapr-secrets",
+                sp =>
+                {
+                    var secretProvider = sp.GetRequiredService<DaprSecretProvider>();
+                    return new DaprSecretHealthCheck(secretProvider);
+                },
+                failureStatus: null,
+                tags: ReadyTag));
+
+            return builder;
         }
     }
 }

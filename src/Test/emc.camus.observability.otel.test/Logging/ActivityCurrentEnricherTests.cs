@@ -4,6 +4,7 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Parsing;
 using emc.camus.observability.otel.Logging;
+using emc.camus.observability.otel.test.Helpers;
 
 namespace emc.camus.observability.otel.test.Logging;
 
@@ -97,14 +98,4 @@ public class ActivityCurrentEnricherTests
             .Should().Be(activity.SpanId.ToHexString());
     }
 
-    /// <summary>
-    /// Minimal ILogEventPropertyFactory for test use.
-    /// </summary>
-    private sealed class LogEventPropertyFactory : ILogEventPropertyFactory
-    {
-        public LogEventProperty CreateProperty(string name, object? value, bool destructureObjects = false)
-        {
-            return new LogEventProperty(name, new ScalarValue(value));
-        }
-    }
 }

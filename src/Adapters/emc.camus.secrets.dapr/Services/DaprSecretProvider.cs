@@ -157,6 +157,17 @@ namespace emc.camus.secrets.dapr.Services
             _secrets[secretName] = secretValue;
         }
 
-
+        /// <summary>
+        /// Verifies that the configured Dapr secret store is reachable by requesting
+        /// a bulk secret listing.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>A task representing the asynchronous connectivity check.</returns>
+        /// <exception cref="HttpRequestException">Thrown when the secret store is unreachable.</exception>
+        internal async Task CheckConnectivityAsync(CancellationToken cancellationToken)
+        {
+            using var response = await _httpClient.GetAsync("bulk", cancellationToken);
+            response.EnsureSuccessStatusCode();
+        }
     }
 }
