@@ -31,7 +31,7 @@ internal sealed class IMApiInfoRepository : IApiInfoRepository
     /// <exception cref="InvalidOperationException">
     /// Thrown when API info configuration is invalid.
     /// </exception>
-    public void Initialize()
+    public Task InitializeAsync(CancellationToken ct = default)
     {
         if (_initialized)
         {
@@ -53,12 +53,15 @@ internal sealed class IMApiInfoRepository : IApiInfoRepository
         }
 
         _initialized = true;
+
+        return Task.CompletedTask;
     }
 
     /// <summary>
     /// Gets API information by version.
     /// </summary>
     /// <param name="version">The API version to retrieve.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>An ApiInfo object if found.</returns>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the repository has not been initialized.
@@ -66,7 +69,7 @@ internal sealed class IMApiInfoRepository : IApiInfoRepository
     /// <exception cref="KeyNotFoundException">
     /// Thrown when the specified version is not found.
     /// </exception>
-    public Task<ApiInfo> GetByVersionAsync(string version)
+    public Task<ApiInfo> GetByVersionAsync(string version, CancellationToken ct = default)
     {
         EnsureInitialized();
 
@@ -84,7 +87,7 @@ internal sealed class IMApiInfoRepository : IApiInfoRepository
     {
         if (!_initialized)
         {
-            throw new InvalidOperationException("Repository not initialized. Call Initialize() first.");
+            throw new InvalidOperationException("Repository not initialized. Call InitializeAsync() first.");
         }
     }
 }

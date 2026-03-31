@@ -29,8 +29,9 @@ internal sealed partial class IMUnitOfWork : IUnitOfWork
     /// <summary>
     /// No-op: in-memory persistence does not require transactions.
     /// </summary>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A completed task.</returns>
-    public Task BeginTransactionAsync()
+    public Task BeginTransactionAsync(CancellationToken ct = default)
     {
         LogSkippedOperation("BeginTransaction");
         return Task.CompletedTask;
@@ -39,8 +40,9 @@ internal sealed partial class IMUnitOfWork : IUnitOfWork
     /// <summary>
     /// No-op: in-memory persistence does not require transactions.
     /// </summary>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A completed task.</returns>
-    public Task CommitAsync()
+    public Task CommitAsync(CancellationToken ct = default)
     {
         LogSkippedOperation("Commit");
         return Task.CompletedTask;

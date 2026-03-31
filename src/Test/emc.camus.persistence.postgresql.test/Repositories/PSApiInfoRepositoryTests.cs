@@ -1,6 +1,6 @@
 using FluentAssertions;
-using emc.camus.application.Common;
 using emc.camus.persistence.postgresql.Repositories;
+using emc.camus.persistence.postgresql.Services;
 
 namespace emc.camus.persistence.postgresql.test.Repositories;
 
@@ -8,20 +8,26 @@ public class PSApiInfoRepositoryTests
 {
     private readonly Mock<IConnectionFactory> _mockConnectionFactory = new();
 
+    private PSApiInfoRepository CreateRepository()
+    {
+        var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
+        return new PSApiInfoRepository(unitOfWork);
+    }
+
     // --- Constructor ---
 
     [Fact]
-    public void Constructor_NullConnectionFactory_ThrowsArgumentNullException()
+    public void Constructor_NullUnitOfWork_ThrowsArgumentNullException()
     {
         // Arrange
-        IConnectionFactory? connectionFactory = null;
+        PSUnitOfWork? unitOfWork = null;
 
         // Act
-        var act = () => new PSApiInfoRepository(connectionFactory!);
+        var act = () => new PSApiInfoRepository(unitOfWork!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
-            .And.ParamName.Should().Be("connectionFactory");
+            .And.ParamName.Should().Be("unitOfWork");
     }
 
     // --- GetByVersionAsync ---
@@ -30,7 +36,7 @@ public class PSApiInfoRepositoryTests
     public async Task GetByVersionAsync_NotInitialized_ThrowsInvalidOperationException()
     {
         // Arrange
-        var repository = new PSApiInfoRepository(_mockConnectionFactory.Object);
+        var repository = CreateRepository();
 
         // Act
         var act = () => repository.GetByVersionAsync("1.0");

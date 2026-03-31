@@ -37,10 +37,10 @@ public class IMUserRepositoryTests
         act.Should().Throw<ArgumentNullException>();
     }
 
-    // --- Initialize ---
+    // --- InitializeAsync ---
 
     [Fact]
-    public void Initialize_ValidSettings_DoesNotThrow()
+    public async Task InitializeAsync_ValidSettings_DoesNotThrow()
     {
         // Arrange
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
@@ -49,33 +49,33 @@ public class IMUserRepositoryTests
         var repository = new IMUserRepository(settings, _mockSecretProvider.Object);
 
         // Act
-        var act = () => repository.Initialize();
+        var act = () => repository.InitializeAsync();
 
         // Assert
-        act.Should().NotThrow();
+        await act.Should().NotThrowAsync();
     }
 
     [Fact]
-    public void Initialize_CalledTwice_ThrowsInvalidOperationException()
+    public async Task InitializeAsync_CalledTwice_ThrowsInvalidOperationException()
     {
         // Arrange
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
         var repository = new IMUserRepository(settings, _mockSecretProvider.Object);
-        repository.Initialize();
+        await repository.InitializeAsync();
 
         // Act
-        var act = () => repository.Initialize();
+        var act = () => repository.InitializeAsync();
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*already initialized*");
     }
 
     [Theory]
     [MemberData(nameof(MissingSecretData))]
-    public void Initialize_MissingSecret_ThrowsInvalidOperationException(
+    public async Task InitializeAsync_MissingSecret_ThrowsInvalidOperationException(
         string usernameValue, string passwordValue, string expectedMessage)
     {
         // Arrange
@@ -85,10 +85,10 @@ public class IMUserRepositoryTests
         var repository = new IMUserRepository(settings, _mockSecretProvider.Object);
 
         // Act
-        var act = () => repository.Initialize();
+        var act = () => repository.InitializeAsync();
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage(expectedMessage);
     }
 
@@ -107,7 +107,7 @@ public class IMUserRepositoryTests
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
-        var repository = CreateInitializedRepository(settings);
+        var repository = await CreateInitializedRepository(settings);
 
         // Act
         var result = await repository.ValidateCredentialsAsync("adminuser", "adminpass");
@@ -128,7 +128,7 @@ public class IMUserRepositoryTests
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
-        var repository = CreateInitializedRepository(settings);
+        var repository = await CreateInitializedRepository(settings);
 
         // Act
         var act = () => repository.ValidateCredentialsAsync(username, password);
@@ -163,7 +163,7 @@ public class IMUserRepositoryTests
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
-        var repository = CreateInitializedRepository(settings);
+        var repository = await CreateInitializedRepository(settings);
 
         // Act
         var act = () => repository.ValidateCredentialsAsync(username!, "adminpass");
@@ -182,7 +182,7 @@ public class IMUserRepositoryTests
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
-        var repository = CreateInitializedRepository(settings);
+        var repository = await CreateInitializedRepository(settings);
 
         // Act
         var act = () => repository.ValidateCredentialsAsync("adminuser", password!);
@@ -200,7 +200,7 @@ public class IMUserRepositoryTests
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
-        var repository = CreateInitializedRepository(settings);
+        var repository = await CreateInitializedRepository(settings);
         var user = await repository.ValidateCredentialsAsync("adminuser", "adminpass");
 
         // Act
@@ -219,7 +219,7 @@ public class IMUserRepositoryTests
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
-        var repository = CreateInitializedRepository(settings);
+        var repository = await CreateInitializedRepository(settings);
         var nonExistentId = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
         // Act
@@ -237,7 +237,7 @@ public class IMUserRepositoryTests
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
-        var repository = CreateInitializedRepository(settings);
+        var repository = await CreateInitializedRepository(settings);
 
         // Act
         var act = () => repository.GetByIdAsync(Guid.Empty);
@@ -271,7 +271,7 @@ public class IMUserRepositoryTests
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
-        var repository = CreateInitializedRepository(settings);
+        var repository = await CreateInitializedRepository(settings);
         var user = await repository.ValidateCredentialsAsync("adminuser", "adminpass");
 
         // Act
@@ -288,7 +288,7 @@ public class IMUserRepositoryTests
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
-        var repository = CreateInitializedRepository(settings);
+        var repository = await CreateInitializedRepository(settings);
 
         // Act
         var act = () => repository.UpdateLastLoginAsync(Guid.Empty);
@@ -308,7 +308,7 @@ public class IMUserRepositoryTests
         SetupSecretProvider("reader-username", "readeruser");
         SetupSecretProvider("reader-password", "readerpass");
         var settings = CreateSettingsWithMultipleUsers();
-        var repository = CreateInitializedRepository(settings);
+        var repository = await CreateInitializedRepository(settings);
 
         // Act
         var result = await repository.ValidateCredentialsAsync("readeruser", "readerpass");
@@ -343,7 +343,7 @@ public class IMUserRepositoryTests
             },
             ApiInfos = new List<ApiInfoSettings>()
         };
-        var repository = CreateInitializedRepository(settings);
+        var repository = await CreateInitializedRepository(settings);
 
         // Act
         var result = await repository.ValidateCredentialsAsync("adminuser", "adminpass");
@@ -360,10 +360,10 @@ public class IMUserRepositoryTests
             .Returns(secretValue);
     }
 
-    private IMUserRepository CreateInitializedRepository(InMemoryModelSettings settings)
+    private async Task<IMUserRepository> CreateInitializedRepository(InMemoryModelSettings settings)
     {
         var repository = new IMUserRepository(settings, _mockSecretProvider.Object);
-        repository.Initialize();
+        await repository.InitializeAsync();
         return repository;
     }
 

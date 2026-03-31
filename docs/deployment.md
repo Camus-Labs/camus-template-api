@@ -47,8 +47,8 @@ DataPersistenceSettings__Provider=PostgreSQL
 APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=your-key
 ```
 
-Secrets (JWT private key, API key, DB passwords) are managed through Dapr secret stores —
-see [Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md) for details.
+Secrets (JWT private key, API key, database passwords) are managed through Dapr secret stores — see the
+[Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md) for details.
 
 ## Azure Container Apps
 
@@ -128,22 +128,18 @@ The application uses Dapr for secret management. Configure appropriate secret st
 Configure a Dapr Azure Key Vault component and update `appsettings.Production.json` with `SecretStoreName`
 set to `"azurekeyvault"`.
 
-See [Dapr Components README — Production
-Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
-for the component YAML template and
-[Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md)
-for the application settings structure.
+See [Dapr Components README — Production Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
+for the component YAML template and [Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md) for the
+application settings structure.
 
 ### AWS Secrets Manager
 
 Configure a Dapr AWS Secrets Manager component and update `appsettings.Production.json` with `SecretStoreName`
 set to `"awssecretsmanager"`.
 
-See [Dapr Components README — Production
-Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
-for the component YAML template and
-[Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md)
-for the application settings structure.
+See [Dapr Components README — Production Configuration](../src/Infrastructure/dapr/README.md#-production-configuration)
+for the component YAML template and [Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md) for the
+application settings structure.
 
 **Deployment Steps:**
 

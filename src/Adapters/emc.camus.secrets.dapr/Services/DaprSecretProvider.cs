@@ -40,11 +40,12 @@ namespace emc.camus.secrets.dapr.Services
         /// Loads the specified secrets from the Dapr secret store asynchronously.
         /// </summary>
         /// <param name="secretNames">A collection of secret names to load.</param>
+        /// <param name="ct">Cancellation token for cooperative cancellation.</param>
         /// <returns>A task representing the asynchronous load operation.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="secretNames"/> is null.</exception>
         /// <exception cref="ArgumentException">Thrown when any secret name is null or whitespace.</exception>
         /// <exception cref="InvalidOperationException">Thrown when a secret is not found, empty, or cannot be parsed.</exception>
-        public async Task LoadSecretsAsync(IEnumerable<string> secretNames)
+        public async Task LoadSecretsAsync(IEnumerable<string> secretNames, CancellationToken ct = default)
         {
             ArgumentNullException.ThrowIfNull(secretNames);
 
@@ -62,7 +63,7 @@ namespace emc.camus.secrets.dapr.Services
 
             foreach (var secretName in secretNamesList)
             {
-                await LoadSingleSecretAsync(secretName);
+                await LoadSingleSecretAsync(secretName, ct);
             }
         }
 
@@ -88,15 +89,16 @@ namespace emc.camus.secrets.dapr.Services
         /// Loads a single secret from the Dapr secret store via HTTP.
         /// </summary>
         /// <param name="secretName">The name of the secret to load.</param>
+        /// <param name="ct">Cancellation token for cooperative cancellation.</param>
         /// <returns>A task representing the asynchronous load operation.</returns>
         /// <remarks>
         /// Throws on 404 (secret not found), empty responses, and non-success HTTP status codes.
         /// </remarks>
-        private async Task LoadSingleSecretAsync(string secretName)
+        private async Task LoadSingleSecretAsync(string secretName, CancellationToken ct)
         {
             try
             {
-                using var response = await _httpClient.GetAsync(secretName);
+                using var response = await _httpClient.GetAsync(secretName, ct);
 
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
@@ -105,7 +107,7 @@ namespace emc.camus.secrets.dapr.Services
 
                 response.EnsureSuccessStatusCode();
 
-                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseContent = await response.Content.ReadAsStringAsync(ct);
 
                 if (string.IsNullOrWhiteSpace(responseContent))
                 {

@@ -37,10 +37,8 @@ Create a PostgreSQL database and apply schema migrations via the DbUp adapter:
 createdb camus
 ```
 
-Schema is managed via the
-[DbUp migrations adapter](../emc.camus.migrations.dbup/README.md) — migration
-scripts run automatically at application startup when `DBUpSettings.Enabled`
-is `true`.
+Schema is managed via the [DbUp migrations adapter](../emc.camus.migrations.dbup/README.md) — migration scripts run
+automatically at application startup when `DBUpSettings.Enabled` is `true`.
 
 ### 2. Configure Application Settings
 
@@ -71,11 +69,10 @@ The repositories are registered via `PersistenceSetupExtensions` in the API laye
 
 - `builder.AddPersistence()` routes to `AddPostgreSqlPersistence()` when
   `DataPersistenceSettings.Provider` is `PostgreSQL`
-- `app.UsePersistence()` initializes `AuthService` and `ApiInfoService`
+- `app.UsePersistenceAsync()` initializes `AuthService` and `ApiInfoService`
   at startup
 
-See `PersistenceSetupExtensions` in
-`src/Api/emc.camus.api/Extensions/` for the wiring details.
+See `PersistenceSetupExtensions` in `src/Api/emc.camus.api/Extensions/` for the wiring details.
 
 ---
 
@@ -87,48 +84,15 @@ See `PersistenceSetupExtensions` in
 
 Manages API version information:
 
-- `Initialize()` - Validates database connection and schema
+- `InitializeAsync()` - Validates database connection and schema
 - `GetByVersionAsync(version)` - Retrieves API info by version
-- `GetAllAsync()` - Returns all API versions
 
 #### PSUserRepository
 
 Manages user authentication and authorization:
 
-- `Initialize()` - Validates database connection and schema
+- `InitializeAsync()` - Validates database connection and schema
 - `ValidateCredentialsAsync(username, password)` - Authenticates users and loads roles
-
-### Database Schema
-
-```text
-┌─────────────────┐      ┌─────────────────┐
-│   api_info      │      │     roles       │
-├─────────────────┤      ├─────────────────┤
-│ id (PK)         │      │ id (PK)         │
-│ name            │      │ name            │
-│ version (UQ)    │      │ description     │
-│ status          │      └────────┬────────┘
-│ features[]      │               │
-└─────────────────┘               │
-                                  │
-                      ┌───────────┴──────────┐
-                      │                      │
-         ┌────────────▼────────┐  ┌──────────▼──────────┐
-         │ role_permissions    │  │   users             │
-         ├─────────────────────┤  ├─────────────────────┤
-         │ id (PK)             │  │ id (PK)             │
-         │ role_id (FK)        │  │ username (UQ)       │
-         │ permission          │  │ password_hash       │
-         └─────────────────────┘  └──────────┬──────────┘
-                                             │
-                                  ┌──────────▼──────────┐
-                                  │   user_roles        │
-                                  ├─────────────────────┤
-                                  │ id (PK)             │
-                                  │ user_id (FK)        │
-                                  │ role_id (FK)        │
-                                  └─────────────────────┘
-```
 
 ---
 
@@ -152,9 +116,8 @@ application startup when `DBUpSettings.Enabled` is `true`.
 
 ### Password Storage
 
-Passwords are stored as bcrypt hashes in the `password_hash` column.
-The `PSUserRepository.ValidateCredentialsAsync` method verifies
-credentials against the stored hash at runtime.
+Passwords are stored as bcrypt hashes in the `password_hash` column. The `PSUserRepository.ValidateCredentialsAsync`
+method verifies credentials against the stored hash at runtime.
 
 ### Connection String Security
 
@@ -199,11 +162,10 @@ This adapter integrates through extension methods in the API layer:
 
 - `builder.AddPersistence()` routes to `AddPostgreSqlPersistence()` when
   `DataPersistenceSettings.Provider` is `PostgreSQL`
-- `app.UsePersistence()` initializes `AuthService` and `ApiInfoService`
+- `app.UsePersistenceAsync()` initializes `AuthService` and `ApiInfoService`
   at startup
 
-See `PersistenceSetupExtensions` in
-`src/Api/emc.camus.api/Extensions/` for the full wiring details.
+See `PersistenceSetupExtensions` in `src/Api/emc.camus.api/Extensions/` for the full wiring details.
 
 ---
 
@@ -272,8 +234,8 @@ Part of Camus API Template - See main repository for license information.
 
 - `Npgsql` - PostgreSQL .NET data provider
 - `Dapper` - Micro-ORM for .NET
-- Microsoft.Extensions.Configuration
-- Microsoft.Extensions.DependencyInjection
+- `BCrypt.Net-Next` - Password hashing
+- `Microsoft.Extensions.Logging.Abstractions` - Logging abstractions
 
 ---
 

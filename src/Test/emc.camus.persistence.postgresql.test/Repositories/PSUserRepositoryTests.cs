@@ -1,5 +1,4 @@
 using FluentAssertions;
-using emc.camus.application.Common;
 using emc.camus.persistence.postgresql.Repositories;
 using emc.camus.persistence.postgresql.Services;
 
@@ -12,7 +11,7 @@ public class PSUserRepositoryTests
     private PSUserRepository CreateRepository()
     {
         var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
-        return new PSUserRepository(unitOfWork, _mockConnectionFactory.Object);
+        return new PSUserRepository(unitOfWork);
     }
 
     // --- Constructor ---
@@ -24,25 +23,11 @@ public class PSUserRepositoryTests
         PSUnitOfWork? unitOfWork = null;
 
         // Act
-        var act = () => new PSUserRepository(unitOfWork!, _mockConnectionFactory.Object);
+        var act = () => new PSUserRepository(unitOfWork!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
             .And.ParamName.Should().Be("unitOfWork");
-    }
-
-    [Fact]
-    public void Constructor_NullConnectionFactory_ThrowsArgumentNullException()
-    {
-        // Arrange
-        var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
-
-        // Act
-        var act = () => new PSUserRepository(unitOfWork, null!);
-
-        // Assert
-        act.Should().Throw<ArgumentNullException>()
-            .And.ParamName.Should().Be("connectionFactory");
     }
 
     // --- ValidateCredentialsAsync ---

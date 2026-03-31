@@ -32,16 +32,17 @@ public class ApiInfoService : IApiInfoService
     /// Retrieves API information for a specific version.
     /// </summary>
     /// <param name="filter">The filter containing the API version to retrieve</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>View containing API information for the requested version</returns>
     /// <exception cref="KeyNotFoundException">Thrown when the requested version is not found in the repository</exception>
     /// <exception cref="InvalidOperationException">Thrown when database operations fail</exception>
-    public virtual async Task<ApiInfoDetailView> GetByVersionAsync(ApiInfoFilter filter)
+    public virtual async Task<ApiInfoDetailView> GetByVersionAsync(ApiInfoFilter filter, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(filter);
         try
         {
             // Call repository to get domain entity (KeyNotFoundException bubbles up)
-            var apiInfo = await _repository.GetByVersionAsync(filter.Version);
+            var apiInfo = await _repository.GetByVersionAsync(filter.Version, ct);
 
             // Convert domain entity to application result
             return new ApiInfoDetailView(
@@ -67,14 +68,16 @@ public class ApiInfoService : IApiInfoService
     /// Initializes the API info repository to load API data.
     /// Should be called during application startup.
     /// </summary>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     /// <exception cref="InvalidOperationException">
     /// Thrown when database connection fails or required tables don't exist.
     /// </exception>
-    public virtual void Initialize()
+    public virtual async Task InitializeAsync(CancellationToken ct = default)
     {
         try
         {
-            _repository.Initialize();
+            await _repository.InitializeAsync(ct);
         }
         catch (Exception ex)
         {

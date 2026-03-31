@@ -35,11 +35,13 @@ internal sealed class PSActionAuditRepository : IActionAuditRepository
     /// </summary>
     /// <param name="actionTitle">A short title describing the action (e.g., "User Login", "Role Assigned").</param>
     /// <param name="actionSummary">A detailed summary of what was done.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The ID of the created audit entry.</returns>
     /// <exception cref="ArgumentException">Thrown when actionTitle or actionSummary is null, empty, or whitespace.</exception>
     public async Task<long> LogCurrentUserActionAsync(
         string actionTitle,
-        string actionSummary)
+        string actionSummary,
+        CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(actionTitle);
         ArgumentException.ThrowIfNullOrWhiteSpace(actionSummary);
@@ -49,7 +51,7 @@ internal sealed class PSActionAuditRepository : IActionAuditRepository
         var username = _userContext.GetCurrentUsername()
             ?? throw new InvalidOperationException("Username is not available. Ensure the user is authenticated.");
 
-        return await LogActionAsync(userId, username, actionTitle, actionSummary);
+        return await LogActionAsync(userId, username, actionTitle, actionSummary, ct);
     }
 
     /// <summary>
@@ -59,23 +61,26 @@ internal sealed class PSActionAuditRepository : IActionAuditRepository
     /// <param name="username">The username performing the action (e.g., "System", "Migration").</param>
     /// <param name="actionTitle">A short title describing the action.</param>
     /// <param name="actionSummary">A detailed summary of what was done.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The ID of the created audit entry.</returns>
     public async Task<long> LogActionAsync(
         Guid userId,
         string username,
         string actionTitle,
-        string actionSummary)
+        string actionSummary,
+        CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
         ArgumentException.ThrowIfNullOrWhiteSpace(actionTitle);
         ArgumentException.ThrowIfNullOrWhiteSpace(actionSummary);
 
-        var connection = await _unitOfWork.GetConnectionAsync();
+        var connection = await _unitOfWork.GetConnectionAsync(ct);
 
         var traceId = _userContext.GetCurrentTraceId();
 
         const string fkCheckSql = "SELECT EXISTS (SELECT 1 FROM camus.users WHERE id = @UserId)";
-        var userExists = await connection.ExecuteScalarAsync<bool>(fkCheckSql, new { UserId = userId });
+        var userExists = await connection.ExecuteScalarAsync<bool>(
+            new CommandDefinition(fkCheckSql, new { UserId = userId }, cancellationToken: ct));
 
         if (!userExists)
         {
@@ -87,14 +92,15 @@ internal sealed class PSActionAuditRepository : IActionAuditRepository
             VALUES (@UserId, @Username, @TraceId, @ActionTitle, @ActionSummary)
             RETURNING id";
 
-        var auditId = await connection.ExecuteScalarAsync<long>(sql, new
-        {
-            userId,
-            username,
-            traceId,
-            actionTitle,
-            actionSummary
-        });
+        var auditId = await connection.ExecuteScalarAsync<long>(
+            new CommandDefinition(sql, new
+            {
+                userId,
+                username,
+                traceId,
+                actionTitle,
+                actionSummary
+            }, cancellationToken: ct));
 
         return auditId;
     }

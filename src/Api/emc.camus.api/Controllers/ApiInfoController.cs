@@ -66,7 +66,7 @@ namespace emc.camus.api.Controllers
             Description = "Allows public information request about the API, including features and status. Available for all versions."
         )]
         [ProducesResponseType(typeof(ApiResponse<ApiInfoResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetInfo()
+        public async Task<IActionResult> GetInfo(CancellationToken ct)
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfo", OperationType.Read, async activity =>
             {
@@ -79,7 +79,7 @@ namespace emc.camus.api.Controllers
 
                 // Call application service to retrieve API info
                 var filter = ApiInfoMappingExtensions.ToFilter(apiVersion);
-                var result = await _apiInfoService.GetByVersionAsync(filter);
+                var result = await _apiInfoService.GetByVersionAsync(filter, ct);
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
@@ -104,7 +104,7 @@ namespace emc.camus.api.Controllers
             Description = "Returns API info for v2.0, requires API Key authentication."
         )]
         [ProducesResponseType(typeof(ApiResponse<ApiInfoResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetInfoApiKey()
+        public async Task<IActionResult> GetInfoApiKey(CancellationToken ct)
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfoApiKey", OperationType.Read, async activity =>
             {
@@ -117,7 +117,7 @@ namespace emc.camus.api.Controllers
 
                 // Call application service to retrieve API info
                 var filter = ApiInfoMappingExtensions.ToFilter(apiVersion);
-                var result = await _apiInfoService.GetByVersionAsync(filter);
+                var result = await _apiInfoService.GetByVersionAsync(filter, ct);
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
@@ -142,7 +142,7 @@ namespace emc.camus.api.Controllers
             Description = "Returns API info for v2.0, requires JWT authentication."
         )]
         [ProducesResponseType(typeof(ApiResponse<ApiInfoResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetInfoJwt()
+        public async Task<IActionResult> GetInfoJwt(CancellationToken ct)
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetInfoJwt", OperationType.Read, async activity =>
             {
@@ -155,7 +155,7 @@ namespace emc.camus.api.Controllers
 
                 // Call application service to retrieve API info
                 var filter = ApiInfoMappingExtensions.ToFilter(apiVersion);
-                var result = await _apiInfoService.GetByVersionAsync(filter);
+                var result = await _apiInfoService.GetByVersionAsync(filter, ct);
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {

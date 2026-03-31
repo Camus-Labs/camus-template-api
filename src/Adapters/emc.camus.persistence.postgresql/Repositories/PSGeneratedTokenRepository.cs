@@ -32,15 +32,16 @@ internal sealed class PSGeneratedTokenRepository : IGeneratedTokenRepository
     /// Validates that the creator user exists before inserting.
     /// </summary>
     /// <param name="generatedToken">The generated token domain entity.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     /// <exception cref="ArgumentNullException">Thrown when generatedToken is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when a token with the same JTI already exists.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when the creator user does not exist.</exception>
-    public async Task CreateAsync(GeneratedToken generatedToken)
+    public async Task CreateAsync(GeneratedToken generatedToken, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(generatedToken);
 
-        var connection = await _unitOfWork.GetConnectionAsync();
+        var connection = await _unitOfWork.GetConnectionAsync(ct);
 
         const string sql = @"
             INSERT INTO camus.generated_tokens (
@@ -53,7 +54,8 @@ internal sealed class PSGeneratedTokenRepository : IGeneratedTokenRepository
             )";
 
         const string jtiCheckSql = "SELECT EXISTS (SELECT 1 FROM camus.generated_tokens WHERE jti = @Jti)";
-        var jtiExists = await connection.ExecuteScalarAsync<bool>(jtiCheckSql, new { generatedToken.Jti });
+        var jtiExists = await connection.ExecuteScalarAsync<bool>(
+            new CommandDefinition(jtiCheckSql, new { generatedToken.Jti }, cancellationToken: ct));
 
         if (jtiExists)
         {
@@ -61,33 +63,36 @@ internal sealed class PSGeneratedTokenRepository : IGeneratedTokenRepository
         }
 
         const string fkCheckSql = "SELECT EXISTS (SELECT 1 FROM camus.users WHERE id = @CreatorUserId)";
-        var creatorExists = await connection.ExecuteScalarAsync<bool>(fkCheckSql, new { generatedToken.CreatorUserId });
+        var creatorExists = await connection.ExecuteScalarAsync<bool>(
+            new CommandDefinition(fkCheckSql, new { generatedToken.CreatorUserId }, cancellationToken: ct));
 
         if (!creatorExists)
         {
             throw new KeyNotFoundException($"Creator user with ID '{generatedToken.CreatorUserId}' not found.");
         }
 
-        await connection.ExecuteAsync(sql, new
-        {
-            generatedToken.Jti,
-            generatedToken.CreatorUserId,
-            generatedToken.CreatorUsername,
-            generatedToken.TokenUsername,
-            Permissions = generatedToken.Permissions.ToArray(),
-            generatedToken.ExpiresOn,
-            generatedToken.IsRevoked
-        });
+        await connection.ExecuteAsync(
+            new CommandDefinition(sql, new
+            {
+                generatedToken.Jti,
+                generatedToken.CreatorUserId,
+                generatedToken.CreatorUsername,
+                generatedToken.TokenUsername,
+                Permissions = generatedToken.Permissions.ToArray(),
+                generatedToken.ExpiresOn,
+                generatedToken.IsRevoked
+            }, cancellationToken: ct));
     }
 
     /// <summary>
     /// Retrieves a generated token from PostgreSQL by its JTI (JWT ID).
     /// </summary>
     /// <param name="jti">The JWT ID to search for.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The generated token if found, otherwise <see langword="null"/>.</returns>
-    public async Task<GeneratedToken?> GetByJtiAsync(Guid jti)
+    public async Task<GeneratedToken?> GetByJtiAsync(Guid jti, CancellationToken ct = default)
     {
-        var connection = await _unitOfWork.GetConnectionAsync();
+        var connection = await _unitOfWork.GetConnectionAsync(ct);
 
         const string sql = @"
             SELECT
@@ -96,7 +101,8 @@ internal sealed class PSGeneratedTokenRepository : IGeneratedTokenRepository
             FROM camus.generated_tokens
             WHERE jti = @Jti";
 
-        var result = await connection.QueryFirstOrDefaultAsync<GeneratedTokenModel>(sql, new { jti });
+        var result = await connection.QueryFirstOrDefaultAsync<GeneratedTokenModel>(
+            new CommandDefinition(sql, new { jti }, cancellationToken: ct));
 
         if (result == null)
         {
@@ -113,13 +119,14 @@ internal sealed class PSGeneratedTokenRepository : IGeneratedTokenRepository
     /// <param name="creatorUserId">The user ID of the creator.</param>
     /// <param name="pagination">Pagination parameters (page number and page size).</param>
     /// <param name="filter">Optional filter criteria for excluding revoked or expired tokens.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A paged result containing the matching tokens and pagination metadata.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="pagination"/> is null.</exception>
-    public async Task<PagedResult<GeneratedToken>> GetPagedByCreatorUserIdAsync(Guid creatorUserId, PaginationParams pagination, GeneratedTokenFilter? filter = null)
+    public async Task<PagedResult<GeneratedToken>> GetPagedByCreatorUserIdAsync(Guid creatorUserId, PaginationParams pagination, GeneratedTokenFilter? filter = null, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(pagination);
 
-        var connection = await _unitOfWork.GetConnectionAsync();
+        var connection = await _unitOfWork.GetConnectionAsync(ct);
 
         var whereClause = "WHERE creator_user_id = @CreatorUserId";
 
@@ -153,14 +160,16 @@ internal sealed class PSGeneratedTokenRepository : IGeneratedTokenRepository
         parameters.Add("Offset", pagination.Offset);
         parameters.Add("Now", DateTime.UtcNow);
 
-        var totalCount = await connection.ExecuteScalarAsync<int>(countSql, parameters);
+        var totalCount = await connection.ExecuteScalarAsync<int>(
+            new CommandDefinition(countSql, parameters, cancellationToken: ct));
 
         if (totalCount == 0)
         {
             return new PagedResult<GeneratedToken>([], 0, pagination.Page, pagination.PageSize);
         }
 
-        var results = await connection.QueryAsync<GeneratedTokenModel>(dataSql, parameters);
+        var results = await connection.QueryAsync<GeneratedTokenModel>(
+            new CommandDefinition(dataSql, parameters, cancellationToken: ct));
 
         var items = results.Select(r => r.ToEntity()).ToList();
 
@@ -172,26 +181,28 @@ internal sealed class PSGeneratedTokenRepository : IGeneratedTokenRepository
     /// Updates the revocation status and timestamp.
     /// </summary>
     /// <param name="generatedToken">The generated token domain entity with updated state.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="generatedToken"/> is null.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when no token with the specified JTI exists.</exception>
-    public async Task SaveAsync(GeneratedToken generatedToken)
+    public async Task SaveAsync(GeneratedToken generatedToken, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(generatedToken);
 
-        var connection = await _unitOfWork.GetConnectionAsync();
+        var connection = await _unitOfWork.GetConnectionAsync(ct);
 
         const string sql = @"
             UPDATE camus.generated_tokens
             SET is_revoked = @IsRevoked, revoked_at = @RevokedAt
             WHERE jti = @Jti";
 
-        var rowsAffected = await connection.ExecuteAsync(sql, new
-        {
-            generatedToken.Jti,
-            generatedToken.IsRevoked,
-            generatedToken.RevokedAt
-        });
+        var rowsAffected = await connection.ExecuteAsync(
+            new CommandDefinition(sql, new
+            {
+                generatedToken.Jti,
+                generatedToken.IsRevoked,
+                generatedToken.RevokedAt
+            }, cancellationToken: ct));
 
         if (rowsAffected == 0)
         {

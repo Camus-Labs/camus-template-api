@@ -112,7 +112,7 @@ app.UseAuthentication();
 app.UseAuthorizationPolicies();
 
 // Step 28: Initialize persistence-dependent data (load API info)
-app.UsePersistence();
+await app.UsePersistenceAsync();
 
 // Step 29: Apply application services (adds Username header + endpoint routing)
 app.UseApplicationServices();

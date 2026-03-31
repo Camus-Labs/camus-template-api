@@ -52,7 +52,7 @@ namespace emc.camus.persistence.postgresql
 
         /// <summary>
         /// Registers a PostgreSQL health check tagged with "ready" for readiness probes.
-        /// Resolves <see cref="IConnectionFactory"/> at runtime to verify database connectivity.
+        /// Resolves <see cref="PSUnitOfWork"/> at runtime to verify database connectivity.
         /// </summary>
         /// <param name="builder">The health checks builder.</param>
         /// <returns>The health checks builder for method chaining.</returns>
@@ -62,8 +62,8 @@ namespace emc.camus.persistence.postgresql
                 "postgresql",
                 sp =>
                 {
-                    var connectionFactory = sp.GetRequiredService<IConnectionFactory>();
-                    return new PSHealthCheck(connectionFactory);
+                    var unitOfWork = sp.GetRequiredService<PSUnitOfWork>();
+                    return new PSHealthCheck(unitOfWork);
                 },
                 failureStatus: null,
                 tags: ReadyTag));

@@ -1,4 +1,4 @@
-using System.Data;
+using System.Data.Common;
 using Dapper;
 using emc.camus.application.Common;
 using emc.camus.application.Configurations;
@@ -46,19 +46,20 @@ internal sealed class PSConnectionFactory : IConnectionFactory
     /// Session variable app.current_username is automatically configured for audit triggers
     /// to populate created_by and updated_by fields with the authenticated user's username.
     /// </summary>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>An open database connection with session context configured.</returns>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the connection cannot be opened.
     /// </exception>
-    public async Task<IDbConnection> CreateConnectionAsync()
+    public async Task<DbConnection> CreateConnectionAsync(CancellationToken ct = default)
     {
         try
         {
             var connection = new NpgsqlConnection(_connectionString);
-            await connection.OpenAsync();
+            await connection.OpenAsync(ct);
 
             // Set session variables for audit triggers
-            await SetSessionContextAsync(connection);
+            await SetSessionContextAsync(connection, ct);
 
             return connection;
         }
@@ -74,15 +75,19 @@ internal sealed class PSConnectionFactory : IConnectionFactory
     /// Uses session-scoped SET (not SET LOCAL) since we're outside a transaction block.
     /// Variable persists for the lifetime of this connection.
     /// </summary>
-    private async Task SetSessionContextAsync(IDbConnection connection)
+    /// <param name="connection">The open database connection to configure.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
+    private async Task SetSessionContextAsync(DbConnection connection, CancellationToken ct)
     {
         var username = _userContext.GetCurrentUsername();
 
         if (!string.IsNullOrEmpty(username))
         {
             await connection.ExecuteAsync(
-                "SET app.current_username = @Username;",
-                new { Username = username });
+                new CommandDefinition(
+                    "SET app.current_username = @Username;",
+                    new { Username = username },
+                    cancellationToken: ct));
         }
     }
 

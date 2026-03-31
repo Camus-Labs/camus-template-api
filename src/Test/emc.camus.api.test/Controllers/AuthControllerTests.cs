@@ -77,11 +77,11 @@ public class AuthControllerTests
         var authResult = new AuthenticateUserResult("jwt-token-value", new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc));
 
         _mockAuthService
-            .Setup(s => s.AuthenticateAsync(It.IsAny<AuthenticateUserCommand>()))
+            .Setup(s => s.AuthenticateAsync(It.IsAny<AuthenticateUserCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(authResult);
 
         // Act
-        var result = await _controller.AuthenticateUser(request);
+        var result = await _controller.AuthenticateUser(request, CancellationToken.None);
 
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
@@ -116,11 +116,11 @@ public class AuthControllerTests
             "adminuser-ci-deploy");
 
         _mockAuthService
-            .Setup(s => s.GenerateTokenAsync(It.IsAny<GenerateTokenCommand>()))
+            .Setup(s => s.GenerateTokenAsync(It.IsAny<GenerateTokenCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(generateResult);
 
         // Act
-        var result = await _controller.GenerateToken(request);
+        var result = await _controller.GenerateToken(request, CancellationToken.None);
 
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
@@ -158,11 +158,12 @@ public class AuthControllerTests
         _mockAuthService
             .Setup(s => s.GetGeneratedTokensAsync(
                 It.IsAny<PaginationParams>(),
-                It.IsAny<GeneratedTokenFilter>()))
+                It.IsAny<GeneratedTokenFilter>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
         // Act
-        var result = await _controller.GetGeneratedTokens(query);
+        var result = await _controller.GetGeneratedTokens(query, CancellationToken.None);
 
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
@@ -184,11 +185,12 @@ public class AuthControllerTests
         _mockAuthService
             .Setup(s => s.GetGeneratedTokensAsync(
                 It.IsAny<PaginationParams>(),
-                It.IsAny<GeneratedTokenFilter>()))
+                It.IsAny<GeneratedTokenFilter>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
         // Act
-        var result = await _controller.GetGeneratedTokens(query);
+        var result = await _controller.GetGeneratedTokens(query, CancellationToken.None);
 
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
@@ -212,11 +214,11 @@ public class AuthControllerTests
             true, revokedAt, false);
 
         _mockAuthService
-            .Setup(s => s.RevokeTokenAsync(It.IsAny<RevokeTokenCommand>()))
+            .Setup(s => s.RevokeTokenAsync(It.IsAny<RevokeTokenCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(view);
 
         // Act
-        var result = await _controller.RevokeToken(jti);
+        var result = await _controller.RevokeToken(jti, CancellationToken.None);
 
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;

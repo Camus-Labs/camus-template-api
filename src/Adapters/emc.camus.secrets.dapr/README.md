@@ -193,7 +193,6 @@ Call `AddDaprSecrets()` before any adapter that depends on `ISecretProvider` (e.
 
 ## 📦 Dependencies
 
-- `Dapr.Client` - Dapr SDK for .NET
+- `Microsoft.Extensions.Logging.Abstractions` - Logging abstractions
+- `Microsoft.Extensions.Options` - Options pattern support
 - `emc.camus.application` - Application interfaces
-- Microsoft.Extensions.Configuration
-- Microsoft.Extensions.DependencyInjection

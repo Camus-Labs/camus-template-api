@@ -21,40 +21,40 @@ public class IMApiInfoRepositoryTests
         act.Should().Throw<ArgumentNullException>();
     }
 
-    // --- Initialize ---
+    // --- InitializeAsync ---
 
     [Fact]
-    public void Initialize_ValidSettings_DoesNotThrow()
+    public async Task InitializeAsync_ValidSettings_DoesNotThrow()
     {
         // Arrange
         var settings = CreateValidSettings();
         var repository = new IMApiInfoRepository(settings);
 
         // Act
-        var act = () => repository.Initialize();
+        var act = () => repository.InitializeAsync();
 
         // Assert
-        act.Should().NotThrow();
+        await act.Should().NotThrowAsync();
     }
 
     [Fact]
-    public void Initialize_CalledTwice_ThrowsInvalidOperationException()
+    public async Task InitializeAsync_CalledTwice_ThrowsInvalidOperationException()
     {
         // Arrange
         var settings = CreateValidSettings();
         var repository = new IMApiInfoRepository(settings);
-        repository.Initialize();
+        await repository.InitializeAsync();
 
         // Act
-        var act = () => repository.Initialize();
+        var act = () => repository.InitializeAsync();
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*already initialized*");
     }
 
     [Fact]
-    public void Initialize_EmptyApiInfos_DoesNotThrow()
+    public async Task InitializeAsync_EmptyApiInfos_DoesNotThrow()
     {
         // Arrange
         var settings = CreateValidSettings();
@@ -62,10 +62,10 @@ public class IMApiInfoRepositoryTests
         var repository = new IMApiInfoRepository(settings);
 
         // Act
-        var act = () => repository.Initialize();
+        var act = () => repository.InitializeAsync();
 
         // Assert
-        act.Should().NotThrow();
+        await act.Should().NotThrowAsync();
     }
 
     // --- GetByVersionAsync ---
@@ -76,7 +76,7 @@ public class IMApiInfoRepositoryTests
         // Arrange
         var settings = CreateValidSettings();
         var repository = new IMApiInfoRepository(settings);
-        repository.Initialize();
+        await repository.InitializeAsync();
 
         // Act
         var result = await repository.GetByVersionAsync(InMemoryModelSettingsFactory.DefaultApiVersion);
@@ -120,7 +120,7 @@ public class IMApiInfoRepositoryTests
             }
         };
         var repository = new IMApiInfoRepository(settings);
-        repository.Initialize();
+        await repository.InitializeAsync();
 
         // Act
         var result = await repository.GetByVersionAsync("v1");
@@ -136,7 +136,7 @@ public class IMApiInfoRepositoryTests
         // Arrange
         var settings = CreateValidSettings();
         var repository = new IMApiInfoRepository(settings);
-        repository.Initialize();
+        await repository.InitializeAsync();
 
         // Act
         var act = () => repository.GetByVersionAsync("99.0");
@@ -170,7 +170,7 @@ public class IMApiInfoRepositoryTests
         // Arrange
         var settings = CreateValidSettings();
         var repository = new IMApiInfoRepository(settings);
-        repository.Initialize();
+        await repository.InitializeAsync();
 
         // Act
         var act = () => repository.GetByVersionAsync(version!);
@@ -210,7 +210,7 @@ public class IMApiInfoRepositoryTests
             }
         };
         var repository = new IMApiInfoRepository(settings);
-        repository.Initialize();
+        await repository.InitializeAsync();
 
         // Act
         var result = await repository.GetByVersionAsync("1.0");
@@ -250,7 +250,7 @@ public class IMApiInfoRepositoryTests
             }
         };
         var repository = new IMApiInfoRepository(settings);
-        repository.Initialize();
+        await repository.InitializeAsync();
 
         // Act
         var result = await repository.GetByVersionAsync("1.0");

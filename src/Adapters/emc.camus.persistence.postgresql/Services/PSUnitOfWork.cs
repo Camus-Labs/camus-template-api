@@ -1,4 +1,4 @@
-using System.Data;
+using System.Data.Common;
 using emc.camus.application.Common;
 
 namespace emc.camus.persistence.postgresql.Services;
@@ -11,8 +11,8 @@ namespace emc.camus.persistence.postgresql.Services;
 internal sealed class PSUnitOfWork : IUnitOfWork, IAsyncDisposable, IDisposable
 {
     private readonly IConnectionFactory _connectionFactory;
-    private IDbConnection? _connection;
-    private IDbTransaction? _transaction;
+    private DbConnection? _connection;
+    private DbTransaction? _transaction;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PSUnitOfWork"/> class.
@@ -28,51 +28,64 @@ internal sealed class PSUnitOfWork : IUnitOfWork, IAsyncDisposable, IDisposable
     /// <summary>
     /// Returns the current database connection, creating one lazily if needed.
     /// </summary>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>An open database connection.</returns>
-    internal async Task<IDbConnection> GetConnectionAsync()
+    internal async Task<DbConnection> GetConnectionAsync(CancellationToken ct = default)
     {
-        _connection ??= await _connectionFactory.CreateConnectionAsync();
+        _connection ??= await _connectionFactory.CreateConnectionAsync(ct);
         return _connection;
     }
 
     /// <summary>
     /// Opens a connection (if not already open) and begins a new transaction.
     /// </summary>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task BeginTransactionAsync()
+    public async Task BeginTransactionAsync(CancellationToken ct = default)
     {
-        var connection = await GetConnectionAsync();
-        _transaction = connection.BeginTransaction();
+        var connection = await GetConnectionAsync(ct);
+        _transaction = await connection.BeginTransactionAsync(ct);
     }
 
     /// <summary>
     /// Commits the current transaction.
     /// </summary>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task CommitAsync()
+    public async Task CommitAsync(CancellationToken ct = default)
     {
-        _transaction?.Commit();
-        return Task.CompletedTask;
+        if (_transaction != null)
+            await _transaction.CommitAsync(ct);
     }
 
     /// <summary>
-    /// Rolls back the current transaction.
+    /// Rolls back the current transaction. Uses <see cref="CancellationToken.None"/>
+    /// because rollback is a compensating action that must run to completion.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task RollbackAsync()
+    public async Task RollbackAsync()
     {
-        _transaction?.Rollback();
-        return Task.CompletedTask;
+        if (_transaction != null)
+            await _transaction.RollbackAsync(CancellationToken.None);
     }
 
     /// <summary>
     /// Releases the transaction and connection resources asynchronously.
     /// </summary>
     /// <returns>A value task representing the asynchronous dispose operation.</returns>
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        Dispose();
-        return ValueTask.CompletedTask;
+        if (_transaction != null)
+        {
+            await _transaction.DisposeAsync();
+            _transaction = null;
+        }
+
+        if (_connection != null)
+        {
+            await _connection.DisposeAsync();
+            _connection = null;
+        }
     }
 
     /// <summary>

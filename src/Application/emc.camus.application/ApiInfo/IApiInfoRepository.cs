@@ -13,15 +13,18 @@ public interface IApiInfoRepository
     /// <remarks>
     /// This method should be called at application startup to fail-fast if there are configuration issues.
     /// </remarks>
-    void Initialize();
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task InitializeAsync(CancellationToken ct = default);
 
     /// <summary>
     /// Gets API information by version.
     /// </summary>
     /// <param name="version">The API version to retrieve (e.g., "1.0", "2.0").</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>An ApiInfo object if found.</returns>
     /// <exception cref="KeyNotFoundException">
     /// Thrown when the specified version is not found.
     /// </exception>
-    Task<domain.Auth.ApiInfo> GetByVersionAsync(string version);
+    Task<domain.Auth.ApiInfo> GetByVersionAsync(string version, CancellationToken ct = default);
 }

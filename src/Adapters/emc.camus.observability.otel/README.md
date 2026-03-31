@@ -291,9 +291,13 @@ Call these in `Program.cs` early in the pipeline, before authentication and rout
 - `OpenTelemetry.Instrumentation.Http` - HTTP client instrumentation
 - `OpenTelemetry.Instrumentation.Runtime` - .NET runtime metrics
 - `OpenTelemetry.Exporter.OpenTelemetryProtocol` - OTLP exporter
-- `OpenTelemetry.Exporter.Jaeger` - Jaeger exporter
-- `OpenTelemetry.Exporter.Zipkin` - Zipkin exporter
-- `OpenTelemetry.Exporter.Prometheus.AspNetCore` - Prometheus exporter
+- `OpenTelemetry.Exporter.Console` - Console exporter
+- `OpenTelemetry` - Core OpenTelemetry library
+- `OpenTelemetry.Instrumentation.Process` - Process metrics
+- `Serilog` - Structured logging framework
+- `Serilog.Extensions.Hosting` - Serilog hosting integration
+- `Serilog.Settings.Configuration` - Serilog configuration bindings
+- `Serilog.Sinks.Console` - Console log sink
 - `Serilog.AspNetCore` - Structured logging
 - `Serilog.Sinks.OpenTelemetry` - Serilog OTLP sink
 

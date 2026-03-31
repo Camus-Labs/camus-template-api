@@ -10,6 +10,7 @@ using emc.camus.observability.otel.Telemetry;
 using emc.camus.observability.otel.Services;
 using emc.camus.observability.otel.Middleware;
 using emc.camus.application.Observability;
+using Serilog;
 
 namespace emc.camus.observability.otel
 {
@@ -70,6 +71,7 @@ namespace emc.camus.observability.otel
         public static WebApplication UseObservability(this WebApplication app)
         {
             app.UseMiddleware<TraceIdHeaderMiddleware>();
+            app.UseSerilogRequestLogging();
 
             return app;
         }

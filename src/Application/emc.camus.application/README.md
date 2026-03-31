@@ -23,17 +23,28 @@ The Application layer serves as the **contracts layer** between API/Adapters and
 - ❌ Implementations (belong in Adapters)
 - ❌ Infrastructure concerns (databases, HTTP, logging)
 - ❌ Business logic (belongs in Domain)
-- ❌ Use cases/orchestration (belongs in API controllers)
 
 ---
 
 ## 📁 Namespace Structure
 
+### `ApiInfo/`
+
+API information contracts and services:
+
+- **`IApiInfoService`** - Interface for the API information application service
+- **`ApiInfoService`** - Retrieves and provides API version information
+- **`IApiInfoRepository`** - Repository contract for retrieving API information
+
 ### `Auth/`
 
-Authentication-related contracts:
+Authentication-related contracts and services:
 
+- **`IAuthService`** - Interface for the authentication application service
+- **`AuthService`** - Orchestrates user authentication, token generation, listing, and revocation
 - **`ITokenGenerator`** - Interface for JWT token generation (implemented by `emc.camus.security.jwt`)
+- **`IUserRepository`** - Repository contract for user credential validation and retrieval
+- **`IGeneratedTokenRepository`** - Repository contract for managing generated tokens
 - **`GenerateTokenResult`** - Token generation result model
 - **`AuthenticationSchemes`** - Authentication scheme name constants (`Bearer`, `ApiKey`)
 
@@ -60,8 +71,13 @@ Secret management contracts:
 
 ### `Common/`
 
-Application-wide constants:
+Application-wide constants and shared contracts:
 
+- **`IUnitOfWork`** - Abstracts transactional boundaries for application services
+- **`IActionAuditRepository`** - Repository contract for managing action audit logs
+- **`IUserContext`** - Interface for accessing current user information
+- **`PagedResult<T>`** - Generic paged result wrapper
+- **`PaginationParams`** - Pagination parameters model
 - **`ErrorCodes`** - Standardized error codes for API responses (`bad_request`, `unauthorized`,
   `rate_limit_exceeded`, etc.)
 - **`Headers`** - Custom HTTP header name constants (`X-Api-Key`, `X-Trace-Id`, rate limit
@@ -129,12 +145,19 @@ Application interfaces are implemented in the following adapters:
 | `ITokenGenerator` | `JwtTokenGenerator` | `emc.camus.security.jwt` |
 | `ISecretProvider` | `DaprSecretProvider` | `emc.camus.secrets.dapr` |
 | `IActivitySourceWrapper` | `ActivitySourceWrapper` | `emc.camus.observability.otel` |
+| `IUserRepository` | `PSUserRepository`, `IMUserRepository` | `emc.camus.persistence.postgresql`, `emc.camus.persistence.inmemory` |
+| `IApiInfoRepository` | `PSApiInfoRepository`, `IMApiInfoRepository` | `emc.camus.persistence.postgresql`, `emc.camus.persistence.inmemory` |
+| `IActionAuditRepository` | `PSActionAuditRepository`, `IMActionAuditRepository` | `emc.camus.persistence.postgresql`, `emc.camus.persistence.inmemory` |
+| `IGeneratedTokenRepository` | `PSGeneratedTokenRepository` | `emc.camus.persistence.postgresql` |
+| `IUnitOfWork` | `PSUnitOfWork`, `IMUnitOfWork` | `emc.camus.persistence.postgresql`, `emc.camus.persistence.inmemory` |
 
 See individual adapter READMEs for implementation details:
 
 - [JWT Authentication](../../Adapters/emc.camus.security.jwt/README.md)
 - [Dapr Secrets](../../Adapters/emc.camus.secrets.dapr/README.md)
 - [OpenTelemetry Observability](../../Adapters/emc.camus.observability.otel/README.md)
+- [PostgreSQL Persistence](../../Adapters/emc.camus.persistence.postgresql/README.md)
+- [In-Memory Persistence](../../Adapters/emc.camus.persistence.inmemory/README.md)
 
 ---
 

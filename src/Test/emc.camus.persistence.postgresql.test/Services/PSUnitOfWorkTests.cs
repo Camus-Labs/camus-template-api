@@ -1,6 +1,7 @@
 using System.Data;
+using System.Data.Common;
 using FluentAssertions;
-using emc.camus.application.Common;
+using Moq.Protected;
 using emc.camus.persistence.postgresql.Services;
 
 namespace emc.camus.persistence.postgresql.test.Services;
@@ -8,8 +9,8 @@ namespace emc.camus.persistence.postgresql.test.Services;
 public class PSUnitOfWorkTests
 {
     private readonly Mock<IConnectionFactory> _mockConnectionFactory = new();
-    private readonly Mock<IDbConnection> _mockConnection = new();
-    private readonly Mock<IDbTransaction> _mockTransaction = new();
+    private readonly Mock<DbConnection> _mockConnection = new();
+    private readonly Mock<DbTransaction> _mockTransaction = new();
 
     // --- Constructor ---
 
@@ -33,7 +34,7 @@ public class PSUnitOfWorkTests
     public async Task GetConnectionAsync_FirstCall_ReturnsConnection()
     {
         // Arrange
-        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync()).ReturnsAsync(_mockConnection.Object);
+        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_mockConnection.Object);
         var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
 
         // Act
@@ -47,7 +48,7 @@ public class PSUnitOfWorkTests
     public async Task GetConnectionAsync_MultipleCalls_CreatesConnectionOnlyOnce()
     {
         // Arrange
-        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync()).ReturnsAsync(_mockConnection.Object);
+        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_mockConnection.Object);
         var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
 
         // Act
@@ -55,7 +56,7 @@ public class PSUnitOfWorkTests
         await unitOfWork.GetConnectionAsync();
 
         // Assert
-        _mockConnectionFactory.Verify(f => f.CreateConnectionAsync(), Times.Once);
+        _mockConnectionFactory.Verify(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // --- BeginTransactionAsync ---
@@ -64,15 +65,22 @@ public class PSUnitOfWorkTests
     public async Task BeginTransactionAsync_CreatesTransaction()
     {
         // Arrange
-        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync()).ReturnsAsync(_mockConnection.Object);
-        _mockConnection.Setup(c => c.BeginTransaction()).Returns(_mockTransaction.Object);
+        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_mockConnection.Object);
+        _mockConnection.Protected()
+            .Setup<ValueTask<DbTransaction>>("BeginDbTransactionAsync",
+                ItExpr.IsAny<IsolationLevel>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns(new ValueTask<DbTransaction>(_mockTransaction.Object));
         var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
 
         // Act
         await unitOfWork.BeginTransactionAsync();
 
         // Assert
-        _mockConnection.Verify(c => c.BeginTransaction(), Times.Once);
+        _mockConnection.Protected()
+            .Verify<ValueTask<DbTransaction>>("BeginDbTransactionAsync", Times.Once(),
+                ItExpr.IsAny<IsolationLevel>(),
+                ItExpr.IsAny<CancellationToken>());
     }
 
     // --- CommitAsync ---
@@ -81,8 +89,12 @@ public class PSUnitOfWorkTests
     public async Task CommitAsync_WithTransaction_CommitsTransaction()
     {
         // Arrange
-        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync()).ReturnsAsync(_mockConnection.Object);
-        _mockConnection.Setup(c => c.BeginTransaction()).Returns(_mockTransaction.Object);
+        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_mockConnection.Object);
+        _mockConnection.Protected()
+            .Setup<ValueTask<DbTransaction>>("BeginDbTransactionAsync",
+                ItExpr.IsAny<IsolationLevel>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns(new ValueTask<DbTransaction>(_mockTransaction.Object));
         var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
         await unitOfWork.BeginTransactionAsync();
 
@@ -90,7 +102,7 @@ public class PSUnitOfWorkTests
         await unitOfWork.CommitAsync();
 
         // Assert
-        _mockTransaction.Verify(t => t.Commit(), Times.Once);
+        _mockTransaction.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -112,8 +124,12 @@ public class PSUnitOfWorkTests
     public async Task RollbackAsync_WithTransaction_RollsBackTransaction()
     {
         // Arrange
-        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync()).ReturnsAsync(_mockConnection.Object);
-        _mockConnection.Setup(c => c.BeginTransaction()).Returns(_mockTransaction.Object);
+        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_mockConnection.Object);
+        _mockConnection.Protected()
+            .Setup<ValueTask<DbTransaction>>("BeginDbTransactionAsync",
+                ItExpr.IsAny<IsolationLevel>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns(new ValueTask<DbTransaction>(_mockTransaction.Object));
         var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
         await unitOfWork.BeginTransactionAsync();
 
@@ -121,7 +137,7 @@ public class PSUnitOfWorkTests
         await unitOfWork.RollbackAsync();
 
         // Assert
-        _mockTransaction.Verify(t => t.Rollback(), Times.Once);
+        _mockTransaction.Verify(t => t.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -143,8 +159,12 @@ public class PSUnitOfWorkTests
     public async Task Dispose_WithConnectionAndTransaction_DisposesResources()
     {
         // Arrange
-        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync()).ReturnsAsync(_mockConnection.Object);
-        _mockConnection.Setup(c => c.BeginTransaction()).Returns(_mockTransaction.Object);
+        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_mockConnection.Object);
+        _mockConnection.Protected()
+            .Setup<ValueTask<DbTransaction>>("BeginDbTransactionAsync",
+                ItExpr.IsAny<IsolationLevel>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns(new ValueTask<DbTransaction>(_mockTransaction.Object));
         var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
         await unitOfWork.BeginTransactionAsync();
 
@@ -152,8 +172,8 @@ public class PSUnitOfWorkTests
         unitOfWork.Dispose();
 
         // Assert
-        _mockTransaction.Verify(t => t.Dispose(), Times.Once);
-        _mockConnection.Verify(c => c.Dispose(), Times.Once);
+        _mockTransaction.Protected().Verify("Dispose", Times.Once(), ItExpr.IsAny<bool>());
+        _mockConnection.Protected().Verify("Dispose", Times.Once(), ItExpr.IsAny<bool>());
     }
 
     [Fact]
@@ -175,8 +195,12 @@ public class PSUnitOfWorkTests
     public async Task DisposeAsync_WithConnectionAndTransaction_DisposesResources()
     {
         // Arrange
-        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync()).ReturnsAsync(_mockConnection.Object);
-        _mockConnection.Setup(c => c.BeginTransaction()).Returns(_mockTransaction.Object);
+        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_mockConnection.Object);
+        _mockConnection.Protected()
+            .Setup<ValueTask<DbTransaction>>("BeginDbTransactionAsync",
+                ItExpr.IsAny<IsolationLevel>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns(new ValueTask<DbTransaction>(_mockTransaction.Object));
         var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
         await unitOfWork.BeginTransactionAsync();
 
@@ -184,7 +208,7 @@ public class PSUnitOfWorkTests
         await unitOfWork.DisposeAsync();
 
         // Assert
-        _mockTransaction.Verify(t => t.Dispose(), Times.Once);
-        _mockConnection.Verify(c => c.Dispose(), Times.Once);
+        _mockTransaction.Verify(t => t.DisposeAsync(), Times.Once);
+        _mockConnection.Verify(c => c.DisposeAsync(), Times.Once);
     }
 }

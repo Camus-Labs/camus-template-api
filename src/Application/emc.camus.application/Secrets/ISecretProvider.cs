@@ -9,8 +9,9 @@ namespace emc.camus.application.Secrets
         /// Loads the specified secrets asynchronously from the underlying secret store.
         /// </summary>
         /// <param name="secretNames">A collection of secret names to load.</param>
+        /// <param name="ct">Cancellation token for cooperative cancellation.</param>
         /// <returns>A task representing the asynchronous load operation.</returns>
-        Task LoadSecretsAsync(IEnumerable<string> secretNames);
+        Task LoadSecretsAsync(IEnumerable<string> secretNames, CancellationToken ct = default);
 
         /// <summary>
         /// Retrieves the value of a loaded secret by name.

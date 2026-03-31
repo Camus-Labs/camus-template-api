@@ -138,7 +138,7 @@ Each adapter exposes a pair of extension methods consumed in `Program.cs`:
 | API Key Auth | `AddApiKeyAuthentication()` | — |
 | Authorization | `AddAuthorizationPolicies()` | `UseAuthorizationPolicies()` |
 | App Services | `AddApplicationServices()` | `UseApplicationServices()` |
-| Persistence | `AddPersistence()` | `UsePersistence()` |
+| Persistence | `AddPersistence()` | `UsePersistenceAsync()` |
 
 ### Controllers
 

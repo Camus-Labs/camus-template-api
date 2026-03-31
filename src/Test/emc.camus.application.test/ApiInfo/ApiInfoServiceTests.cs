@@ -53,7 +53,7 @@ public class ApiInfoServiceTests
         var filter = new ApiInfoFilter(ValidVersion);
         var apiInfo = new emc.camus.domain.Auth.ApiInfo(ValidVersion, ValidStatus, ValidFeatures.ToList());
 
-        _repositoryMock.Setup(r => r.GetByVersionAsync(ValidVersion)).ReturnsAsync(apiInfo);
+        _repositoryMock.Setup(r => r.GetByVersionAsync(ValidVersion, It.IsAny<CancellationToken>())).ReturnsAsync(apiInfo);
 
         var service = CreateService();
 
@@ -85,7 +85,7 @@ public class ApiInfoServiceTests
     {
         // Arrange
         var filter = new ApiInfoFilter(ValidVersion);
-        _repositoryMock.Setup(r => r.GetByVersionAsync(ValidVersion))
+        _repositoryMock.Setup(r => r.GetByVersionAsync(ValidVersion, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new KeyNotFoundException("Version not found"));
 
         var service = CreateService();
@@ -102,7 +102,7 @@ public class ApiInfoServiceTests
     {
         // Arrange
         var filter = new ApiInfoFilter(ValidVersion);
-        _repositoryMock.Setup(r => r.GetByVersionAsync(ValidVersion))
+        _repositoryMock.Setup(r => r.GetByVersionAsync(ValidVersion, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("DB connection failed"));
 
         var service = CreateService();
@@ -115,33 +115,33 @@ public class ApiInfoServiceTests
             .WithMessage("*Failed to retrieve API information*system error*");
     }
 
-    // --- Initialize ---
+    // --- InitializeAsync ---
 
     [Fact]
-    public void Initialize_Success_CallsRepositoryInitialize()
+    public async Task InitializeAsync_Success_CallsRepositoryInitializeAsync()
     {
         // Arrange
         var service = CreateService();
 
         // Act
-        service.Initialize();
+        await service.InitializeAsync();
 
         // Assert
-        _repositoryMock.Verify(r => r.Initialize(), Times.Once);
+        _repositoryMock.Verify(r => r.InitializeAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public void Initialize_RepositoryFails_ThrowsInvalidOperationException()
+    public async Task InitializeAsync_RepositoryFails_ThrowsInvalidOperationException()
     {
         // Arrange
-        _repositoryMock.Setup(r => r.Initialize()).Throws(new InvalidOperationException("Connection failed"));
+        _repositoryMock.Setup(r => r.InitializeAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("Connection failed"));
         var service = CreateService();
 
         // Act
-        var act = () => service.Initialize();
+        var act = () => service.InitializeAsync();
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Failed to initialize*API info*");
     }
 }

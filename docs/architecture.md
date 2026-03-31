@@ -41,7 +41,6 @@ Camus follows **Hexagonal Architecture (Ports & Adapters)** pattern with clean s
 **Does NOT contain:**
 
 - Implementations (belong in Adapters)
-- Use cases or orchestration (belong in API controllers)
 - Business logic (belongs in Domain)
 - Infrastructure concerns (databases, HTTP, logging)
 
@@ -51,7 +50,7 @@ Camus follows **Hexagonal Architecture (Ports & Adapters)** pattern with clean s
 - `Observability/` - Telemetry interfaces (`IActivitySourceWrapper`)
 - `Secrets/` - Secret management interfaces (`ISecretProvider`)
 - `RateLimiting/` - Rate limit attribute and policy constants
-- `Common/` - Application-wide constants (ErrorCodes, Headers, MediaTypes)
+- `Common/` - Application-wide constants and shared contracts (ErrorCodes, Headers, IUnitOfWork, IActionAuditRepository)
 - `Exceptions/` - Custom exceptions (RateLimitExceededException)
 
 > **📖 Full Reference:** See [Application Layer README](../src/Application/emc.camus.application/README.md)

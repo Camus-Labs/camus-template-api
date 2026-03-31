@@ -57,17 +57,17 @@ namespace emc.camus.api.Extensions
         /// </summary>
         /// <param name="app">The web application instance.</param>
         /// <returns>The web application instance for method chaining.</returns>
-        public static WebApplication UsePersistence(this WebApplication app)
+        public static async Task<WebApplication> UsePersistenceAsync(this WebApplication app)
         {
             // Initialize API info and Auth service to validate required data
             // Services are scoped, so we need to create a scope to resolve them
             using (var scope = app.Services.CreateScope())
             {
                 var apiInfoService = scope.ServiceProvider.GetRequiredService<IApiInfoService>();
-                apiInfoService.Initialize();
+                await apiInfoService.InitializeAsync();
 
                 var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
-                authService.Initialize();
+                await authService.InitializeAsync();
             }
 
             return app;

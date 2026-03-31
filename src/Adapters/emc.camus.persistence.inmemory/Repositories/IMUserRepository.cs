@@ -41,7 +41,7 @@ internal sealed class IMUserRepository : IUserRepository
     /// <exception cref="InvalidOperationException">
     /// Thrown when any username or password secret cannot be retrieved from the secret store.
     /// </exception>
-    public void Initialize()
+    public Task InitializeAsync(CancellationToken ct = default)
     {
         if (_initialized)
         {
@@ -92,6 +92,8 @@ internal sealed class IMUserRepository : IUserRepository
         }
 
         _initialized = true;
+
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -100,6 +102,7 @@ internal sealed class IMUserRepository : IUserRepository
     /// </summary>
     /// <param name="username">The username to validate.</param>
     /// <param name="password">The password to validate.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The authenticated user with roles.</returns>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the repository has not been initialized.
@@ -107,7 +110,7 @@ internal sealed class IMUserRepository : IUserRepository
     /// <exception cref="UnauthorizedAccessException">
     /// Thrown when credentials are invalid (empty, user not found, or wrong password).
     /// </exception>
-    public Task<User> ValidateCredentialsAsync(string username, string password)
+    public Task<User> ValidateCredentialsAsync(string username, string password, CancellationToken ct = default)
     {
         EnsureInitialized();
 
@@ -120,7 +123,7 @@ internal sealed class IMUserRepository : IUserRepository
             throw new UnauthorizedAccessException("The provided credentials are invalid. User not found.");
         }
 
-        // Get password from secret store - is guarantee to exist in secretProvider because Initialize() loads this at startup and throws if any secrets are missing
+        // Get password from secret store - is guarantee to exist in secretProvider because InitializeAsync() loads this at startup and throws if any secrets are missing
         var passwordFromSecret = _secretProvider.GetSecret(userEntry.PasswordSecretName);
 
         // Validate password
@@ -137,10 +140,11 @@ internal sealed class IMUserRepository : IUserRepository
     /// Retrieves a user by their unique identifier from the in-memory store.
     /// </summary>
     /// <param name="userId">The unique identifier of the user to retrieve.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The User with roles.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the repository has not been initialized.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when the user is not found.</exception>
-    public Task<User> GetByIdAsync(Guid userId)
+    public Task<User> GetByIdAsync(Guid userId, CancellationToken ct = default)
     {
         EnsureInitialized();
         ArgumentOutOfRangeException.ThrowIfEqual(userId, Guid.Empty);
@@ -158,8 +162,9 @@ internal sealed class IMUserRepository : IUserRepository
     /// Updates the last login timestamp for a user (no-op for in-memory implementation).
     /// </summary>
     /// <param name="userId">The ID of the user to update.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>Task representing the asynchronous operation.</returns>
-    public Task UpdateLastLoginAsync(Guid userId)
+    public Task UpdateLastLoginAsync(Guid userId, CancellationToken ct = default)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(userId, Guid.Empty);
 
@@ -171,7 +176,7 @@ internal sealed class IMUserRepository : IUserRepository
     {
         if (!_initialized)
         {
-            throw new InvalidOperationException("Repository not initialized. Call Initialize() first.");
+            throw new InvalidOperationException("Repository not initialized. Call InitializeAsync() first.");
         }
     }
 }

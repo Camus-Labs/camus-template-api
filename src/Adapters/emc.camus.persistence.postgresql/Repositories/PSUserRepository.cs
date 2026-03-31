@@ -2,7 +2,6 @@ using System.Data;
 using BCrypt.Net;
 using Dapper;
 using emc.camus.application.Auth;
-using emc.camus.application.Common;
 using emc.camus.domain.Auth;
 using emc.camus.persistence.postgresql.Mapping;
 using emc.camus.persistence.postgresql.Models;
@@ -16,23 +15,18 @@ namespace emc.camus.persistence.postgresql.Repositories;
 internal sealed class PSUserRepository : IUserRepository
 {
     private readonly PSUnitOfWork _unitOfWork;
-    private readonly IConnectionFactory _connectionFactory;
     private bool _initialized;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PSUserRepository"/> class.
     /// </summary>
     /// <param name="unitOfWork">Unit of work for accessing the shared database connection.</param>
-    /// <param name="connectionFactory">Factory for creating database connections (used only during initialization).</param>
     public PSUserRepository(
-        PSUnitOfWork unitOfWork,
-        IConnectionFactory connectionFactory)
+        PSUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(unitOfWork);
-        ArgumentNullException.ThrowIfNull(connectionFactory);
 
         _unitOfWork = unitOfWork;
-        _connectionFactory = connectionFactory;
     }
 
     /// <summary>
@@ -42,7 +36,7 @@ internal sealed class PSUserRepository : IUserRepository
     /// <exception cref="InvalidOperationException">
     /// Thrown when database connection fails or required tables don't exist.
     /// </exception>
-    public void Initialize()
+    public async Task InitializeAsync(CancellationToken ct = default)
     {
         if (_initialized)
         {
@@ -50,7 +44,7 @@ internal sealed class PSUserRepository : IUserRepository
         }
 
         // Test connection and verify tables exist
-        using var connection = _connectionFactory.CreateConnectionAsync().GetAwaiter().GetResult();
+        var connection = await _unitOfWork.GetConnectionAsync(ct);
 
         const string checkTablesSql = @"
             SELECT
@@ -71,7 +65,8 @@ internal sealed class PSUserRepository : IUserRepository
                     WHERE table_schema = 'camus' AND table_name = 'role_permissions'
                 )) as role_permissions_exists";
 
-        var result = connection.QuerySingle<dynamic>(checkTablesSql);
+        var result = await connection.QuerySingleAsync<dynamic>(
+            new CommandDefinition(checkTablesSql, cancellationToken: ct));
 
         if (!result.users_exists || !result.roles_exists ||
             !result.user_roles_exists || !result.role_permissions_exists)
@@ -96,6 +91,7 @@ internal sealed class PSUserRepository : IUserRepository
     /// </summary>
     /// <param name="username">The username to validate.</param>
     /// <param name="password">The password to validate.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The authenticated user with roles.</returns>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the repository has not been initialized.
@@ -103,14 +99,14 @@ internal sealed class PSUserRepository : IUserRepository
     /// <exception cref="UnauthorizedAccessException">
     /// Thrown when credentials are invalid (empty, user not found, or wrong password).
     /// </exception>
-    public async Task<User> ValidateCredentialsAsync(string username, string password)
+    public async Task<User> ValidateCredentialsAsync(string username, string password, CancellationToken ct = default)
     {
         EnsureInitialized();
 
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
         ArgumentException.ThrowIfNullOrWhiteSpace(password);
 
-        var connection = await _unitOfWork.GetConnectionAsync();
+        var connection = await _unitOfWork.GetConnectionAsync(ct);
 
         // Get user with password hash
         const string userSql = @"
@@ -122,8 +118,7 @@ internal sealed class PSUserRepository : IUserRepository
             WHERE username = @Username";
 
         var userModel = await connection.QuerySingleOrDefaultAsync<UserModel>(
-            userSql,
-            new { username });
+            new CommandDefinition(userSql, new { username }, cancellationToken: ct));
 
         if (userModel == null)
         {
@@ -164,8 +159,7 @@ internal sealed class PSUserRepository : IUserRepository
             ORDER BY r.name";
 
         var roleModels = await connection.QueryAsync<RoleModel>(
-            rolesSql,
-            new { UserId = userModel.Id });
+            new CommandDefinition(rolesSql, new { UserId = userModel.Id }, cancellationToken: ct));
 
         return userModel.ToEntity(roleModels);
     }
@@ -174,14 +168,15 @@ internal sealed class PSUserRepository : IUserRepository
     /// Retrieves a user by their unique identifier with roles.
     /// </summary>
     /// <param name="userId">The unique identifier of the user to retrieve.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The User if found, otherwise null.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the repository has not been initialized.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when the user is not found.</exception>
-    public async Task<User> GetByIdAsync(Guid userId)
+    public async Task<User> GetByIdAsync(Guid userId, CancellationToken ct = default)
     {
         EnsureInitialized();
 
-        var connection = await _unitOfWork.GetConnectionAsync();
+        var connection = await _unitOfWork.GetConnectionAsync(ct);
 
         const string userSql = @"
             SELECT id, username
@@ -189,8 +184,7 @@ internal sealed class PSUserRepository : IUserRepository
             WHERE id = @UserId";
 
         var userModel = await connection.QuerySingleOrDefaultAsync<UserModel>(
-            userSql,
-            new { UserId = userId })
+            new CommandDefinition(userSql, new { UserId = userId }, cancellationToken: ct))
             ?? throw new KeyNotFoundException($"User with ID '{userId}' not found.");
 
         const string rolesSql = @"
@@ -207,8 +201,7 @@ internal sealed class PSUserRepository : IUserRepository
             ORDER BY r.name";
 
         var roleModels = await connection.QueryAsync<RoleModel>(
-            rolesSql,
-            new { UserId = userModel.Id });
+            new CommandDefinition(rolesSql, new { UserId = userModel.Id }, cancellationToken: ct));
 
         return userModel.ToEntity(roleModels);
     }
@@ -217,19 +210,21 @@ internal sealed class PSUserRepository : IUserRepository
     /// Updates the last login timestamp for a user.
     /// </summary>
     /// <param name="userId">The ID of the user to update.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>Task representing the asynchronous operation.</returns>
-    public async Task UpdateLastLoginAsync(Guid userId)
+    public async Task UpdateLastLoginAsync(Guid userId, CancellationToken ct = default)
     {
         EnsureInitialized();
 
-        var connection = await _unitOfWork.GetConnectionAsync();
+        var connection = await _unitOfWork.GetConnectionAsync(ct);
 
         const string updateSql = @"
             UPDATE camus.users
             SET last_login = NOW()
             WHERE id = @UserId";
 
-        var rowsAffected = await connection.ExecuteAsync(updateSql, new { userId });
+        var rowsAffected = await connection.ExecuteAsync(
+            new CommandDefinition(updateSql, new { userId }, cancellationToken: ct));
 
         if (rowsAffected == 0)
         {
@@ -241,7 +236,7 @@ internal sealed class PSUserRepository : IUserRepository
     {
         if (!_initialized)
         {
-            throw new InvalidOperationException("Repository not initialized. Call Initialize() first.");
+            throw new InvalidOperationException("Repository not initialized. Call InitializeAsync() first.");
         }
     }
 }

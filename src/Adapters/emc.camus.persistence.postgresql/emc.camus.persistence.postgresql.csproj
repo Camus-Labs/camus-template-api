@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="emc.camus.persistence.postgresql.test" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 
   <ItemGroup>

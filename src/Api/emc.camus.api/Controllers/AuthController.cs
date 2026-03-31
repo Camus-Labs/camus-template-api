@@ -58,6 +58,7 @@ namespace emc.camus.api.Controllers
         /// Requires API Key authentication to access this endpoint.
         /// </summary>
         /// <param name="request">The authentication request containing Username and Password.</param>
+        /// <param name="ct">Cancellation token for cooperative cancellation.</param>
         /// <returns>Authentication response with JWT token if credentials are valid; otherwise, an error response.</returns>
         [HttpPost("authenticate")]
         [Authorize(AuthenticationSchemes = AuthenticationSchemes.ApiKey)]
@@ -66,7 +67,7 @@ namespace emc.camus.api.Controllers
             Description = "Authenticates a user and generates a JWT token for valid credentials in API version >=2.0. Requires API Key authentication."
         )]
         [ProducesResponseType(typeof(ApiResponse<AuthenticateUserResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> AuthenticateUser([FromBody] AuthenticateUserRequest request)
+        public async Task<IActionResult> AuthenticateUser([FromBody] AuthenticateUserRequest request, CancellationToken ct)
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("AuthenticateUser", OperationType.Auth, async activity =>
             {
@@ -79,7 +80,7 @@ namespace emc.camus.api.Controllers
                 var command = request.ToCommand();
 
                 // Call authentication service (business logic encapsulated)
-                var result = await _authService.AuthenticateAsync(command);
+                var result = await _authService.AuthenticateAsync(command, ct);
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
@@ -97,6 +98,7 @@ namespace emc.camus.api.Controllers
         /// Available for API version >=2.0.
         /// </summary>
         /// <param name="request">The token generation request containing suffix, expiration, and permissions.</param>
+        /// <param name="ct">Cancellation token for cooperative cancellation.</param>
         /// <returns>Token generation response with token details and permissions.</returns>
         [HttpPost("generate-token")]
         [Authorize(AuthenticationSchemes = AuthenticationSchemes.JwtBearer, Policy = Permissions.TokenCreate)]
@@ -105,7 +107,7 @@ namespace emc.camus.api.Controllers
             Description = "Generates a custom token with specified permissions and expiration. Requires token.create permission."
         )]
         [ProducesResponseType(typeof(ApiResponse<GenerateTokenResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GenerateToken([FromBody] GenerateTokenRequest request)
+        public async Task<IActionResult> GenerateToken([FromBody] GenerateTokenRequest request, CancellationToken ct)
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GenerateToken", OperationType.Auth, async activity =>
             {
@@ -120,7 +122,7 @@ namespace emc.camus.api.Controllers
                 var command = request.ToCommand();
 
                 // Call authentication service to generate token
-                var result = await _authService.GenerateTokenAsync(command);
+                var result = await _authService.GenerateTokenAsync(command, ct);
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
@@ -139,6 +141,7 @@ namespace emc.camus.api.Controllers
         /// Available for API version >=2.0.
         /// </summary>
         /// <param name="query">Query parameters including pagination and filters.</param>
+        /// <param name="ct">Cancellation token for cooperative cancellation.</param>
         /// <returns>A paginated list of generated token summaries.</returns>
         [HttpGet("tokens")]
         [Authorize(AuthenticationSchemes = AuthenticationSchemes.JwtBearer, Policy = Permissions.TokenCreate)]
@@ -147,7 +150,7 @@ namespace emc.camus.api.Controllers
             Description = "Retrieves a paginated list of generated tokens for the current user. Supports filtering by revocation/expiration status. Requires token.create permission."
         )]
         [ProducesResponseType(typeof(ApiResponse<PagedResponse<GeneratedTokenSummaryDto>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetGeneratedTokens([FromQuery] GetGeneratedTokensQuery query)
+        public async Task<IActionResult> GetGeneratedTokens([FromQuery] GetGeneratedTokensQuery query, CancellationToken ct)
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetGeneratedTokens", OperationType.Auth, async activity =>
             {
@@ -161,7 +164,7 @@ namespace emc.camus.api.Controllers
 
                 var pagination = query.ToPaginationParams();
                 var filter = query.ToFilter();
-                var pagedResult = await _authService.GetGeneratedTokensAsync(pagination, filter);
+                var pagedResult = await _authService.GetGeneratedTokensAsync(pagination, filter, ct);
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
@@ -183,6 +186,7 @@ namespace emc.camus.api.Controllers
         /// Available for API version >=2.0.
         /// </summary>
         /// <param name="jti">The JWT ID of the token to revoke.</param>
+        /// <param name="ct">Cancellation token for cooperative cancellation.</param>
         /// <returns>The revoked token summary confirming the revocation.</returns>
         [HttpPost("tokens/{jti:guid}/revoke")]
         [Authorize(AuthenticationSchemes = AuthenticationSchemes.JwtBearer, Policy = Permissions.TokenCreate)]
@@ -191,7 +195,7 @@ namespace emc.camus.api.Controllers
             Description = "Revokes a generated token by JTI. Only the token creator can revoke it. Requires token.create permission."
         )]
         [ProducesResponseType(typeof(ApiResponse<GeneratedTokenSummaryDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> RevokeToken([FromRoute] Guid jti)
+        public async Task<IActionResult> RevokeToken([FromRoute] Guid jti, CancellationToken ct)
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("RevokeToken", OperationType.Auth, async activity =>
             {
@@ -202,7 +206,7 @@ namespace emc.camus.api.Controllers
 
                 // Map route inputs to Application Command
                 var command = Mapping.V2.AuthMappingExtensions.ToRevokeTokenCommand(jti);
-                var result = await _authService.RevokeTokenAsync(command);
+                var result = await _authService.RevokeTokenAsync(command, ct);
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {
@@ -225,7 +229,7 @@ namespace emc.camus.api.Controllers
         [SwaggerOperation(
             Description = "Handles unexpected errors in API version 2.0"
         )]
-        public async Task<IActionResult> GetUnexpectedError()
+        public async Task<IActionResult> GetUnexpectedError(CancellationToken ct)
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetUnexpectedError", OperationType.Test, activity =>
             {

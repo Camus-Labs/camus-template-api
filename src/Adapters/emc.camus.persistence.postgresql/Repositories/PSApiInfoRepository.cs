@@ -1,8 +1,8 @@
 using System.Data;
 using Dapper;
 using emc.camus.application.ApiInfo;
-using emc.camus.application.Common;
 using emc.camus.domain.Auth;
+using emc.camus.persistence.postgresql.Services;
 using emc.camus.persistence.postgresql.Mapping;
 using emc.camus.persistence.postgresql.Models;
 
@@ -13,19 +13,19 @@ namespace emc.camus.persistence.postgresql.Repositories;
 /// </summary>
 internal sealed class PSApiInfoRepository : IApiInfoRepository
 {
-    private readonly IConnectionFactory _connectionFactory;
+    private readonly PSUnitOfWork _unitOfWork;
     private bool _initialized;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PSApiInfoRepository"/> class.
     /// </summary>
-    /// <param name="connectionFactory">Factory for creating database connections.</param>
+    /// <param name="unitOfWork">Unit of work for accessing the shared database connection.</param>
     public PSApiInfoRepository(
-        IConnectionFactory connectionFactory)
+        PSUnitOfWork unitOfWork)
     {
-        ArgumentNullException.ThrowIfNull(connectionFactory);
+        ArgumentNullException.ThrowIfNull(unitOfWork);
 
-        _connectionFactory = connectionFactory;
+        _unitOfWork = unitOfWork;
     }
 
     /// <summary>
@@ -35,7 +35,7 @@ internal sealed class PSApiInfoRepository : IApiInfoRepository
     /// <exception cref="InvalidOperationException">
     /// Thrown when database connection fails or required tables don't exist.
     /// </exception>
-    public void Initialize()
+    public async Task InitializeAsync(CancellationToken ct = default)
     {
         if (_initialized)
         {
@@ -43,7 +43,7 @@ internal sealed class PSApiInfoRepository : IApiInfoRepository
         }
 
         // Test connection and verify table exists
-        using var connection = _connectionFactory.CreateConnectionAsync().GetAwaiter().GetResult();
+        var connection = await _unitOfWork.GetConnectionAsync(ct);
 
         const string checkTableSql = @"
             SELECT EXISTS (
@@ -52,7 +52,8 @@ internal sealed class PSApiInfoRepository : IApiInfoRepository
                 AND table_name = 'api_info'
             )";
 
-        var tableExists = connection.ExecuteScalar<bool>(checkTableSql);
+        var tableExists = await connection.ExecuteScalarAsync<bool>(
+            new CommandDefinition(checkTableSql, cancellationToken: ct));
 
         if (!tableExists)
         {
@@ -68,6 +69,7 @@ internal sealed class PSApiInfoRepository : IApiInfoRepository
     /// Gets API information by version from the database.
     /// </summary>
     /// <param name="version">The API version to retrieve.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>An ApiInfo object if found.</returns>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the repository has not been initialized.
@@ -78,13 +80,13 @@ internal sealed class PSApiInfoRepository : IApiInfoRepository
     /// <exception cref="KeyNotFoundException">
     /// Thrown when the specified version is not found.
     /// </exception>
-    public async Task<ApiInfo> GetByVersionAsync(string version)
+    public async Task<ApiInfo> GetByVersionAsync(string version, CancellationToken ct = default)
     {
         EnsureInitialized();
 
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
 
-        using var connection = await _connectionFactory.CreateConnectionAsync();
+        var connection = await _unitOfWork.GetConnectionAsync(ct);
 
         const string sql = @"
             SELECT
@@ -96,8 +98,7 @@ internal sealed class PSApiInfoRepository : IApiInfoRepository
             WHERE version = @Version";
 
         var result = await connection.QuerySingleOrDefaultAsync<ApiInfoModel>(
-            sql,
-            new { version });
+            new CommandDefinition(sql, new { version }, cancellationToken: ct));
 
         if (result == null)
         {
@@ -111,7 +112,7 @@ internal sealed class PSApiInfoRepository : IApiInfoRepository
     {
         if (!_initialized)
         {
-            throw new InvalidOperationException("Repository not initialized. Call Initialize() first.");
+            throw new InvalidOperationException("Repository not initialized. Call InitializeAsync() first.");
         }
     }
 }

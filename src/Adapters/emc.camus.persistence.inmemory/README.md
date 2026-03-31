@@ -29,8 +29,8 @@ scenarios where a database is not required.
 
 ### Register in Program.cs
 
-Call `builder.AddInMemoryPersistence()` to register all in-memory persistence services.
-See `InMemoryPersistenceSetupExtensions` in this adapter for the full registration API.
+Call `builder.AddInMemoryPersistence()` to register all in-memory persistence services — refer to the
+`InMemoryPersistenceSetupExtensions` class in this adapter for the full registration API.
 
 ---
 
@@ -135,8 +135,8 @@ The adapter registers via the extension method in `InMemoryPersistenceSetupExten
   repository implementations as singletons: `IUserRepository`,
   `IApiInfoRepository`, `IActionAuditRepository`, and `IUnitOfWork`.
 
-Both `IMUserRepository` and `IMApiInfoRepository` require explicit initialization at startup via their `Initialize()`
-methods to load data from configuration and secrets.
+Both `IMUserRepository` and `IMApiInfoRepository` require explicit initialization at startup via their
+`InitializeAsync()` methods to load data from configuration and secrets.
 
 ---
 
@@ -144,12 +144,12 @@ methods to load data from configuration and secrets.
 
 | Symptom | Likely Cause |
 | ------- | ------------ |
-| `Repository not initialized. Call Initialize() first.` | `Initialize()` not called at startup for the repository |
+| `Repository not initialized. Call InitializeAsync() first.` | `InitializeAsync()` not called at startup for the repository |
 | `Failed to retrieve username from secret` | Secret name in `InMemoryModelSettings` doesn't match a secret in the store |
 | `Duplicate API version` | Two entries in `ApiInfos` share the same `Version` value |
 | `API info not found for version` | Requested version not defined in `InMemoryModelSettings.ApiInfos` |
 | Data lost after restart | Expected behavior — in-memory storage does not persist across restarts |
-| `IMApiInfoRepository already initialized` | `Initialize()` called more than once |
+| `IMApiInfoRepository already initialized` | `InitializeAsync()` called more than once |
 
 ---
 

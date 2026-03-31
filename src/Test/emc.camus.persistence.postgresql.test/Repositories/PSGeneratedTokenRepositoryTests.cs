@@ -1,5 +1,4 @@
 using FluentAssertions;
-using emc.camus.application.Common;
 using emc.camus.persistence.postgresql.Repositories;
 using emc.camus.persistence.postgresql.Services;
 

@@ -72,11 +72,11 @@ public class ApiInfoControllerTests
         // Arrange
         var detailView = new ApiInfoDetailView("2.0", "Active", new List<string> { "auth", "versioning" });
         _mockApiInfoService
-            .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>()))
+            .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(detailView);
 
         // Act
-        var result = await _controller.GetInfo();
+        var result = await _controller.GetInfo(CancellationToken.None);
 
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
@@ -102,11 +102,11 @@ public class ApiInfoControllerTests
         // Arrange
         var detailView = new ApiInfoDetailView("2.0", "Active", new List<string> { "auth", "versioning" });
         _mockApiInfoService
-            .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>()))
+            .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(detailView);
 
         // Act
-        var result = await _controller.GetInfoApiKey();
+        var result = await _controller.GetInfoApiKey(CancellationToken.None);
 
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
@@ -122,11 +122,11 @@ public class ApiInfoControllerTests
         // Arrange
         var detailView = new ApiInfoDetailView("2.0", "Active", new List<string> { "auth", "versioning" });
         _mockApiInfoService
-            .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>()))
+            .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(detailView);
 
         // Act
-        var result = await _controller.GetInfoJwt();
+        var result = await _controller.GetInfoJwt(CancellationToken.None);
 
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;

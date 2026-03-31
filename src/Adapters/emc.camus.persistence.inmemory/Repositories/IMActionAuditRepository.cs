@@ -38,11 +38,13 @@ internal sealed partial class IMActionAuditRepository : IActionAuditRepository
     /// </summary>
     /// <param name="actionTitle">A short title describing the action.</param>
     /// <param name="actionSummary">A detailed summary of what was done.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A dummy audit entry ID of 0.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="actionTitle"/> is null or whitespace.</exception>
     public Task<long> LogCurrentUserActionAsync(
         string actionTitle,
-        string actionSummary)
+        string actionSummary,
+        CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(actionTitle);
         ArgumentException.ThrowIfNullOrWhiteSpace(actionSummary);
@@ -52,7 +54,7 @@ internal sealed partial class IMActionAuditRepository : IActionAuditRepository
         var username = _userContext.GetCurrentUsername()
             ?? throw new InvalidOperationException("Username is not available. Ensure the user is authenticated.");
 
-        return LogActionAsync(userId, username, actionTitle, actionSummary);
+        return LogActionAsync(userId, username, actionTitle, actionSummary, ct);
     }
 
     /// <summary>
@@ -62,6 +64,7 @@ internal sealed partial class IMActionAuditRepository : IActionAuditRepository
     /// <param name="username">The username performing the action.</param>
     /// <param name="actionTitle">A short title describing the action.</param>
     /// <param name="actionSummary">A detailed summary of what was done.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A dummy audit entry ID of 0.</returns>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="username"/> or <paramref name="actionTitle"/> is null or whitespace.
@@ -70,7 +73,8 @@ internal sealed partial class IMActionAuditRepository : IActionAuditRepository
         Guid userId,
         string username,
         string actionTitle,
-        string actionSummary)
+        string actionSummary,
+        CancellationToken ct = default)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(userId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(username);

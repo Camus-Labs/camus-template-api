@@ -67,26 +67,27 @@ public class AuthService : IAuthService
     /// Manages transaction and audit logging via the unit of work.
     /// </summary>
     /// <param name="command">The authentication command containing username and password.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>Authentication result with token, expiration, and user information.</returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when credentials are invalid.</exception>
     /// <exception cref="InvalidOperationException">Thrown when token generation or database operations fail.</exception>
-    public virtual async Task<AuthenticateUserResult> AuthenticateAsync(AuthenticateUserCommand command)
+    public virtual async Task<AuthenticateUserResult> AuthenticateAsync(AuthenticateUserCommand command, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(command);
         try
         {
-            await _unitOfWork.BeginTransactionAsync();
+            await _unitOfWork.BeginTransactionAsync(ct);
 
             try
             {
-                var user = await _userRepository.ValidateCredentialsAsync(command.Username, command.Password);
+                var user = await _userRepository.ValidateCredentialsAsync(command.Username, command.Password, ct);
 
                 _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
                 {
                     { "user_id", user.Id }
                 });
 
-                await _userRepository.UpdateLastLoginAsync(user.Id);
+                await _userRepository.UpdateLastLoginAsync(user.Id, ct);
 
                 var token = _tokenGenerator.GenerateToken(user.Id, user.Username, user.ToPermissionClaims());
 
@@ -94,9 +95,10 @@ public class AuthService : IAuthService
                     user.Id,
                     user.Username,
                     "user.login.success",
-                    $"Successful login. Token expires: {token.ExpiresOn:yyyy-MM-dd HH:mm:ss} UTC");
+                    $"Successful login. Token expires: {token.ExpiresOn:yyyy-MM-dd HH:mm:ss} UTC",
+                    ct);
 
-                await _unitOfWork.CommitAsync();
+                await _unitOfWork.CommitAsync(ct);
 
                 return new AuthenticateUserResult(
                     token.Token,
@@ -126,10 +128,11 @@ public class AuthService : IAuthService
     /// Stores the generated token metadata via the unit of work for audit and tracking.
     /// </summary>
     /// <param name="command">The generate token command with suffix, expiration, and permissions.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>Token generation result with token details and permissions.</returns>
     /// <exception cref="ArgumentException">Thrown when validation fails (invalid suffix, expiration, or permissions).</exception>
     /// <exception cref="InvalidOperationException">Thrown when user context is unavailable or token generation fails.</exception>
-    public virtual async Task<GenerateTokenResult> GenerateTokenAsync(GenerateTokenCommand command)
+    public virtual async Task<GenerateTokenResult> GenerateTokenAsync(GenerateTokenCommand command, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(command);
 
@@ -138,7 +141,7 @@ public class AuthService : IAuthService
 
         try
         {
-            var creator = await _userRepository.GetByIdAsync(currentUserId);
+            var creator = await _userRepository.GetByIdAsync(currentUserId, ct);
 
             var additionalClaims = command.Permissions
                 .Select(p => new Claim(Permissions.ClaimType, p))
@@ -164,17 +167,18 @@ public class AuthService : IAuthService
 
             if (_generatedTokenRepository != null)
             {
-                await _unitOfWork.BeginTransactionAsync();
+                await _unitOfWork.BeginTransactionAsync(ct);
 
                 try
                 {
-                    await _generatedTokenRepository.CreateAsync(generatedToken);
+                    await _generatedTokenRepository.CreateAsync(generatedToken, ct);
 
                     await _auditRepository.LogCurrentUserActionAsync(
                         "token.generate.success",
-                        $"Generated token for '{generatedToken.TokenUsername}' with permissions: {string.Join(", ", command.Permissions)}. Expires: {command.ExpiresOn:yyyy-MM-dd HH:mm:ss} UTC");
+                        $"Generated token for '{generatedToken.TokenUsername}' with permissions: {string.Join(", ", command.Permissions)}. Expires: {command.ExpiresOn:yyyy-MM-dd HH:mm:ss} UTC",
+                        ct);
 
-                    await _unitOfWork.CommitAsync();
+                    await _unitOfWork.CommitAsync(ct);
                 }
                 catch (Exception)
                 {
@@ -204,9 +208,10 @@ public class AuthService : IAuthService
     /// </summary>
     /// <param name="pagination">Pagination parameters (page number and page size).</param>
     /// <param name="filter">Optional filter criteria for the query.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A paged result of token summaries for the current user.</returns>
     /// <exception cref="InvalidOperationException">Thrown when user context is unavailable or database operations fail.</exception>
-    public virtual async Task<PagedResult<GeneratedTokenSummaryView>> GetGeneratedTokensAsync(PaginationParams pagination, GeneratedTokenFilter? filter = null)
+    public virtual async Task<PagedResult<GeneratedTokenSummaryView>> GetGeneratedTokensAsync(PaginationParams pagination, GeneratedTokenFilter? filter = null, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(pagination);
 
@@ -219,7 +224,7 @@ public class AuthService : IAuthService
         }
         try
         {
-            var pagedTokens = await _generatedTokenRepository.GetPagedByCreatorUserIdAsync(currentUserId, pagination, filter);
+            var pagedTokens = await _generatedTokenRepository.GetPagedByCreatorUserIdAsync(currentUserId, pagination, filter, ct);
 
             var items = pagedTokens.Items.Select(t => t.ToSummaryView()).ToList();
 
@@ -242,11 +247,12 @@ public class AuthService : IAuthService
     /// Updates the in-memory revocation cache so the token is immediately rejected.
     /// </summary>
     /// <param name="command">The revoke token command containing the JTI.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A summary view of the revoked token.</returns>
     /// <exception cref="InvalidOperationException">Thrown when user context is unavailable or database operations fail.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when the token is not found.</exception>
     /// <exception cref="UnauthorizedAccessException">Thrown when the user is not the creator of the token.</exception>
-    public virtual async Task<GeneratedTokenSummaryView> RevokeTokenAsync(RevokeTokenCommand command)
+    public virtual async Task<GeneratedTokenSummaryView> RevokeTokenAsync(RevokeTokenCommand command, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(command);
 
@@ -261,24 +267,25 @@ public class AuthService : IAuthService
 
         try
         {
-            await _unitOfWork.BeginTransactionAsync();
+            await _unitOfWork.BeginTransactionAsync(ct);
 
             try
             {
-                var generatedToken = await _generatedTokenRepository.GetByJtiAsync(jti)
+                var generatedToken = await _generatedTokenRepository.GetByJtiAsync(jti, ct)
                     ?? throw new KeyNotFoundException($"Generated token with JTI '{jti}' not found.");
 
                 generatedToken.Revoke(currentUserId);
 
-                await _generatedTokenRepository.SaveAsync(generatedToken);
+                await _generatedTokenRepository.SaveAsync(generatedToken, ct);
 
                 _tokenRevocationCache.Revoke(jti, generatedToken.ExpiresOn);
 
                 await _auditRepository.LogCurrentUserActionAsync(
                     "token.revoke.success",
-                    $"Revoked token '{generatedToken.TokenUsername}' (JTI: {jti}).");
+                    $"Revoked token '{generatedToken.TokenUsername}' (JTI: {jti}).",
+                    ct);
 
-                await _unitOfWork.CommitAsync();
+                await _unitOfWork.CommitAsync(ct);
 
                 return generatedToken.ToSummaryView();
             }
@@ -303,14 +310,16 @@ public class AuthService : IAuthService
     /// Initializes the user repository to load users and roles.
     /// Should be called during application startup.
     /// </summary>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     /// <exception cref="InvalidOperationException">
     /// Thrown when database connection fails or required tables don't exist.
     /// </exception>
-    public virtual void Initialize()
+    public virtual async Task InitializeAsync(CancellationToken ct = default)
     {
         try
         {
-            _userRepository.Initialize();
+            await _userRepository.InitializeAsync(ct);
         }
         catch (Exception ex)
         {
