@@ -126,10 +126,8 @@ public class JwtTokenGeneratorTests : IDisposable
         result.ExpiresOn.Should().BeAfter(beforeGeneration);
         token.Issuer.Should().Be(_jwtSettings.Issuer);
         token.Audiences.Should().ContainSingle().Which.Should().Be(_jwtSettings.Audience);
-        token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == ValidUsername);
+        token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == ValidUserId.ToString());
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.UniqueName && c.Value == ValidUsername);
-        token.Claims.Should().Contain(c => c.Type == ClaimTypes.NameIdentifier && c.Value == ValidUserId.ToString());
-        token.Claims.Should().Contain(c => c.Type == ClaimTypes.Name && c.Value == ValidUsername);
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Jti);
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Iat);
     }
@@ -249,10 +247,8 @@ public class JwtTokenGeneratorTests : IDisposable
         token.Issuer.Should().Be(_jwtSettings.Issuer);
         token.Audiences.Should().ContainSingle().Which.Should().Be(_jwtSettings.Audience);
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Jti && c.Value == ValidJti.ToString());
-        token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == ValidUsername);
+        token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == ValidUserId.ToString());
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.UniqueName && c.Value == ValidUsername);
-        token.Claims.Should().Contain(c => c.Type == ClaimTypes.NameIdentifier && c.Value == ValidUserId.ToString());
-        token.Claims.Should().Contain(c => c.Type == ClaimTypes.Name && c.Value == ValidUsername);
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Iat);
     }
 

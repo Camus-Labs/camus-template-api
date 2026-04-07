@@ -1,0 +1,33 @@
+{
+  "solution": {
+    "path": "CamusApp.sln",
+    "projects": [
+      "Domain\\emc.camus.domain\\emc.camus.domain.csproj",
+      "Application\\emc.camus.application\\emc.camus.application.csproj",
+      "Api\\emc.camus.api\\emc.camus.api.csproj",
+      "Adapters\\emc.camus.persistence.postgresql\\emc.camus.persistence.postgresql.csproj",
+      "Adapters\\emc.camus.persistence.inmemory\\emc.camus.persistence.inmemory.csproj",
+      "Adapters\\emc.camus.secrets.dapr\\emc.camus.secrets.dapr.csproj",
+      "Adapters\\emc.camus.security.jwt\\emc.camus.security.jwt.csproj",
+      "Adapters\\emc.camus.security.apikey\\emc.camus.security.apikey.csproj",
+      "Adapters\\emc.camus.documentation.swagger\\emc.camus.documentation.swagger.csproj",
+      "Adapters\\emc.camus.observability.otel\\emc.camus.observability.otel.csproj",
+      "Adapters\\emc.camus.ratelimiting.inmemory\\emc.camus.ratelimiting.inmemory.csproj",
+      "Adapters\\emc.camus.migrations.dbup\\emc.camus.migrations.dbup.csproj",
+      "Adapters\\emc.camus.cache.inmemory\\emc.camus.cache.inmemory.csproj",
+      "Test\\emc.camus.domain.test\\emc.camus.domain.test.csproj",
+      "Test\\emc.camus.application.test\\emc.camus.application.test.csproj",
+      "Test\\emc.camus.api.test\\emc.camus.api.test.csproj",
+      "Test\\emc.camus.persistence.postgresql.test\\emc.camus.persistence.postgresql.test.csproj",
+      "Test\\emc.camus.persistence.inmemory.test\\emc.camus.persistence.inmemory.test.csproj",
+      "Test\\emc.camus.security.jwt.test\\emc.camus.security.jwt.test.csproj",
+      "Test\\emc.camus.security.apikey.test\\emc.camus.security.apikey.test.csproj",
+      "Test\\emc.camus.observability.otel.test\\emc.camus.observability.otel.test.csproj",
+      "Test\\emc.camus.secrets.dapr.test\\emc.camus.secrets.dapr.test.csproj",
+      "Test\\emc.camus.ratelimiting.inmemory.test\\emc.camus.ratelimiting.inmemory.test.csproj",
+      "Test\\emc.camus.documentation.swagger.test\\emc.camus.documentation.swagger.test.csproj",
+      "Test\\emc.camus.cache.inmemory.test\\emc.camus.cache.inmemory.test.csproj",
+      "Test\\emc.camus.migrations.dbup.test\\emc.camus.migrations.dbup.test.csproj"
+    ]
+  }
+}

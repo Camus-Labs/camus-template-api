@@ -78,6 +78,12 @@ namespace emc.camus.security.jwt
             builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
                 .Configure<JwtSettings, RsaSecurityKey>((options, jwtSettings, rsaKey) =>
                 {
+                    // Map inbound JWT claim types (e.g. "sub") to their .NET equivalents
+                    // (e.g. ClaimTypes.NameIdentifier). Required because JwtSecurityTokenHandler
+                    // maps outbound claims during token creation, but JsonWebTokenHandler
+                    // (default in .NET 8+) does not map inbound claims by default.
+                    options.MapInboundClaims = true;
+
                     // Token Validation Parameters
                     options.TokenValidationParameters = new TokenValidationParameters
                     {

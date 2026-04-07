@@ -79,6 +79,12 @@ public static class ErrorCodes
         public const string Conflict = "conflict";
 
         /// <summary>
+        /// Error code for 409 Conflict responses.
+        /// Indicates the request conflicts with the current state of the resource.
+        /// </summary>
+        public const string DataConflict = "data_conflict";
+
+        /// <summary>
         /// Error code for 429 Too Many Requests responses.
         /// Indicates the rate limit has been exceeded.
         /// </summary>

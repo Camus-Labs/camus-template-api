@@ -85,7 +85,7 @@ internal sealed class PSConnectionFactory : IConnectionFactory
         {
             await connection.ExecuteAsync(
                 new CommandDefinition(
-                    "SET app.current_username = @Username;",
+                    "SELECT set_config('app.current_username', @Username, false);",
                     new { Username = username },
                     cancellationToken: ct));
         }

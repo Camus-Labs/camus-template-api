@@ -97,6 +97,7 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         yield return new object[] { new KeyNotFoundException("Resource not found"), HttpStatusCode.NotFound };
         yield return new object[] { new UnauthorizedAccessException("Access denied"), HttpStatusCode.Unauthorized };
         yield return new object[] { new RateLimitExceededException("strict", 10, 60, 30, 1234567890), HttpStatusCode.TooManyRequests };
+        yield return new object[] { new DataConflictException("A generated token with username 'Admin-test' already exists."), HttpStatusCode.Conflict };
     }
 
     [Theory]
@@ -123,7 +124,7 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
     [Theory]
     [InlineData("Token not found in repository", HttpStatusCode.NotFound)]
     [InlineData("Insufficient permission to perform action", HttpStatusCode.Forbidden)]
-    [InlineData("Duplicate entry detected", HttpStatusCode.Conflict)]
+    [InlineData("Invalid Setting", HttpStatusCode.InternalServerError)]
     public async Task InvokeAsync_InvalidOperationException_ReturnsExpectedStatusCode(
         string message, HttpStatusCode expectedStatusCode)
     {

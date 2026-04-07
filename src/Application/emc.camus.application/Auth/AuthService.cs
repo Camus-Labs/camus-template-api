@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Security.Claims;
 using emc.camus.application.Common;
+using emc.camus.application.Exceptions;
 using emc.camus.application.Observability;
 using emc.camus.domain.Auth;
 using emc.camus.domain.Exceptions;
@@ -192,7 +193,7 @@ public class AuthService : IAuthService
                 token.ExpiresOn,
                 generatedToken.TokenUsername);
         }
-        catch (Exception ex) when (ex is ArgumentException or DomainException)
+        catch (Exception ex) when (ex is ArgumentException or DomainException or KeyNotFoundException or DataConflictException)
         {
             throw;
         }

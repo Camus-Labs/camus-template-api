@@ -1,6 +1,7 @@
 using Dapper;
 using emc.camus.application.Auth;
 using emc.camus.application.Common;
+using emc.camus.application.Exceptions;
 using emc.camus.domain.Auth;
 using emc.camus.persistence.postgresql.Mapping;
 using emc.camus.persistence.postgresql.Models;
@@ -35,7 +36,7 @@ internal sealed class PSGeneratedTokenRepository : IGeneratedTokenRepository
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     /// <exception cref="ArgumentNullException">Thrown when generatedToken is null.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when a token with the same JTI already exists.</exception>
+    /// <exception cref="DataConflictException">Thrown when a token with the same JTI or token username already exists.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when the creator user does not exist.</exception>
     public async Task CreateAsync(GeneratedToken generatedToken, CancellationToken ct = default)
     {
@@ -59,7 +60,16 @@ internal sealed class PSGeneratedTokenRepository : IGeneratedTokenRepository
 
         if (jtiExists)
         {
-            throw new InvalidOperationException($"A generated token with JTI '{generatedToken.Jti}' already exists.");
+            throw new DataConflictException($"A generated token with JTI '{generatedToken.Jti}' already exists.");
+        }
+
+        const string usernameCheckSql = "SELECT EXISTS (SELECT 1 FROM camus.generated_tokens WHERE token_username = @TokenUsername)";
+        var usernameExists = await connection.ExecuteScalarAsync<bool>(
+            new CommandDefinition(usernameCheckSql, new { generatedToken.TokenUsername }, cancellationToken: ct));
+
+        if (usernameExists)
+        {
+            throw new DataConflictException($"A generated token with username '{generatedToken.TokenUsername}' already exists.");
         }
 
         const string fkCheckSql = "SELECT EXISTS (SELECT 1 FROM camus.users WHERE id = @CreatorUserId)";

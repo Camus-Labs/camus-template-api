@@ -1,0 +1,21 @@
+{
+  "solution": {
+    "path": "CamusApp.sln",
+    "projects": [
+      "Domain\\emc.camus.domain\\emc.camus.domain.csproj",
+      "Application\\emc.camus.application\\emc.camus.application.csproj",
+      "Api\\emc.camus.api\\emc.camus.api.csproj",
+      "Adapters\\emc.camus.persistence.postgresql\\emc.camus.persistence.postgresql.csproj",
+      "Adapters\\emc.camus.persistence.inmemory\\emc.camus.persistence.inmemory.csproj",
+      "Adapters\\emc.camus.secrets.dapr\\emc.camus.secrets.dapr.csproj",
+      "Adapters\\emc.camus.security.jwt\\emc.camus.security.jwt.csproj",
+      "Adapters\\emc.camus.security.apikey\\emc.camus.security.apikey.csproj",
+      "Adapters\\emc.camus.documentation.swagger\\emc.camus.documentation.swagger.csproj",
+      "Adapters\\emc.camus.observability.otel\\emc.camus.observability.otel.csproj",
+      "Adapters\\emc.camus.ratelimiting.inmemory\\emc.camus.ratelimiting.inmemory.csproj",
+      "Adapters\\emc.camus.migrations.dbup\\emc.camus.migrations.dbup.csproj",
+      "Adapters\\emc.camus.cache.inmemory\\emc.camus.cache.inmemory.csproj",
+      "Test\\emc.camus.api.integration.test\\emc.camus.api.integration.test.csproj"
+    ]
+  }
+}

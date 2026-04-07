@@ -65,13 +65,14 @@ internal sealed class JwtTokenGenerator : ITokenGenerator
         ArgumentOutOfRangeException.ThrowIfEqual(jti, Guid.Empty);
         ArgumentOutOfRangeException.ThrowIfEqual(expiresOn, default);
 
-        // Build claims list
+        // Build claims list using JWT registered names only.
+        // MapInboundClaims on JwtBearerOptions maps these back to .NET ClaimTypes:
+        //   sub         → ClaimTypes.NameIdentifier  (for HttpUserContext.GetCurrentUserId)
+        //   unique_name → ClaimTypes.Name             (for HttpUserContext.GetCurrentUsername via Identity.Name)
         var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, username),
+            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new Claim(JwtRegisteredClaimNames.UniqueName, username),
-            new Claim(ClaimTypes.NameIdentifier, userId.ToString()), // For HttpUserContext.GetCurrentUserId()
-            new Claim(ClaimTypes.Name, username),         // For HttpUserContext.GetCurrentUsername() via Identity.Name
             new Claim(JwtRegisteredClaimNames.Jti, jti.ToString()),
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture), ClaimValueTypes.Integer64)
         };

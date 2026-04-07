@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS camus.generated_tokens (
     jti UUID PRIMARY KEY, -- JWT ID — primary identifier for the token
     creator_user_id UUID NOT NULL,
     creator_username VARCHAR(200) NOT NULL,
-    token_username VARCHAR(221) NOT NULL, -- Original username + '-' + suffix (200 + 1 + 20)
+    token_username VARCHAR(221) NOT NULL UNIQUE, -- Original username + '-' + suffix (200 + 1 + 20)
     permissions TEXT[] NOT NULL, -- Array of permission strings
     expires_on TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),

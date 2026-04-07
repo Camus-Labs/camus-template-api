@@ -35,6 +35,7 @@ namespace emc.camus.api.Middleware
         private static readonly IReadOnlyList<ErrorCodeMappingRule> PlatformRules = new List<ErrorCodeMappingRule>
         {
             new() { Type = nameof(RateLimitExceededException), ErrorCode = ErrorCodes.RateLimitExceeded },
+            new() { Type = nameof(DataConflictException), ErrorCode = ErrorCodes.DataConflict },
             new() { Type = nameof(KeyNotFoundException), ErrorCode = ErrorCodes.NotFound },
             // JWT-specific error patterns (most specific first)
             new() { Type = nameof(UnauthorizedAccessException), Pattern = "jwt.*expired|token.*expired", ErrorCode = ErrorCodes.JwtTokenExpired },
@@ -196,6 +197,13 @@ namespace emc.camus.api.Middleware
                     Type = "https://tools.ietf.org/html/rfc6585#section-4",
                     Extensions = { ["retryAfter"] = rateLimitEx.RetryAfterSeconds }
                 },
+                DataConflictException => new ProblemDetails
+                {
+                    Status = (int)HttpStatusCode.Conflict,
+                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.Conflict),
+                    Detail = exception.Message,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+                },
                 InvalidOperationException when exception.Message.Contains("not found", StringComparison.OrdinalIgnoreCase) => new ProblemDetails
                 {
                     Status = (int)HttpStatusCode.NotFound,
@@ -212,10 +220,10 @@ namespace emc.camus.api.Middleware
                 },
                 InvalidOperationException => new ProblemDetails
                 {
-                    Status = (int)HttpStatusCode.Conflict,
-                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.Conflict),
+                    Status = (int)HttpStatusCode.InternalServerError,
+                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.InternalServerError),
                     Detail = exception.Message,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
                 },
                 _ => new ProblemDetails
                 {

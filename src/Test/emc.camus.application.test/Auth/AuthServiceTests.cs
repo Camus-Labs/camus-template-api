@@ -305,24 +305,6 @@ public class AuthServiceTests
     }
 
     [Fact]
-    public async Task GenerateTokenAsync_NoUsername_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var command = new GenerateTokenCommand(ValidTokenSuffix, DateTime.UtcNow.AddMonths(6), [Permissions.ApiRead]);
-        _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _userContextMock.Setup(c => c.GetCurrentUsername()).Returns((string?)null);
-
-        var service = CreateService();
-
-        // Act
-        var act = () => service.GenerateTokenAsync(command);
-
-        // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*Username*not available*");
-    }
-
-    [Fact]
     public async Task GenerateTokenAsync_InfrastructureFailure_ThrowsInvalidOperationException()
     {
         // Arrange

@@ -156,7 +156,7 @@ public class GeneratedTokenTests
     public static TheoryData<DateTime> InvalidExpirationDates => new()
     {
         new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-        DateTime.UtcNow.AddYears(1).AddDays(1)
+        new DateTime(2099, 1, 1, 0, 0, 0, DateTimeKind.Utc)
     };
 
     [Theory]

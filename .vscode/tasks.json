@@ -12,7 +12,27 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "test",
+            "label": "test-unit",
+            "type": "shell",
+            "command": "dotnet test src/UnitTests.slnf /p:GeneratePullPaths=true",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "test",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "test-integration",
+            "type": "shell",
+            "command": "dotnet test src/IntegrationTests.slnf /p:GeneratePullPaths=true",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "test",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "test-all",
             "type": "shell",
             "command": "dotnet test src/CamusApp.sln /p:GeneratePullPaths=true",
             "options": {
@@ -24,7 +44,7 @@
         {
             "label": "test-with-coverage",
             "type": "shell",
-            "command": "find src/Test -type d -name 'TestResults' -exec rm -rf {} + 2>/dev/null || true && find src/Test -type d \\( -name 'bin' -o -name 'obj' \\) -exec rm -rf {} + 2>/dev/null || true && dotnet clean src/CamusApp.sln && dotnet build src/CamusApp.sln && dotnet test src/CamusApp.sln --collect:\"XPlat Code Coverage\" --no-build --settings coverlet.runsettings /p:GeneratePullPaths=true",
+            "command": "find src/Test -type d -name 'TestResults' -exec rm -rf {} + 2>/dev/null || true && find src/Test -type d \\( -name 'bin' -o -name 'obj' \\) -exec rm -rf {} + 2>/dev/null || true && dotnet clean src/UnitTests.slnf && dotnet build src/UnitTests.slnf && dotnet test src/UnitTests.slnf --collect:\"XPlat Code Coverage\" --no-build --settings coverlet.runsettings /p:GeneratePullPaths=true",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
