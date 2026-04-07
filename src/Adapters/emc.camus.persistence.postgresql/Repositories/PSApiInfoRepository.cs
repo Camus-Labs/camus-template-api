@@ -13,19 +13,23 @@ namespace emc.camus.persistence.postgresql.Repositories;
 /// </summary>
 internal sealed class PSApiInfoRepository : IApiInfoRepository
 {
-    private static bool s_initialized;
     private readonly PSUnitOfWork _unitOfWork;
+    private readonly PSInitializationState _initState;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PSApiInfoRepository"/> class.
     /// </summary>
     /// <param name="unitOfWork">Unit of work for accessing the shared database connection.</param>
+    /// <param name="initState">Container-scoped initialization state shared across scoped instances.</param>
     public PSApiInfoRepository(
-        PSUnitOfWork unitOfWork)
+        PSUnitOfWork unitOfWork,
+        PSInitializationState initState)
     {
         ArgumentNullException.ThrowIfNull(unitOfWork);
+        ArgumentNullException.ThrowIfNull(initState);
 
         _unitOfWork = unitOfWork;
+        _initState = initState;
     }
 
     /// <summary>
@@ -37,7 +41,7 @@ internal sealed class PSApiInfoRepository : IApiInfoRepository
     /// </exception>
     public async Task InitializeAsync(CancellationToken ct = default)
     {
-        if (s_initialized)
+        if (_initState.ApiInfoRepositoryInitialized)
         {
             throw new InvalidOperationException("PSApiInfoRepository already initialized.");
         }
@@ -62,7 +66,7 @@ internal sealed class PSApiInfoRepository : IApiInfoRepository
                 "Please run database migrations to create the schema.");
         }
 
-        s_initialized = true;
+        _initState.ApiInfoRepositoryInitialized = true;
     }
 
     /// <summary>
@@ -108,9 +112,9 @@ internal sealed class PSApiInfoRepository : IApiInfoRepository
         return result.ToEntity();
     }
 
-    private static void EnsureInitialized()
+    private void EnsureInitialized()
     {
-        if (!s_initialized)
+        if (!_initState.ApiInfoRepositoryInitialized)
         {
             throw new InvalidOperationException("Repository not initialized. Call InitializeAsync() first.");
         }

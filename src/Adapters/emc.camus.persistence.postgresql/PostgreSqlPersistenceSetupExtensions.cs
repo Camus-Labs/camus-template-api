@@ -38,6 +38,9 @@ namespace emc.camus.persistence.postgresql
             // Register database connection factory
             builder.Services.AddSingleton<IConnectionFactory, PSConnectionFactory>();
 
+            // Register initialization state (singleton: shared across scoped repositories within one container)
+            builder.Services.AddSingleton<PSInitializationState>();
+
             // Register unit of work (scoped: one per request, shared across repositories)
             builder.Services.AddScoped<PSUnitOfWork>();
             builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<PSUnitOfWork>());

@@ -14,19 +14,23 @@ namespace emc.camus.persistence.postgresql.Repositories;
 /// </summary>
 internal sealed class PSUserRepository : IUserRepository
 {
-    private static bool s_initialized;
     private readonly PSUnitOfWork _unitOfWork;
+    private readonly PSInitializationState _initState;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PSUserRepository"/> class.
     /// </summary>
     /// <param name="unitOfWork">Unit of work for accessing the shared database connection.</param>
+    /// <param name="initState">Container-scoped initialization state shared across scoped instances.</param>
     public PSUserRepository(
-        PSUnitOfWork unitOfWork)
+        PSUnitOfWork unitOfWork,
+        PSInitializationState initState)
     {
         ArgumentNullException.ThrowIfNull(unitOfWork);
+        ArgumentNullException.ThrowIfNull(initState);
 
         _unitOfWork = unitOfWork;
+        _initState = initState;
     }
 
     /// <summary>
@@ -38,7 +42,7 @@ internal sealed class PSUserRepository : IUserRepository
     /// </exception>
     public async Task InitializeAsync(CancellationToken ct = default)
     {
-        if (s_initialized)
+        if (_initState.UserRepositoryInitialized)
         {
             throw new InvalidOperationException("PSUserRepository already initialized.");
         }
@@ -82,7 +86,7 @@ internal sealed class PSUserRepository : IUserRepository
                 "Please run database migrations to create the schema.");
         }
 
-        s_initialized = true;
+        _initState.UserRepositoryInitialized = true;
     }
 
     /// <summary>
@@ -232,9 +236,9 @@ internal sealed class PSUserRepository : IUserRepository
         }
     }
 
-    private static void EnsureInitialized()
+    private void EnsureInitialized()
     {
-        if (!s_initialized)
+        if (!_initState.UserRepositoryInitialized)
         {
             throw new InvalidOperationException("Repository not initialized. Call InitializeAsync() first.");
         }
