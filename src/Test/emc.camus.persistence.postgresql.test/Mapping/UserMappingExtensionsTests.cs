@@ -6,6 +6,8 @@ namespace emc.camus.persistence.postgresql.test.Mapping;
 
 public class UserMappingExtensionsTests
 {
+    private static readonly string[] RolePermissions = ["read", "write"];
+
     // --- ToEntity ---
 
     [Fact]
@@ -26,7 +28,7 @@ public class UserMappingExtensionsTests
                 Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
                 Name = "Admin",
                 Description = "Administrator",
-                Permissions = new[] { "read", "write" }
+                Permissions = RolePermissions
             }
         };
 
