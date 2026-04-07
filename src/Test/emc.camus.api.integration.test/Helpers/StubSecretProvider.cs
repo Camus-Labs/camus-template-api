@@ -8,7 +8,7 @@ namespace emc.camus.api.integration.test.Helpers;
 /// </summary>
 public sealed class StubSecretProvider : ISecretProvider
 {
-    private static readonly Dictionary<string, string> Secrets = new()
+    private readonly Dictionary<string, string> _secrets = new()
     {
         ["AdminUser"] = "admin",
         ["AdminSecret"] = "admin-password",
@@ -29,7 +29,7 @@ public sealed class StubSecretProvider : ISecretProvider
 
     public string GetSecret(string name)
     {
-        return Secrets.TryGetValue(name, out var value)
+        return _secrets.TryGetValue(name, out var value)
             ? value
             : throw new KeyNotFoundException($"Test secret '{name}' not configured.");
     }

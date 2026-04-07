@@ -10,7 +10,8 @@ using Xunit.Abstractions;
 namespace emc.camus.api.integration.test.ApiInfo;
 
 [Trait("Category", "Integration")]
-public class ApiInfoIMEndpointTests : IClassFixture<CamusApiIMFactory>
+[Collection(InMemoryTestGroup.Name)]
+public class ApiInfoIMEndpointTests
 {
     private readonly CamusApiIMFactory _factory;
     private readonly HttpClient _client;

@@ -1,4 +1,7 @@
+using emc.camus.api.integration.test.Helpers;
 using Microsoft.AspNetCore.Hosting;
+using Npgsql;
+using Respawn;
 using Testcontainers.PostgreSql;
 
 namespace emc.camus.api.integration.test.Fixtures;
@@ -15,6 +18,8 @@ public class CamusApiPSFactory : CamusApiFactoryBase
     private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:16-alpine")
         .Build();
 
+    private Respawner? _respawner;
+
     /// <summary>
     /// Returns the Testcontainer connection string for direct database assertions in tests.
     /// </summary>
@@ -23,11 +28,34 @@ public class CamusApiPSFactory : CamusApiFactoryBase
     public override async Task InitializeAsync()
     {
         await _container.StartAsync();
+
+        // Force host creation so Program.cs runs and DBUp migrations execute
+        // before any test tries to reset the database via Respawn.
+        _ = Server;
     }
 
     protected override async Task CleanupAsync()
     {
         await _container.DisposeAsync();
+    }
+
+    /// <summary>
+    /// Resets the database to its post-migration state by deleting all data and re-seeding.
+    /// The <see cref="Respawner"/> is created lazily on first call, after migrations have run.
+    /// </summary>
+    public async Task ResetDatabaseAsync()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionString);
+        await connection.OpenAsync();
+
+        _respawner ??= await Respawner.CreateAsync(connection, new RespawnerOptions
+        {
+            DbAdapter = DbAdapter.Postgres,
+            SchemasToInclude = ["camus"],
+        });
+
+        await _respawner.ResetAsync(connection);
+        await DatabaseSeeder.SeedAsync(connection);
     }
 
     protected override void ConfigureVariantHostSettings(IWebHostBuilder builder)

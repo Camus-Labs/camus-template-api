@@ -15,7 +15,8 @@ using Xunit.Abstractions;
 namespace emc.camus.api.integration.test.Auth;
 
 [Trait("Category", "Integration")]
-public class AuthPSEndpointTests : IClassFixture<CamusApiPSFactory>
+[Collection(PostgreSqlTestGroup.Name)]
+public class AuthPSEndpointTests : IAsyncLifetime
 {
     private readonly CamusApiPSFactory _factory;
 
@@ -24,6 +25,10 @@ public class AuthPSEndpointTests : IClassFixture<CamusApiPSFactory>
         factory.OutputHelper = outputHelper;
         _factory = factory;
     }
+
+    public async Task InitializeAsync() => await _factory.ResetDatabaseAsync();
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task GenerateToken_ValidRequest_ReturnsOkWithPersistedToken()

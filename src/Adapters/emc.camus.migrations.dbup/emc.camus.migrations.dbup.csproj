@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <!-- DB MIGRATIONS -->
-    <PackageReference Include="dbup-postgresql" Version="6.1.5" />
+    <PackageReference Include="dbup-postgresql" Version="7.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.13" />
   </ItemGroup>
 

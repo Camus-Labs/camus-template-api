@@ -10,7 +10,8 @@ using Xunit.Abstractions;
 namespace emc.camus.api.integration.test.Auth;
 
 [Trait("Category", "Integration")]
-public class AuthIMEndpointTests : IClassFixture<CamusApiIMFactory>
+[Collection(InMemoryTestGroup.Name)]
+public class AuthIMEndpointTests
 {
     private readonly CamusApiIMFactory _factory;
 

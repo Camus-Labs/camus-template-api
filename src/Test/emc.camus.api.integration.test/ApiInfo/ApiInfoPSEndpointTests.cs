@@ -9,15 +9,22 @@ using Xunit.Abstractions;
 namespace emc.camus.api.integration.test.ApiInfo;
 
 [Trait("Category", "Integration")]
-public class ApiInfoPSEndpointTests : IClassFixture<CamusApiPSFactory>
+[Collection(PostgreSqlTestGroup.Name)]
+public class ApiInfoPSEndpointTests : IAsyncLifetime
 {
+    private readonly CamusApiPSFactory _factory;
     private readonly HttpClient _client;
 
     public ApiInfoPSEndpointTests(CamusApiPSFactory factory, ITestOutputHelper outputHelper)
     {
         factory.OutputHelper = outputHelper;
+        _factory = factory;
         _client = factory.CreateClient();
     }
+
+    public async Task InitializeAsync() => await _factory.ResetDatabaseAsync();
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task GetInfo_PostgreSqlPersistence_ReturnsOkWithApiInfo()
