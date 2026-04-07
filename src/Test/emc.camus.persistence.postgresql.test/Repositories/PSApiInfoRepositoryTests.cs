@@ -11,7 +11,7 @@ public class PSApiInfoRepositoryTests
     private PSApiInfoRepository CreateRepository()
     {
         var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
-        return new PSApiInfoRepository(unitOfWork);
+        return new PSApiInfoRepository(unitOfWork, new PSInitializationState());
     }
 
     // --- Constructor ---
@@ -23,7 +23,7 @@ public class PSApiInfoRepositoryTests
         PSUnitOfWork? unitOfWork = null;
 
         // Act
-        var act = () => new PSApiInfoRepository(unitOfWork!);
+        var act = () => new PSApiInfoRepository(unitOfWork!, new PSInitializationState());
 
         // Assert
         act.Should().Throw<ArgumentNullException>()

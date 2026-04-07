@@ -11,7 +11,7 @@ public class PSUserRepositoryTests
     private PSUserRepository CreateRepository()
     {
         var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
-        return new PSUserRepository(unitOfWork);
+        return new PSUserRepository(unitOfWork, new PSInitializationState());
     }
 
     // --- Constructor ---
@@ -23,7 +23,7 @@ public class PSUserRepositoryTests
         PSUnitOfWork? unitOfWork = null;
 
         // Act
-        var act = () => new PSUserRepository(unitOfWork!);
+        var act = () => new PSUserRepository(unitOfWork!, new PSInitializationState());
 
         // Assert
         act.Should().Throw<ArgumentNullException>()

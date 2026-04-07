@@ -20,7 +20,7 @@ public class RoleMappingExtensionsTests
             Id = ValidRoleId,
             Name = "Admin",
             Description = "Administrator role",
-            Permissions = new List<string> { "read", "write", "delete" }
+            Permissions = new[] { "read", "write", "delete" }
         };
 
         // Act

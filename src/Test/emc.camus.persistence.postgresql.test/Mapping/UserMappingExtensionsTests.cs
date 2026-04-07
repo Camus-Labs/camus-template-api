@@ -26,7 +26,7 @@ public class UserMappingExtensionsTests
                 Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
                 Name = "Admin",
                 Description = "Administrator",
-                Permissions = new List<string> { "read", "write" }
+                Permissions = new[] { "read", "write" }
             }
         };
 

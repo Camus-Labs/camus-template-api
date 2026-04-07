@@ -19,7 +19,7 @@ public class ApiInfoMappingExtensionsTests
             Name = "Test API",
             Version = "1.0",
             Status = "active",
-            Features = new List<string> { "feature1", "feature2" }
+            Features = new[] { "feature1", "feature2" }
         };
 
         // Act
