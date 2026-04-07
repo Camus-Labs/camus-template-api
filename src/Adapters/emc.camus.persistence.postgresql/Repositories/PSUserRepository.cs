@@ -14,8 +14,8 @@ namespace emc.camus.persistence.postgresql.Repositories;
 /// </summary>
 internal sealed class PSUserRepository : IUserRepository
 {
+    private static bool s_initialized;
     private readonly PSUnitOfWork _unitOfWork;
-    private bool _initialized;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PSUserRepository"/> class.
@@ -38,7 +38,7 @@ internal sealed class PSUserRepository : IUserRepository
     /// </exception>
     public async Task InitializeAsync(CancellationToken ct = default)
     {
-        if (_initialized)
+        if (s_initialized)
         {
             throw new InvalidOperationException("PSUserRepository already initialized.");
         }
@@ -82,7 +82,7 @@ internal sealed class PSUserRepository : IUserRepository
                 "Please run database migrations to create the schema.");
         }
 
-        _initialized = true;
+        s_initialized = true;
     }
 
     /// <summary>
@@ -232,9 +232,9 @@ internal sealed class PSUserRepository : IUserRepository
         }
     }
 
-    private void EnsureInitialized()
+    private static void EnsureInitialized()
     {
-        if (!_initialized)
+        if (!s_initialized)
         {
             throw new InvalidOperationException("Repository not initialized. Call InitializeAsync() first.");
         }

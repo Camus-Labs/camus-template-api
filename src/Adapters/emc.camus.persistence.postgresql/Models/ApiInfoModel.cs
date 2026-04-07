@@ -28,5 +28,5 @@ internal sealed class ApiInfoModel
     /// Gets or sets the list of features available in this API version.
     /// Maps to PostgreSQL TEXT[] array type.
     /// </summary>
-    public List<string>? Features { get; set; }
+    public string[]? Features { get; set; }
 }

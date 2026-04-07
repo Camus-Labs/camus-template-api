@@ -28,5 +28,5 @@ internal sealed class RoleModel
     /// Gets or sets the list of permissions associated with this role.
     /// Maps to PostgreSQL array aggregation from role_permissions table.
     /// </summary>
-    public List<string>? Permissions { get; set; }
+    public string[]? Permissions { get; set; }
 }

@@ -32,6 +32,9 @@ namespace emc.camus.persistence.postgresql
         /// </remarks>
         public static WebApplicationBuilder AddPostgreSqlPersistence(this WebApplicationBuilder builder)
         {
+            // Enable Dapper snake_case → PascalCase column mapping (e.g., password_hash → PasswordHash)
+            Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+
             // Register database connection factory
             builder.Services.AddSingleton<IConnectionFactory, PSConnectionFactory>();
 

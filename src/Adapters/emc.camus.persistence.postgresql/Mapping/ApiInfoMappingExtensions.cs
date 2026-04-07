@@ -19,6 +19,6 @@ internal static class ApiInfoMappingExtensions
             name: model.Name,
             version: model.Version,
             status: model.Status,
-            features: model.Features ?? new List<string>());
+            features: model.Features?.ToList() ?? new List<string>());
     }
 }

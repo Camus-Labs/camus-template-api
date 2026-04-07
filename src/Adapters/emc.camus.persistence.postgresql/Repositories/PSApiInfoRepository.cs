@@ -13,8 +13,8 @@ namespace emc.camus.persistence.postgresql.Repositories;
 /// </summary>
 internal sealed class PSApiInfoRepository : IApiInfoRepository
 {
+    private static bool s_initialized;
     private readonly PSUnitOfWork _unitOfWork;
-    private bool _initialized;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PSApiInfoRepository"/> class.
@@ -37,7 +37,7 @@ internal sealed class PSApiInfoRepository : IApiInfoRepository
     /// </exception>
     public async Task InitializeAsync(CancellationToken ct = default)
     {
-        if (_initialized)
+        if (s_initialized)
         {
             throw new InvalidOperationException("PSApiInfoRepository already initialized.");
         }
@@ -62,7 +62,7 @@ internal sealed class PSApiInfoRepository : IApiInfoRepository
                 "Please run database migrations to create the schema.");
         }
 
-        _initialized = true;
+        s_initialized = true;
     }
 
     /// <summary>
@@ -108,9 +108,9 @@ internal sealed class PSApiInfoRepository : IApiInfoRepository
         return result.ToEntity();
     }
 
-    private void EnsureInitialized()
+    private static void EnsureInitialized()
     {
-        if (!_initialized)
+        if (!s_initialized)
         {
             throw new InvalidOperationException("Repository not initialized. Call InitializeAsync() first.");
         }
