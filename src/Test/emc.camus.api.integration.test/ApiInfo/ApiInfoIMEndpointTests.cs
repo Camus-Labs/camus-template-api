@@ -66,6 +66,7 @@ public class ApiInfoIMEndpointTests
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
+        await response.Should().HaveErrorCode("apikey_authentication_required");
     }
 
     [Fact]
@@ -94,5 +95,6 @@ public class ApiInfoIMEndpointTests
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
+        await response.Should().HaveErrorCode("jwt_authentication_required");
     }
 }
