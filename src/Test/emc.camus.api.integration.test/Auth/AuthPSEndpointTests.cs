@@ -76,6 +76,42 @@ public class AuthPSEndpointTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Authenticate_ClientApp_UpdatesLastLoginAndAuditFields()
+    {
+        // Arrange — snapshot the user row before authentication
+        var before = DateTime.UtcNow;
+        await using var connection = new NpgsqlConnection(_factory.ConnectionString);
+        await connection.OpenAsync();
+
+        var userBefore = await connection.QuerySingleAsync<dynamic>(
+            "SELECT created_by, updated_by, last_login FROM camus.users WHERE username = 'ClientApp'");
+
+        ((string)userBefore.created_by).Should().Be("Admin");
+        ((string)userBefore.updated_by).Should().Be("Admin");
+        ((DateTime?)userBefore.last_login).Should().BeNull();
+
+        // Act — authenticate as ClientApp
+        await _factory.AuthenticateAsync("ClientApp", "clientsecret");
+        var after = DateTime.UtcNow;
+
+        // Assert — user row updated with last_login and audit fields
+        var userAfter = await connection.QuerySingleAsync<dynamic>(
+            "SELECT created_by, updated_by, last_login FROM camus.users WHERE username = 'ClientApp'");
+
+        ((string)userAfter.created_by).Should().Be("Admin", "seed creator must be preserved");
+        ((string)userAfter.updated_by).Should().Be("ApiKeyUser", "trigger sets updated_by to the HTTP identity (API key)");
+        ((DateTime?)userAfter.last_login).Should().NotBeNull();
+        ((DateTime)userAfter.last_login).Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
+
+        // Assert — audit record persisted
+        var audit = await connection.QuerySingleAsync<dynamic>(
+            "SELECT user_name, action_title FROM camus.action_audit WHERE action_title = 'user.login.success' AND user_name = 'ClientApp' ORDER BY created_at DESC LIMIT 1");
+
+        ((string)audit.user_name).Should().Be("ClientApp");
+        ((string)audit.action_title).Should().Be("user.login.success");
+    }
+
+    [Fact]
     public async Task RevokeToken_ValidJti_ReturnsOkWithRevokedToken()
     {
         // Arrange — generate a token first

@@ -9,6 +9,8 @@ namespace emc.camus.api.integration.test.Helpers;
 internal static class DatabaseSeeder
 {
     private const string SeedSql = """
+        SELECT set_config('app.current_username', 'Admin', false);
+
         INSERT INTO camus.api_info (version, name, status, features)
         VALUES
             ('1.0', 'Camus DB API - 1.0 Release', 'Available',

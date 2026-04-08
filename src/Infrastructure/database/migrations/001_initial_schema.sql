@@ -204,39 +204,42 @@ FOR EACH ROW EXECUTE FUNCTION update_audit_fields();
 -- If any insert fails, all data changes will be rolled back
 BEGIN;
 
+-- Set session variable so audit triggers populate created_by/updated_by as 'Admin'
+SELECT set_config('app.current_username', 'Admin', true);
+
 -- Sample API info data
 -- Note: API info must match configuration in appsettings.json > AppDataSettings.InMemory.ApiInfos
-INSERT INTO camus.api_info (version, name, status, features, created_by, updated_by) VALUES
+INSERT INTO camus.api_info (version, name, status, features) VALUES
     ('1.0', 'Camus DB API - 1.0 Release', 'Available', 
-     ARRAY['Basic API Information', 'Public Endpoints', 'Basic Observability'], 'Admin', 'Admin'),
+     ARRAY['Basic API Information', 'Public Endpoints', 'Basic Observability']),
     ('2.0', 'Camus DB API - 2.0 Beta', 'Beta', 
      ARRAY['Authentication (JWT & API Key)', 'Authorization (Role-based)', 'API Versioning', 
            'Observability (OpenTelemetry)', 'Rate Limiting (Multiple policies)', 'Swagger/OpenAPI Documentation',
-           'Secret Management (Dapr)', 'Error Handling', 'CORS Support', 'Health Checks'], 'Admin', 'Admin');
+           'Secret Management (Dapr)', 'Error Handling', 'CORS Support', 'Health Checks']);
 
 -- Sample roles
 -- Note: Role definitions must match configuration in appsettings.json > Authorization.InMemory.Roles
-INSERT INTO camus.roles (id, name, description, created_by, updated_by) VALUES
-    ('11111111-1111-1111-1111-111111111111', 'Admin', 'Administrator with full access including token creation', 'Admin', 'Admin'),
-    ('22222222-2222-2222-2222-222222222222', 'ReadWrite', 'Standard user with read and write access', 'Admin', 'Admin'),
-    ('33333333-3333-3333-3333-333333333333', 'ReadOnly', 'User with read-only access', 'Admin', 'Admin');
+INSERT INTO camus.roles (id, name, description) VALUES
+    ('11111111-1111-1111-1111-111111111111', 'Admin', 'Administrator with full access including token creation'),
+    ('22222222-2222-2222-2222-222222222222', 'ReadWrite', 'Standard user with read and write access'),
+    ('33333333-3333-3333-3333-333333333333', 'ReadOnly', 'User with read-only access');
 
 -- Sample permissions for Admin role
 -- Note: Permission values must match constants defined in emc.camus.application.Auth.Permissions class
 --       Available permissions: api.read, api.write, token.create
-INSERT INTO camus.role_permissions (role_id, permission, created_by, updated_by) VALUES
-    ('11111111-1111-1111-1111-111111111111', 'token.create', 'Admin', 'Admin'),
-    ('11111111-1111-1111-1111-111111111111', 'api.read', 'Admin', 'Admin'),
-    ('11111111-1111-1111-1111-111111111111', 'api.write', 'Admin', 'Admin');
+INSERT INTO camus.role_permissions (role_id, permission) VALUES
+    ('11111111-1111-1111-1111-111111111111', 'token.create'),
+    ('11111111-1111-1111-1111-111111111111', 'api.read'),
+    ('11111111-1111-1111-1111-111111111111', 'api.write');
 
 -- Sample permissions for ReadWrite role
-INSERT INTO camus.role_permissions (role_id, permission, created_by, updated_by) VALUES
-    ('22222222-2222-2222-2222-222222222222', 'api.read', 'Admin', 'Admin'),
-    ('22222222-2222-2222-2222-222222222222', 'api.write', 'Admin', 'Admin');
+INSERT INTO camus.role_permissions (role_id, permission) VALUES
+    ('22222222-2222-2222-2222-222222222222', 'api.read'),
+    ('22222222-2222-2222-2222-222222222222', 'api.write');
 
 -- Sample permissions for ReadOnly role
-INSERT INTO camus.role_permissions (role_id, permission, created_by, updated_by) VALUES
-    ('33333333-3333-3333-3333-333333333333', 'api.read', 'Admin', 'Admin');
+INSERT INTO camus.role_permissions (role_id, permission) VALUES
+    ('33333333-3333-3333-3333-333333333333', 'api.read');
 
 -- Sample users with bcrypt password hashes
 -- Note: These use predefined UUIDs for development. In production, use gen_random_uuid()
@@ -245,14 +248,14 @@ INSERT INTO camus.role_permissions (role_id, permission, created_by, updated_by)
 --   ClientApp: clientsecret
 -- 
 -- Hashes generated with bcrypt work factor 12
-INSERT INTO camus.users (id, username, password_hash, created_by, updated_by) VALUES
-    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Admin', '$2a$12$o/lEizsiyXbUjG5dSijR2OHUo7f6zjci179AXOyeYT5V.ii2C48gi', 'Admin', 'Admin'),
-    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'ClientApp', '$2a$12$bEdsi67xom.wkxmPk6QvyO3/G0XtLqEHjMBNqn79UtakMWZOIQvFi', 'Admin', 'Admin');
+INSERT INTO camus.users (id, username, password_hash) VALUES
+    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Admin', '$2a$12$o/lEizsiyXbUjG5dSijR2OHUo7f6zjci179AXOyeYT5V.ii2C48gi'),
+    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'ClientApp', '$2a$12$bEdsi67xom.wkxmPk6QvyO3/G0XtLqEHjMBNqn79UtakMWZOIQvFi');
 
 -- Assign roles to users
-INSERT INTO camus.user_roles (user_id, role_id, created_by, updated_by) VALUES
-    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'Admin', 'Admin'), -- Admin has Admin role
-    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '22222222-2222-2222-2222-222222222222', 'Admin', 'Admin');  -- ClientApp has ReadWrite role
+INSERT INTO camus.user_roles (user_id, role_id) VALUES
+    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111'), -- Admin has Admin role
+    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '22222222-2222-2222-2222-222222222222');  -- ClientApp has ReadWrite role
 
 -- Commit transaction - all sample data inserted successfully
 COMMIT;
