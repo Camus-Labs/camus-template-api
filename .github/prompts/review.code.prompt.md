@@ -30,6 +30,8 @@ Read and internalize the instruction checklists before starting:
 - #file:.github/instructions/adapters.instructions.md
 - #file:.github/instructions/adapters.persistence.instructions.md
 - #file:.github/instructions/testing.instructions.md
+- #file:.github/instructions/testing.unit.instructions.md
+- #file:.github/instructions/testing.integration.instructions.md
 
 ## Inputs
 
@@ -45,7 +47,8 @@ Read and internalize the instruction checklists before starting:
 
 3. Match each file to its applicable instruction checklists by evaluating the `applyTo` glob patterns that each
   instruction file frontmatter declares — apply these rules in order:
-    - `src/Test/**` → `testing.instructions`
+    - `src/Test/**` (excluding `*.integration.test`) → `testing.instructions` + `testing.unit.instructions`
+    - `src/Test/**integration.test/**` → `testing.instructions` + `testing.integration.instructions`
     - `src/Domain/**/*.cs` → `csharp.instructions` + `domain.instructions`
     - `src/Application/**/*.cs` → `csharp.instructions` + `application.instructions`
     - `src/Api/**/*.cs` → `csharp.instructions` + `api.instructions`
