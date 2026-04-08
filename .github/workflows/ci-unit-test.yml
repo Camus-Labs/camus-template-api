@@ -1,4 +1,4 @@
-name: CI + Test
+name: CI Unit Test
 
 on:
   pull_request:
@@ -6,8 +6,8 @@ on:
       - main
 
 jobs:
-  build-and-test:
-    name: Build & Test
+  unit-test:
+    name: Build & Unit Test
     runs-on: ubuntu-latest
 
     steps:
@@ -20,14 +20,14 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore src/CamusApp.sln
+        run: dotnet restore src/UnitTests.slnf
 
       - name: Build solution
-        run: dotnet build src/CamusApp.sln -c Release --no-restore
+        run: dotnet build src/UnitTests.slnf -c Release --no-restore
 
-      - name: Run tests with coverage
+      - name: Run unit tests with coverage
         run: >
-          dotnet test src/CamusApp.sln
+          dotnet test src/UnitTests.slnf
           -c Release
           --no-build
           --logger "trx;LogFileName=test-results.trx"
@@ -39,10 +39,8 @@ jobs:
         run: |
           THRESHOLD=80
 
-          # Install dotnet-coverage tool for merging reports
           dotnet tool install --global dotnet-coverage
 
-          # Merge all per-project Cobertura reports into one
           dotnet-coverage merge ./TestResults/**/coverage.cobertura.xml \
             --output ./TestResults/merged.cobertura.xml \
             --output-format cobertura
@@ -54,7 +52,6 @@ jobs:
             exit 1
           fi
 
-          # Extract line-rate from the root <coverage> element (value is 0.0–1.0)
           LINE_RATE=$(grep -oP '<coverage[^>]+line-rate="\K[0-9.]+' "$REPORT" | head -1)
 
           if [[ -z "$LINE_RATE" ]]; then
@@ -62,7 +59,6 @@ jobs:
             exit 1
           fi
 
-          # Convert to percentage (awk handles floating-point math)
           COVERAGE=$(awk "BEGIN { printf \"%.2f\", $LINE_RATE * 100 }")
 
           echo "📊 Line coverage: ${COVERAGE}%"
