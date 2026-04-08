@@ -65,6 +65,7 @@ src/
 │   └── observability/                    # Observability stack configs
 │
 └── Test/                                  # 🧪 Testing Projects
+    ├── emc.camus.api.integration.test/    # Integration tests (Testcontainers)
     ├── emc.camus.api.test/
     ├── emc.camus.application.test/
     ├── emc.camus.domain.test/
@@ -181,25 +182,8 @@ flow, and patterns.
 
 ## 🧪 Testing
 
-Comprehensive test project structure included:
-
-```bash
-# Run all tests
-dotnet test
-
-# Run with coverage
-dotnet test /p:CollectCoverage=true
-
-# Run specific project
-dotnet test src/Test/emc.camus.api.test/
-```
-
-**Test Organization:**
-
-- `emc.camus.api.test` - Controller and middleware tests
-- `emc.camus.application.test` - Use case tests
-- `emc.camus.domain.test` - Domain logic tests
-- `emc.camus.*.test` - Adapter-specific tests
+Comprehensive test suite with unit and integration tests — see [Test README](src/Test/README.md) for details
+on project structure, running tests, coverage reports, and conventions.
 
 ---
 
