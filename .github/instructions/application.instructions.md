@@ -46,7 +46,7 @@ applyTo: "src/Application/**/*.cs"
           port/infrastructure calls go inside
     - [ ] Catch blocks add business operation context to exceptions (e.g., `"Failed to cancel order {orderId}"`)
     - [ ] Exception filters in catch blocks list only domain and validation exception types (`DomainException`,
-          `ArgumentException`, `UnauthorizedAccessException`, `KeyNotFoundException`) — never
+          `ArgumentException`, `UnauthorizedAccessException`, `KeyNotFoundException`, `DataConflictException`) — never
           `InvalidOperationException` (reserved for infrastructure failure wrapping)
     - [ ] Domain and validation exceptions caught by exception filters are re-thrown unchanged — never wrapped or
           swallowed

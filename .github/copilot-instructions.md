@@ -14,6 +14,7 @@ Hexagonal Architecture (Ports & Adapters). Dependencies point inward:
   exceptions, constants) and concrete application services. No infrastructure implementations.
 - **API** (`src/Api/`) — Controllers, middleware, DI, HTTP pipeline.
 - **Adapters** (`src/Adapters/`) — Implement Application interfaces. Each independently swappable.
-- **Tests** (`src/Test/`) — xUnit + FluentAssertions. One test project per adapter/layer.
+- **Tests** (`src/Test/`) — xUnit + FluentAssertions. Unit test projects (`.test` suffix) per adapter/layer;
+  single integration test project (`.integration.test` suffix).
 
 Full architecture reference: `docs/architecture.md`

@@ -31,5 +31,5 @@ applyTo: "src/Adapters/emc.camus.persistence.postgresql/**/*.cs"
 
     - [ ] Repositories validate data constraints (uniqueness, referential integrity, foreign-key existence)
           before persisting
-    - [ ] Constraint violations throw `InvalidOperationException` for uniqueness/integrity or
-          `KeyNotFoundException` for missing references
+    - [ ] Constraint violations throw `DataConflictException` for uniqueness/integrity or `KeyNotFoundException` for
+          missing references
