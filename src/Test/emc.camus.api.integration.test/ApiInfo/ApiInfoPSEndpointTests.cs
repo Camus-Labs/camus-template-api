@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using emc.camus.api.integration.test.Fixtures;
+using emc.camus.api.integration.test.Helpers;
 using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V1;
 using FluentAssertions;
@@ -12,10 +13,10 @@ namespace emc.camus.api.integration.test.ApiInfo;
 [Collection(PostgreSqlTestGroup.Name)]
 public class ApiInfoPSEndpointTests : IAsyncLifetime
 {
-    private readonly CamusApiPSFactory _factory;
+    private readonly ApiPSFactory _factory;
     private readonly HttpClient _client;
 
-    public ApiInfoPSEndpointTests(CamusApiPSFactory factory, ITestOutputHelper outputHelper)
+    public ApiInfoPSEndpointTests(ApiPSFactory factory, ITestOutputHelper outputHelper)
     {
         factory.OutputHelper = outputHelper;
         _factory = factory;
@@ -33,7 +34,7 @@ public class ApiInfoPSEndpointTests : IAsyncLifetime
         var response = await _client.GetAsync("/api/v1.0/apiinfo/info");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        await response.Should().HaveStatusCode(HttpStatusCode.OK);
 
         var body = await response.Content.ReadFromJsonAsync<ApiResponse<ApiInfoResponse>>();
         body.Should().NotBeNull();

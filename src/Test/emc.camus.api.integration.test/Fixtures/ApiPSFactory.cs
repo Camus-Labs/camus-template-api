@@ -10,10 +10,10 @@ namespace emc.camus.api.integration.test.Fixtures;
 /// Factory variant backed by a real PostgreSQL Testcontainer.
 /// Configures the PostgreSQL persistence provider with DBUp migrations enabled,
 /// so the full persistence stack (migrations → repositories → database) is exercised.
-/// All settings are supplied via <see cref="CamusApiFactoryBase.ConfigureVariantHostSettings"/>
+/// All settings are supplied via <see cref="ApiFactoryBase.ConfigureVariantHostSettings"/>
 /// to ensure they are available during <c>Program.cs</c> service registration.
 /// </summary>
-public class CamusApiPSFactory : CamusApiFactoryBase
+public class ApiPSFactory : ApiFactoryBase
 {
     private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:16-alpine")
         .Build();

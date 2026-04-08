@@ -1,4 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -18,9 +17,9 @@ namespace emc.camus.api.integration.test.Auth;
 [Collection(PostgreSqlTestGroup.Name)]
 public class AuthPSEndpointTests : IAsyncLifetime
 {
-    private readonly CamusApiPSFactory _factory;
+    private readonly ApiPSFactory _factory;
 
-    public AuthPSEndpointTests(CamusApiPSFactory factory, ITestOutputHelper outputHelper)
+    public AuthPSEndpointTests(ApiPSFactory factory, ITestOutputHelper outputHelper)
     {
         factory.OutputHelper = outputHelper;
         _factory = factory;
@@ -46,7 +45,7 @@ public class AuthPSEndpointTests : IAsyncLifetime
         var response = await client.PostAsJsonAsync("/api/v2.0/auth/generate-token", request);
 
         // Assert — HTTP response
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        await response.Should().HaveStatusCode(HttpStatusCode.OK);
 
         var body = await response.Content.ReadFromJsonAsync<ApiResponse<GenerateTokenResponse>>();
         body.Should().NotBeNull();
@@ -56,7 +55,7 @@ public class AuthPSEndpointTests : IAsyncLifetime
         body.Data.TokenUsername.Should().Be("Admin-inttest");
 
         // Assert — database row persisted
-        var jti = ExtractJti(body.Data.Token);
+        var jti = AuthenticatedClientHelper.ExtractJti(body.Data.Token);
         await using var connection = new NpgsqlConnection(_factory.ConnectionString);
         var row = await connection.QuerySingleAsync<dynamic>(
             "SELECT creator_user_id, creator_username, token_username, is_revoked, permissions FROM camus.generated_tokens WHERE jti = @Jti",
@@ -89,16 +88,16 @@ public class AuthPSEndpointTests : IAsyncLifetime
         };
 
         var generateResponse = await client.PostAsJsonAsync("/api/v2.0/auth/generate-token", generateRequest);
-        generateResponse.StatusCode.Should().Be(HttpStatusCode.OK, "token generation must succeed for test setup");
+        await generateResponse.Should().HaveStatusCode(HttpStatusCode.OK, "token generation must succeed for test setup");
 
         var generateBody = await generateResponse.Content.ReadFromJsonAsync<ApiResponse<GenerateTokenResponse>>();
-        var jti = ExtractJti(generateBody!.Data!.Token);
+        var jti = AuthenticatedClientHelper.ExtractJti(generateBody!.Data!.Token);
 
         // Act
         var response = await client.PostAsync($"/api/v2.0/auth/tokens/{jti}/revoke", null);
 
         // Assert — HTTP response
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        await response.Should().HaveStatusCode(HttpStatusCode.OK);
 
         var body = await response.Content.ReadFromJsonAsync<ApiResponse<GeneratedTokenSummaryDto>>();
         body.Should().NotBeNull();
@@ -145,23 +144,23 @@ public class AuthPSEndpointTests : IAsyncLifetime
         };
 
         var firstResponse = await client.PostAsJsonAsync("/api/v2.0/auth/generate-token", firstRequest);
-        firstResponse.StatusCode.Should().Be(HttpStatusCode.OK, "first token generation must succeed for test setup");
+        await firstResponse.Should().HaveStatusCode(HttpStatusCode.OK, "first token generation must succeed for test setup");
 
         var secondResponse = await client.PostAsJsonAsync("/api/v2.0/auth/generate-token", secondRequest);
-        secondResponse.StatusCode.Should().Be(HttpStatusCode.OK, "second token generation must succeed for test setup");
+        await secondResponse.Should().HaveStatusCode(HttpStatusCode.OK, "second token generation must succeed for test setup");
 
         // Act
         var response = await client.GetAsync("/api/v2.0/auth/tokens?Page=1&PageSize=50");
 
         // Assert — HTTP response
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        await response.Should().HaveStatusCode(HttpStatusCode.OK);
 
         var body = await response.Content.ReadFromJsonAsync<ApiResponse<PagedResponse<GeneratedTokenSummaryDto>>>();
         body.Should().NotBeNull();
         body!.Data.Should().NotBeNull();
         body.Data!.Items.Should().Contain(t => t.TokenUsername == "Admin-list-a");
         body.Data.Items.Should().Contain(t => t.TokenUsername == "Admin-list-b");
-        body.Data.TotalCount.Should().BeGreaterThanOrEqualTo(2);
+        body.Data.TotalCount.Should().Be(2);
 
         // Assert — database rows match response count
         await using var connection = new NpgsqlConnection(_factory.ConnectionString);
@@ -184,7 +183,7 @@ public class AuthPSEndpointTests : IAsyncLifetime
         };
 
         var firstResponse = await client.PostAsJsonAsync("/api/v2.0/auth/generate-token", firstRequest);
-        firstResponse.StatusCode.Should().Be(HttpStatusCode.OK, "first token generation must succeed for test setup");
+        await firstResponse.Should().HaveStatusCode(HttpStatusCode.OK, "first token generation must succeed for test setup");
 
         // Snapshot counts after the first successful insert
         await using var connection = new NpgsqlConnection(_factory.ConnectionString);
@@ -204,7 +203,7 @@ public class AuthPSEndpointTests : IAsyncLifetime
         var response = await client.PostAsJsonAsync("/api/v2.0/auth/generate-token", duplicateRequest);
 
         // Assert — request rejected with Conflict and correct error code
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await response.Should().HaveStatusCode(HttpStatusCode.Conflict);
 
         var errorBody = await response.Content.ReadFromJsonAsync<JsonElement>();
         errorBody.GetProperty("error").GetString().Should().Be("data_conflict");
@@ -220,31 +219,5 @@ public class AuthPSEndpointTests : IAsyncLifetime
     }
 
     private async Task<HttpClient> AuthenticateAdminAsync()
-    {
-        var apiKeyClient = _factory.CreateApiKeyClient();
-
-        // PS credentials come from migration seed data (001_initial_schema.sql),
-        // not from StubSecretProvider which is used by the InMemory user repository.
-        var authRequest = new { Username = "Admin", Password = "adminsecret" };
-
-        var authResponse = await apiKeyClient.PostAsJsonAsync("/api/v2.0/auth/authenticate", authRequest);
-        authResponse.StatusCode.Should().Be(HttpStatusCode.OK, "admin authentication must succeed for test setup");
-
-        var authBody = await authResponse.Content.ReadFromJsonAsync<ApiResponse<AuthenticateUserResponse>>();
-
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authBody!.Data!.Token);
-
-        return client;
-    }
-
-    private static Guid ExtractJti(string token)
-    {
-        var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(token);
-        var jti = jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
-
-        return Guid.Parse(jti);
-    }
+        => await _factory.AuthenticateAsync("Admin", "adminsecret");
 }

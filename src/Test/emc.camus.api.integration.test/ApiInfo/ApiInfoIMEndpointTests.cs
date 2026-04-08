@@ -13,10 +13,10 @@ namespace emc.camus.api.integration.test.ApiInfo;
 [Collection(InMemoryTestGroup.Name)]
 public class ApiInfoIMEndpointTests
 {
-    private readonly CamusApiIMFactory _factory;
+    private readonly ApiIMFactory _factory;
     private readonly HttpClient _client;
 
-    public ApiInfoIMEndpointTests(CamusApiIMFactory factory, ITestOutputHelper outputHelper)
+    public ApiInfoIMEndpointTests(ApiIMFactory factory, ITestOutputHelper outputHelper)
     {
         factory.OutputHelper = outputHelper;
         _factory = factory;
@@ -30,7 +30,7 @@ public class ApiInfoIMEndpointTests
         var response = await _client.GetAsync("/api/v1.0/apiinfo/info");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        await response.Should().HaveStatusCode(HttpStatusCode.OK);
 
         var body = await response.Content.ReadFromJsonAsync<ApiResponse<ApiInfoResponse>>();
         body.Should().NotBeNull();
@@ -50,7 +50,7 @@ public class ApiInfoIMEndpointTests
         var response = await client.GetAsync("/api/v2.0/apiinfo/info-apikey");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        await response.Should().HaveStatusCode(HttpStatusCode.OK);
 
         var body = await response.Content.ReadFromJsonAsync<ApiResponse<ApiInfoResponse>>();
         body.Should().NotBeNull();
@@ -65,7 +65,7 @@ public class ApiInfoIMEndpointTests
         var response = await _client.GetAsync("/api/v2.0/apiinfo/info-apikey");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class ApiInfoIMEndpointTests
         var response = await client.GetAsync("/api/v2.0/apiinfo/info-jwt");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        await response.Should().HaveStatusCode(HttpStatusCode.OK);
 
         var body = await response.Content.ReadFromJsonAsync<ApiResponse<ApiInfoResponse>>();
         body.Should().NotBeNull();
@@ -93,6 +93,6 @@ public class ApiInfoIMEndpointTests
         var response = await _client.GetAsync("/api/v2.0/apiinfo/info-jwt");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
     }
 }

@@ -13,9 +13,9 @@ namespace emc.camus.api.integration.test.Auth;
 [Collection(InMemoryTestGroup.Name)]
 public class AuthIMEndpointTests
 {
-    private readonly CamusApiIMFactory _factory;
+    private readonly ApiIMFactory _factory;
 
-    public AuthIMEndpointTests(CamusApiIMFactory factory, ITestOutputHelper outputHelper)
+    public AuthIMEndpointTests(ApiIMFactory factory, ITestOutputHelper outputHelper)
     {
         factory.OutputHelper = outputHelper;
         _factory = factory;
@@ -32,7 +32,7 @@ public class AuthIMEndpointTests
         var response = await client.PostAsJsonAsync("/api/v2.0/auth/authenticate", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        await response.Should().HaveStatusCode(HttpStatusCode.OK);
 
         var body = await response.Content.ReadFromJsonAsync<ApiResponse<AuthenticateUserResponse>>();
         body.Should().NotBeNull();
@@ -52,7 +52,7 @@ public class AuthIMEndpointTests
         var response = await client.PostAsJsonAsync("/api/v2.0/auth/authenticate", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
@@ -66,6 +66,6 @@ public class AuthIMEndpointTests
         var response = await client.PostAsJsonAsync("/api/v2.0/auth/authenticate", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
     }
 }

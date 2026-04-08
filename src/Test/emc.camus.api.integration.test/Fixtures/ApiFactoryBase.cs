@@ -17,7 +17,7 @@ namespace emc.camus.api.integration.test.Fixtures;
 /// are available during <c>Program.cs</c> service registration.
 /// Derived factories supply variant-specific settings via <see cref="ConfigureVariantHostSettings"/>.
 /// </summary>
-public abstract class CamusApiFactoryBase : WebApplicationFactory<Program>, IAsyncLifetime, ITestOutputHelperAccessor
+public abstract class ApiFactoryBase : WebApplicationFactory<Program>, IAsyncLifetime, ITestOutputHelperAccessor
 {
     public Xunit.Abstractions.ITestOutputHelper? OutputHelper { get; set; }
 

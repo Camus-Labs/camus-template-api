@@ -7,7 +7,7 @@ namespace emc.camus.api.integration.test.Fixtures;
 /// Uses the default InMemory provider from appsettings.json.
 /// DBUp migrations are explicitly disabled.
 /// </summary>
-public class CamusApiIMFactory : CamusApiFactoryBase
+public class ApiIMFactory : ApiFactoryBase
 {
     protected override void ConfigureVariantHostSettings(IWebHostBuilder builder)
     {
