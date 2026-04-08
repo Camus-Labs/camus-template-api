@@ -53,6 +53,7 @@ public class AuthIMEndpointTests
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
+        await response.Should().HaveErrorCode("auth_invalid_credentials");
     }
 
     [Fact]
@@ -67,5 +68,6 @@ public class AuthIMEndpointTests
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
+        await response.Should().HaveErrorCode("apikey_authentication_required");
     }
 }

@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using Dapper;
 using Npgsql;
 using emc.camus.api.integration.test.Fixtures;
@@ -240,9 +239,7 @@ public class AuthPSEndpointTests : IAsyncLifetime
 
         // Assert — request rejected with Conflict and correct error code
         await response.Should().HaveStatusCode(HttpStatusCode.Conflict);
-
-        var errorBody = await response.Content.ReadFromJsonAsync<JsonElement>();
-        errorBody.GetProperty("error").GetString().Should().Be("data_conflict");
+        await response.Should().HaveErrorCode("data_conflict");
 
         // Assert — no additional token or audit record was persisted (transaction rolled back)
         var tokenCountAfter = await connection.ExecuteScalarAsync<int>(

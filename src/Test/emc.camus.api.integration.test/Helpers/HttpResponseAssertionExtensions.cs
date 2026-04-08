@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using FluentAssertions;
 using FluentAssertions.Primitives;
 
@@ -35,5 +37,28 @@ public static class HttpResponseAssertionExtensions
                 $"{because}{(string.IsNullOrEmpty(because) ? "" : " — ")}Response body: {truncatedBody}",
                 becauseArgs);
         }
+    }
+
+    /// <summary>
+    /// Asserts that the response body contains a ProblemDetails <c>error</c> extension with the
+    /// expected machine-readable error code. On failure, includes the full response body in the
+    /// assertion message for immediate diagnostics.
+    /// </summary>
+    public static async Task HaveErrorCode(
+        this ObjectAssertions assertions,
+        string expectedErrorCode,
+        string because = "",
+        params object[] becauseArgs)
+    {
+        var response = (HttpResponseMessage)assertions.Subject;
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        body.TryGetProperty("error", out var errorProperty).Should().BeTrue(
+            $"response body should contain an 'error' property but was: {body}");
+
+        errorProperty.GetString().Should().Be(
+            expectedErrorCode,
+            because,
+            becauseArgs);
     }
 }
