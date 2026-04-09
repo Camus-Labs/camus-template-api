@@ -102,6 +102,8 @@ internal sealed class PSGeneratedTokenRepository : IGeneratedTokenRepository
     /// <returns>The generated token if found, otherwise <see langword="null"/>.</returns>
     public async Task<GeneratedToken?> GetByJtiAsync(Guid jti, CancellationToken ct = default)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(jti, Guid.Empty);
+
         var connection = await _unitOfWork.GetConnectionAsync(ct);
 
         const string sql = @"
@@ -134,6 +136,7 @@ internal sealed class PSGeneratedTokenRepository : IGeneratedTokenRepository
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="pagination"/> is null.</exception>
     public async Task<PagedResult<GeneratedToken>> GetPagedByCreatorUserIdAsync(Guid creatorUserId, PaginationParams pagination, GeneratedTokenFilter? filter = null, CancellationToken ct = default)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(creatorUserId, Guid.Empty);
         ArgumentNullException.ThrowIfNull(pagination);
 
         var connection = await _unitOfWork.GetConnectionAsync(ct);
@@ -218,5 +221,26 @@ internal sealed class PSGeneratedTokenRepository : IGeneratedTokenRepository
         {
             throw new KeyNotFoundException($"Generated token with JTI '{generatedToken.Jti}' not found.");
         }
+    }
+
+    /// <summary>
+    /// Retrieves all revoked tokens that have not yet expired from PostgreSQL.
+    /// Returns a lightweight projection (JTI only) for cache synchronization.
+    /// </summary>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
+    /// <returns>A set of JTIs for revoked tokens that have not yet expired.</returns>
+    public async Task<HashSet<Guid>> GetActiveRevokedJtisAsync(CancellationToken ct = default)
+    {
+        var connection = await _unitOfWork.GetConnectionAsync(ct);
+
+        const string sql = @"
+            SELECT jti
+            FROM camus.generated_tokens
+            WHERE is_revoked = true AND expires_on > @Now";
+
+        var results = await connection.QueryAsync<Guid>(
+            new CommandDefinition(sql, new { Now = DateTime.UtcNow }, cancellationToken: ct));
+
+        return results.ToHashSet();
     }
 }

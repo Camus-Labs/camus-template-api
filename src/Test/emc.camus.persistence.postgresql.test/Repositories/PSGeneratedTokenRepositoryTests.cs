@@ -55,7 +55,7 @@ public class PSGeneratedTokenRepositoryTests
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.GetPagedByCreatorUserIdAsync(Guid.Empty, null!);
+        var act = () => repository.GetPagedByCreatorUserIdAsync(Guid.Parse("a1b2c3d4-0001-0002-0003-000000000001"), null!);
 
         // Assert
         (await act.Should().ThrowAsync<ArgumentNullException>())

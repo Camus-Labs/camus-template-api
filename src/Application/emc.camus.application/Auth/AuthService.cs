@@ -279,7 +279,7 @@ public class AuthService : IAuthService
 
                 await _generatedTokenRepository.SaveAsync(generatedToken, ct);
 
-                _tokenRevocationCache.Revoke(jti, generatedToken.ExpiresOn);
+                _tokenRevocationCache.Revoke(jti);
 
                 await _auditRepository.LogCurrentUserActionAsync(
                     "token.revoke.success",

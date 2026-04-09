@@ -5,7 +5,7 @@ namespace emc.camus.application.RateLimiting
     /// <summary>
     /// Defines standard rate limit policy names used throughout the application.
     /// These constants ensure type safety when applying rate limit attributes.
-    /// Each policy must be configured in appsettings.json under RateLimitSettings.Policies.
+    /// Each policy must be configured in appsettings.json under InMemoryRateLimitingSettings.Policies.
     /// </summary>
     [ExcludeFromCodeCoverage]
     public static class RateLimitPolicies

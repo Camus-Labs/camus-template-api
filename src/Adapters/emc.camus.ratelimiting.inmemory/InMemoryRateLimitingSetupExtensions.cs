@@ -47,7 +47,7 @@ namespace emc.camus.ratelimiting.inmemory
         public static WebApplicationBuilder AddInMemoryRateLimiting(this WebApplicationBuilder builder, string serviceName)
         {
             // Load and validate rate limit settings
-            var settings = builder.Configuration.GetSection(RateLimitSettings.ConfigurationSectionName).Get<RateLimitSettings>() ?? new RateLimitSettings();
+            var settings = builder.Configuration.GetSection(InMemoryRateLimitingSettings.ConfigurationSectionName).Get<InMemoryRateLimitingSettings>() ?? new InMemoryRateLimitingSettings();
             settings.Validate();
             builder.Services.AddSingleton(settings);
 
@@ -118,7 +118,7 @@ namespace emc.camus.ratelimiting.inmemory
         /// Checks if the request path matches any of the configured exempt paths.
         /// Exempt paths bypass rate limiting (e.g., health checks, metrics).
         /// </summary>
-        private static bool IsExemptPath(HttpContext context, RateLimitSettings settings)
+        private static bool IsExemptPath(HttpContext context, InMemoryRateLimitingSettings settings)
         {
             var path = context.Request.Path.ToString();
             return settings.ExemptPaths?.Any(exemptPath => path.StartsWith(exemptPath, StringComparison.OrdinalIgnoreCase)) ?? false;
@@ -129,7 +129,7 @@ namespace emc.camus.ratelimiting.inmemory
         /// Looks for [RateLimit("policyName")] attribute on action or controller.
         /// Falls back to "default" policy if no attribute is present.
         /// </summary>
-        private static string GetPolicyNameFromEndpoint(HttpContext context, RateLimitSettings settings)
+        private static string GetPolicyNameFromEndpoint(HttpContext context, InMemoryRateLimitingSettings settings)
         {
             // Check if endpoint has RateLimit attribute
             var endpoint = context.GetEndpoint();
@@ -170,7 +170,7 @@ namespace emc.camus.ratelimiting.inmemory
         /// </summary>
         private static RateLimitPartition<string> CreateIpBasedPartition(
             HttpContext context,
-            RateLimitSettings settings,
+            InMemoryRateLimitingSettings settings,
             string policyName)
         {
             var ipResolver = context.RequestServices.GetRequiredService<ClientIpResolver>();
@@ -200,7 +200,7 @@ namespace emc.camus.ratelimiting.inmemory
         /// </summary>
         private static void HandleRateLimitRejection(
             OnRejectedContext context,
-            RateLimitSettings settings)
+            InMemoryRateLimitingSettings settings)
         {
             // Resolve services from request scope
             var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<WebApplication>>();

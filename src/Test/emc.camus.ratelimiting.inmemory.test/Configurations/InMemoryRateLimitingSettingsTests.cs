@@ -4,12 +4,12 @@ using emc.camus.application.RateLimiting;
 
 namespace emc.camus.ratelimiting.inmemory.test.Configurations;
 
-public class RateLimitSettingsTests
+public class InMemoryRateLimitingSettingsTests
 {
     private static readonly string[] DefaultExemptPaths = new[] { "/health", "/ready" };
     private static readonly string[] ExemptPathsWithoutLeadingSlash = new[] { "/health", "metrics" };
 
-    private static RateLimitSettings CreateValidSettings(
+    private static InMemoryRateLimitingSettings CreateValidSettings(
         int segmentsPerWindow = 5,
         Dictionary<string, RateLimitPolicySettings>? policies = null,
         string[]? exemptPaths = null) =>
@@ -31,7 +31,7 @@ public class RateLimitSettingsTests
     public void Validate_DefaultSettings_DoesNotThrow()
     {
         // Arrange
-        var settings = new RateLimitSettings();
+        var settings = new InMemoryRateLimitingSettings();
 
         // Act
         var act = () => settings.Validate();
@@ -138,14 +138,15 @@ public class RateLimitSettingsTests
             .WithMessage($"*{RateLimitPolicies.Default}*");
     }
 
-    [Fact]
-    public void Validate_InvalidPolicyName_ThrowsInvalidOperationException()
+    [Theory]
+    [MemberData(nameof(InvalidPolicyNameCases))]
+    public void Validate_InvalidPolicyName_ThrowsInvalidOperationException(string policyName, string expectedMessagePattern)
     {
         // Arrange
         var policies = new Dictionary<string, RateLimitPolicySettings>
         {
             { RateLimitPolicies.Default, new RateLimitPolicySettings { PermitLimit = 100, WindowSeconds = 60 } },
-            { "unknown-policy", new RateLimitPolicySettings { PermitLimit = 10, WindowSeconds = 60 } }
+            { policyName, new RateLimitPolicySettings { PermitLimit = 10, WindowSeconds = 60 } }
         };
         var settings = CreateValidSettings(policies: policies);
 
@@ -154,8 +155,15 @@ public class RateLimitSettingsTests
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*Invalid policy name*unknown-policy*");
+            .WithMessage(expectedMessagePattern);
     }
+
+    public static TheoryData<string, string> InvalidPolicyNameCases => new()
+    {
+        { "", "*Policy name*null*empty*" },
+        { "   ", "*Policy name*null*empty*" },
+        { "unknown-policy", "*Invalid policy name*unknown-policy*" }
+    };
 
     [Fact]
     public void Validate_NullPolicyValue_ThrowsInvalidOperationException()

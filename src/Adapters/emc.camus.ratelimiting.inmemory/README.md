@@ -68,7 +68,7 @@ Add to `appsettings.json`:
 
 ```json
 {
-  "RateLimitSettings": {
+  "InMemoryRateLimitingSettings": {
     "Policies": {
       "default": {
         "PermitLimit": 250,
@@ -104,12 +104,8 @@ for the available policies.
 ⚠️ **Single-Instance Only** - This adapter uses in-memory storage and is **NOT suitable for multi-instance
 deployments**.
 
-For production environments with horizontal scaling (Kubernetes, Azure App Service scale-out), use the Redis
-adapter instead:
-
-```bash
-dotnet add package emc.camus.ratelimiting.redis
-```
+For production environments with horizontal scaling (Kubernetes, Azure App Service scale-out), replace this
+adapter with a Redis-backed implementation that shares state across instances.
 
 ⚠️ **Proxy Header Detection** - IP resolution depends on reverse proxy configuration:
 
@@ -132,20 +128,10 @@ Exports OpenTelemetry metrics for anomaly detection:
 
 - `rate_limit_rejections_total` - Requests rejected due to rate limiting (signals attacks or misbehaving clients)
 
-Tagged with: `partition`, `endpoint`, `method`, `user_or_ip`
+Tagged with: `policy`, `method`
 
 **Note**: Success cases are not metered to avoid high-volume noise. Rate limit information for successful
 requests is available via response headers (`RateLimit-Limit`, `RateLimit-Reset`).
-
-## Migration to Redis
-
-To migrate to Redis-based distributed rate limiting:
-
-1. Install the Redis adapter package (`emc.camus.ratelimiting.redis`)
-2. Replace `AddInMemoryRateLimiting` / `UseInMemoryRateLimiting` calls
-   with `AddRedisRateLimiting` / `UseRedisRateLimiting`
-3. Add a `RedisConnectionString` property to the `RateLimitSettings`
-   configuration section
 
 ## Response Headers
 
@@ -191,15 +177,14 @@ Following clean architecture principles:
                     │
          ┌──────────▼──────────┐
          │  Application Layer  │
-         │  - IRateLimiter     │  ◄─── Abstraction
-         │  - RateLimitAttribute│
+         │  - RateLimitAttribute│  ◄─── Endpoint metadata
          │  - RateLimitExceededException │
          │  - RateLimitPolicies │  ◄─── Shared constants
          └──────────┬──────────┘
                     │
          ┌──────────▼──────────┐
          │   Adapter Layer     │
-         │  - RateLimitSettings│
+         │  - InMemoryRateLimitingSettings│
          │  - ClientIpResolver │
          │  - Implementation   │
          └─────────────────────┘
@@ -212,7 +197,6 @@ Following clean architecture principles:
 - Type-safe attribute lookup (no reflection)
 - Custom exception type with full context
 - RFC-compliant headers for client compatibility
-- Testable abstraction (IRateLimiter)
 - Easy to swap implementations (memory → Redis → distributed cache)
 
 ---
@@ -221,11 +205,10 @@ Following clean architecture principles:
 
 The adapter registers rate limiting services via two extension methods in `InMemoryRateLimitingSetupExtensions.cs`:
 
-1. **`builder.AddInMemoryRateLimiting(serviceName)`** — Reads `RateLimitSettings` from
-   configuration, validates policies, and registers the ASP.NET Core sliding-window rate limiter
-   with IP-based partitioning.
-2. **`app.UseInMemoryRateLimiting()`** — Activates the rate limiting middleware. Must be called
-   **before** authentication middleware and **after** `UseForwardedHeaders()` when behind a proxy.
+1. **`builder.AddInMemoryRateLimiting(serviceName)`** — Reads `InMemoryRateLimitingSettings` from configuration,
+   validates policies, and registers the ASP.NET Core sliding-window rate limiter with IP-based partitioning.
+2. **`app.UseInMemoryRateLimiting()`** — Activates the rate limiting middleware. Must be called **before**
+   authentication middleware and **after** `UseForwardedHeaders()` when behind a proxy.
 
 ---
 
@@ -235,7 +218,7 @@ The adapter registers rate limiting services via two extension methods in `InMem
 | ------- | ------------ |
 | All requests share one rate limit | `UseForwardedHeaders()` not called before rate limiting when behind a proxy |
 | 429 responses with default policy | No `[RateLimit]` attribute on endpoint — falls back to `default` policy |
-| `RateLimitSettings configuration is missing` | Missing `RateLimitSettings` section in `appsettings.json` |
+| `InMemoryRateLimitingSettings configuration is missing` | Missing `InMemoryRateLimitingSettings` section in `appsettings.json` |
 | Rate limit not applied to endpoint | Endpoint path matches an entry in `ExemptPaths` |
 | Metrics not appearing | OpenTelemetry adapter not registered or meter name mismatch |
 
@@ -244,7 +227,7 @@ The adapter registers rate limiting services via two extension methods in `InMem
 ## Dependencies
 
 - `Microsoft.AspNetCore.RateLimiting` - ASP.NET Core built-in rate limiter
-- `emc.camus.application` - Application layer abstractions (RateLimitPolicies, ErrorCodes, MeterName
+- `emc.camus.application` - Application layer abstractions (RateLimitPolicies, ErrorCodes, MeterNames)
 
 **Dependency Flow**: API → Adapter (setup) + Application (constants)
 
@@ -255,5 +238,5 @@ The adapter registers rate limiting services via two extension methods in `InMem
 
 ---
 
-**Note:** This is a production-ready implementation for single-instance deployments. For distributed
-systems, migrate to the Redis adapter.
+**Note:** This is a production-ready implementation for single-instance deployments. For distributed systems,
+replace this adapter with a Redis-backed implementation.

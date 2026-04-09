@@ -26,12 +26,12 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
     ///   "relaxed": { "PermitLimit": 1000, "WindowSeconds": 60 }
     /// }
     /// </summary>
-    internal sealed class RateLimitSettings
+    internal sealed class InMemoryRateLimitingSettings
     {
         /// <summary>
         /// The configuration section name for rate limit settings.
         /// </summary>
-        public const string ConfigurationSectionName = "RateLimitSettings";
+        public const string ConfigurationSectionName = "InMemoryRateLimitingSettings";
 
         private const int MinSegmentsPerWindow = 1;
         private const int MaxSegmentsPerWindow = 20;

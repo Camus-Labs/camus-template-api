@@ -6,25 +6,25 @@ In-memory cache adapter for Camus applications providing token revocation cachin
 
 ---
 
-## 📋 Overview
+## Overview
 
 This adapter implements the `ITokenRevocationCache` interface from the Application layer using a thread-safe
-`ConcurrentDictionary`. It supports JWT token revocation by tracking revoked token identifiers (JTI) with their
-expiration timestamps, and performs lazy eviction of expired entries during lookups.
+`ConcurrentDictionary`. It supports JWT token revocation by tracking revoked token identifiers (JTI). Expired
+entries are cleaned up by a background sync service that periodically replaces the full cache from persistence.
 
 ---
 
-## ✨ Features
+## Features
 
-- 🔒 **Thread-Safe** - Uses `ConcurrentDictionary` for safe concurrent access across requests
-- ⏱️ **Lazy Eviction** - Expired tokens are removed automatically during `IsRevoked` lookups
-- 🎯 **Singleton Lifetime** - Registered as a singleton, shared across all requests
-- 🔄 **Interface-Based** - Implements `ITokenRevocationCache` from Application layer
-- ⚙️ **Zero Configuration** - No settings required; register and use
+- **Thread-Safe** - Uses `ConcurrentDictionary` for safe concurrent access across requests
+- **Background Sync** - `TokenRevocationSyncService` periodically reloads the cache from persistence
+- **Singleton Lifetime** - Registered as a singleton, shared across all requests
+- **Interface-Based** - Implements `ITokenRevocationCache` from Application layer
+- **Sensible Defaults** - Works out of the box with configurable sync interval
 
 ---
 
-## 🚀 Usage
+## Usage
 
 ### Register in Program.cs
 
@@ -33,7 +33,7 @@ adapter for the full registration API.
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ### Dependency Inversion
 
@@ -47,6 +47,8 @@ adapter for the full registration API.
 │       Adapter Layer                  │
 │    IMTokenRevocationCache            │
 │  (implements ITokenRevocationCache)  │
+│    TokenRevocationSyncService        │
+│  (background sync from persistence)  │
 └──────────────────────────────────────┘
 ```
 
@@ -58,46 +60,66 @@ adapter for the full registration API.
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
-This adapter requires no configuration. It is registered as a singleton and stores revoked tokens in memory for the
-lifetime of the application process.
+Add to `appsettings.json`:
+
+```json
+{
+  "InMemoryCacheSettings": {
+    "TokenRevocationCache": {
+      "SyncEnabled": true,
+      "SyncIntervalSeconds": 300
+    }
+  }
+}
+```
+
+| Property | Type | Default | Description |
+| -------- | ---- | ------- | ----------- |
+| `SyncEnabled` | bool | `true` | Enables background sync with persistence |
+| `SyncIntervalSeconds` | int | `300` | Interval between sync cycles (10–86400) |
+
+When `SyncEnabled` is `false`, the background sync service is not registered and the cache only contains tokens
+revoked during the current application lifetime.
 
 ---
 
-## 🔗 Integration
+## Integration
 
 The adapter registers via the extension method in `InMemoryCacheSetupExtensions.cs`:
 
-- **`builder.AddInMemoryCache()`** — Registers `IMTokenRevocationCache` as the `ITokenRevocationCache` singleton in the
-  DI container.
+- **`builder.AddInMemoryCache()`** — Loads and validates `InMemoryCacheSettings`, registers
+  `IMTokenRevocationCache` as the `ITokenRevocationCache` singleton, and conditionally registers
+  `TokenRevocationSyncService` as a hosted background service when `SyncEnabled` is `true`.
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 | Symptom | Likely Cause |
 | ------- | ------------ |
-| Revoked tokens still accepted after restart | In-memory store is cleared on application restart — expected behavior |
+| Revoked tokens still accepted after restart | In-memory store is cleared on restart — expected behavior |
 | Revoked tokens accepted in other instances | In-memory cache is not shared across instances — use Redis adapter |
-| Memory growing over time | Expired tokens are only evicted lazily during lookups; heavy revocation without lookups may accumulate entries until they expire |
+| Memory growing unexpectedly | Sync service may be disabled; enable `SyncEnabled` to periodically replace the cache |
+| "No IGeneratedTokenRepository registered" log | Persistence adapter not registered — sync service requires a repository |
 
 ---
 
-## ⚠️ Limitations
+## Limitations
 
 ⚠️ **Single-Instance Only** — This adapter uses in-memory storage and is **NOT suitable for multi-instance
 deployments**. Revoked tokens are not shared across application instances.
 
-For production environments with horizontal scaling (Kubernetes, Azure App Service scale-out), use a Redis-backed
-implementation instead.
+For production environments with horizontal scaling (Kubernetes, Azure App Service scale-out), use a
+Redis-backed implementation instead.
 
-⚠️ **No Persistence** — All revocation data is lost when the application restarts. After a restart, previously revoked
-tokens will be accepted until they expire naturally.
+⚠️ **No Persistence** — All revocation data is lost when the application restarts. After a restart,
+previously revoked tokens will be accepted until they expire naturally.
 
 ---
 
-## 🔗 Related Documentation
+## Related Documentation
 
 - **[JWT Authentication Adapter](../emc.camus.security.jwt/README.md)** — Token generation and validation
 - **[Authentication Guide](../../../docs/authentication.md)** — Complete authentication overview
@@ -105,7 +127,7 @@ tokens will be accepted until they expire naturally.
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
-- `emc.camus.application` — Application interfaces (`ITokenRevocationCache`)
+- `emc.camus.application` — Application interfaces (`ITokenRevocationCache`, `IGeneratedTokenRepository`)
 - `Microsoft.AspNetCore.App` — ASP.NET Core framework reference

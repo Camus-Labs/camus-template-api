@@ -104,7 +104,7 @@ namespace emc.camus.security.jwt
                         {
                             // Check if the token has been revoked via in-memory cache
                             var revocationCache = context.HttpContext.RequestServices.GetRequiredService<ITokenRevocationCache>();
-                            var jtiClaim = (context.SecurityToken as JwtSecurityToken)?.Id;
+                            var jtiClaim = context.SecurityToken?.Id;
                             if (jtiClaim != null && Guid.TryParse(jtiClaim, out var jti) && revocationCache.IsRevoked(jti))
                             {
                                 context.Fail(new SecurityTokenException("Token has been revoked."));

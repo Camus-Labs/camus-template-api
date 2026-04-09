@@ -57,3 +57,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `DataConflictException` for clean separation of data conflicts from infrastructure failures
 - Request timeout policies using ASP.NET Core built-in `Microsoft.AspNetCore.Http.Timeouts` with configurable
   per-endpoint policies (default, tight, extended) and appsettings-driven durations
+- In-memory cache background service (`TokenRevocationSyncService`) that periodically synchronizes the token
+  revocation cache with the persistence layer at a configurable interval, with scoped repository resolution and
+  graceful skip when no persistence is registered

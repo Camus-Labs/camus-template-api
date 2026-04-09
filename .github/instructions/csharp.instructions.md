@@ -36,7 +36,7 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
 
 3. Configuration Classes (`*Settings`)
 
-    - [ ] `*Settings` suffix on all configuration/options classes (e.g., `JwtSettings`, `RateLimitSettings`)
+    - [ ] `*Settings` suffix on all configuration/options classes (e.g., `JwtSettings`, `InMemoryRateLimitingSettings`)
     - [ ] Configuration classes live in `Configurations/` folder of the layer they configure
     - [ ] Enums for type-safe options — exception: validated strings for framework-mandated identifiers
     - [ ] `Validate{Property}()` methods called from a central `Validate()` method

@@ -17,6 +17,12 @@ public interface ITokenRevocationCache
     /// Marks a token as revoked in the cache.
     /// </summary>
     /// <param name="jti">The JWT ID to revoke.</param>
-    /// <param name="expiresOn">The token's expiration date. Used for cache eviction — entries are removed after the token would have expired anyway.</param>
-    void Revoke(Guid jti, DateTime expiresOn);
+    void Revoke(Guid jti);
+
+    /// <summary>
+    /// Replaces all cached entries with the provided set of revoked JTIs.
+    /// Used by background synchronization to reload the cache from persistence.
+    /// </summary>
+    /// <param name="revokedJtis">The complete set of active revoked JTIs.</param>
+    void Refresh(HashSet<Guid> revokedJtis);
 }

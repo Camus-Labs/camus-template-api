@@ -6,7 +6,6 @@ namespace emc.camus.cache.inmemory.test.Services;
 public class IMTokenRevocationCacheTests
 {
     private static readonly Guid ValidJti = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    private static readonly DateTime FutureExpiry = new(2099, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     private readonly IMTokenRevocationCache _cache = new();
 
@@ -41,11 +40,11 @@ public class IMTokenRevocationCacheTests
     }
 
     [Fact]
-    public void IsRevoked_RevokedTokenWithFutureExpiry_ReturnsTrue()
+    public void IsRevoked_RevokedToken_ReturnsTrue()
     {
         // Arrange
         var jti = ValidJti;
-        _cache.Revoke(jti, FutureExpiry);
+        _cache.Revoke(jti);
 
         // Act
         var result = _cache.IsRevoked(jti);
@@ -59,7 +58,7 @@ public class IMTokenRevocationCacheTests
     {
         // Arrange
         var anotherJti = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-        _cache.Revoke(ValidJti, FutureExpiry);
+        _cache.Revoke(ValidJti);
 
         // Act
         var result = _cache.IsRevoked(anotherJti);
@@ -77,7 +76,7 @@ public class IMTokenRevocationCacheTests
         var emptyJti = Guid.Empty;
 
         // Act
-        var act = () => _cache.Revoke(emptyJti, FutureExpiry);
+        var act = () => _cache.Revoke(emptyJti);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -86,45 +85,61 @@ public class IMTokenRevocationCacheTests
     }
 
     [Fact]
-    public void Revoke_DefaultExpiresOn_ThrowsArgumentOutOfRangeException()
-    {
-        // Arrange
-        var defaultExpiry = default(DateTime);
-
-        // Act
-        var act = () => _cache.Revoke(ValidJti, defaultExpiry);
-
-        // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>()
-            .WithMessage("*equal*")
-            .And.ParamName.Should().Be("expiresOn");
-    }
-
-    [Fact]
-    public void Revoke_PastExpiry_TokenIsNotRevoked()
-    {
-        // Arrange
-        var jti = ValidJti;
-        var pastExpiry = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-        // Act
-        _cache.Revoke(jti, pastExpiry);
-
-        // Assert
-        _cache.IsRevoked(jti).Should().BeFalse();
-    }
-
-    [Fact]
     public void Revoke_SameTokenTwice_TokenIsStillRevoked()
     {
         // Arrange
         var jti = ValidJti;
-        _cache.Revoke(jti, FutureExpiry);
+        _cache.Revoke(jti);
 
         // Act
-        _cache.Revoke(jti, FutureExpiry);
+        _cache.Revoke(jti);
 
         // Assert
         _cache.IsRevoked(jti).Should().BeTrue();
+    }
+
+    // --- Refresh ---
+
+    [Fact]
+    public void Refresh_NullSet_ThrowsArgumentNullException()
+    {
+        // Arrange
+        HashSet<Guid> revokedJtis = null!;
+
+        // Act
+        var act = () => _cache.Refresh(revokedJtis);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .And.ParamName.Should().Be("revokedJtis");
+    }
+
+    [Fact]
+    public void Refresh_EmptySet_ClearsExistingEntries()
+    {
+        // Arrange
+        _cache.Revoke(ValidJti);
+        _cache.IsRevoked(ValidJti).Should().BeTrue("precondition: token should be revoked");
+
+        // Act
+        _cache.Refresh([]);
+
+        // Assert
+        _cache.IsRevoked(ValidJti).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Refresh_WithEntries_ReplacesExistingCache()
+    {
+        // Arrange — cache has one token, replacement has a different one
+        _cache.Revoke(ValidJti);
+        var replacementJti = new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc");
+
+        // Act
+        _cache.Refresh([replacementJti]);
+
+        // Assert
+        _cache.IsRevoked(ValidJti).Should().BeFalse("old entry should be removed");
+        _cache.IsRevoked(replacementJti).Should().BeTrue("new entry should be present");
     }
 }

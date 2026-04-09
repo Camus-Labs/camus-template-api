@@ -2,7 +2,7 @@ namespace emc.camus.application.RateLimiting
 {
     /// <summary>
     /// Specifies which rate limit policy to apply to a controller or action.
-    /// The policy name must match a policy defined in RateLimitSettings.Policies configuration.
+    /// The policy name must match a policy defined in InMemoryRateLimitingSettings.Policies configuration.
     /// If no attribute is present, the "default" policy is used.
     /// </summary>
     /// <example>

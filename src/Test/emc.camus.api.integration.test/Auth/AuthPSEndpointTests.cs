@@ -1,7 +1,12 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using Dapper;
 using Npgsql;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using emc.camus.api.integration.test.Fixtures;
 using emc.camus.api.integration.test.Helpers;
 using emc.camus.api.Models.Dtos.V2;
@@ -255,6 +260,82 @@ public class AuthPSEndpointTests : IAsyncLifetime
 
         tokenCountAfter.Should().Be(tokenCountBefore);
         auditCountAfter.Should().Be(auditCountBefore);
+    }
+
+    [Fact]
+    public async Task RevokedToken_UsedOnProtectedEndpoint_ReturnsUnauthorized()
+    {
+        // Arrange — authenticate, generate a token, then revoke it
+        var adminClient = await AuthenticateAdminAsync();
+        var generateRequest = new
+        {
+            UsernameSuffix = "revoked-use",
+            ExpiresOn = DateTime.UtcNow.AddHours(2),
+            Permissions = new[] { "api.read" },
+        };
+
+        var generateResponse = await adminClient.PostAsJsonAsync("/api/v2.0/auth/generate-token", generateRequest);
+        await generateResponse.Should().HaveStatusCode(HttpStatusCode.OK, "token generation must succeed for test setup");
+
+        var generateBody = await generateResponse.Content.ReadFromJsonAsync<ApiResponse<GenerateTokenResponse>>();
+        var generatedToken = generateBody!.Data!.Token;
+        var jti = AuthenticatedClientHelper.ExtractJti(generatedToken);
+
+        // Assert — the generated token works on a JWT-protected endpoint before revocation
+        var tokenClient = _factory.CreateClient();
+        tokenClient.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", generatedToken);
+
+        var preRevokeResponse = await tokenClient.GetAsync("/api/v2.0/apiinfo/info-jwt");
+        await preRevokeResponse.Should().HaveStatusCode(HttpStatusCode.OK, "generated token must be accepted before revocation");
+
+        // Act — revoke the token and use it again
+        var revokeResponse = await adminClient.PostAsync($"/api/v2.0/auth/tokens/{jti}/revoke", null);
+        await revokeResponse.Should().HaveStatusCode(HttpStatusCode.OK, "token revocation must succeed for test setup");
+
+        var postRevokeResponse = await tokenClient.GetAsync("/api/v2.0/apiinfo/info-jwt");
+
+        // Assert — the revocation cache rejects the token via OnTokenValidated
+        await postRevokeResponse.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
+        await postRevokeResponse.Should().HaveErrorCode("jwt_token_revoked");
+    }
+
+    [Fact]
+    public async Task ExpiredToken_UsedOnProtectedEndpoint_ReturnsUnauthorizedWithExpiredCode()
+    {
+        // Arrange — create a JWT that expires almost immediately
+        using var scope = _factory.Services.CreateScope();
+        var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+        var signingCredentials = scope.ServiceProvider.GetRequiredService<SigningCredentials>();
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
+            new(JwtRegisteredClaimNames.UniqueName, "expired-test-user"),
+            new(JwtRegisteredClaimNames.Jti, "ffffffff-ffff-ffff-ffff-ffffffffffff"),
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: config["JwtSettings:Issuer"],
+            audience: config["JwtSettings:Audience"],
+            claims: claims,
+            expires: DateTime.UtcNow.AddMilliseconds(50),
+            signingCredentials: signingCredentials);
+
+        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+        SpinWait.SpinUntil(() => DateTime.UtcNow > token.ValidTo);
+
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenString);
+
+        // Act
+        var response = await client.GetAsync("/api/v2.0/apiinfo/info-jwt");
+
+        // Assert — framework rejects the expired token before OnTokenValidated fires
+        await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
+        await response.Should().HaveErrorCode("jwt_token_expired");
     }
 
     private async Task<HttpClient> AuthenticateAdminAsync()

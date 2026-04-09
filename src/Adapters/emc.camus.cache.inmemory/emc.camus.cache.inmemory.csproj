@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="emc.camus.cache.inmemory.test" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 
   <ItemGroup>

@@ -5,59 +5,58 @@ namespace emc.camus.cache.inmemory.Services;
 
 /// <summary>
 /// In-memory implementation of <see cref="ITokenRevocationCache"/> using a <see cref="ConcurrentDictionary{TKey, TValue}"/>.
-/// Provides thread-safe token revocation checking with lazy eviction of expired entries.
+/// Provides thread-safe token revocation checking.
 /// Registered as a singleton — shared across all requests within the application lifetime.
 /// </summary>
 /// <remarks>
 /// Suitable for single-instance deployments. For multi-instance or distributed scenarios,
 /// replace with a Redis-backed implementation (emc.camus.cache.redis).
-/// 
-/// Eviction strategy: expired tokens are removed lazily during <see cref="IsRevoked"/> lookups.
-/// No background cleanup thread is used, keeping the implementation simple and predictable.
+///
+/// Cleanup strategy: expired entries are excluded by the repository query during periodic sync
+/// by <see cref="TokenRevocationSyncService"/>, which replaces the full cache each cycle.
 /// </remarks>
 internal sealed class IMTokenRevocationCache : ITokenRevocationCache
 {
-    private readonly ConcurrentDictionary<Guid, DateTime> _revokedTokens = new();
+    private readonly ConcurrentDictionary<Guid, byte> _revokedTokens = new();
 
     /// <summary>
     /// Checks whether a token identified by its JTI has been revoked.
-    /// Lazily evicts expired entries encountered during lookup.
     /// </summary>
     /// <param name="jti">The JWT ID to check.</param>
-    /// <returns><see langword="true"/> if the token is revoked and not yet expired; otherwise <see langword="false"/>.</returns>
+    /// <returns><see langword="true"/> if the token is revoked; otherwise <see langword="false"/>.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="jti"/> is <see cref="Guid.Empty"/>.</exception>
     public bool IsRevoked(Guid jti)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(jti, Guid.Empty);
 
-        if (_revokedTokens.TryGetValue(jti, out var expiresOn))
-        {
-            if (expiresOn <= DateTime.UtcNow)
-            {
-                _revokedTokens.TryRemove(jti, out _);
-                return false;
-            }
-            return true;
-        }
-        return false;
+        return _revokedTokens.ContainsKey(jti);
     }
 
     /// <summary>
-    /// Records a token as revoked until its expiration time.
-    /// Ignores tokens that have already expired.
+    /// Records a token as revoked.
     /// </summary>
     /// <param name="jti">The JWT ID to revoke.</param>
-    /// <param name="expiresOn">The token's expiration date, used for cache eviction.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="jti"/> is <see cref="Guid.Empty"/>.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="expiresOn"/> is <see langword="default"/>.</exception>
-    public void Revoke(Guid jti, DateTime expiresOn)
+    public void Revoke(Guid jti)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(jti, Guid.Empty);
-        ArgumentOutOfRangeException.ThrowIfEqual(expiresOn, default);
 
-        if (expiresOn > DateTime.UtcNow)
+        _revokedTokens.TryAdd(jti, 0);
+    }
+
+    /// <summary>
+    /// Replaces all cached entries with the provided revoked token set.
+    /// Used by <see cref="TokenRevocationSyncService"/> to reload the cache from persistence.
+    /// </summary>
+    /// <param name="revokedJtis">The complete set of active revoked JTIs.</param>
+    public void Refresh(HashSet<Guid> revokedJtis)
+    {
+        ArgumentNullException.ThrowIfNull(revokedJtis);
+
+        _revokedTokens.Clear();
+        foreach (var jti in revokedJtis)
         {
-            _revokedTokens.TryAdd(jti, expiresOn);
+            _revokedTokens.TryAdd(jti, 0);
         }
     }
 }

@@ -43,4 +43,12 @@ public interface IGeneratedTokenRepository
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     Task SaveAsync(GeneratedToken generatedToken, CancellationToken ct = default);
+
+    /// <summary>
+    /// Retrieves all revoked tokens that have not yet expired.
+    /// Used by background cache synchronization to reload the revocation denylist.
+    /// </summary>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
+    /// <returns>A set of JTIs for revoked tokens that have not yet expired.</returns>
+    Task<HashSet<Guid>> GetActiveRevokedJtisAsync(CancellationToken ct = default);
 }

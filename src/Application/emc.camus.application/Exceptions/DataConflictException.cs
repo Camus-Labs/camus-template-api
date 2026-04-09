@@ -11,7 +11,5 @@ public sealed class DataConflictException : Exception
     /// Initializes a new instance of the <see cref="DataConflictException"/> class.
     /// </summary>
     /// <param name="message">The message describing the constraint violation.</param>
-    public DataConflictException(string message) : base(message)
-    {
-    }
+    public DataConflictException(string message)  : base(message) { }
 }

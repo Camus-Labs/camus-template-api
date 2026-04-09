@@ -596,7 +596,7 @@ public class AuthServiceTests
         await service.RevokeTokenAsync(command);
 
         // Assert
-        _tokenRevocationCacheMock.Verify(c => c.Revoke(ValidJti, ValidExpiration), Times.Once);
+        _tokenRevocationCacheMock.Verify(c => c.Revoke(ValidJti), Times.Once);
     }
 
     [Fact]

@@ -175,7 +175,7 @@ The API layer exports:
 | Symptom | Likely Cause |
 | --- | --- |
 | `403 Forbidden` on an endpoint that should be public | Missing `[AllowAnonymous]` attribute or CORS policy blocking the origin |
-| `429 Too Many Requests` in development | Rate limit policy too strict — check `RateLimitSettings.Policies` in `appsettings.Development.json` |
+| `429 Too Many Requests` in development | Rate limit policy too strict — check `InMemoryRateLimitingSettings.Policies` in `appsettings.Development.json` |
 | Swagger UI not loading | `SwaggerSettings.Enabled` is `false` in the active configuration profile |
 | `500` with "secret" or "configuration" in logs | Dapr sidecar not running or secret store misconfigured — see [Dapr Secrets Adapter](../../Adapters/emc.camus.secrets.dapr/README.md) |
 | CORS preflight failures | `AllowedOrigins` does not include the requesting origin — update `CorsSettings` |

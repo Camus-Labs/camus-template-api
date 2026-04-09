@@ -25,7 +25,7 @@ namespace emc.camus.api.Controllers
     /// Integrates with OpenTelemetry for activity tracing.
     ///
     /// Rate Limiting: Uses strict policy (lower limits) to protect authentication endpoints from brute force attacks.
-    /// Configure rate limit policies in appsettings.json under RateLimitSettings.Policies.
+    /// Configure rate limit policies in appsettings.json under InMemoryRateLimitingSettings.Policies.
     /// </remarks>
     [Authorize]
     [RateLimit(RateLimitPolicies.Strict)]

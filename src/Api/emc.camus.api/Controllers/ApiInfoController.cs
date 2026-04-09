@@ -27,7 +27,7 @@ namespace emc.camus.api.Controllers
     /// Integrates with OpenTelemetry for activity tracing and logs API version for observability.
     ///
     /// Rate Limiting: Uses relaxed policy for public endpoints, default for authenticated endpoints.
-    /// Configure rate limit policies in appsettings.json under RateLimitSettings.Policies.
+    /// Configure rate limit policies in appsettings.json under InMemoryRateLimitingSettings.Policies.
     /// </remarks>
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
