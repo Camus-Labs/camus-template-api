@@ -165,7 +165,7 @@ public class PSUnitOfWorkTests
                 ItExpr.IsAny<IsolationLevel>(),
                 ItExpr.IsAny<CancellationToken>())
             .Returns(new ValueTask<DbTransaction>(_mockTransaction.Object));
-        var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
+        using var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
         await unitOfWork.BeginTransactionAsync();
 
         // Act

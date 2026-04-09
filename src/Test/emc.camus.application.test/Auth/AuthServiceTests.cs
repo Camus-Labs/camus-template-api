@@ -292,7 +292,8 @@ public class AuthServiceTests
     {
         // Arrange
         var command = new GenerateTokenCommand(ValidTokenSuffix, DateTime.UtcNow.AddMonths(6), [Permissions.ApiRead]);
-        _userContextMock.Setup(c => c.GetCurrentUserId()).Returns((Guid?)null);
+        Guid? noUserId = null;
+        _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(noUserId);
 
         var service = CreateService();
 
@@ -400,7 +401,8 @@ public class AuthServiceTests
     {
         // Arrange
         var pagination = new PaginationParams();
-        _userContextMock.Setup(c => c.GetCurrentUserId()).Returns((Guid?)null);
+        Guid? noUserId = null;
+        _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(noUserId);
 
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
@@ -496,7 +498,8 @@ public class AuthServiceTests
     {
         // Arrange
         var command = new RevokeTokenCommand(ValidJti);
-        _userContextMock.Setup(c => c.GetCurrentUserId()).Returns((Guid?)null);
+        Guid? noUserId = null;
+        _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(noUserId);
 
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
@@ -533,7 +536,8 @@ public class AuthServiceTests
         var command = new RevokeTokenCommand(ValidJti);
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
         _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
-        _generatedTokenRepositoryMock.Setup(r => r.GetByJtiAsync(ValidJti, It.IsAny<CancellationToken>())).ReturnsAsync((GeneratedToken?)null);
+        GeneratedToken? noToken = null;
+        _generatedTokenRepositoryMock.Setup(r => r.GetByJtiAsync(ValidJti, It.IsAny<CancellationToken>())).ReturnsAsync(noToken);
 
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 

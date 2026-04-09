@@ -26,7 +26,8 @@ public class HttpUserContextTests
         }
         else
         {
-            mockAccessor.Setup(x => x.HttpContext).Returns((HttpContext?)null);
+            HttpContext? noContext = null;
+            mockAccessor.Setup(x => x.HttpContext).Returns(noContext);
         }
 
         return new HttpUserContext(mockAccessor.Object);

@@ -60,11 +60,17 @@ public class AuthPSEndpointTests : IAsyncLifetime
             "SELECT creator_user_id, creator_username, token_username, is_revoked, permissions FROM camus.generated_tokens WHERE jti = @Jti",
             new { Jti = jti });
 
-        ((Guid)row.creator_user_id).Should().NotBeEmpty();
-        ((string)row.creator_username).Should().Be("Admin");
-        ((string)row.token_username).Should().Be("Admin-inttest");
-        ((bool)row.is_revoked).Should().BeFalse();
-        ((string[])row.permissions).Should().Contain("api.read");
+        Guid creatorUserId = row.creator_user_id;
+        string creatorUsername = row.creator_username;
+        string tokenUsername = row.token_username;
+        bool isRevoked = row.is_revoked;
+        string[] permissions = row.permissions;
+
+        creatorUserId.Should().NotBeEmpty();
+        creatorUsername.Should().Be("Admin");
+        tokenUsername.Should().Be("Admin-inttest");
+        isRevoked.Should().BeFalse();
+        permissions.Should().Contain("api.read");
 
         // Assert — audit record persisted
         var audit = await connection.QuerySingleAsync<dynamic>(

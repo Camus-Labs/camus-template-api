@@ -92,7 +92,7 @@ public class DaprSecretProviderTests
         var httpClient = new HttpClient(new FakeHttpMessageHandler(HttpStatusCode.OK, "{}"));
 
         // Act
-        var provider = new DaprSecretProvider(httpClient, settings);
+        _ = new DaprSecretProvider(httpClient, settings);
 
         // Assert
         httpClient.BaseAddress.Should().NotBeNull();
