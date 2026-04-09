@@ -24,7 +24,7 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 │  │  Output: Section B populated (architecture + implementation plan)     │
 │  │  Gate:   Human reviews & approves architecture                        │
 │  ▼                                                                       │
-│  Phase 2: TESTER ─────────── @tester                                     │
+│  Phase 2: TESTER ─────────── @unit.tester                                │
 │  │  Input:  Story file with completed Sections A + B                     │
 │  │  Output: Stubs + test files (TDD red) + Section C                     │
 │  │  Gate:   Human reviews test design + production skeleton              │
@@ -35,7 +35,12 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 │  │  Sub:    @reviewer.code (multi-model, invoked automatically)          │
 │  │  Gate:   Human reviews implementation                                 │
 │  ▼                                                                       │
-│  Phase 4: REVIEW ─────────── @reviewer.code + @documentation.fix        │
+│  Phase 4: INTEGRATION ────── @integration.tester                         │
+│  │  Input:  Story file with Developer Handoff Gate complete              │
+│  │  Output: Integration tests + Section D + status report                │
+│  │  Gate:   Human reviews findings, approves integration status          │
+│  ▼                                                                       │
+│  Phase 5: REVIEW ─────────── @reviewer.code + @documentation.fix        │
 │  │  Input:  Uncommitted files from previous phases                       │
 │  │  Step 1: @reviewer.code uncommitted (final code compliance check)     │
 │  │  Step 2: @documentation.fix uncommitted (fix docs until compliant)    │
@@ -110,11 +115,11 @@ decisions. Approve before proceeding to testing.
 
 ---
 
-### Phase 2: Tester — `@tester`
+### Phase 2: Tester — `@unit.tester`
 
-**Invoke:** `@tester` → provide the path to a story file with completed Sections A and B.
+**Invoke:** `@unit.tester` → provide the path to a story file with completed Sections A and B.
 
-Example: `@tester #file:docs/stories/user-profiles/US-01-create-profile.md`
+Example: `@unit.tester #file:docs/stories/user-profiles/US-01-create-profile.md`
 
 **What the agent does:**
 
@@ -161,7 +166,37 @@ moving to final review.
 
 ---
 
-### Phase 4: Review — `@reviewer.code` + `@documentation.fix`
+### Phase 4: Integration Testing — `@integration.tester`
+
+**Invoke:** `@integration.tester` → provide the path to a story file with completed Developer Handoff Gate.
+
+Example: `@integration.tester #file:docs/stories/user-profiles/US-01-create-profile.md`
+
+**What the agent does:**
+
+1. Validates the Developer Handoff Gate is fully passing
+2. Extracts the Layer Impact Matrix (Section B) and Test Traceability (Section C) to determine which cross-layer
+   boundaries the story touches
+3. Identifies affected integration test projects (`emc.camus.api.integration.test` for API/middleware,
+   `emc.camus.persistence.integration.test` for database/repository)
+4. Scans existing integration tests and classifies each boundary as covered, partial, or missing
+5. Presents coverage gaps to user with a proposed test plan — waits for approval before writing tests
+6. Creates or modifies integration test files following `testing.instructions.md` and
+   `testing.integration.instructions.md`
+7. Builds and runs integration tests via `--filter "Category=Integration"`
+8. Distinguishes test defects (fixes them) from production code defects (records as findings)
+9. Populates Section D — Integration Test Traceability, Integration Test Findings, and evaluates the
+   Integration Tester Handoff Gate
+
+**Deliverable:** Integration test files, Section D populated (Traceability + Findings), Integration Test Report.
+
+**Your role:** Review the integration test report. If findings exist, decide whether to fix production code
+(using `@code.fix` or `@developer`) and re-run `@integration-tester`, or accept the findings and proceed.
+Approve before moving to final review.
+
+---
+
+### Phase 5: Review — `@reviewer.code` + `@documentation.fix`
 
 Both steps are **required** before commit. Code changes frequently affect documentation — new adapters need READMEs,
 API endpoint changes require architecture and authentication doc updates, and new configuration keys must appear in the
@@ -192,7 +227,7 @@ both show PASS. Do not merge until both steps produce a PASS verdict.
 
 ### Post: Complete & Commit — User Action
 
-After Phase 4 produces PASS for both code and documentation reviews, finalize the feature.
+After Phase 5 produces PASS for both code and documentation reviews, finalize the feature.
 
 **Steps:**
 
@@ -213,10 +248,11 @@ are committed, and the feature branch is ready for merge. Use the story details 
 | Pre | User | Latest `main` branch | `feat_` branch created |
 | 0 | `@product_owner` | Feature request (free text) | Story files in `todo/` with Section A |
 | 1 | `@architect` | Story file (Section A complete) | Section B populated |
-| 2 | `@tester` | Story file (Sections A + B complete) | Stub files + test files + Section C |
+| 2 | `@unit.tester` | Story file (Sections A + B complete) | Stub files + test files + Section C |
 | 3 | `@developer` | Story file (Section C tests in RED) | Implementation + code review approved |
-| 4a | `@reviewer.code` | `uncommitted` | Consolidated code compliance report (multi-model) |
-| 4b | `@documentation.fix` | `uncommitted`, file, or directory | Documentation fixed + compliance report |
+| 4 | `@integration.tester` | Story file (Developer Handoff Gate complete) | Integration tests + Section D + status report |
+| 5a | `@reviewer.code` | `uncommitted` | Consolidated code compliance report (multi-model) |
+| 5b | `@documentation.fix` | `uncommitted`, file, or directory | Documentation fixed + compliance report |
 | Post | User | All phases PASS | Stories moved to `done/`, changes committed |
 
 ## Tips
@@ -225,7 +261,9 @@ are committed, and the feature branch is ready for merge. Use the story details 
 - **Reference files** with `#file:path` syntax in Copilot Chat for precise context.
 - **Section C is the TDD tracker** — the tester populates it (Skeleton Inventory + Test Traceability), the developer
   updates it, the code reviewer verifies against it.
-- **Phase 4 is mandatory** — both `@reviewer.code uncommitted` and `@documentation.fix uncommitted` must produce
+- **Section D is the integration test tracker** — the integration tester populates it (Integration Test Traceability +
+  Findings), with human approval before writing any tests.
+- **Phase 5 is mandatory** — both `@reviewer.code uncommitted` and `@documentation.fix uncommitted` must produce
   PASS before merging. Run them sequentially: code review first, documentation fix second.
 - **`@documentation.fix` handles the fix loop automatically** — it invokes `@reviewer.documentation` internally and
   iterates until the reviewer returns PASS or the iteration limit is reached. Run it even when you did not edit `.md`

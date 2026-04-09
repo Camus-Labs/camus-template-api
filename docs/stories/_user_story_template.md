@@ -158,3 +158,25 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Build succeeds with zero warnings: `[Yes | No]`
 - Ready for code review: `[Yes | No]`
 - Developer sign-off: `[Name, Date]`
+
+## Section D - Integration Testing
+
+### Integration Test Traceability
+
+| Boundary | Factory | Test Class | Test Method | Change |
+| --- | --- | --- | --- | --- |
+| [cross-layer boundary] | [factory class name] | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [New, Modified, Existing] |
+
+### Integration Test Findings
+
+| # | Test | Failure | Root Cause Analysis | Affected File |
+| --- | --- | --- | --- | --- |
+| [n] | [test method] | [failure description] | [analysis] | [production file path] |
+
+### Integration Tester Handoff Gate
+
+- All cross-layer boundaries identified and covered: `[Yes | No]`
+- All integration tests pass: `[Yes | No]`
+- No unresolved production code findings: `[Yes | No]`
+- Ready for review: `[Yes | No]`
+- Integration Tester sign-off: `[Name, Date]`

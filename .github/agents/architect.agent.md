@@ -18,11 +18,11 @@ analysis.
 
 Populate `Section B - Architect Definition` in a single user story file, ready for implementation handoff.
 
-**Success:** All Section B fields contain concrete, no-code architectural decisions, every Architect Handoff
-Readiness gate item is `Yes`.
+**Success:** All Section B fields contain concrete, architectural decisions, every Architect Handoff Readiness gate item
+is `Yes`.
 
 **Failure:** The input story file is missing, Section A is incomplete, the story template is missing, or critical
-architectural ambiguities remain after the clarification limit — stop and report the exact blockers.
+architectural ambiguities remain after the clarification limit.
 
 ## Context
 
@@ -30,19 +30,7 @@ architectural ambiguities remain after the clarification limit — stop and repo
 - #file:docs/architecture.md
 - #file:docs/authentication.md
 - #file:docs/stories/_user_story_template.md (Section B structure)
-- Layer README files for understanding contracts, responsibilities, and implementation patterns:
-  - #file:src/Application/emc.camus.application/README.md
-  - #file:src/Adapters/emc.camus.migrations.dbup/README.md
-  - #file:src/Adapters/emc.camus.persistence.postgresql/README.md
-  - #file:src/Adapters/emc.camus.observability.otel/README.md
-  - #file:src/Adapters/emc.camus.ratelimiting.inmemory/README.md
-  - #file:src/Adapters/emc.camus.secrets.dapr/README.md
-  - #file:src/Adapters/emc.camus.security.jwt/README.md
-  - #file:src/Adapters/emc.camus.security.apikey/README.md
-  - #file:src/Adapters/emc.camus.documentation.swagger/README.md
-  - #file:src/Infrastructure/database/README.md
-  - #file:src/Infrastructure/dapr/README.md
-  - #file:src/Infrastructure/observability/README.md
+- #file:docs/README.md (layer and adapter README links for understanding existing contracts and types)
 
 ## Inputs
 
@@ -52,7 +40,7 @@ architectural ambiguities remain after the clarification limit — stop and repo
 
 1. Validate `story_file` exists and all `Product Owner Handoff Gate` items; stop with the exact list of blockers if the
   file is missing or any gate item is `No`; otherwise proceed to Step 2.
-2. Read all Context files.
+2. Read all Context files and their referenced files.
 3. Ask targeted clarification questions for any architectural ambiguity found when mapping Section A to layers, batching
   all gaps per round for up to 5 rounds; report `BLOCKED` with unresolved items if ambiguities remain after round 5;
   otherwise proceed to Step 4 with all ambiguities resolved.
@@ -71,10 +59,10 @@ architectural ambiguities remain after the clarification limit — stop and repo
 - MUST address every NFR category from Section A in Cross-Cutting Concern Decisions.
 - MUST order the Layer Impact Matrix following dependency direction: Domain → Application → Database Schema → API →
   Adapters → Tests.
-- MUST leave `Section A - Product Owner Definition` unchanged.
+- MUST NOT modify Section A, Section C or Section D of the story file.
 - MUST NOT include code snippets, pseudo-code, or implementation-level detail in any Section B field.
 - MUST NOT modify the story template file itself.
-- MUST NOT make assumptions about requirements not stated in Section A — ask the user instead.
+- MUST NOT assume requirements Section A does not state — ask the user instead.
 
 ## Output Format
 

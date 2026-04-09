@@ -2,7 +2,8 @@
 
 ## Overview
 
-Camus follows **Hexagonal Architecture (Ports & Adapters)** pattern with clean separation of concerns.
+Camus follows **Hexagonal Architecture (Ports & Adapters)** pattern with clean separation of concerns. Dependencies
+point inward: outer layers depend on inner layers, never the reverse.
 
 ## Layer Structure
 
@@ -19,53 +20,38 @@ Camus follows **Hexagonal Architecture (Ports & Adapters)** pattern with clean s
 └─────────────────────────────────────────────┘
 ```
 
-## Key Components
+## Layers
 
 ### Domain (`emc.camus.domain`)
 
-- Business entities and rules
-- Independent of infrastructure
-- Contains authentication models and contracts
+Innermost layer containing business entities, invariants, and rules. Has zero external dependencies.
+
+> **📖 Full Reference:** See [Domain Layer README](../src/Domain/emc.camus.domain/README.md) for entity
+documentation and namespace structure.
 
 ### Application (`emc.camus.application`)
 
-**Role:** Shared contracts layer defining interfaces, attributes, exceptions, and constants.
+Shared contracts layer defining port interfaces, attributes, exceptions, and constants consumed by the API layer
+and infrastructure adapters. Also contains concrete application services that orchestrate domain operations.
 
-**Contains:**
-
-- Port interfaces consumed by API layer or multiple adapters
-- Attributes for declarative behavior (`[RateLimit]`)
-- Custom exceptions for standardized error handling
-- Application-wide constants (error codes, headers, policies, meter names)
-
-**Does NOT contain:**
-
-- Implementations (belong in Adapters)
-- Business logic (belongs in Domain)
-- Infrastructure concerns (databases, HTTP, logging)
-
-**Key Namespaces:**
-
-- `Auth/` - Authentication interfaces (`ITokenGenerator`)
-- `Observability/` - Telemetry interfaces (`IActivitySourceWrapper`)
-- `Secrets/` - Secret management interfaces (`ISecretProvider`)
-- `RateLimiting/` - Rate limit attribute and policy constants
-- `Common/` - Application-wide constants and shared contracts (ErrorCodes, Headers, IUnitOfWork, IActionAuditRepository)
-- `Exceptions/` - Custom exceptions (RateLimitExceededException)
-
-> **📖 Full Reference:** See [Application Layer README](../src/Application/emc.camus.application/README.md)
-for complete contracts documentation.
+> **📖 Full Reference:** See [Application Layer README](../src/Application/emc.camus.application/README.md) for
+complete contracts documentation and namespace structure.
 
 ### Adapters
 
-- **API** (`emc.camus.api`) - REST endpoints, middleware
-- **Persistence** (`emc.camus.persistence.postgresql`) - Database access with Dapper
-- **Observability** (`emc.camus.observability.otel`) - OpenTelemetry integration
-- **Rate Limiting** (`emc.camus.ratelimiting.inmemory`) - IP-based sliding window rate limiter
-- **Secrets** (`emc.camus.secrets.dapr`) - Dapr secret management
-- **Security JWT** (`emc.camus.security.jwt`) - JWT Bearer authentication
-- **Security API Key** (`emc.camus.security.apikey`) - API Key authentication
-- **Documentation** (`emc.camus.documentation.swagger`) - Swagger/OpenAPI documentation
+Infrastructure implementations that fulfill Application-layer port interfaces. Each adapter is independently
+swappable:
+
+- **API** (`emc.camus.api`) — REST endpoints, middleware, and composition root
+- **Persistence** (`emc.camus.persistence.postgresql`) — PostgreSQL database access with Dapper
+- **Observability** (`emc.camus.observability.otel`) — OpenTelemetry tracing, metrics, and structured logging
+- **Rate Limiting** (`emc.camus.ratelimiting.inmemory`) — IP-based sliding window rate limiter
+- **Secrets** (`emc.camus.secrets.dapr`) — Dapr secret management
+- **Security JWT** (`emc.camus.security.jwt`) — JWT Bearer authentication
+- **Security API Key** (`emc.camus.security.apikey`) — API Key authentication
+- **Documentation** (`emc.camus.documentation.swagger`) — Swagger/OpenAPI documentation
+
+Each adapter README contains configuration, integration, and troubleshooting details.
 
 ## Dependency Flow
 
@@ -75,21 +61,14 @@ API → Application → Domain
   Adapters (PostgreSQL, Observability)
 ```
 
-**Rule:** Dependencies point inward. Domain has zero external dependencies.
+**Rule:** Dependencies point inward. Domain has zero external dependencies. Adapters depend on Application
+interfaces but never on each other.
 
-## Observability Stack
+## Cross-Cutting Concerns
 
-- **OpenTelemetry Collector** - Centralized telemetry pipeline
-- **Jaeger** - Distributed tracing
-- **Prometheus** - Metrics collection
-- **Grafana** - Visualization dashboards
-- **Loki** - Log aggregation
+Observability, security, and rate limiting are implemented as swappable adapters and wired through the API
+composition root. See the following guides for architectural and configuration details:
 
-## Security Architecture
-
-- **JWT Authentication** - RSA256 token validation
-- **API Key Authentication** - Header-based (`Api-Key`)
-- **CORS** - Configurable policies
-- **Rate Limiting** - Sliding window algorithm (memory-based, Redis-ready)
-
-See [authentication.md](authentication.md) for implementation details.
+- **Authentication** — [Authentication Guide](authentication.md) covers JWT and API Key mechanisms
+- **Observability** — [Observability Adapter](../src/Adapters/emc.camus.observability.otel/README.md) and
+  [Infrastructure Configuration](../src/Infrastructure/observability/README.md) cover the telemetry pipeline

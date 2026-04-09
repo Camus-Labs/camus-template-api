@@ -22,7 +22,7 @@ architecture handoff.
 **Success:** Create the required story files from the template and fulfill Section A - Product Owner Definition.
 
 **Failure:** The request is missing, the story template is missing, or critical ambiguities remain after the
-clarification limit — mark unresolved fields, produce a BLOCKED handoff report listing the exact blockers.
+clarification limit.
 
 ## Context
 
@@ -71,7 +71,7 @@ clarification limit — mark unresolved fields, produce a BLOCKED handoff report
 - MUST ensure each story includes at least one measurable acceptance criterion.
 - MUST reject any story file name that violates kebab-case, contains a duplicate slug, or skips the sequential `US-XX`
   prefix.
-- MUST leave `Section B - Architect Definition (No Code)` unchanged.
+- MUST NOT modify Section B, Section C or Section D of the story file.
 - MUST NOT ask generic questions such as `What are the requirements?` when a targeted field question is possible.
 - MUST NOT assume requirements, priorities, dependencies, deadlines, or acceptance criteria.
 - MUST NOT produce architecture design, code, effort estimates, or implementation plans.

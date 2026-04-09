@@ -23,8 +23,8 @@ tests passing (TDD green phase).
 **Success:** All tests pass, the build succeeds with zero warnings, and all Developer Handoff Gate items are `Yes`.
 
 **Failure:** The story file is missing, Section C is incomplete, the Tester Handoff Gate has any `No` item, the build
-fails after 5 compilation retries, review violations remain after exhausting user-guided iterations, or tests cannot
-pass after 5 test-fix iterations — stop and report the exact blockers.
+fails after exhausting compilation retries, review violations remain after exhausting user-guided iterations, or tests
+cannot pass after exhausting test-fix iterations — stop and report the exact blockers.
 
 ## Context
 
@@ -37,21 +37,12 @@ pass after 5 test-fix iterations — stop and report the exact blockers.
 - #file:.github/instructions/api.instructions.md
 - #file:.github/instructions/adapters.instructions.md
 - #file:.github/instructions/adapters.persistence.instructions.md
-- Layer README files for understanding contracts, responsibilities, and implementation patterns:
-  - #file:src/Application/emc.camus.application/README.md
-  - #file:src/Adapters/emc.camus.persistence.postgresql/README.md
-  - #file:src/Adapters/emc.camus.observability.otel/README.md
-  - #file:src/Adapters/emc.camus.ratelimiting.inmemory/README.md
-  - #file:src/Adapters/emc.camus.secrets.dapr/README.md
-  - #file:src/Adapters/emc.camus.security.jwt/README.md
-  - #file:src/Adapters/emc.camus.security.apikey/README.md
-  - #file:src/Adapters/emc.camus.documentation.swagger/README.md
-  - #file:src/Infrastructure/database/README.md
+- #file:docs/README.md (layer and adapter README links for understanding existing contracts and types)
 
 ## Inputs
 
 - `story_file` (required, string, path): path to a single user story file with completed Sections A, B, and C
-  (Skeleton Inventory and Test Traceability populated, Tester Handoff Gate all `Yes`).
+  (Skeleton Inventory and Test Traceability complete, Tester Handoff Gate all `Yes`).
 
 ## Process
 
@@ -59,9 +50,9 @@ pass after 5 test-fix iterations — stop and report the exact blockers.
   validation fails; otherwise proceed to Step 2.
 
 2. Read all Context files and the story file — extract the Skeleton Inventory and Test Traceability from Section C; read
-  every stub file listed in the Skeleton Inventory to understand the production skeleton (type signatures, method
-  signatures, constructor parameters, and whether each is `New` or `Modified`); read every test file referenced in the
-  Test Traceability table to understand the expected behaviors; proceed to Step 3.
+  every Skeleton Inventory stub file to understand the production skeleton (type signatures, method signatures,
+  constructor parameters, and whether each is `New` or `Modified`); every Test Traceability test file to understand the
+  expected behaviors; proceed to Step 3.
 
 3. Implement production code — for each Skeleton Inventory entry, fill in stub bodies for `New` files and extend
   existing types for `Modified` files following `csharp.instructions.md` and the applicable layer instruction files;
@@ -92,7 +83,7 @@ pass after 5 test-fix iterations — stop and report the exact blockers.
 - MUST implement the minimum code to pass failing tests — no gold-plating or speculative features.
 - MUST preserve all type signatures, method signatures, and constructor parameters from the Skeleton Inventory.
 - MUST NOT modify test files — fix production code to satisfy existing tests.
-- MUST NOT modify Section A, Section B, or the Tester Handoff Gate of the story file.
+- MUST NOT modify Section A, Section B, Section D, or the Tester Handoff Gate of the story file.
 - MUST NOT create files outside the paths listed in the Skeleton Inventory.
 - MUST register new types in DI containers when the layer conventions require it.
 - MUST fill in all stub bodies with complete implementations — no `NotImplementedException` in final code.
