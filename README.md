@@ -35,15 +35,27 @@ architecture, authentication, deployment, and debugging.
 src/
 ├── Api/                                    # 🌐 REST API Layer
 │   └── emc.camus.api/
+│       ├── Configurations/                 # App settings bindings
 │       ├── Controllers/                    # API endpoints
-│       ├── Middleware/                     # HTTP pipeline components
 │       ├── Extensions/                     # Service configuration
+│       ├── Infrastructure/                 # Cross-cutting infra
+│       ├── Mapping/                        # DTO mapping
+│       ├── Metrics/                        # Custom metrics
+│       ├── Middleware/                     # HTTP pipeline components
+│       ├── Models/                         # Request/response models
+│       ├── SwaggerExamples/                # OpenAPI examples
 │       └── Program.cs                      # Application startup
 │
 ├── Application/                            # 🔧 Use Cases & Ports
 │   └── emc.camus.application/
+│       ├── ApiInfo/                       # API info contracts
 │       ├── Auth/                          # Authentication interfaces
+│       ├── Common/                        # Shared types
+│       ├── Configurations/                # Settings contracts
+│       ├── Exceptions/                    # Application exceptions
+│       ├── Idempotency/                   # Idempotency contracts
 │       ├── Observability/                 # Tracing interfaces
+│       ├── RateLimiting/                  # Rate limiting contracts
 │       └── Secrets/                       # Secret provider interfaces
 │
 ├── Domain/                                 # 💼 Business Core
@@ -52,13 +64,16 @@ src/
 │       └── Exceptions/                    # Domain exceptions
 │
 ├── Adapters/                              # 🔌 Infrastructure
+│   ├── emc.camus.cache.inmemory/          # Token revocation cache
+│   ├── emc.camus.documentation.swagger/   # Swagger/OpenAPI
+│   ├── emc.camus.migrations.dbup/         # Database migrations
+│   ├── emc.camus.observability.otel/      # OpenTelemetry
+│   ├── emc.camus.persistence.inmemory/    # In-memory repositories
 │   ├── emc.camus.persistence.postgresql/  # Database adapter
-│   ├── emc.camus.secrets.dapr/           # Dapr secrets
-│   ├── emc.camus.observability.otel/     # OpenTelemetry
-│   ├── emc.camus.ratelimiting.inmemory/    # Rate limiting
-│   ├── emc.camus.security.jwt/           # JWT authentication
-│   ├── emc.camus.security.apikey/        # API Key authentication
-│   └── emc.camus.documentation.swagger/  # Swagger/OpenAPI
+│   ├── emc.camus.ratelimiting.inmemory/   # Rate limiting
+│   ├── emc.camus.secrets.dapr/            # Dapr secrets
+│   ├── emc.camus.security.apikey/         # API Key authentication
+│   └── emc.camus.security.jwt/            # JWT authentication
 │
 ├── Infrastructure/                        # 🏗️ Infrastructure Config
 │   ├── dapr/                             # Dapr configurations
@@ -68,9 +83,14 @@ src/
     ├── emc.camus.api.integration.test/    # Integration tests (Testcontainers)
     ├── emc.camus.api.test/
     ├── emc.camus.application.test/
+    ├── emc.camus.cache.inmemory.test/
+    ├── emc.camus.documentation.swagger.test/
     ├── emc.camus.domain.test/
-    ├── emc.camus.persistence.postgresql.test/
+    ├── emc.camus.migrations.dbup.test/
     ├── emc.camus.observability.otel.test/
+    ├── emc.camus.persistence.inmemory.test/
+    ├── emc.camus.persistence.postgresql.test/
+    ├── emc.camus.ratelimiting.inmemory.test/
     ├── emc.camus.secrets.dapr.test/
     ├── emc.camus.security.apikey.test/
     └── emc.camus.security.jwt.test/
@@ -100,7 +120,7 @@ and dependency flow.
 
 2. **Configure secrets** (Development):
   
-   Edit `src/Infrastructure/dapr/secrets.json` with your development credentials. See
+   Edit `src/Infrastructure/dapr/secrets.json` with your development credentials. See the
    [Dapr Components README](src/Infrastructure/dapr/README.md) for the secrets file format and examples.
 
 3. **Run the API**:
@@ -125,29 +145,6 @@ docker-compose -f docker-compose.prod.yml up -d
 
 > **📖 Detailed Guide:** See [Debugging Documentation](docs/debugging.md) for Docker development workflow
 with VS Code debugging.
-
----
-
-## 🔐 Authentication
-
-JWT Bearer token and API Key authentication with permission-based policies and RSA256 token signing — see
-[Authentication Documentation](docs/authentication.md) for configuration, claims reference, and security best practices.
-
----
-
-## �️ Rate Limiting
-
-IP-based sliding-window rate limiting with policy-based configuration (strict, default, relaxed) and OpenTelemetry
-metrics — see [Rate Limiting Adapter README](src/Adapters/emc.camus.ratelimiting.inmemory/README.md) for configuration
-and deployment.
-
----
-
-## 📊 Observability
-
-OpenTelemetry integration for tracing, metrics, and structured logging with Docker Compose observability stack.
-See [Observability Adapter README](src/Adapters/emc.camus.observability.otel/README.md) for usage guide and
-[Observability Stack README](src/Infrastructure/observability/README.md) for stack configuration.
 
 ---
 
@@ -189,48 +186,16 @@ on project structure, running tests, coverage reports, and conventions.
 
 ## 🚢 Deployment
 
-### Docker
-
-```bash
-# Build production image
-docker build -t camus-api:latest .
-
-# Run
-docker run -p 8080:8080 -e ASPNETCORE_ENVIRONMENT=Production camus-api:latest
-```
-
-### Azure Container Apps
-
-```bash
-az containerapp create \
-  --name camus-api \
-  --resource-group camus-rg \
-  --environment camus-env \
-  --image your-registry/camus-api:latest \
-  --target-port 8080 \
-  --ingress external
-```
-
-> **📖 Complete Guide:** See [Deployment Documentation](docs/deployment.md) for production setup, scaling,
-and cloud deployment.
+> **📖 Complete Guide:** See [Deployment Documentation](docs/deployment.md) for Docker builds, production setup,
+scaling, and cloud deployment.
 
 ---
 
 ## 🛠️ Extending the Template
 
-### Add Business Controllers
-
-Create versioned API controllers in `src/Api/emc.camus.api/Controllers/`. Apply `[ApiController]`, `[ApiVersion]`,
-and version-based route attributes. See existing controllers in that folder for the pattern.
-
-### Implement Use Cases
-
-Add application service interfaces in `src/Application/emc.camus.application/`. See existing interfaces
-like `IApiInfoRepository` and `IUserRepository` for the contract pattern.
-
-### Create Domain Entities
-
-Define business models in `src/Domain/emc.camus.domain/`. Keep domain entities free of infrastructure dependencies.
+This project uses an **agent-driven SDLC workflow** to implement new features end-to-end — from user stories through
+architecture, TDD, implementation, and review. See the [Agentic SDLC Workflow](docs/agentic-sdlc-workflow.md) guide
+for the full pipeline, agent roles, and approval gates.
 
 ---
 
@@ -252,6 +217,7 @@ Define business models in `src/Domain/emc.camus.domain/`. Keep domain entities f
 - [Security (API Key)](src/Adapters/emc.camus.security.apikey/README.md)
 - [Secrets (Dapr)](src/Adapters/emc.camus.secrets.dapr/README.md)
 - [Persistence (PostgreSQL)](src/Adapters/emc.camus.persistence.postgresql/README.md)
+- [Migrations (DbUp)](src/Adapters/emc.camus.migrations.dbup/README.md)
 - [Cache (Memory)](src/Adapters/emc.camus.cache.inmemory/README.md)
 - [Persistence (Memory)](src/Adapters/emc.camus.persistence.inmemory/README.md)
 - [Documentation (Swagger)](src/Adapters/emc.camus.documentation.swagger/README.md)
@@ -294,10 +260,4 @@ requirements, and the agent-driven development workflow.
 
 ---
 
-## 📄 License
-
-MIT License - see LICENSE file for details.
-
----
-
-Built with ❤️ using .NET 9.0, OpenTelemetry, and Hexagonal Architecture principles.
+Built with ❤️ using .NET 9.0 and Hexagonal Architecture principles.

@@ -44,10 +44,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - VS Code debugging support for containerized applications
 - Observability stack (Jaeger, Prometheus, Grafana, Loki) via Docker Compose
 - .NET 9.0 target framework
-- Comprehensive test project structure with 100% coverage target across all layers
+- Comprehensive test project structure with unit and integration tests, solution filters, and 100% coverage target
 - Copilot instruction files per layer (Domain, Application, API, Adapters, Persistence, Testing, C#, Documentation)
-- AI agent definitions for TDD workflow (product owner, architect, tester, developer) and automated fixes
+- AI agent definitions for TDD workflow (product owner, architect, unit tester, developer) and automated fixes
 - Multi-model concurrent reviewer agents for code, documentation, agents, and prompts
 - Review prompt templates for code, documentation, agent, and prompt compliance
-- GitHub Actions workflows for CI, dependency vulnerability scanning, Markdown lint, Docker lint, and version check
+- Separate GitHub Actions workflows for unit tests, integration tests, dependency scanning, Markdown lint, Docker
+  lint, and version check
 - Unit of work pattern for transactional and shared connections on pstgresql adapter
+- Integration test infrastructure with Testcontainers, Respawn database reset, collection fixtures, and
+  WebApplicationFactory variants (PostgreSQL and in-memory)
+- `DataConflictException` for clean separation of data conflicts from infrastructure failures

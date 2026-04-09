@@ -1,4 +1,4 @@
-# Camus Documentation Hub
+# Documentation Hub
 
 Complete technical documentation for the Camus API Template.
 
@@ -103,6 +103,7 @@ Detailed usage guides for infrastructure adapters:
 
 Core layer architecture and contracts:
 
+- **[Domain Layer](../src/Domain/emc.camus.domain/README.md)** - Business entities, invariants, and exception types
 - **[API Layer](../src/Api/emc.camus.api/README.md)** - Controllers, middleware, pipeline wiring, and response models
 - **[Application Layer](../src/Application/emc.camus.application/README.md)** - Shared contracts, interfaces,
   attributes, and constants
