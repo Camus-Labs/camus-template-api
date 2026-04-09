@@ -14,13 +14,4 @@ public sealed class DataConflictException : Exception
     public DataConflictException(string message) : base(message)
     {
     }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DataConflictException"/> class.
-    /// </summary>
-    /// <param name="message">The message describing the constraint violation.</param>
-    /// <param name="innerException">The inner exception that caused the constraint violation.</param>
-    public DataConflictException(string message, Exception innerException) : base(message, innerException)
-    {
-    }
 }
