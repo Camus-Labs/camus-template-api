@@ -55,3 +55,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Integration test infrastructure with Testcontainers, Respawn database reset, collection fixtures, and
   WebApplicationFactory variants (PostgreSQL and in-memory)
 - `DataConflictException` for clean separation of data conflicts from infrastructure failures
+- Request timeout policies using ASP.NET Core built-in `Microsoft.AspNetCore.Http.Timeouts` with configurable
+  per-endpoint policies (default, tight, extended) and appsettings-driven durations

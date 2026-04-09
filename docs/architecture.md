@@ -66,9 +66,11 @@ interfaces but never on each other.
 
 ## Cross-Cutting Concerns
 
-Observability, security, and rate limiting are implemented as swappable adapters and wired through the API
-composition root. See the following guides for architectural and configuration details:
+Observability, security, rate limiting, and request timeouts are implemented as cross-cutting concerns wired
+through the API composition root. See the following guides for architectural and configuration details:
 
 - **Authentication** — [Authentication Guide](authentication.md) covers JWT and API Key mechanisms
 - **Observability** — [Observability Adapter](../src/Adapters/emc.camus.observability.otel/README.md) and
   [Infrastructure Configuration](../src/Infrastructure/observability/README.md) cover the telemetry pipeline
+- **Request Timeouts** — Configured in the API layer via ASP.NET Core built-in request timeouts with named
+  policies (default, tight, extended) and appsettings-driven durations

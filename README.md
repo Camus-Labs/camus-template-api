@@ -15,6 +15,7 @@ architecture, authentication, deployment, and debugging.
 
 - 🔐 Authentication (JWT Bearer + API Key)
 - �️ Rate Limiting (Sliding Window Algorithm)
+- ⏱️ Request Timeouts (Per-Endpoint Policies)
 - 📊 Observability (OpenTelemetry + Serilog)
 - 🗄️ Data Persistence (PostgreSQL + Dapper)
 - 🔒 Secrets Management (Dapr)
