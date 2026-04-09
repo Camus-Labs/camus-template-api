@@ -10,6 +10,8 @@ using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V1;
 using emc.camus.api.Mapping.V1;
 using emc.camus.application.Auth;
+using Microsoft.AspNetCore.Http.Timeouts;
+using emc.camus.api.Configurations;
 
 namespace emc.camus.api.Controllers
 {
@@ -31,6 +33,7 @@ namespace emc.camus.api.Controllers
     [ApiVersion("2.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
     [Produces(MediaTypeNames.Application.Json)]
+    [RequestTimeout(RequestTimeoutPolicies.Tight)]
     [ApiController]
     public class ApiInfoController : ApiControllerBase
     {

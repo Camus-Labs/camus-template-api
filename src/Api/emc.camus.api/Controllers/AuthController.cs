@@ -12,6 +12,8 @@ using emc.camus.api.Models.Responses.V2;
 using emc.camus.api.Models.Dtos.V2;
 using emc.camus.api.Mapping;
 using emc.camus.api.Mapping.V2;
+using Microsoft.AspNetCore.Http.Timeouts;
+using emc.camus.api.Configurations;
 
 namespace emc.camus.api.Controllers
 {
@@ -27,6 +29,7 @@ namespace emc.camus.api.Controllers
     /// </remarks>
     [Authorize]
     [RateLimit(RateLimitPolicies.Strict)]
+    [RequestTimeout(RequestTimeoutPolicies.Default)]
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
     [Route("api/v{version:apiVersion}/[controller]")]

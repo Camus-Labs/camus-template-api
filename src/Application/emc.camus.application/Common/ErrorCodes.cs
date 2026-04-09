@@ -14,7 +14,7 @@ public static class ErrorCodes
         /// This pattern is discouraged - error codes should be automatically detected via configuration.
         /// </summary>
         public const string ErrorCodeKey = "ErrorCode";
-        
+
         /// <summary>
         /// Default error code returned when no rules match an exception.
         /// Indicates an unhandled or unexpected error type.

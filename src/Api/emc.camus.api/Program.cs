@@ -30,100 +30,106 @@ builder.AddObservability(SERVICE_NAME, SERVICE_VERSION, INSTANCE_ID, ENV_NAME);
 // Step 2: Configure error handling (exception-to-error-code resolution and metrics)
 builder.AddErrorHandling(SERVICE_NAME);
 
-// Step 3: Configure API versioning
+// Step 3: Configure request timeouts (prevents cascading failures from hanging calls)
+builder.AddRequestTimeoutPolicies();
+
+// Step 4: Configure API versioning
 builder.AddApiVersioning();
 
-// Step 4: Add Swagger documentation via adapter (depends on API versioning)
+// Step 5: Add Swagger documentation via adapter (depends on API versioning)
 builder.AddSwaggerDocumentation();
 
-// Step 5: Configure CORS policy
+// Step 6: Configure CORS policy
 builder.AddCorsPolicy();
 
-// Step 6: Configure rate limiting (always enabled for security)
+// Step 7: Configure rate limiting (always enabled for security)
 builder.AddInMemoryRateLimiting(SERVICE_NAME);
 
-// Step 7: Configure Secrets Provider using Dapr Adapter
+// Step 8: Configure Secrets Provider using Dapr Adapter
 builder.AddDaprSecrets();
 
-// Step 8: Configure data persistence (depends on secrets for DB credentials)
+// Step 9: Configure data persistence (depends on secrets for DB credentials)
 builder.AddPersistence();
 
-// Step 9: Configure database migrations (depends on persistence settings)
+// Step 10: Configure database migrations (depends on persistence settings)
 builder.AddDatabaseMigrations();
 
-// Step 10: Configure in-memory cache (token revocation denylist)
+// Step 11: Configure in-memory cache (token revocation denylist)
 builder.AddInMemoryCache();
 
-// Step 11: Configure Authentication using Security Adapters (depends on secrets)
+// Step 12: Configure Authentication using Security Adapters (depends on secrets)
 builder.AddJwtAuthentication();
 builder.AddApiKeyAuthentication();
 
-// Step 12: Configure authorization policies (depends on authentication)
+// Step 13: Configure authorization policies (depends on authentication)
 builder.AddAuthorizationPolicies();
 
-// Step 13: Configure application services (IUserContext, etc.)
+// Step 14: Configure application services (IUserContext, etc.)
 builder.AddApplicationServices();
 
-// Step 14: Configure health check services
+// Step 15: Configure health check services
 builder.AddHealthChecks();
 
-// Step 15: Build App Builder
+// Step 16: Build App Builder
 var app = builder.Build();
 
-// Step 16: Get logger for startup events
+// Step 17: Get logger for startup events
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 
 Program.LogServiceStarting(startupLogger, SERVICE_NAME, SERVICE_VERSION, ENV_NAME);
 Program.LogInstanceId(startupLogger, INSTANCE_ID);
 
-// Step 17: Configure transport security (forwarded headers, HSTS, HTTPS redirection)
+// Step 18: Configure transport security (forwarded headers, HSTS, HTTPS redirection)
 app.UseTransportSecurity();
 
-// Step 18: Add security headers (X-Content-Type-Options, X-Frame-Options, CSP, Referrer-Policy)
+// Step 19: Add security headers (X-Content-Type-Options, X-Frame-Options, CSP, Referrer-Policy)
 app.UseSecurityHeaders();
 
-// Step 19: Enable observability middleware (adds Trace Id header to responses)
+// Step 20: Enable observability middleware (adds Trace Id header to responses)
 // Must be BEFORE exception handling so trace IDs are available in error logs
 app.UseObservability();
 
-// Step 20: Global exception handling middleware (catches auth, authz, and app exceptions)
+// Step 21: Global exception handling middleware (catches auth, authz, and app exceptions)
 // Must be EARLY in pipeline to catch exceptions from rate limiting, auth, etc.
 app.UseErrorHandling();
 
-// Step 21: Enable Swagger UI in development
+// Step 22: Apply request timeouts (AFTER error handling so timeout exceptions are caught)
+app.UseRequestTimeoutPolicies();
+
+// Step 23: Enable Swagger UI in development
 app.UseSwaggerDocumentation();
 
-// Step 22: Apply CORS policy (before authentication to allow preflight requests)
+// Step 24: Apply CORS policy (before authentication to allow preflight requests)
 app.UseCorsPolicy();
 
-// Step 23: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
+// Step 25: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
 app.UseInMemoryRateLimiting();
 
-// Step 24: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
+// Step 26: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
 app.UseDaprSecrets();
 
-// Step 25: Run database migrations (creates schema and tables if needed)
+// Step 27: Run database migrations (creates schema and tables if needed)
 app.UseDatabaseMigrations(startupLogger);
 
-// Step 26: Add Authentication and Authorization
+// Step 28: Add Authentication and Authorization
 app.UseAuthentication();
 
-// Step 27: Apply authorization middleware
+// Step 29: Apply authorization middleware
 app.UseAuthorizationPolicies();
 
-// Step 28: Initialize persistence-dependent data (load API info)
+// Step 30: Initialize persistence-dependent data (load API info)
 await app.UsePersistenceAsync();
 
-// Step 29: Apply application services (adds Username header + endpoint routing)
+// Step 31: Apply application services (adds Username header + endpoint routing)
 app.UseApplicationServices();
 
-// Step 30: Map health check endpoints (liveness, readiness, overall health)
+// Step 32: Map health check endpoints (liveness, readiness, overall health)
 app.UseHealthChecks();
 
 
 Program.LogStartupComplete(startupLogger, SERVICE_NAME);
 
-// Step 31: Run the app
+// Step 33: Run the app
 await app.RunAsync();
 
 /// <summary>
