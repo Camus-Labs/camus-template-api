@@ -39,24 +39,18 @@ internal sealed class FakeHttpMessageHandler : HttpMessageHandler
             var secretName = request.RequestUri!.Segments.Last();
             if (_responses.TryGetValue(secretName, out var response))
             {
-                var matchedMessage = new HttpResponseMessage(response.statusCode)
-                {
-                    Content = new StringContent(response.content)
-                };
+                var matchedMessage = new HttpResponseMessage(response.statusCode);
+                matchedMessage.Content = new StringContent(response.content);
                 return Task.FromResult(matchedMessage);
             }
 
-            var notFoundMessage = new HttpResponseMessage(HttpStatusCode.NotFound)
-            {
-                Content = new StringContent("")
-            };
+            var notFoundMessage = new HttpResponseMessage(HttpStatusCode.NotFound);
+            notFoundMessage.Content = new StringContent("");
             return Task.FromResult(notFoundMessage);
         }
 
-        var resultMessage = new HttpResponseMessage(_statusCode!.Value)
-        {
-            Content = new StringContent(_content!)
-        };
+        var resultMessage = new HttpResponseMessage(_statusCode!.Value);
+        resultMessage.Content = new StringContent(_content!);
         return Task.FromResult(resultMessage);
     }
 }
