@@ -2,12 +2,15 @@ using Swashbuckle.AspNetCore.Filters;
 using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V2;
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.api.SwaggerExamples.V2;
 
 /// <summary>
 /// Provides example data for ApiResponse&lt;GenerateTokenResponse&gt;
 /// in Swagger documentation.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class GenerateTokenResponseExample
     : IExamplesProvider<ApiResponse<GenerateTokenResponse>>
 {

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Swashbuckle.AspNetCore.Filters;
 using emc.camus.api.Models.Dtos.V2;
 using emc.camus.api.Models.Responses;
@@ -8,6 +9,7 @@ namespace emc.camus.api.SwaggerExamples.V2;
 /// Provides example data for ApiResponse&lt;GeneratedTokenSummaryDto&gt;
 /// in Swagger documentation (used by RevokeToken endpoint).
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class RevokeTokenResponseExample
     : IExamplesProvider<ApiResponse<GeneratedTokenSummaryDto>>
 {

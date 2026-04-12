@@ -10,7 +10,6 @@ namespace emc.camus.api.Metrics
     /// Tracks all application errors by error code, HTTP status, and endpoint path.
     /// Exports counters to Prometheus/Application Insights via OpenTelemetry.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public partial class ErrorMetrics : IDisposable
     {
         private readonly Meter _meter;

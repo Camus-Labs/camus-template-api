@@ -45,4 +45,23 @@ public class PSApiInfoRepositoryTests
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*not initialized*");
     }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task GetByVersionAsync_Initialized_InvalidVersion_ThrowsArgumentException(string? version)
+    {
+        // Arrange
+        var initState = new PSInitializationState { ApiInfoRepositoryInitialized = true };
+        var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
+        var repository = new PSApiInfoRepository(unitOfWork, initState);
+
+        // Act
+        var act = () => repository.GetByVersionAsync(version!);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>()
+            .Where(e => e.ParamName == "version");
+    }
 }

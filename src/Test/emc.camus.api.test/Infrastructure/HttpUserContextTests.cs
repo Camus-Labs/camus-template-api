@@ -33,6 +33,15 @@ public class HttpUserContextTests
         return new HttpUserContext(mockAccessor.Object);
     }
 
+    private static HttpUserContext CreateContextWithNullUser()
+    {
+        var mockAccessor = new Mock<IHttpContextAccessor>();
+        var mockHttpContext = new Mock<HttpContext>();
+        mockHttpContext.Setup(x => x.User).Returns((ClaimsPrincipal)null!);
+        mockAccessor.Setup(x => x.HttpContext).Returns(mockHttpContext.Object);
+        return new HttpUserContext(mockAccessor.Object);
+    }
+
     private static ClaimsPrincipal CreateAuthenticatedUser(
         string username = "testuser",
         Guid? userId = null,
@@ -86,6 +95,10 @@ public class HttpUserContextTests
     {
         yield return new object[] { CreateContext() };
         yield return new object[] { CreateContext(hasHttpContext: false) };
+        yield return new object[] { CreateContextWithNullUser() };
+
+        var nullIdentityUser = new ClaimsPrincipal();
+        yield return new object[] { CreateContext(nullIdentityUser) };
 
         var nonGuidUser = new ClaimsPrincipal(
             new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "not-a-guid") }, "TestAuth"));
@@ -128,6 +141,10 @@ public class HttpUserContextTests
     {
         yield return new object[] { CreateContext() };
         yield return new object[] { CreateContext(hasHttpContext: false) };
+        yield return new object[] { CreateContextWithNullUser() };
+
+        var nullIdentityUser = new ClaimsPrincipal();
+        yield return new object[] { CreateContext(nullIdentityUser) };
     }
 
     [Theory]
@@ -163,6 +180,11 @@ public class HttpUserContextTests
     {
         yield return new object[] { CreateContext(CreateAuthenticatedUser()) };
         yield return new object[] { CreateContext() };
+        yield return new object[] { CreateContext(hasHttpContext: false) };
+        yield return new object[] { CreateContextWithNullUser() };
+
+        var nullIdentityUser = new ClaimsPrincipal();
+        yield return new object[] { CreateContext(nullIdentityUser) };
     }
 
     [Theory]

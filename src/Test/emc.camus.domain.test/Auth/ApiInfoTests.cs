@@ -5,6 +5,7 @@ namespace emc.camus.domain.test.Auth;
 
 public class ApiInfoTests
 {
+    private const string ValidName = "Test API";
     private const string ValidVersion = "1.0.0";
     private const string ValidStatus = "Available";
 
@@ -14,14 +15,15 @@ public class ApiInfoTests
     public void Constructor_RequiredParametersOnly_SetsDefaults()
     {
         // Arrange
+        var name = ValidName;
         var version = ValidVersion;
         var status = ValidStatus;
 
         // Act
-        var apiInfo = new ApiInfo(version, status);
+        var apiInfo = new ApiInfo(name, version, status);
 
         // Assert
-        apiInfo.Name.Should().Be("My Basic API");
+        apiInfo.Name.Should().Be(name);
         apiInfo.Version.Should().Be(version);
         apiInfo.Status.Should().Be(status);
         apiInfo.Features.Should().BeEmpty();
@@ -37,7 +39,7 @@ public class ApiInfoTests
         var name = "Custom API";
 
         // Act
-        var apiInfo = new ApiInfo(version, status, features, name);
+        var apiInfo = new ApiInfo(name, version, status, features);
 
         // Assert
         apiInfo.Name.Should().Be(name);
@@ -54,7 +56,7 @@ public class ApiInfoTests
     {
         // Arrange
         // Act
-        var act = () => new ApiInfo(version!, ValidStatus);
+        var act = () => new ApiInfo(ValidName, version!, ValidStatus);
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -69,7 +71,7 @@ public class ApiInfoTests
     {
         // Arrange
         // Act
-        var act = () => new ApiInfo(ValidVersion, status!);
+        var act = () => new ApiInfo(ValidName, ValidVersion, status!);
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -81,36 +83,28 @@ public class ApiInfoTests
     {
         // Arrange
         // Act
-        var apiInfo = new ApiInfo(ValidVersion, ValidStatus, features: null);
+        var apiInfo = new ApiInfo(ValidName, ValidVersion, ValidStatus, features: null);
 
         // Assert
         apiInfo.Features.Should().BeEmpty();
     }
 
-    [Fact]
-    public void Constructor_NullName_UsesDefaultName()
-    {
-        // Arrange
-        // Act
-        var apiInfo = new ApiInfo(ValidVersion, ValidStatus, name: null);
-
-        // Assert
-        apiInfo.Name.Should().Be("My Basic API");
-    }
-
     [Theory]
+    [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void Constructor_InvalidName_ThrowsArgumentException(string name)
+    public void Constructor_InvalidName_ThrowsArgumentException(string? name)
     {
         // Arrange
         // Act
-        var act = () => new ApiInfo(ValidVersion, ValidStatus, name: name);
+        var act = () => new ApiInfo(name!, ValidVersion, ValidStatus);
 
         // Assert
         act.Should().Throw<ArgumentException>()
             .And.ParamName.Should().Be("name");
     }
+
+
 
     // --- Reconstitute ---
 

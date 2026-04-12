@@ -35,13 +35,16 @@ public abstract class ApiControllerBase : ControllerBase
 
     /// <summary>
     /// Returns a created response (201 Created) with data wrapped in ApiResponse.
+    /// When actionName is provided, includes a Location header pointing to the resource.
+    /// When actionName is null, returns 201 without a Location header (e.g., when the
+    /// resource secret is only available at creation time).
     /// </summary>
     /// <typeparam name="T">Type of the response data</typeparam>
     /// <param name="data">The created resource data</param>
     /// <param name="message">Success message describing the creation</param>
     /// <param name="actionName">Name of the action to retrieve the created resource</param>
     /// <param name="routeValues">Route values for generating the location header</param>
-    /// <returns>201 Created with Location header and standardized ApiResponse wrapper</returns>
+    /// <returns>201 Created with standardized ApiResponse wrapper</returns>
     protected IActionResult Created<T>(T data, string message, string? actionName = null, object? routeValues = null)
     {
         var response = new ApiResponse<T>

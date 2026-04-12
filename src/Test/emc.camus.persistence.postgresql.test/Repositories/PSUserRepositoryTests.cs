@@ -46,6 +46,25 @@ public class PSUserRepositoryTests
             .WithMessage("*not initialized*");
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task ValidateCredentialsAsync_Initialized_InvalidUsername_ThrowsArgumentException(string? username)
+    {
+        // Arrange
+        var initState = new PSInitializationState { UserRepositoryInitialized = true };
+        var unitOfWork = new PSUnitOfWork(_mockConnectionFactory.Object);
+        var repository = new PSUserRepository(unitOfWork, initState);
+
+        // Act
+        var act = () => repository.ValidateCredentialsAsync(username!, "pass");
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>()
+            .Where(e => e.ParamName == "username");
+    }
+
     // --- GetByIdAsync ---
 
     [Fact]

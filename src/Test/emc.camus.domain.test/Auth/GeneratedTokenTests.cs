@@ -153,6 +153,32 @@ public class GeneratedTokenTests
             .WithMessage("*cannot grant*write*");
     }
 
+    [Fact]
+    public void Constructor_ExplicitJti_SetsJti()
+    {
+        // Arrange
+        var creator = CreateCreator();
+
+        // Act
+        var token = new GeneratedToken(creator, ValidSuffix, ValidPermissions.ToList(), ValidExpiration, ValidJti);
+
+        // Assert
+        token.Jti.Should().Be(ValidJti);
+    }
+
+    [Fact]
+    public void Constructor_EmptyJti_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var creator = CreateCreator();
+
+        // Act
+        var act = () => new GeneratedToken(creator, ValidSuffix, ValidPermissions.ToList(), ValidExpiration, Guid.Empty);
+
+        // Assert
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
     public static TheoryData<DateTime> InvalidExpirationDates => new()
     {
         new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc),

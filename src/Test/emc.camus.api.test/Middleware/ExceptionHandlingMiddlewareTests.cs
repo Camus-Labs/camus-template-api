@@ -1,8 +1,11 @@
+using System.Diagnostics.Metrics;
 using System.Net;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -38,7 +41,8 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
     private ExceptionHandlingMiddleware CreateMiddleware(
         RequestDelegate next,
         bool isDevelopment = false,
-        List<ErrorCodeMappingRule>? additionalRules = null)
+        List<ErrorCodeMappingRule>? additionalRules = null,
+        ErrorMetrics? errorMetrics = null)
     {
         var logger = new Mock<ILogger<ExceptionHandlingMiddleware>>();
         var environment = new Mock<IHostEnvironment>();
@@ -51,7 +55,7 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         };
         var options = Options.Create(settings);
 
-        return new ExceptionHandlingMiddleware(next, logger.Object, environment.Object, options, _errorMetrics);
+        return new ExceptionHandlingMiddleware(next, logger.Object, environment.Object, options, errorMetrics ?? _errorMetrics);
     }
 
     private static async Task<ProblemDetails> GetProblemDetailsFromResponse(HttpContext context)
@@ -247,27 +251,6 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         problemDetails.Extensions["error"]!.ToString().Should().Be(expectedErrorCode);
     }
 
-    // --- ExplicitErrorCode in Exception.Data ---
-
-    [Fact]
-    public async Task InvokeAsync_ExplicitErrorCodeInExceptionData_UsesExplicitCode()
-    {
-        // Arrange
-        var context = CreateHttpContext();
-        var exception = new InvalidOperationException("Some error");
-        exception.Data[ErrorCodes.ErrorCodeKey] = "custom_error_code";
-
-        var middleware = CreateMiddleware(_ => throw exception);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        var problemDetails = await GetProblemDetailsFromResponse(context);
-        problemDetails.Extensions.Should().ContainKey("error");
-        problemDetails.Extensions["error"]!.ToString().Should().Be("custom_error_code");
-    }
-
     // --- Additional (Configuration) Rules ---
 
     [Fact]
@@ -327,6 +310,108 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         // Assert
         var problemDetails = await GetProblemDetailsFromResponse(context);
         problemDetails.Instance.Should().Be("/api/v2/auth/authenticate");
+    }
+
+    // --- Regex Timeout in Rule ---
+
+    [Fact]
+    public async Task InvokeAsync_RegexPatternTimesOut_SkipsRuleAndFallsThrough()
+    {
+        // Arrange
+        var context = CreateHttpContext();
+        var additionalRules = new List<ErrorCodeMappingRule>
+        {
+            new() { Type = "InvalidProgramException", Pattern = @"^(a+)+$", ErrorCode = "should_not_match" }
+        };
+        // Input designed to cause catastrophic backtracking on the pattern above
+        var message = new string('a', 50) + "!";
+        var middleware = CreateMiddleware(
+            _ => throw new InvalidProgramException(message),
+            additionalRules: additionalRules);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        var problemDetails = await GetProblemDetailsFromResponse(context);
+        problemDetails.Extensions["error"]!.ToString().Should().Be(ErrorCodes.DefaultErrorCode);
+    }
+
+    // --- Route Pattern Resolution ---
+
+    [Fact]
+    public async Task InvokeAsync_NoEndpoint_RecordsUnresolvedInMetrics()
+    {
+        // Arrange
+        string? recordedPath = null;
+        var metricsLogger = new Mock<ILogger<ErrorMetrics>>();
+        using var errorMetrics = new ErrorMetrics("route-test-unresolved", metricsLogger.Object);
+        using var listener = CreateMetricsListener("route-test-unresolved", tags => recordedPath = GetTagValue(tags, "path"));
+
+        var context = CreateHttpContext();
+        var middleware = CreateMiddleware(_ => throw new ArgumentException("test"), errorMetrics: errorMetrics);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        recordedPath.Should().Be("unresolved");
+    }
+
+    [Fact]
+    public async Task InvokeAsync_RouteEndpointPresent_RecordsRoutePatternInMetrics()
+    {
+        // Arrange
+        string? recordedPath = null;
+        var metricsLogger = new Mock<ILogger<ErrorMetrics>>();
+        using var errorMetrics = new ErrorMetrics("route-test-resolved", metricsLogger.Object);
+        using var listener = CreateMetricsListener("route-test-resolved", tags => recordedPath = GetTagValue(tags, "path"));
+
+        var context = CreateHttpContext();
+        var routePattern = RoutePatternFactory.Parse("/api/v1/test/{id}");
+        var endpoint = new RouteEndpoint(
+            _ => Task.CompletedTask,
+            routePattern,
+            order: 0,
+            metadata: new EndpointMetadataCollection(),
+            displayName: "TestEndpoint");
+        context.SetEndpoint(endpoint);
+
+        var middleware = CreateMiddleware(_ => throw new ArgumentException("test"), errorMetrics: errorMetrics);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        recordedPath.Should().Be("/api/v1/test/{id}");
+    }
+
+    private static string? GetTagValue(ReadOnlySpan<KeyValuePair<string, object?>> tags, string key)
+    {
+        foreach (var tag in tags)
+        {
+            if (tag.Key == key)
+                return tag.Value?.ToString();
+        }
+        return null;
+    }
+
+    private static MeterListener CreateMetricsListener(
+        string meterNamePrefix,
+        Action<ReadOnlySpan<KeyValuePair<string, object?>>> onMeasurement)
+    {
+        var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, meterListener) =>
+        {
+            if (instrument.Name == "error_responses_total" &&
+                instrument.Meter.Name.StartsWith(meterNamePrefix, StringComparison.Ordinal))
+            {
+                meterListener.EnableMeasurementEvents(instrument);
+            }
+        };
+        listener.SetMeasurementEventCallback<long>((_, _, tags, _) => onMeasurement(tags));
+        listener.Start();
+        return listener;
     }
 
     // --- Constructor Validation ---

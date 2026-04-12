@@ -209,6 +209,24 @@ public class CorsSettingsTests
             .WithMessage("*at least one*HTTP method*");
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Validate_AllowedMethodsContainsNullOrWhitespace_ThrowsInvalidOperationException(string? method)
+    {
+        // Arrange
+        var settings = CreateValidSettings();
+        settings.AllowedMethods = new[] { "GET", method! };
+
+        // Act
+        var act = () => settings.Validate();
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*AllowedMethods*null or empty*");
+    }
+
     // --- Validate: AllowedHeaders ---
 
     [Fact]

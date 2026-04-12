@@ -181,8 +181,8 @@ The adapter exports OpenTelemetry metrics for monitoring authentication failures
 
 ### Error Handling
 
-Authentication failures are handled via exceptions with error codes in `exception.Data[ErrorCodes.ErrorCodeKey]`. The
-global exception handler logs errors and returns RFC 7807 Problem Details responses.
+Authentication failures are handled via exceptions. The global exception handler logs errors and returns RFC 7807
+Problem Details responses.
 
 ---
 

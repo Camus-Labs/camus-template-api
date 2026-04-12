@@ -8,6 +8,7 @@ namespace emc.camus.application.test.ApiInfo;
 
 public class ApiInfoServiceTests
 {
+    private const string ValidName = "Test API";
     private const string ValidVersion = "1.0";
     private const string ValidStatus = "Available";
     private static readonly IReadOnlyList<string> ValidFeatures = ["Auth", "Tokens"];
@@ -51,7 +52,7 @@ public class ApiInfoServiceTests
     {
         // Arrange
         var filter = new ApiInfoFilter(ValidVersion);
-        var apiInfo = new emc.camus.domain.Auth.ApiInfo(ValidVersion, ValidStatus, ValidFeatures.ToList());
+        var apiInfo = new emc.camus.domain.Auth.ApiInfo(ValidName, ValidVersion, ValidStatus, ValidFeatures.ToList());
 
         _repositoryMock.Setup(r => r.GetByVersionAsync(ValidVersion, It.IsAny<CancellationToken>())).ReturnsAsync(apiInfo);
 

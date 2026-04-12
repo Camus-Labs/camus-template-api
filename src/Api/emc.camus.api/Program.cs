@@ -10,8 +10,6 @@ using emc.camus.documentation.swagger;
 using emc.camus.ratelimiting.inmemory;
 using emc.camus.migrations.dbup;
 
-[assembly: ExcludeFromCodeCoverage]
-
 // Step 0: Define WebApplicationBuilder and settings
 var builder = WebApplication.CreateBuilder(args);
 
@@ -135,6 +133,7 @@ await app.RunAsync();
 /// <summary>
 /// Application entry point. Partial class enables LoggerMessage source generation for top-level statements.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public partial class Program
 {
     [LoggerMessage(Level = LogLevel.Information,

@@ -10,12 +10,6 @@ namespace emc.camus.application.Common;
 public static class ErrorCodes
     {
         /// <summary>
-        /// Dictionary key for storing explicit error codes in exception.Data (deprecated pattern).
-        /// This pattern is discouraged - error codes should be automatically detected via configuration.
-        /// </summary>
-        public const string ErrorCodeKey = "ErrorCode";
-
-        /// <summary>
         /// Default error code returned when no rules match an exception.
         /// Indicates an unhandled or unexpected error type.
         /// </summary>

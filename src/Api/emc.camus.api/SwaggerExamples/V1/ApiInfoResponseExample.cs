@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Swashbuckle.AspNetCore.Filters;
 using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V1;
@@ -7,6 +8,7 @@ namespace emc.camus.api.SwaggerExamples.V1;
 /// <summary>
 /// Provides example data for ApiResponse&lt;ApiInfoResponse&gt; in Swagger documentation.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class ApiInfoResponseExample : IExamplesProvider<ApiResponse<ApiInfoResponse>>
 {
     /// <summary>

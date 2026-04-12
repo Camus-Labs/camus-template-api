@@ -2,12 +2,15 @@ using Swashbuckle.AspNetCore.Filters;
 using emc.camus.api.Models.Dtos.V2;
 using emc.camus.api.Models.Responses;
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.api.SwaggerExamples.V2;
 
 /// <summary>
-/// Provides example data for ApiResponse&lt;PagedResponse&lt;GeneratedTokenSummaryDto&gt;&gt;
+/// Provides example data for ApiResponse&lt;PagedResult&lt;GeneratedTokenSummaryResponse&gt;&gt;
 /// in Swagger documentation.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class GeneratedTokenSummaryPagedExample
     : IExamplesProvider<ApiResponse<PagedResponse<GeneratedTokenSummaryDto>>>
 {

@@ -172,11 +172,6 @@ Apply `RateLimit` attribute to controllers:
 
 See `RateLimitAttribute` and `RateLimitPolicies` in the `RateLimiting` namespace for available options.
 
-### Using Error Codes
-
-Set `exception.Data[ErrorCodes.ErrorCodeKey]` to a constant from `ErrorCodes` (e.g., `ErrorCodes.InvalidCredentials`)
-to surface machine-readable error codes in API responses. See `ErrorCodes.cs` in the `Common` namespace.
-
 ### Using Authentication Schemes
 
 Apply `[Authorize(AuthenticationSchemes = AuthenticationSchemes.JwtBearer)]` to controllers or actions requiring

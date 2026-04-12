@@ -51,6 +51,39 @@ public class IMActionAuditRepositoryTests
         result.Should().Be(0L);
     }
 
+    [Fact]
+    public async Task LogCurrentUserActionAsync_NullUserId_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var userContextMock = new Mock<IUserContext>();
+        userContextMock.Setup(x => x.GetCurrentUserId()).Returns((Guid?)null);
+        var repository = new IMActionAuditRepository(NullLogger<IMActionAuditRepository>.Instance, userContextMock.Object);
+
+        // Act
+        var act = () => repository.LogCurrentUserActionAsync("TestAction", "Test summary");
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*User ID*");
+    }
+
+    [Fact]
+    public async Task LogCurrentUserActionAsync_NullUsername_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var userContextMock = new Mock<IUserContext>();
+        userContextMock.Setup(x => x.GetCurrentUserId()).Returns(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        userContextMock.Setup(x => x.GetCurrentUsername()).Returns((string?)null);
+        var repository = new IMActionAuditRepository(NullLogger<IMActionAuditRepository>.Instance, userContextMock.Object);
+
+        // Act
+        var act = () => repository.LogCurrentUserActionAsync("TestAction", "Test summary");
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Username*");
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]

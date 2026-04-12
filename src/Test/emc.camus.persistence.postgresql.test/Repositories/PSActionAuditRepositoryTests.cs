@@ -65,6 +65,37 @@ public class PSActionAuditRepositoryTests
             .And.ParamName.Should().Be("actionTitle");
     }
 
+    [Fact]
+    public async Task LogCurrentUserActionAsync_NullUserId_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        _mockUserContext.Setup(x => x.GetCurrentUserId()).Returns((Guid?)null);
+        var repository = CreateRepository();
+
+        // Act
+        var act = () => repository.LogCurrentUserActionAsync("TestAction", "Test summary");
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*User ID*");
+    }
+
+    [Fact]
+    public async Task LogCurrentUserActionAsync_NullUsername_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        _mockUserContext.Setup(x => x.GetCurrentUserId()).Returns(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        _mockUserContext.Setup(x => x.GetCurrentUsername()).Returns((string?)null);
+        var repository = CreateRepository();
+
+        // Act
+        var act = () => repository.LogCurrentUserActionAsync("TestAction", "Test summary");
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Username*");
+    }
+
     // --- LogActionAsync ---
 
     [Theory]

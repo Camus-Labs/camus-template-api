@@ -43,10 +43,10 @@ internal sealed class IMApiInfoRepository : IApiInfoRepository
         foreach (var config in _settings.ApiInfos)
         {
             var apiInfo = new ApiInfo(
+                name: config.Name,
                 version: config.Version,
                 status: config.Status,
-                features: config.Features?.Count > 0 ? config.Features : null,
-                name: !string.IsNullOrWhiteSpace(config.Name) ? config.Name : null
+                features: config.Features?.Count > 0 ? config.Features : null
             );
 
             _apiInfoByVersion[config.Version] = apiInfo;

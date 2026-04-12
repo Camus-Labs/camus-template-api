@@ -72,10 +72,6 @@ namespace emc.camus.api.Middleware
         private partial void LogExceptionDetected(Exception ex, string errorMessage);
 
         [LoggerMessage(Level = LogLevel.Warning,
-            Message = "Explicit error code '{ExplicitCode}' found in exception.Data[{ErrorCodeKey}]. This pattern is discouraged - error codes should be automatically detected via configuration. Exception type: {ExceptionType}")]
-        private partial void LogExplicitErrorCodeFound(string explicitCode, string errorCodeKey, string exceptionType);
-
-        [LoggerMessage(Level = LogLevel.Warning,
             Message = "Regex pattern '{Pattern}' timed out matching exception message. Skipping rule.")]
         private partial void LogRegexPatternTimeout(string pattern);
 
@@ -166,7 +162,7 @@ namespace emc.camus.api.Middleware
         /// </summary>
         private static ProblemDetails CreateProblemDetails(Exception exception)
         {
-            var problemDetails = exception switch
+            return exception switch
             {
                 ArgumentException => new ProblemDetails
                 {
@@ -204,27 +200,7 @@ namespace emc.camus.api.Middleware
                     Detail = exception.Message,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.5.8"
                 },
-                InvalidOperationException when exception.Message.Contains("not found", StringComparison.OrdinalIgnoreCase) => new ProblemDetails
-                {
-                    Status = (int)HttpStatusCode.NotFound,
-                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.NotFound),
-                    Detail = exception.Message,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
-                },
-                InvalidOperationException when exception.Message.Contains("permission") => new ProblemDetails
-                {
-                    Status = (int)HttpStatusCode.Forbidden,
-                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.Forbidden),
-                    Detail = "You do not have permission to access this resource.",
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
-                },
-                InvalidOperationException => new ProblemDetails
-                {
-                    Status = (int)HttpStatusCode.InternalServerError,
-                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.InternalServerError),
-                    Detail = exception.Message,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
-                },
+                InvalidOperationException invalidOpEx => CreateInvalidOperationProblemDetails(invalidOpEx),
                 _ => new ProblemDetails
                 {
                     Status = (int)HttpStatusCode.InternalServerError,
@@ -233,8 +209,44 @@ namespace emc.camus.api.Middleware
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
                 }
             };
+        }
 
-            return problemDetails;
+        /// <summary>
+        /// Creates a ProblemDetails object for InvalidOperationException subtypes.
+        /// Inspects the exception message to determine the appropriate HTTP status code.
+        /// </summary>
+        private static ProblemDetails CreateInvalidOperationProblemDetails(InvalidOperationException exception)
+        {
+            if (exception.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+            {
+                return new ProblemDetails
+                {
+                    Status = (int)HttpStatusCode.NotFound,
+                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.NotFound),
+                    Detail = exception.Message,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                };
+            }
+            else if (exception.Message.Contains("permission", StringComparison.OrdinalIgnoreCase))
+            {
+                return new ProblemDetails
+                {
+                    Status = (int)HttpStatusCode.Forbidden,
+                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.Forbidden),
+                    Detail = "You do not have permission to access this resource.",
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                };
+            }
+            else
+            {
+                return new ProblemDetails
+                {
+                    Status = (int)HttpStatusCode.InternalServerError,
+                    Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.InternalServerError),
+                    Detail = exception.Message,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+            }
         }
 
         /// <summary>
@@ -248,7 +260,7 @@ namespace emc.camus.api.Middleware
 
             // Normalize path to route template to ensure low-cardinality metric labels
             var endpoint = context.GetEndpoint();
-            var routePattern = (endpoint as Microsoft.AspNetCore.Routing.RouteEndpoint)?.RoutePattern?.RawText
+            var routePattern = (endpoint as Microsoft.AspNetCore.Routing.RouteEndpoint)?.RoutePattern.RawText
                 ?? "unresolved";
 
             // Record error metrics (fire-and-forget telemetry)
@@ -261,52 +273,58 @@ namespace emc.camus.api.Middleware
         /// </summary>
         private string ResolveErrorCode(Exception exception)
         {
-            // First check if error code was explicitly set in exception.Data (override mechanism)
-            if (exception.Data.Contains(ErrorCodes.ErrorCodeKey) &&
-                exception.Data[ErrorCodes.ErrorCodeKey] is string explicitCode &&
-                !string.IsNullOrWhiteSpace(explicitCode))
-            {
-                LogExplicitErrorCodeFound(explicitCode, ErrorCodes.ErrorCodeKey, exception.GetType().Name);
-                return explicitCode;
-            }
-
             // Evaluate rules in order - first match wins
             var exceptionTypeName = exception.GetType().Name;
 
             foreach (var rule in _allRules)
             {
-                // Check type match (if specified)
-                bool typeMatches = string.IsNullOrWhiteSpace(rule.Type) ||
-                                   exceptionTypeName.Equals(rule.Type, StringComparison.OrdinalIgnoreCase);
-
-                if (!typeMatches)
-                    continue;
-
-                // Check pattern match (if specified)
-                if (!string.IsNullOrWhiteSpace(rule.Pattern))
+                if (TryMatchRule(rule, exceptionTypeName, exception.Message, out var errorCode))
                 {
-                    try
-                    {
-                        if (Regex.IsMatch(exception.Message, rule.Pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(RegexTimeoutMilliseconds)))
-                        {
-                            return rule.ErrorCode;
-                        }
-                    }
-                    catch (RegexMatchTimeoutException)
-                    {
-                        LogRegexPatternTimeout(rule.Pattern);
-                        continue;
-                    }
-                }
-                else
-                {
-                    // Type-only match (no pattern specified)
-                    return rule.ErrorCode;
+                    return errorCode;
                 }
             }
 
             // No rules matched - return unknown error constant
             return ErrorCodes.DefaultErrorCode;
+        }
+
+        /// <summary>
+        /// Evaluates a single error code mapping rule against the exception type name and message.
+        /// Returns true if the rule matches, with the matched error code in the out parameter.
+        /// </summary>
+        private bool TryMatchRule(ErrorCodeMappingRule rule, string exceptionTypeName, string exceptionMessage, out string errorCode)
+        {
+            errorCode = string.Empty;
+
+            // Check type match (if specified)
+            if (!string.IsNullOrWhiteSpace(rule.Type) &&
+                !exceptionTypeName.Equals(rule.Type, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // Type-only match (no pattern specified)
+            if (string.IsNullOrWhiteSpace(rule.Pattern))
+            {
+                errorCode = rule.ErrorCode;
+                return true;
+            }
+
+            // Check pattern match
+            try
+            {
+                if (Regex.IsMatch(exceptionMessage, rule.Pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(RegexTimeoutMilliseconds)))
+                {
+                    errorCode = rule.ErrorCode;
+                    return true;
+                }
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                LogRegexPatternTimeout(rule.Pattern);
+            }
+
+            return false;
         }
 
         /// <summary>

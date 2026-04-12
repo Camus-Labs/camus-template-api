@@ -42,14 +42,24 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "test-with-coverage",
+            "label": "test-refresh-coverage-report",
             "type": "shell",
-            "command": "find src/Test -type d -name 'TestResults' -exec rm -rf {} + 2>/dev/null || true && find src/Test -type d \\( -name 'bin' -o -name 'obj' \\) -exec rm -rf {} + 2>/dev/null || true && dotnet clean src/UnitTests.slnf && dotnet build src/UnitTests.slnf && dotnet test src/UnitTests.slnf --collect:\"XPlat Code Coverage\" --no-build --settings coverlet.runsettings /p:GeneratePullPaths=true && rm -rf coveragereport && reportgenerator -reports:\"src/Test/**/TestResults/**/coverage.cobertura.xml\" -targetdir:\"coveragereport\" -reporttypes:Html && open coveragereport/index.html",
+            "command": "find src/Test -type d -name 'TestResults' -exec rm -rf {} + 2>/dev/null || true && find src/Test -type d \\( -name 'bin' -o -name 'obj' \\) -exec rm -rf {} + 2>/dev/null || true && dotnet clean src/UnitTests.slnf && dotnet build src/UnitTests.slnf && dotnet test src/UnitTests.slnf --collect:\"XPlat Code Coverage\" --no-build --settings coverlet.runsettings /p:GeneratePullPaths=true && rm -rf coveragereport && reportgenerator -reports:\"src/Test/**/TestResults/**/coverage.cobertura.xml\" -targetdir:\"coveragereport\" -reporttypes:Html",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
             "group": "test",
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "test-open-coverage-report",
+            "type": "shell",
+            "command": "open coveragereport/index.html",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "none",
+            "problemMatcher": []
         },
         {
             "label": "run-api",

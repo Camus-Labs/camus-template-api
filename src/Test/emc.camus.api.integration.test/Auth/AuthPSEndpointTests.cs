@@ -49,7 +49,7 @@ public class AuthPSEndpointTests : IAsyncLifetime
         var response = await client.PostAsJsonAsync("/api/v2.0/auth/generate-token", request);
 
         // Assert — HTTP response
-        await response.Should().HaveStatusCode(HttpStatusCode.OK);
+        await response.Should().HaveStatusCode(HttpStatusCode.Created);
 
         var body = await response.Content.ReadFromJsonAsync<ApiResponse<GenerateTokenResponse>>();
         body.Should().NotBeNull();
@@ -134,7 +134,7 @@ public class AuthPSEndpointTests : IAsyncLifetime
         };
 
         var generateResponse = await client.PostAsJsonAsync("/api/v2.0/auth/generate-token", generateRequest);
-        await generateResponse.Should().HaveStatusCode(HttpStatusCode.OK, "token generation must succeed for test setup");
+        await generateResponse.Should().HaveStatusCode(HttpStatusCode.Created, "token generation must succeed for test setup");
 
         var generateBody = await generateResponse.Content.ReadFromJsonAsync<ApiResponse<GenerateTokenResponse>>();
         var jti = AuthenticatedClientHelper.ExtractJti(generateBody!.Data!.Token);
@@ -190,10 +190,10 @@ public class AuthPSEndpointTests : IAsyncLifetime
         };
 
         var firstResponse = await client.PostAsJsonAsync("/api/v2.0/auth/generate-token", firstRequest);
-        await firstResponse.Should().HaveStatusCode(HttpStatusCode.OK, "first token generation must succeed for test setup");
+        await firstResponse.Should().HaveStatusCode(HttpStatusCode.Created, "first token generation must succeed for test setup");
 
         var secondResponse = await client.PostAsJsonAsync("/api/v2.0/auth/generate-token", secondRequest);
-        await secondResponse.Should().HaveStatusCode(HttpStatusCode.OK, "second token generation must succeed for test setup");
+        await secondResponse.Should().HaveStatusCode(HttpStatusCode.Created, "second token generation must succeed for test setup");
 
         // Act
         var response = await client.GetAsync("/api/v2.0/auth/tokens?Page=1&PageSize=50");
@@ -229,7 +229,7 @@ public class AuthPSEndpointTests : IAsyncLifetime
         };
 
         var firstResponse = await client.PostAsJsonAsync("/api/v2.0/auth/generate-token", firstRequest);
-        await firstResponse.Should().HaveStatusCode(HttpStatusCode.OK, "first token generation must succeed for test setup");
+        await firstResponse.Should().HaveStatusCode(HttpStatusCode.Created, "first token generation must succeed for test setup");
 
         // Snapshot counts after the first successful insert
         await using var connection = new NpgsqlConnection(_factory.ConnectionString);
@@ -275,7 +275,7 @@ public class AuthPSEndpointTests : IAsyncLifetime
         };
 
         var generateResponse = await adminClient.PostAsJsonAsync("/api/v2.0/auth/generate-token", generateRequest);
-        await generateResponse.Should().HaveStatusCode(HttpStatusCode.OK, "token generation must succeed for test setup");
+        await generateResponse.Should().HaveStatusCode(HttpStatusCode.Created, "token generation must succeed for test setup");
 
         var generateBody = await generateResponse.Content.ReadFromJsonAsync<ApiResponse<GenerateTokenResponse>>();
         var generatedToken = generateBody!.Data!.Token;

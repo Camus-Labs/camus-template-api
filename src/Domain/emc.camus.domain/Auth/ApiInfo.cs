@@ -5,12 +5,11 @@ namespace emc.camus.domain.Auth;
 /// </summary>
 public class ApiInfo
 {
-    private const string DefaultApiName = "My Basic API";
 
     /// <summary>
     /// The name of the API.
     /// </summary>
-    public string Name { get; private set; } = DefaultApiName;
+    public string Name { get; private set; } = string.Empty;
 
     /// <summary>
     /// The version of the API.
@@ -30,20 +29,18 @@ public class ApiInfo
     /// <summary>
     /// Creates a new API info. Validates business attributes.
     /// </summary>
+    /// <param name="name">The API name.</param>
     /// <param name="version">The API version.</param>
     /// <param name="status">The status detail descriptor (e.g., "Available", "Deprecated", "Beta").</param>
     /// <param name="features">Optional list of features. If not provided, returns empty list.</param>
-    /// <param name="name">Optional API name. If not provided, uses default name.</param>
-    /// <exception cref="ArgumentException">Thrown when version or status is null, empty, or whitespace.</exception>
-    public ApiInfo(string version, string status, List<string>? features = null, string? name = null)
+    /// <exception cref="ArgumentException">Thrown when name, version, or status is null, empty, or whitespace.</exception>
+    public ApiInfo(string name, string version, string status, List<string>? features = null)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
         ArgumentException.ThrowIfNullOrWhiteSpace(status);
 
-        if (name is not null)
-            ArgumentException.ThrowIfNullOrWhiteSpace(name);
-
-        Name = name ?? DefaultApiName;
+        Name = name;
         Version = version;
         Status = status;
         Features = features ?? new List<string>();

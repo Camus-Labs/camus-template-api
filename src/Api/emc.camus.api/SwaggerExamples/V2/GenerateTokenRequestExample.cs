@@ -1,11 +1,14 @@
 using Swashbuckle.AspNetCore.Filters;
 using emc.camus.api.Models.Requests.V2;
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.api.SwaggerExamples.V2;
 
 /// <summary>
 /// Provides example data for GenerateTokenRequest in Swagger documentation.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class GenerateTokenRequestExample
     : IExamplesProvider<GenerateTokenRequest>
 {

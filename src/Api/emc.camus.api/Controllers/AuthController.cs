@@ -109,7 +109,7 @@ namespace emc.camus.api.Controllers
         [SwaggerOperation(
             Description = "Generates a custom token with specified permissions and expiration. Requires token.create permission."
         )]
-        [ProducesResponseType(typeof(ApiResponse<GenerateTokenResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<GenerateTokenResponse>), StatusCodes.Status201Created)]
         public async Task<IActionResult> GenerateToken([FromBody] GenerateTokenRequest request, CancellationToken ct)
         {
             return await _activitySource.StartActivityAndRunAsync<IActionResult>("GenerateToken", OperationType.Auth, async activity =>
@@ -133,7 +133,7 @@ namespace emc.camus.api.Controllers
                 });
 
                 // Use base controller helper for standardized response
-                return Success(result.ToResponse(), "Token generated successfully");
+                return Created(result.ToResponse(), "Token generated successfully");
             });
         }
 

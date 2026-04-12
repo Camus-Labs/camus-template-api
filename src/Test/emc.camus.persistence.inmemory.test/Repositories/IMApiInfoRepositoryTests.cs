@@ -1,5 +1,4 @@
 using FluentAssertions;
-using emc.camus.application.Auth;
 using emc.camus.persistence.inmemory.Configurations;
 using emc.camus.persistence.inmemory.Repositories;
 using emc.camus.persistence.inmemory.test.Helpers;
@@ -68,6 +67,30 @@ public class IMApiInfoRepositoryTests
         await act.Should().NotThrowAsync();
     }
 
+    [Fact]
+    public async Task InitializeAsync_NullFeatures_DefaultsToEmptyList()
+    {
+        // Arrange
+        var settings = CreateValidSettings(apiInfos: new List<ApiInfoSettings>
+        {
+            new ApiInfoSettings
+            {
+                Name = InMemoryModelSettingsFactory.DefaultApiName,
+                Version = InMemoryModelSettingsFactory.DefaultApiVersion,
+                Status = InMemoryModelSettingsFactory.DefaultApiStatus,
+                Features = null!
+            }
+        });
+        var repository = new IMApiInfoRepository(settings);
+        await repository.InitializeAsync();
+
+        // Act
+        var result = await repository.GetByVersionAsync(InMemoryModelSettingsFactory.DefaultApiVersion);
+
+        // Assert
+        result.Features.Should().BeEmpty();
+    }
+
     // --- GetByVersionAsync ---
 
     [Fact]
@@ -93,32 +116,16 @@ public class IMApiInfoRepositoryTests
     public async Task GetByVersionAsync_CaseInsensitiveLookup_ReturnsApiInfo()
     {
         // Arrange
-        var settings = new InMemoryModelSettings
+        var settings = CreateValidSettings(apiInfos: new List<ApiInfoSettings>
         {
-            Roles = new List<RoleSettings>
+            new ApiInfoSettings
             {
-                new RoleSettings { Name = "admin", Permissions = new List<string> { Permissions.ApiRead } }
-            },
-            Users = new List<UserSettings>
-            {
-                new UserSettings
-                {
-                    UsernameSecretName = "user-secret",
-                    PasswordSecretName = "pass-secret",
-                    Roles = new List<string> { "admin" }
-                }
-            },
-            ApiInfos = new List<ApiInfoSettings>
-            {
-                new ApiInfoSettings
-                {
-                    Name = "Test API",
-                    Version = "V1",
-                    Status = "Available",
-                    Features = new List<string>()
-                }
+                Name = "Test API",
+                Version = "V1",
+                Status = "Available",
+                Features = new List<string>()
             }
-        };
+        });
         var repository = new IMApiInfoRepository(settings);
         await repository.InitializeAsync();
 
@@ -180,75 +187,42 @@ public class IMApiInfoRepositoryTests
     }
 
     [Fact]
-    public async Task GetByVersionAsync_ApiInfoWithoutName_UsesDefaultName()
+    public async Task InitializeAsync_ApiInfoWithoutName_ThrowsArgumentException()
     {
         // Arrange
-        var settings = new InMemoryModelSettings
+        var settings = CreateValidSettings(apiInfos: new List<ApiInfoSettings>
         {
-            Roles = new List<RoleSettings>
+            new ApiInfoSettings
             {
-                new RoleSettings { Name = "admin", Permissions = new List<string> { Permissions.ApiRead } }
-            },
-            Users = new List<UserSettings>
-            {
-                new UserSettings
-                {
-                    UsernameSecretName = "user-secret",
-                    PasswordSecretName = "pass-secret",
-                    Roles = new List<string> { "admin" }
-                }
-            },
-            ApiInfos = new List<ApiInfoSettings>
-            {
-                new ApiInfoSettings
-                {
-                    Name = "",
-                    Version = "1.0",
-                    Status = "Available",
-                    Features = new List<string>()
-                }
+                Name = "",
+                Version = "1.0",
+                Status = "Available",
+                Features = new List<string>()
             }
-        };
+        });
         var repository = new IMApiInfoRepository(settings);
-        await repository.InitializeAsync();
 
         // Act
-        var result = await repository.GetByVersionAsync("1.0");
+        var act = () => repository.InitializeAsync();
 
         // Assert
-        result.Name.Should().Be("My Basic API");
+        await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
     public async Task GetByVersionAsync_ApiInfoWithEmptyFeatures_ReturnsEmptyFeatures()
     {
         // Arrange
-        var settings = new InMemoryModelSettings
+        var settings = CreateValidSettings(apiInfos: new List<ApiInfoSettings>
         {
-            Roles = new List<RoleSettings>
+            new ApiInfoSettings
             {
-                new RoleSettings { Name = "admin", Permissions = new List<string> { Permissions.ApiRead } }
-            },
-            Users = new List<UserSettings>
-            {
-                new UserSettings
-                {
-                    UsernameSecretName = "user-secret",
-                    PasswordSecretName = "pass-secret",
-                    Roles = new List<string> { "admin" }
-                }
-            },
-            ApiInfos = new List<ApiInfoSettings>
-            {
-                new ApiInfoSettings
-                {
-                    Name = "Test API",
-                    Version = "1.0",
-                    Status = "Available",
-                    Features = new List<string>()
-                }
+                Name = "Test API",
+                Version = "1.0",
+                Status = "Available",
+                Features = new List<string>()
             }
-        };
+        });
         var repository = new IMApiInfoRepository(settings);
         await repository.InitializeAsync();
 
@@ -259,8 +233,8 @@ public class IMApiInfoRepositoryTests
         result.Features.Should().BeEmpty();
     }
 
-    private static InMemoryModelSettings CreateValidSettings()
+    private static InMemoryModelSettings CreateValidSettings(List<ApiInfoSettings>? apiInfos = null)
     {
-        return InMemoryModelSettingsFactory.Create();
+        return InMemoryModelSettingsFactory.Create(apiInfos: apiInfos);
     }
 }

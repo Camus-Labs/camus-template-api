@@ -123,8 +123,9 @@ public class AuthControllerTests
         var result = await _controller.GenerateToken(request, CancellationToken.None);
 
         // Assert
-        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-        var apiResponse = okResult.Value.Should().BeOfType<ApiResponse<GenerateTokenResponse>>().Subject;
+        var createdResult = result.Should().BeOfType<CreatedAtActionResult>().Subject;
+        createdResult.StatusCode.Should().Be(StatusCodes.Status201Created);
+        var apiResponse = createdResult.Value.Should().BeOfType<ApiResponse<GenerateTokenResponse>>().Subject;
         apiResponse.Data!.Token.Should().Be("generated-token");
         apiResponse.Data.ExpiresOn.Should().Be(generateResult.ExpiresOn);
         apiResponse.Data.TokenUsername.Should().Be("adminuser-ci-deploy");

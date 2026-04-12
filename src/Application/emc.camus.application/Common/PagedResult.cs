@@ -30,7 +30,7 @@ public class PagedResult<T>
     /// <summary>
     /// The total number of pages available.
     /// </summary>
-    public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 0;
+    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
 
     /// <summary>
     /// Whether there is a next page available.
