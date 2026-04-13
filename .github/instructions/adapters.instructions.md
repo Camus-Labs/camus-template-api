@@ -16,7 +16,7 @@ applyTo: "src/Adapters/**/*.cs"
 2. Type Conventions & Lifecycle
 
     - [ ] Service implementations live in `Services/` or `Handlers/` folder matching the Application interface name
-          except repository services which live in `Repositories/`
+          — exception: repository services in `Repositories/`, DataAccess classes in `DataAccess/`
     - [ ] Setup extension method lives in a single `*SetupExtensions.cs` file per adapter for DI registration
     - [ ] No cross-adapter dependencies — each adapter references only Application-layer interfaces
 

@@ -40,14 +40,14 @@ namespace emc.camus.persistence.inmemory
             builder.Services.AddSingleton(inMemorySettings);
 
             // Register unit of work (scoped: one per request, no-op for in-memory)
-            builder.Services.AddScoped<IUnitOfWork, IMUnitOfWork>();
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // Register audit repository (shared across Auth and AppData)
-            builder.Services.AddSingleton<IActionAuditRepository, IMActionAuditRepository>();
+            builder.Services.AddSingleton<IActionAuditRepository, ActionAuditRepository>();
 
             // Register repositories as singletons (to persist data during app lifetime)
-            builder.Services.AddSingleton<IUserRepository, IMUserRepository>();
-            builder.Services.AddSingleton<IApiInfoRepository, IMApiInfoRepository>();
+            builder.Services.AddSingleton<IUserRepository, UserRepository>();
+            builder.Services.AddSingleton<IApiInfoRepository, ApiInfoRepository>();
 
             return builder;
         }

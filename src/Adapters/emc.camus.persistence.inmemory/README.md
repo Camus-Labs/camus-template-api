@@ -107,9 +107,9 @@ The adapter reads from two configuration sections in `appsettings.json`:
                 │ depends on
 ┌───────────────▼──────────────────────┐
 │       Adapter Layer                  │
-│    IMUserRepository                  │
-│    IMApiInfoRepository               │
-│    IMActionAuditRepository           │
+│    UserRepository                    │
+│    ApiInfoRepository                 │
+│    ActionAuditRepository             │
 └───────────────┬──────────────────────┘
                 │ uses
 ┌───────────────▼──────────────────────┐
@@ -131,12 +131,11 @@ The adapter reads from two configuration sections in `appsettings.json`:
 
 The adapter registers via the extension method in `InMemoryPersistenceSetupExtensions.cs`:
 
-- **`builder.AddInMemoryPersistence()`** — Registers all in-memory
-  repository implementations as singletons: `IUserRepository`,
-  `IApiInfoRepository`, `IActionAuditRepository`, and `IUnitOfWork`.
+- **`builder.AddInMemoryPersistence()`** — Registers all in-memory repository implementations as singletons:
+  `IUserRepository`, `IApiInfoRepository`, `IActionAuditRepository`, and `IUnitOfWork`.
 
-Both `IMUserRepository` and `IMApiInfoRepository` require explicit initialization at startup via their
-`InitializeAsync()` methods to load data from configuration and secrets.
+Both `UserRepository` and `ApiInfoRepository` require explicit initialization at startup via their `InitializeAsync()`
+methods to load data from configuration and secrets.
 
 ---
 
@@ -149,7 +148,7 @@ Both `IMUserRepository` and `IMApiInfoRepository` require explicit initializatio
 | `Duplicate API version` | Two entries in `ApiInfos` share the same `Version` value |
 | `API info not found for version` | Requested version not defined in `InMemoryModelSettings.ApiInfos` |
 | Data lost after restart | Expected behavior — in-memory storage does not persist across restarts |
-| `IMApiInfoRepository already initialized` | `InitializeAsync()` called more than once |
+| `ApiInfoRepository already initialized` | `InitializeAsync()` called more than once |
 
 ---
 
@@ -161,7 +160,7 @@ deployments**. Data is not shared across application instances.
 ⚠️ **No Persistence** — All data is loaded from configuration at startup and lost when the application restarts.
 Runtime changes (e.g., last login updates) are not persisted.
 
-⚠️ **Plain-Text Password Comparison** — The `IMUserRepository` compares passwords using direct string comparison
+⚠️ **Plain-Text Password Comparison** — The `UserRepository` compares passwords using direct string comparison
 retrieved from the secret provider. In production, use the PostgreSQL adapter with proper password hashing.
 
 ---

@@ -45,7 +45,7 @@ adapter for the full registration API.
                 │ depends on
 ┌───────────────▼──────────────────────┐
 │       Adapter Layer                  │
-│    IMTokenRevocationCache            │
+│    TokenRevocationCache              │
 │  (implements ITokenRevocationCache)  │
 │    TokenRevocationSyncService        │
 │  (background sync from persistence)  │
@@ -89,9 +89,9 @@ revoked during the current application lifetime.
 
 The adapter registers via the extension method in `InMemoryCacheSetupExtensions.cs`:
 
-- **`builder.AddInMemoryCache()`** — Loads and validates `InMemoryCacheSettings`, registers
-  `IMTokenRevocationCache` as the `ITokenRevocationCache` singleton, and conditionally registers
-  `TokenRevocationSyncService` as a hosted background service when `SyncEnabled` is `true`.
+- **`builder.AddInMemoryCache()`** — Loads and validates `InMemoryCacheSettings`, registers `TokenRevocationCache`
+  as the `ITokenRevocationCache` singleton, and conditionally registers `TokenRevocationSyncService` as a hosted
+  background service when `SyncEnabled` is `true`.
 
 ---
 
@@ -114,8 +114,8 @@ deployments**. Revoked tokens are not shared across application instances.
 For production environments with horizontal scaling (Kubernetes, Azure App Service scale-out), use a
 Redis-backed implementation instead.
 
-⚠️ **No Persistence** — All revocation data is lost when the application restarts. After a restart,
-previously revoked tokens will be accepted until they expire naturally.
+⚠️ **No Persistence** — All revocation data is lost when the application restarts. After a restart, previously
+revoked tokens will be accepted until they expire naturally.
 
 ---
 

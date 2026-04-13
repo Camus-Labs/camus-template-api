@@ -27,7 +27,7 @@ public static class InMemoryCacheSetupExtensions
         settings.Validate();
 
         builder.Services.AddSingleton(settings);
-        builder.Services.AddSingleton<ITokenRevocationCache, IMTokenRevocationCache>();
+        builder.Services.AddSingleton<ITokenRevocationCache, TokenRevocationCache>();
 
         if (settings.TokenRevocationCache.SyncEnabled)
         {

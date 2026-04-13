@@ -65,7 +65,16 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
           `RateLimitMetrics`)
     - [ ] Metric instrument names use `snake_case` with `_total` suffix for counters
 
-6. Architectural Boundaries
+6. Code Coverage Exclusions
+
+    - [ ] `[ExcludeFromCodeCoverage]` on pure data-carrier classes with no logic (e.g., database models, DTOs,
+          request/response records with only auto-properties)
+    - [ ] `[ExcludeFromCodeCoverage]` on DI registration and startup wiring classes (e.g., `*ServiceExtensions`)
+    - [ ] `[ExcludeFromCodeCoverage]` on auto-generated or framework-scaffolded code
+    - [ ] `[ExcludeFromCodeCoverage]` on classes whose logic is only testable through integration tests
+          (e.g., DataAccess classes executing Dapper/ORM extension methods on `DbConnection`)
+
+7. Architectural Boundaries
 
     - [ ] No business rules or domain logic outside `Domain/`
     - [ ] No direct infrastructure access outside `Adapters/`

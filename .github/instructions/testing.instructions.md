@@ -26,11 +26,17 @@ applyTo: "src/Test/**"
 2. Organization
 
     - [ ] Unit test projects use `.test` suffix — integration test projects use `.integration.test` suffix
-    - [ ] Shared test builders extracted to `Helpers/` folder — test doubles (fakes, stubs, custom handlers)
-          extracted even when used by a single test class
+    - [ ] Shared test builders extracted to `Helpers/` folder
+    - [ ] Test doubles (fakes, stubs, custom handlers) extracted to dedicated classes even when used by a single
+          test class
 
 3. Assertions
 
     - [ ] Specific FluentAssertions methods (e.g., `.BeEquivalentTo()`, `.ContainSingle()`) — no `.BeTrue()`/
           `.BeFalse()` wrapping compound expressions
     - [ ] No commented-out assertions
+
+4. Coverage
+
+    - [ ] Do not create artificial test scenarios solely to satisfy coverage metrics — every test must exercise a
+          realistic code path that can occur in production

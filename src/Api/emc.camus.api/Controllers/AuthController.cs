@@ -215,38 +215,10 @@ namespace emc.camus.api.Controllers
                 {
                     { "token_username", result.TokenUsername },
                     { "is_revoked", result.IsRevoked },
-                    { "revoked_at", result.RevokedAt?.ToString("o") }
+                    { "revoked_at", result.RevokedAt!.Value.ToString("o") }
                 });
 
                 return Success(result.ToDto(), "Token revoked successfully");
-            });
-        }
-
-        /// <summary>
-        /// Endpoint to trigger an unexpected error for demonstration and error handling testing.
-        /// </summary>
-        /// <returns>Error message.</returns>
-        [HttpPost("unexpected-error")]
-        [AllowAnonymous]
-        [MapToApiVersion("2.0")]
-        [SwaggerOperation(
-            Description = "Handles unexpected errors in API version 2.0"
-        )]
-        public async Task<IActionResult> GetUnexpectedError(CancellationToken ct)
-        {
-            return await _activitySource.StartActivityAndRunAsync<IActionResult>("GetUnexpectedError", OperationType.Test, activity =>
-            {
-                _activitySource.SetRequestTags(activity, new Dictionary<string, object?>
-                {
-                    { "demoKey", "demoValue" }
-                });
-
-                _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
-                {
-                    { "error_type", "demo_exception" }
-                });
-
-                throw new InvalidOperationException("This is a demo exception for error handling.", new InvalidProgramException("Inner exception for demo purposes."));
             });
         }
     }

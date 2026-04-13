@@ -11,6 +11,7 @@ applyTo: "{src/Test/**,!src/Test/**integration.test/**}"
     - [ ] No mocks for domain logic — test real implementations
     - [ ] Mock application services when testing controllers
     - [ ] Mock adapters when testing application layer
+    - [ ] Mock DataAccess interfaces when testing repository implementations
     - [ ] No `Mock.Verify*()` on methods whose return value is already captured and asserted
     - [ ] Configure mocks with only the methods the test exercises — no blanket `Setup` for unused members
 

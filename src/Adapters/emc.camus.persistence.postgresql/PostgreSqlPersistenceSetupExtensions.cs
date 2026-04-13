@@ -5,6 +5,7 @@ using emc.camus.application.Common;
 using emc.camus.application.ApiInfo;
 using emc.camus.application.Auth;
 using emc.camus.persistence.postgresql.Services;
+using emc.camus.persistence.postgresql.DataAccess;
 using emc.camus.persistence.postgresql.Repositories;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -36,29 +37,35 @@ namespace emc.camus.persistence.postgresql
             Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
             // Register database connection factory
-            builder.Services.AddSingleton<IConnectionFactory, PSConnectionFactory>();
+            builder.Services.AddSingleton<IConnectionFactory, ConnectionFactory>();
 
             // Register initialization state (singleton: shared across scoped repositories within one container)
-            builder.Services.AddSingleton<PSInitializationState>();
+            builder.Services.AddSingleton<InitializationState>();
 
             // Register unit of work (scoped: one per request, shared across repositories)
-            builder.Services.AddScoped<PSUnitOfWork>();
-            builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<PSUnitOfWork>());
+            builder.Services.AddScoped<UnitOfWork>();
+            builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork>());
 
             // Register audit repository (shared across Auth and AppData)
-            builder.Services.AddScoped<IActionAuditRepository, PSActionAuditRepository>();
+            builder.Services.AddScoped<IActionAuditRepository, ActionAuditRepository>();
+
+            // Register data access layers
+            builder.Services.AddSingleton<IUserDataAccess, UserDataAccess>();
+            builder.Services.AddSingleton<IApiInfoDataAccess, ApiInfoDataAccess>();
+            builder.Services.AddSingleton<IGeneratedTokenDataAccess, GeneratedTokenDataAccess>();
+            builder.Services.AddSingleton<IActionAuditDataAccess, ActionAuditDataAccess>();
 
             // Register repositories
-            builder.Services.AddScoped<IUserRepository, PSUserRepository>();
-            builder.Services.AddScoped<IGeneratedTokenRepository, PSGeneratedTokenRepository>();
-            builder.Services.AddScoped<IApiInfoRepository, PSApiInfoRepository>();
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IGeneratedTokenRepository, GeneratedTokenRepository>();
+            builder.Services.AddScoped<IApiInfoRepository, ApiInfoRepository>();
 
             return builder;
         }
 
         /// <summary>
         /// Registers a PostgreSQL health check tagged with "ready" for readiness probes.
-        /// Resolves <see cref="PSUnitOfWork"/> at runtime to verify database connectivity.
+        /// Resolves <see cref="UnitOfWork"/> at runtime to verify database connectivity.
         /// </summary>
         /// <param name="builder">The health checks builder.</param>
         /// <returns>The health checks builder for method chaining.</returns>
@@ -68,8 +75,8 @@ namespace emc.camus.persistence.postgresql
                 "postgresql",
                 sp =>
                 {
-                    var unitOfWork = sp.GetRequiredService<PSUnitOfWork>();
-                    return new PSHealthCheck(unitOfWork);
+                    var unitOfWork = sp.GetRequiredService<UnitOfWork>();
+                    return new HealthCheck(unitOfWork);
                 },
                 failureStatus: null,
                 tags: ReadyTag));

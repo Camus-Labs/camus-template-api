@@ -145,11 +145,11 @@ Application interfaces are implemented in the following adapters:
 | `ITokenGenerator` | `JwtTokenGenerator` | `emc.camus.security.jwt` |
 | `ISecretProvider` | `DaprSecretProvider` | `emc.camus.secrets.dapr` |
 | `IActivitySourceWrapper` | `ActivitySourceWrapper` | `emc.camus.observability.otel` |
-| `IUserRepository` | `PSUserRepository`, `IMUserRepository` | `emc.camus.persistence.postgresql`, `emc.camus.persistence.inmemory` |
-| `IApiInfoRepository` | `PSApiInfoRepository`, `IMApiInfoRepository` | `emc.camus.persistence.postgresql`, `emc.camus.persistence.inmemory` |
-| `IActionAuditRepository` | `PSActionAuditRepository`, `IMActionAuditRepository` | `emc.camus.persistence.postgresql`, `emc.camus.persistence.inmemory` |
-| `IGeneratedTokenRepository` | `PSGeneratedTokenRepository` | `emc.camus.persistence.postgresql` |
-| `IUnitOfWork` | `PSUnitOfWork`, `IMUnitOfWork` | `emc.camus.persistence.postgresql`, `emc.camus.persistence.inmemory` |
+| `IUserRepository` | `UserRepository`, `UserRepository` | `emc.camus.persistence.postgresql`, `emc.camus.persistence.inmemory` |
+| `IApiInfoRepository` | `ApiInfoRepository`, `ApiInfoRepository` | `emc.camus.persistence.postgresql`, `emc.camus.persistence.inmemory` |
+| `IActionAuditRepository` | `ActionAuditRepository`, `ActionAuditRepository` | `emc.camus.persistence.postgresql`, `emc.camus.persistence.inmemory` |
+| `IGeneratedTokenRepository` | `GeneratedTokenRepository` | `emc.camus.persistence.postgresql` |
+| `IUnitOfWork` | `UnitOfWork`, `UnitOfWork` | `emc.camus.persistence.postgresql`, `emc.camus.persistence.inmemory` |
 
 See individual adapter READMEs for implementation details:
 
@@ -225,9 +225,8 @@ The following configuration types are defined in the Application layer:
 
 - **`DataPersistenceSettings`** — Selects the global persistence provider
   (`InMemory` or `PostgreSQL`). Section name: `DataPersistenceSettings`.
-- **`DatabaseSettings`** — PostgreSQL connection parameters
-  (Host, Port, Database, UserSecretName, PasswordSecretName).
-  Section name: `DatabaseSettings`.
+- **`DatabaseSettings`** — PostgreSQL connection parameters (Host, Port, Database, UserSecretName,
+  PasswordSecretName). Section name: `DatabaseSettings`.
 
 Adapter projects that implement these interfaces provide their own additional configuration. See individual adapter
 READMEs for details.

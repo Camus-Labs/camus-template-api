@@ -16,11 +16,6 @@ namespace emc.camus.application.Observability
         Auth,
         
         /// <summary>
-        /// Test operation - testing or validation operations.
-        /// </summary>
-        Test,
-        
-        /// <summary>
         /// Info operation - retrieving informational data.
         /// </summary>
         Info,

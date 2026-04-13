@@ -17,8 +17,8 @@ concerns like stub secrets, rate-limit overrides, and xUnit log routing.
 
 | Factory | Backend | Infrastructure |
 | ------- | ------- | -------------- |
-| `ApiPSFactory` | PostgreSQL (Testcontainers) | Real container, DBUp migrations, Respawn reset |
-| `ApiIMFactory` | In-memory | No external dependencies |
+| `ApiPostgreSqlFactory` | PostgreSQL (Testcontainers) | Real container, DBUp migrations, Respawn reset |
+| `ApiInMemoryFactory` | In-memory | No external dependencies |
 
 ### Collection Fixtures
 
@@ -27,8 +27,8 @@ multiple containers and prevents `CryptoProviderFactory` static cache collisions
 
 | Collection | Factory | Purpose |
 | ---------- | ------- | ------- |
-| `PostgreSqlTestGroup` | `ApiPSFactory` | Shares a single PostgreSQL container across all PS test classes |
-| `InMemoryTestGroup` | `ApiIMFactory` | Shares a single in-memory host across all IM test classes |
+| `PostgreSqlTestGroup` | `ApiPostgreSqlFactory` | Shares a single PostgreSQL container across all PostgreSQL test classes |
+| `InMemoryTestGroup` | `ApiInMemoryFactory` | Shares a single in-memory host across all in-memory test classes |
 
 ### Database Reset Strategy
 

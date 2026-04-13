@@ -33,7 +33,9 @@ public class ApiInfoControllerTests
         _controller = new ApiInfoController(_mockActivitySource.Object, _mockApiInfoService.Object);
 
         var httpContext = new DefaultHttpContext();
-        httpContext.Features.Set<IApiVersioningFeature>(Mock.Of<IApiVersioningFeature>());
+        var mockVersionFeature = new Mock<IApiVersioningFeature>();
+        mockVersionFeature.Setup(f => f.RequestedApiVersion).Returns(new ApiVersion(2, 0));
+        httpContext.Features.Set(mockVersionFeature.Object);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = httpContext
@@ -94,6 +96,32 @@ public class ApiInfoControllerTests
             Times.Once);
     }
 
+    [Fact]
+    public async Task GetInfo_NullApiVersion_UsesUnknownFallbackInRequestTags()
+    {
+        // Arrange
+        var detailView = new ApiInfoDetailView("1.0", "Active", new List<string> { "auth" });
+        _mockApiInfoService
+            .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(detailView);
+
+        var httpContext = new DefaultHttpContext();
+        var mockVersionFeature = new Mock<IApiVersioningFeature>();
+        mockVersionFeature.Setup(f => f.RequestedApiVersion).Returns((ApiVersion?)null);
+        httpContext.Features.Set(mockVersionFeature.Object);
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
+        // Act
+        var result = await _controller.GetInfo(CancellationToken.None);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        _mockActivitySource.Verify(
+            a => a.SetRequestTags(It.IsAny<Activity?>(), It.Is<IDictionary<string, object?>>(
+                d => d.ContainsKey("api_version") && (string)d["api_version"]! == "unknown")),
+            Times.Once);
+    }
+
     // --- GetInfoApiKey ---
 
     [Fact]
@@ -114,6 +142,32 @@ public class ApiInfoControllerTests
         apiResponse.Data!.Version.Should().Be(detailView.Version);
     }
 
+    [Fact]
+    public async Task GetInfoApiKey_NullApiVersion_UsesUnknownFallbackInRequestTags()
+    {
+        // Arrange
+        var detailView = new ApiInfoDetailView("2.0", "Active", new List<string> { "auth" });
+        _mockApiInfoService
+            .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(detailView);
+
+        var httpContext = new DefaultHttpContext();
+        var mockVersionFeature = new Mock<IApiVersioningFeature>();
+        mockVersionFeature.Setup(f => f.RequestedApiVersion).Returns((ApiVersion?)null);
+        httpContext.Features.Set(mockVersionFeature.Object);
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
+        // Act
+        var result = await _controller.GetInfoApiKey(CancellationToken.None);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        _mockActivitySource.Verify(
+            a => a.SetRequestTags(It.IsAny<Activity?>(), It.Is<IDictionary<string, object?>>(
+                d => d.ContainsKey("api_version") && (string)d["api_version"]! == "unknown")),
+            Times.Once);
+    }
+
     // --- GetInfoJwt ---
 
     [Fact]
@@ -132,5 +186,31 @@ public class ApiInfoControllerTests
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
         var apiResponse = okResult.Value.Should().BeOfType<ApiResponse<ApiInfoResponse>>().Subject;
         apiResponse.Data!.Version.Should().Be(detailView.Version);
+    }
+
+    [Fact]
+    public async Task GetInfoJwt_NullApiVersion_UsesUnknownFallbackInRequestTags()
+    {
+        // Arrange
+        var detailView = new ApiInfoDetailView("2.0", "Active", new List<string> { "auth" });
+        _mockApiInfoService
+            .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(detailView);
+
+        var httpContext = new DefaultHttpContext();
+        var mockVersionFeature = new Mock<IApiVersioningFeature>();
+        mockVersionFeature.Setup(f => f.RequestedApiVersion).Returns((ApiVersion?)null);
+        httpContext.Features.Set(mockVersionFeature.Object);
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
+        // Act
+        var result = await _controller.GetInfoJwt(CancellationToken.None);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        _mockActivitySource.Verify(
+            a => a.SetRequestTags(It.IsAny<Activity?>(), It.Is<IDictionary<string, object?>>(
+                d => d.ContainsKey("api_version") && (string)d["api_version"]! == "unknown")),
+            Times.Once);
     }
 }

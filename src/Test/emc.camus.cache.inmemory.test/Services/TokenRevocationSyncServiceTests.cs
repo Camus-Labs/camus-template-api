@@ -12,7 +12,7 @@ public class TokenRevocationSyncServiceTests
 {
     private static readonly Guid RevokedJti = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
-    private readonly IMTokenRevocationCache _cache = new();
+    private readonly TokenRevocationCache _cache = new();
     private readonly InMemoryCacheSettings _settings = new() { TokenRevocationCache = new() { SyncIntervalSeconds = 10 } };
     private readonly Mock<ILogger<TokenRevocationSyncService>> _loggerMock = new();
     private readonly List<(LogLevel Level, string Message)> _logEntries = [];

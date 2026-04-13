@@ -54,7 +54,6 @@ applyTo: "src/Test/**integration.test/**"
 
     - [ ] Test classes organized by feature area — not mirroring production class structure one-to-one
     - [ ] Fixture classes (factories, collection definitions) in `Fixtures/` folder
-    - [ ] Helper classes (authentication, database seeding) in `Helpers/` folder
     - [ ] Test settings files in `Settings/` folder
 
 5. Assertions

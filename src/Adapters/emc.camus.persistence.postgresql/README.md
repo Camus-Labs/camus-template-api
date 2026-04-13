@@ -80,14 +80,14 @@ See `PersistenceSetupExtensions` in `src/Api/emc.camus.api/Extensions/` for the 
 
 ### Repository Implementations
 
-#### PSApiInfoRepository
+#### ApiInfoRepository
 
 Manages API version information:
 
 - `InitializeAsync()` - Validates database connection and schema
 - `GetByVersionAsync(version)` - Retrieves API info by version
 
-#### PSUserRepository
+#### UserRepository
 
 Manages user authentication and authorization:
 
@@ -98,9 +98,9 @@ Manages user authentication and authorization:
 
 ## 📊 Database Schema Management
 
-Schema is managed via the [DbUp migrations adapter](../emc.camus.migrations.dbup/README.md).
-Migration scripts live in `src/Infrastructure/database/migrations/` and run automatically at
-application startup when `DBUpSettings.Enabled` is `true`.
+Schema is managed via the [DbUp migrations adapter](../emc.camus.migrations.dbup/README.md). Migration scripts live
+in `src/Infrastructure/database/migrations/` and run automatically at application startup when `DBUpSettings.Enabled`
+is `true`.
 
 ### Schema Features
 
@@ -116,7 +116,7 @@ application startup when `DBUpSettings.Enabled` is `true`.
 
 ### Password Storage
 
-Passwords are stored as bcrypt hashes in the `password_hash` column. The `PSUserRepository.ValidateCredentialsAsync`
+Passwords are stored as bcrypt hashes in the `password_hash` column. The `UserRepository.ValidateCredentialsAsync`
 method verifies credentials against the stored hash at runtime.
 
 ### Connection String Security
@@ -243,15 +243,3 @@ Part of Camus API Template - See main repository for license information.
 
 See [DatabaseSettings](../../../src/Application/emc.camus.application/Configurations/DatabaseSettings.cs)
 for the full property reference.
-
----
-
-## ⚠️ Best Practices
-
-- ✅ Use parameterized queries (Dapper does this automatically)
-- ✅ Dispose connections properly (use `using` or DI)
-- ✅ Use connection pooling (enabled by default)
-- ✅ Implement retry logic for transient failures
-- ✅ Use read replicas for read-heavy workloads
-- ❌ Never concatenate SQL strings with user input
-- ❌ Avoid N+1 query problems (use batch operations)
