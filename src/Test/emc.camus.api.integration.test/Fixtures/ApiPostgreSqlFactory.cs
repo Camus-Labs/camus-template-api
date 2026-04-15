@@ -70,5 +70,6 @@ public class ApiPostgreSqlFactory : ApiFactoryBase
         builder.UseSetting("DBUpSettings:Enabled", "true");
         builder.UseSetting("DBUpSettings:AdminSecretName", "DBMigrationsUser");
         builder.UseSetting("DBUpSettings:PasswordSecretName", "DBMigrationsSecret");
+        builder.UseSetting("InMemoryCacheSettings:TokenRevocationCache:SyncIntervalSeconds", "10");
     }
 }

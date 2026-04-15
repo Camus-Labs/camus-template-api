@@ -7,7 +7,7 @@ using emc.camus.application.Common;
 using emc.camus.domain.Auth;
 using FluentAssertions;
 
-namespace emc.camus.api.integration.test.Common;
+namespace emc.camus.api.integration.test.PostgreSqlPersistence;
 
 [Trait("Category", "Integration")]
 [Collection(PostgreSqlTestGroup.Name)]

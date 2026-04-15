@@ -40,7 +40,7 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
     public async Task GenerateToken_ValidRequest_ReturnsOkWithPersistedToken()
     {
         // Arrange
-        var client = await AuthenticateAdminAsync();
+        var client = await _factory.AuthenticateAsync("Admin", "adminsecret");
         var request = new
         {
             UsernameSuffix = "inttest",
@@ -92,7 +92,6 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
     public async Task Authenticate_ClientApp_UpdatesLastLoginAndAuditFields()
     {
         // Arrange — snapshot the user row before authentication
-        var before = DateTime.UtcNow;
         await using var connection = new NpgsqlConnection(_factory.ConnectionString);
         await connection.OpenAsync(TestContext.Current.CancellationToken);
 
@@ -104,6 +103,7 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         ((DateTime?)userBefore.last_login).Should().BeNull();
 
         // Act — authenticate as ClientApp
+        var before = DateTime.UtcNow;
         await _factory.AuthenticateAsync("ClientApp", "clientsecret");
         var after = DateTime.UtcNow;
 
@@ -128,7 +128,7 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
     public async Task RevokeToken_ValidJti_ReturnsOkWithRevokedToken()
     {
         // Arrange — generate a token first
-        var client = await AuthenticateAdminAsync();
+        var client = await _factory.AuthenticateAsync("Admin", "adminsecret");
         var generateRequest = new
         {
             UsernameSuffix = "revoke",
@@ -177,7 +177,7 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
     public async Task GetTokens_AfterGenerating_ReturnsPagedTokensFromDatabase()
     {
         // Arrange — generate two tokens with distinct suffixes
-        var client = await AuthenticateAdminAsync();
+        var client = await _factory.AuthenticateAsync("Admin", "adminsecret");
 
         var firstRequest = new
         {
@@ -223,7 +223,7 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
     public async Task GenerateToken_DuplicateTokenUsername_ReturnsConflictAndNothingPersisted()
     {
         // Arrange — generate a token with a specific suffix first
-        var client = await AuthenticateAdminAsync();
+        var client = await _factory.AuthenticateAsync("Admin", "adminsecret");
         var firstRequest = new
         {
             UsernameSuffix = "duplicate",
@@ -269,7 +269,7 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
     public async Task RevokedToken_UsedOnProtectedEndpoint_ReturnsUnauthorized()
     {
         // Arrange — authenticate, generate a token, then revoke it
-        var adminClient = await AuthenticateAdminAsync();
+        var adminClient = await _factory.AuthenticateAsync("Admin", "adminsecret");
         var generateRequest = new
         {
             UsernameSuffix = "revoked-use",
@@ -341,6 +341,4 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         await response.Should().HaveErrorCode("jwt_token_expired");
     }
 
-    private async Task<HttpClient> AuthenticateAdminAsync()
-        => await _factory.AuthenticateAsync("Admin", "adminsecret");
 }
