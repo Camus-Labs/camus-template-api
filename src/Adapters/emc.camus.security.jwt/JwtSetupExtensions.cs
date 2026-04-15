@@ -133,7 +133,7 @@ namespace emc.camus.security.jwt
                                     SecurityTokenInvalidAudienceException => "The provided credentials are invalid. JWT token has invalid audience.",
                                     SecurityTokenException ex when ex.Message.Contains("revoked", StringComparison.OrdinalIgnoreCase)
                                         => "The provided credentials are invalid. JWT token has been revoked.",
-                                    _ => "The provided credentials are invalid. Invalid JWT token."
+                                    _ => "The provided JWT token is malformed or invalid."
                                 };
                                 throw new UnauthorizedAccessException(message, originalException);
                             }

@@ -70,12 +70,6 @@ public static class ErrorCodes
         /// Error code for 409 Conflict responses.
         /// Indicates the request conflicts with the current state of the resource.
         /// </summary>
-        public const string Conflict = "conflict";
-
-        /// <summary>
-        /// Error code for 409 Conflict responses.
-        /// Indicates the request conflicts with the current state of the resource.
-        /// </summary>
         public const string DataConflict = "data_conflict";
 
         /// <summary>

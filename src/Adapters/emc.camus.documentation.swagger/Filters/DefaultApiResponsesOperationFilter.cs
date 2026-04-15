@@ -58,7 +58,7 @@ namespace emc.camus.documentation.swagger.Filters
                     ["status"] = new OpenApiInteger(StatusCodes.Status409Conflict),
                     ["title"] = new OpenApiString(ReasonPhrases.GetReasonPhrase(StatusCodes.Status409Conflict)),
                     ["detail"] = new OpenApiString("The request conflicts with the current state of the resource."),
-                    ["error"] = new OpenApiString(ErrorCodes.Conflict)
+                    ["error"] = new OpenApiString(ErrorCodes.DataConflict)
                 },
                 [StatusCodes.Status429TooManyRequests.ToString(CultureInfo.InvariantCulture)] = new OpenApiObject
                 {
