@@ -38,7 +38,7 @@ public class UnitOfWorkTests
         var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
 
         // Act
-        var connection = await unitOfWork.GetConnectionAsync();
+        var connection = await unitOfWork.GetConnectionAsync(TestContext.Current.CancellationToken);
 
         // Assert
         connection.Should().BeSameAs(_mockConnection.Object);
@@ -52,8 +52,8 @@ public class UnitOfWorkTests
         var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
 
         // Act
-        await unitOfWork.GetConnectionAsync();
-        await unitOfWork.GetConnectionAsync();
+        await unitOfWork.GetConnectionAsync(TestContext.Current.CancellationToken);
+        await unitOfWork.GetConnectionAsync(TestContext.Current.CancellationToken);
 
         // Assert
         _mockConnectionFactory.Verify(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -74,7 +74,7 @@ public class UnitOfWorkTests
         var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
 
         // Act
-        await unitOfWork.BeginTransactionAsync();
+        await unitOfWork.BeginTransactionAsync(TestContext.Current.CancellationToken);
 
         // Assert
         _mockConnection.Protected()
@@ -96,10 +96,10 @@ public class UnitOfWorkTests
                 ItExpr.IsAny<CancellationToken>())
             .Returns(new ValueTask<DbTransaction>(_mockTransaction.Object));
         var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
-        await unitOfWork.BeginTransactionAsync();
+        await unitOfWork.BeginTransactionAsync(TestContext.Current.CancellationToken);
 
         // Act
-        await unitOfWork.CommitAsync();
+        await unitOfWork.CommitAsync(TestContext.Current.CancellationToken);
 
         // Assert
         _mockTransaction.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -112,7 +112,7 @@ public class UnitOfWorkTests
         var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
 
         // Act
-        var act = () => unitOfWork.CommitAsync();
+        var act = () => unitOfWork.CommitAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().NotThrowAsync();
@@ -131,7 +131,7 @@ public class UnitOfWorkTests
                 ItExpr.IsAny<CancellationToken>())
             .Returns(new ValueTask<DbTransaction>(_mockTransaction.Object));
         var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
-        await unitOfWork.BeginTransactionAsync();
+        await unitOfWork.BeginTransactionAsync(TestContext.Current.CancellationToken);
 
         // Act
         await unitOfWork.RollbackAsync();
@@ -166,7 +166,7 @@ public class UnitOfWorkTests
                 ItExpr.IsAny<CancellationToken>())
             .Returns(new ValueTask<DbTransaction>(_mockTransaction.Object));
         using var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
-        await unitOfWork.BeginTransactionAsync();
+        await unitOfWork.BeginTransactionAsync(TestContext.Current.CancellationToken);
 
         // Act
         unitOfWork.Dispose();
@@ -202,7 +202,7 @@ public class UnitOfWorkTests
                 ItExpr.IsAny<CancellationToken>())
             .Returns(new ValueTask<DbTransaction>(_mockTransaction.Object));
         var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
-        await unitOfWork.BeginTransactionAsync();
+        await unitOfWork.BeginTransactionAsync(TestContext.Current.CancellationToken);
 
         // Act
         await unitOfWork.DisposeAsync();

@@ -92,29 +92,12 @@ public class UsernameHeaderMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_AuthenticatedUserWithNullName_DoesNotAddHeader()
+    public async Task InvokeAsync_AuthenticatedUserWithNullName_AddsAnonymousHeader()
     {
         // Arrange
         var context = CreateContextWithTracking(out var responseFeature);
         var identity = new System.Security.Claims.ClaimsIdentity("TestAuth");
         context.User = new System.Security.Claims.ClaimsPrincipal(identity);
-
-        var middleware = new UsernameHeaderMiddleware(_ => Task.CompletedTask);
-
-        // Act
-        await middleware.InvokeAsync(context);
-        await responseFeature.FireOnStartingAsync();
-
-        // Assert
-        responseFeature.Headers.ContainsKey(Headers.Username).Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task InvokeAsync_NullUser_AddsAnonymousHeader()
-    {
-        // Arrange
-        var context = CreateContextWithTracking(out var responseFeature);
-        context.User = null!;
 
         var middleware = new UsernameHeaderMiddleware(_ => Task.CompletedTask);
 
@@ -144,7 +127,25 @@ public class UsernameHeaderMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_UsernameHeaderAlreadyExists_DoesNotOverwrite()
+    public async Task InvokeAsync_UnauthenticatedIdentity_AddsAnonymousHeader()
+    {
+        // Arrange
+        var context = CreateContextWithTracking(out var responseFeature);
+        var identity = new System.Security.Claims.ClaimsIdentity(); // no auth type → IsAuthenticated = false
+        context.User = new System.Security.Claims.ClaimsPrincipal(identity);
+
+        var middleware = new UsernameHeaderMiddleware(_ => Task.CompletedTask);
+
+        // Act
+        await middleware.InvokeAsync(context);
+        await responseFeature.FireOnStartingAsync();
+
+        // Assert
+        responseFeature.Headers[Headers.Username].ToString().Should().Be("anonymous");
+    }
+
+    [Fact]
+    public async Task InvokeAsync_UsernameHeaderAlreadyExists_OverwritesWithResolvedUsername()
     {
         // Arrange
         var context = CreateContextWithTracking(out var responseFeature);
@@ -157,6 +158,6 @@ public class UsernameHeaderMiddlewareTests
         await responseFeature.FireOnStartingAsync();
 
         // Assert
-        responseFeature.Headers[Headers.Username].ToString().Should().Be("existing-user");
+        responseFeature.Headers[Headers.Username].ToString().Should().Be("anonymous");
     }
 }

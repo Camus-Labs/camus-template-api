@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MartinCostello.Logging.XUnit" Version="0.7.1" />
+    <PackageReference Include="MartinCostello.Logging.XUnit.v3" Version="0.7.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.14" />
     <PackageReference Include="Respawn" Version="7.0.0" />
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.11.0" />

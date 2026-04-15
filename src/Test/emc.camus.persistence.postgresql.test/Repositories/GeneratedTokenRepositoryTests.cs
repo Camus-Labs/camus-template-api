@@ -91,7 +91,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.CreateAsync(null!);
+        var act = () => repository.CreateAsync(null!, TestContext.Current.CancellationToken);
 
         // Assert
         (await act.Should().ThrowAsync<ArgumentNullException>())
@@ -108,7 +108,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .ReturnsAsync(true);
 
         // Act
-        var act = () => repository.CreateAsync(CreateToken());
+        var act = () => repository.CreateAsync(CreateToken(), TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<DataConflictException>()
@@ -128,7 +128,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .ReturnsAsync(true);
 
         // Act
-        var act = () => repository.CreateAsync(CreateToken());
+        var act = () => repository.CreateAsync(CreateToken(), TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<DataConflictException>()
@@ -151,7 +151,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .ReturnsAsync(false);
 
         // Act
-        var act = () => repository.CreateAsync(CreateToken());
+        var act = () => repository.CreateAsync(CreateToken(), TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<KeyNotFoundException>()
@@ -174,7 +174,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .ReturnsAsync(true);
 
         // Act
-        var act = () => repository.CreateAsync(CreateToken());
+        var act = () => repository.CreateAsync(CreateToken(), TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().NotThrowAsync();
@@ -189,7 +189,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.GetByJtiAsync(Guid.Empty);
+        var act = () => repository.GetByJtiAsync(Guid.Empty, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
@@ -205,7 +205,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .ReturnsAsync((GeneratedTokenModel?)null);
 
         // Act
-        var result = await repository.GetByJtiAsync(Jti);
+        var result = await repository.GetByJtiAsync(Jti, TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().BeNull();
@@ -227,7 +227,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             });
 
         // Act
-        var result = await repository.GetByJtiAsync(Jti);
+        var result = await repository.GetByJtiAsync(Jti, TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -244,7 +244,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.GetPagedByCreatorUserIdAsync(Guid.Empty, new PaginationParams());
+        var act = () => repository.GetPagedByCreatorUserIdAsync(Guid.Empty, new PaginationParams(), ct: TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
@@ -257,7 +257,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.GetPagedByCreatorUserIdAsync(CreatorUserId, null!);
+        var act = () => repository.GetPagedByCreatorUserIdAsync(CreatorUserId, null!, ct: TestContext.Current.CancellationToken);
 
         // Assert
         (await act.Should().ThrowAsync<ArgumentNullException>())
@@ -274,7 +274,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .ReturnsAsync(0);
 
         // Act
-        var result = await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams());
+        var result = await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), ct: TestContext.Current.CancellationToken);
 
         // Assert
         result.Items.Should().BeEmpty();
@@ -304,7 +304,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             });
 
         // Act
-        var result = await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, pagination);
+        var result = await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, pagination, ct: TestContext.Current.CancellationToken);
 
         // Assert
         result.TotalCount.Should().Be(1);
@@ -323,7 +323,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .ReturnsAsync(0);
 
         // Act
-        await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), filter);
+        await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), filter, TestContext.Current.CancellationToken);
 
         // Assert
         _mockDataAccess.Verify(d => d.CountByCreatorUserIdAsync(
@@ -339,7 +339,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.SaveAsync(null!);
+        var act = () => repository.SaveAsync(null!, TestContext.Current.CancellationToken);
 
         // Assert
         (await act.Should().ThrowAsync<ArgumentNullException>())
@@ -356,7 +356,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .ReturnsAsync(0);
 
         // Act
-        var act = () => repository.SaveAsync(CreateToken());
+        var act = () => repository.SaveAsync(CreateToken(), TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<KeyNotFoundException>()
@@ -373,7 +373,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .ReturnsAsync(1);
 
         // Act
-        var act = () => repository.SaveAsync(CreateToken());
+        var act = () => repository.SaveAsync(CreateToken(), TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().NotThrowAsync();
@@ -391,7 +391,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .ReturnsAsync(new[] { Jti });
 
         // Act
-        var result = await repository.GetActiveRevokedJtisAsync();
+        var result = await repository.GetActiveRevokedJtisAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().ContainSingle().Which.Should().Be(Jti);

@@ -25,7 +25,7 @@ public class ApiPostgreSqlFactory : ApiFactoryBase
     /// </summary>
     public string ConnectionString => _container.GetConnectionString();
 
-    public override async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         await _container.StartAsync();
 

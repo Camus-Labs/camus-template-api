@@ -3,6 +3,7 @@ using Dapper;
 using emc.camus.application.Common;
 using emc.camus.application.Configurations;
 using emc.camus.application.Secrets;
+using System.Diagnostics.CodeAnalysis;
 using Npgsql;
 
 namespace emc.camus.persistence.postgresql.Services;
@@ -13,6 +14,7 @@ namespace emc.camus.persistence.postgresql.Services;
 /// automatic audit field population via database triggers.
 /// Supports both static connection strings and secret-based credentials.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal sealed class ConnectionFactory : IConnectionFactory
 {
     private readonly string _connectionString;

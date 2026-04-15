@@ -56,7 +56,7 @@ public class DaprSecretHealthCheckTests
         var healthCheck = new DaprSecretHealthCheck(provider);
 
         // Act
-        var result = await healthCheck.CheckHealthAsync(new HealthCheckContext());
+        var result = await healthCheck.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         // Assert
         result.Status.Should().Be(HealthStatus.Healthy);
@@ -71,7 +71,7 @@ public class DaprSecretHealthCheckTests
         var healthCheck = new DaprSecretHealthCheck(provider);
 
         // Act
-        var result = await healthCheck.CheckHealthAsync(new HealthCheckContext());
+        var result = await healthCheck.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         // Assert
         result.Status.Should().Be(HealthStatus.Unhealthy);
@@ -87,7 +87,7 @@ public class DaprSecretHealthCheckTests
         var healthCheck = new DaprSecretHealthCheck(provider);
 
         // Act
-        var result = await healthCheck.CheckHealthAsync(new HealthCheckContext());
+        var result = await healthCheck.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         // Assert
         result.Status.Should().Be(HealthStatus.Unhealthy);

@@ -3,8 +3,10 @@ using FluentAssertions;
 using Moq;
 using emc.camus.application.Auth;
 using emc.camus.application.Common;
+using emc.camus.application.Exceptions;
 using emc.camus.application.Observability;
 using emc.camus.domain.Auth;
+using emc.camus.domain.Exceptions;
 
 namespace emc.camus.application.test.Auth;
 
@@ -121,7 +123,7 @@ public class AuthServiceTests
         var service = CreateService();
 
         // Act
-        var result = await service.AuthenticateAsync(command);
+        var result = await service.AuthenticateAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         result.Token.Should().Be(ValidToken);
@@ -135,7 +137,7 @@ public class AuthServiceTests
         var service = CreateService();
 
         // Act
-        var act = () => service.AuthenticateAsync(null!);
+        var act = () => service.AuthenticateAsync(null!, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
@@ -153,7 +155,7 @@ public class AuthServiceTests
         var service = CreateService();
 
         // Act
-        var act = () => service.AuthenticateAsync(command);
+        var act = () => service.AuthenticateAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<UnauthorizedAccessException>();
@@ -170,7 +172,7 @@ public class AuthServiceTests
         var service = CreateService();
 
         // Act
-        var act = () => service.AuthenticateAsync(command);
+        var act = () => service.AuthenticateAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<KeyNotFoundException>();
@@ -187,7 +189,7 @@ public class AuthServiceTests
         var service = CreateService();
 
         // Act
-        var act = () => service.AuthenticateAsync(command);
+        var act = () => service.AuthenticateAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -209,7 +211,7 @@ public class AuthServiceTests
         var service = CreateService();
 
         // Act
-        var act = () => service.AuthenticateAsync(command);
+        var act = () => service.AuthenticateAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>();
@@ -237,7 +239,7 @@ public class AuthServiceTests
         var service = CreateService();
 
         // Act
-        var result = await service.GenerateTokenAsync(command);
+        var result = await service.GenerateTokenAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         result.Token.Should().Be(ValidToken);
@@ -266,7 +268,7 @@ public class AuthServiceTests
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
         // Act
-        await service.GenerateTokenAsync(command);
+        await service.GenerateTokenAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         _generatedTokenRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<GeneratedToken>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -280,7 +282,7 @@ public class AuthServiceTests
         var service = CreateService();
 
         // Act
-        var act = () => service.GenerateTokenAsync(null!);
+        var act = () => service.GenerateTokenAsync(null!, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
@@ -298,7 +300,7 @@ public class AuthServiceTests
         var service = CreateService();
 
         // Act
-        var act = () => service.GenerateTokenAsync(command);
+        var act = () => service.GenerateTokenAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -318,7 +320,7 @@ public class AuthServiceTests
         var service = CreateService();
 
         // Act
-        var act = () => service.GenerateTokenAsync(command);
+        var act = () => service.GenerateTokenAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -346,10 +348,89 @@ public class AuthServiceTests
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
         // Act
-        var act = () => service.GenerateTokenAsync(command);
+        var act = () => service.GenerateTokenAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>();
+        _unitOfWorkMock.Verify(u => u.RollbackAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task GenerateTokenAsync_UserNotFound_ThrowsKeyNotFoundException()
+    {
+        // Arrange
+        var command = new GenerateTokenCommand(ValidTokenSuffix, DateTime.UtcNow.AddMonths(6), [Permissions.ApiRead]);
+        _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
+        _userRepositoryMock.Setup(r => r.GetByIdAsync(ValidUserId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new KeyNotFoundException("User not found"));
+
+        var service = CreateService();
+
+        // Act
+        var act = () => service.GenerateTokenAsync(command, TestContext.Current.CancellationToken);
+
+        // Assert — original message preserved, not wrapped as system error
+        await act.Should().ThrowAsync<KeyNotFoundException>()
+            .WithMessage("*User not found*");
+    }
+
+    public static TheoryData<Exception> GenerateTokenAsync_BusinessExceptionCases => new()
+    {
+        new ArgumentException("Invalid token parameters"),
+        new DomainException("Domain rule violated")
+    };
+
+    [Theory]
+    [MemberData(nameof(GenerateTokenAsync_BusinessExceptionCases))]
+    public async Task GenerateTokenAsync_BusinessException_RethrowsWithOriginalMessage(Exception expectedException)
+    {
+        // Arrange
+        var command = new GenerateTokenCommand(ValidTokenSuffix, DateTime.UtcNow.AddMonths(6), [Permissions.ApiRead]);
+        var user = CreateUser();
+
+        _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
+        _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
+        _userRepositoryMock.Setup(r => r.GetByIdAsync(ValidUserId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _tokenGeneratorMock.Setup(g => g.GenerateToken(
+                ValidUserId, It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<IEnumerable<Claim>>()))
+            .Throws(expectedException);
+
+        var service = CreateService();
+
+        // Act
+        var act = () => service.GenerateTokenAsync(command, TestContext.Current.CancellationToken);
+
+        // Assert — original message preserved, not wrapped as system error
+        (await act.Should().ThrowAsync<Exception>())
+            .Which.Should().BeSameAs(expectedException);
+    }
+
+    [Fact]
+    public async Task GenerateTokenAsync_DuplicateToken_ThrowsDataConflictException()
+    {
+        // Arrange
+        var tokenExpiration = DateTime.UtcNow.AddMonths(6);
+        var command = new GenerateTokenCommand(ValidTokenSuffix, tokenExpiration, [Permissions.ApiRead]);
+        var user = CreateUser();
+        var authToken = CreateAuthToken();
+
+        _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
+        _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
+        _userRepositoryMock.Setup(r => r.GetByIdAsync(ValidUserId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _tokenGeneratorMock.Setup(g => g.GenerateToken(
+                ValidUserId, It.IsAny<string>(), It.IsAny<Guid>(), tokenExpiration, It.IsAny<IEnumerable<Claim>>()))
+            .Returns(authToken);
+        _generatedTokenRepositoryMock.Setup(r => r.CreateAsync(It.IsAny<GeneratedToken>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DataConflictException("Duplicate token"));
+
+        var service = CreateService(_generatedTokenRepositoryMock.Object);
+
+        // Act
+        var act = () => service.GenerateTokenAsync(command, TestContext.Current.CancellationToken);
+
+        // Assert — original message preserved, not wrapped as system error
+        await act.Should().ThrowAsync<DataConflictException>()
+            .WithMessage("*Duplicate token*");
         _unitOfWorkMock.Verify(u => u.RollbackAsync(), Times.Once);
     }
 
@@ -374,7 +455,7 @@ public class AuthServiceTests
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
         // Act
-        var result = await service.GetGeneratedTokensAsync(pagination, filter);
+        var result = await service.GetGeneratedTokensAsync(pagination, filter, TestContext.Current.CancellationToken);
 
         // Assert
         result.Items.Should().ContainSingle();
@@ -389,7 +470,7 @@ public class AuthServiceTests
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
         // Act
-        var act = () => service.GetGeneratedTokensAsync(null!);
+        var act = () => service.GetGeneratedTokensAsync(null!, ct: TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
@@ -407,7 +488,7 @@ public class AuthServiceTests
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
         // Act
-        var act = () => service.GetGeneratedTokensAsync(pagination);
+        var act = () => service.GetGeneratedTokensAsync(pagination, ct: TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -424,7 +505,7 @@ public class AuthServiceTests
         var service = CreateService(generatedTokenRepository: null);
 
         // Act
-        var act = () => service.GetGeneratedTokensAsync(pagination);
+        var act = () => service.GetGeneratedTokensAsync(pagination, ct: TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -443,11 +524,30 @@ public class AuthServiceTests
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
         // Act
-        var act = () => service.GetGeneratedTokensAsync(pagination);
+        var act = () => service.GetGeneratedTokensAsync(pagination, ct: TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Failed to retrieve generated tokens*system error*");
+    }
+
+    [Fact]
+    public async Task GetGeneratedTokensAsync_ArgumentException_RethrowsWithOriginalMessage()
+    {
+        // Arrange
+        var pagination = new PaginationParams();
+        _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
+        _generatedTokenRepositoryMock.Setup(r => r.GetPagedByCreatorUserIdAsync(ValidUserId, pagination, null, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ArgumentException("Invalid filter value"));
+
+        var service = CreateService(_generatedTokenRepositoryMock.Object);
+
+        // Act
+        var act = () => service.GetGeneratedTokensAsync(pagination, ct: TestContext.Current.CancellationToken);
+
+        // Assert — original message preserved, not wrapped as system error
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("*Invalid filter value*");
     }
 
     // --- RevokeTokenAsync ---
@@ -471,7 +571,7 @@ public class AuthServiceTests
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
         // Act
-        var result = await service.RevokeTokenAsync(command);
+        var result = await service.RevokeTokenAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         result.Jti.Should().Be(ValidJti);
@@ -486,7 +586,7 @@ public class AuthServiceTests
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
         // Act
-        var act = () => service.RevokeTokenAsync(null!);
+        var act = () => service.RevokeTokenAsync(null!, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
@@ -504,7 +604,7 @@ public class AuthServiceTests
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
         // Act
-        var act = () => service.RevokeTokenAsync(command);
+        var act = () => service.RevokeTokenAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -522,7 +622,7 @@ public class AuthServiceTests
         var service = CreateService(generatedTokenRepository: null);
 
         // Act
-        var act = () => service.RevokeTokenAsync(command);
+        var act = () => service.RevokeTokenAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -542,7 +642,7 @@ public class AuthServiceTests
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
         // Act
-        var act = () => service.RevokeTokenAsync(command);
+        var act = () => service.RevokeTokenAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<KeyNotFoundException>()
@@ -567,7 +667,7 @@ public class AuthServiceTests
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
         // Act
-        var act = () => service.RevokeTokenAsync(command);
+        var act = () => service.RevokeTokenAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<Exception>();
@@ -593,7 +693,7 @@ public class AuthServiceTests
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
         // Act
-        await service.RevokeTokenAsync(command);
+        await service.RevokeTokenAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         _tokenRevocationCacheMock.Verify(c => c.Revoke(ValidJti), Times.Once);
@@ -612,7 +712,7 @@ public class AuthServiceTests
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
         // Act
-        var act = () => service.RevokeTokenAsync(command);
+        var act = () => service.RevokeTokenAsync(command, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -628,7 +728,7 @@ public class AuthServiceTests
         var service = CreateService();
 
         // Act
-        await service.InitializeAsync();
+        await service.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         _userRepositoryMock.Verify(r => r.InitializeAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -642,7 +742,7 @@ public class AuthServiceTests
         var service = CreateService();
 
         // Act
-        var act = () => service.InitializeAsync();
+        var act = () => service.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()

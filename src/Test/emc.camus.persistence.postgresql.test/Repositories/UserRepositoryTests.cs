@@ -99,7 +99,7 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateInitializedRepository();
 
         // Act
-        var act = () => repository.InitializeAsync();
+        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -122,10 +122,10 @@ public class UserRepositoryTests : IDisposable
             });
 
         // Act
-        await repository.InitializeAsync();
+        await repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert — calling again should throw "already initialized"
-        var act = () => repository.InitializeAsync();
+        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*already initialized*");
     }
@@ -146,11 +146,33 @@ public class UserRepositoryTests : IDisposable
             });
 
         // Act
-        var act = () => repository.InitializeAsync();
+        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*roles*role_permissions*");
+    }
+
+    [Fact]
+    public async Task InitializeAsync_TableKeyMissingFromStatus_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var repository = CreateRepository();
+        _mockDataAccess
+            .Setup(d => d.CheckRequiredTablesAsync(It.IsAny<IDbConnection>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, bool>
+            {
+                ["users"] = true,
+                ["user_roles"] = true,
+                ["role_permissions"] = true,
+            });
+
+        // Act
+        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*roles*");
     }
 
     // --- ValidateCredentialsAsync ---
@@ -162,7 +184,7 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync("user", "pass");
+        var act = () => repository.ValidateCredentialsAsync("user", "pass", TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -179,7 +201,7 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateInitializedRepository();
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync(username!, "pass");
+        var act = () => repository.ValidateCredentialsAsync(username!, "pass", TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>()
@@ -196,7 +218,7 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateInitializedRepository();
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync("user", password!);
+        var act = () => repository.ValidateCredentialsAsync("user", password!, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>()
@@ -213,7 +235,7 @@ public class UserRepositoryTests : IDisposable
             .ReturnsAsync((UserModel?)null);
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync(Username, "anypassword");
+        var act = () => repository.ValidateCredentialsAsync(Username, "anypassword", TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<UnauthorizedAccessException>()
@@ -230,7 +252,7 @@ public class UserRepositoryTests : IDisposable
             .ReturnsAsync(new UserModel { Id = UserId, Username = Username, PasswordHash = PasswordHash });
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync(Username, "wrongpassword");
+        var act = () => repository.ValidateCredentialsAsync(Username, "wrongpassword", TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<UnauthorizedAccessException>()
@@ -247,7 +269,7 @@ public class UserRepositoryTests : IDisposable
             .ReturnsAsync(new UserModel { Id = UserId, Username = Username, PasswordHash = "not-a-valid-hash" });
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync(Username, "anypassword");
+        var act = () => repository.ValidateCredentialsAsync(Username, "anypassword", TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -270,7 +292,7 @@ public class UserRepositoryTests : IDisposable
             });
 
         // Act
-        var result = await repository.ValidateCredentialsAsync(Username, "correctpassword");
+        var result = await repository.ValidateCredentialsAsync(Username, "correctpassword", TestContext.Current.CancellationToken);
 
         // Assert
         result.Id.Should().Be(UserId);
@@ -289,7 +311,7 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.GetByIdAsync(Guid.Empty);
+        var act = () => repository.GetByIdAsync(Guid.Empty, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -306,7 +328,7 @@ public class UserRepositoryTests : IDisposable
             .ReturnsAsync((UserModel?)null);
 
         // Act
-        var act = () => repository.GetByIdAsync(UserId);
+        var act = () => repository.GetByIdAsync(UserId, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<KeyNotFoundException>()
@@ -326,7 +348,7 @@ public class UserRepositoryTests : IDisposable
             .ReturnsAsync(Array.Empty<RoleModel>());
 
         // Act
-        var result = await repository.GetByIdAsync(UserId);
+        var result = await repository.GetByIdAsync(UserId, TestContext.Current.CancellationToken);
 
         // Assert
         result.Id.Should().Be(UserId);
@@ -343,7 +365,7 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.UpdateLastLoginAsync(Guid.Empty);
+        var act = () => repository.UpdateLastLoginAsync(Guid.Empty, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -360,7 +382,7 @@ public class UserRepositoryTests : IDisposable
             .ReturnsAsync(0);
 
         // Act
-        var act = () => repository.UpdateLastLoginAsync(UserId);
+        var act = () => repository.UpdateLastLoginAsync(UserId, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<KeyNotFoundException>()
@@ -377,7 +399,7 @@ public class UserRepositoryTests : IDisposable
             .ReturnsAsync(1);
 
         // Act
-        var act = () => repository.UpdateLastLoginAsync(UserId);
+        var act = () => repository.UpdateLastLoginAsync(UserId, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().NotThrowAsync();

@@ -54,7 +54,7 @@ pair to avoid `CryptoProviderFactory.Default` static cache collisions when multi
 | Testcontainers.PostgreSql | Manages PostgreSQL container lifecycle |
 | Respawn | Resets database state between tests |
 | Dapper | Direct database assertions (transitive dependency) |
-| MartinCostello.Logging.XUnit | Routes application logs to xUnit test output |
+| MartinCostello.Logging.XUnit.v3 | Routes application logs to xUnit test output |
 
 ---
 

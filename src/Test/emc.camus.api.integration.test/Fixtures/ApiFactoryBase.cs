@@ -19,15 +19,16 @@ namespace emc.camus.api.integration.test.Fixtures;
 /// </summary>
 public abstract class ApiFactoryBase : WebApplicationFactory<Program>, IAsyncLifetime, ITestOutputHelperAccessor
 {
-    public Xunit.Abstractions.ITestOutputHelper? OutputHelper { get; set; }
+    public ITestOutputHelper? OutputHelper { get; set; }
 
-    public virtual async Task InitializeAsync()
+    public virtual async ValueTask InitializeAsync()
     {
         await Task.CompletedTask;
     }
 
-    async Task IAsyncLifetime.DisposeAsync()
+    async ValueTask IAsyncDisposable.DisposeAsync()
     {
+        GC.SuppressFinalize(this);
         await DisposeAsync();
         await CleanupAsync();
     }

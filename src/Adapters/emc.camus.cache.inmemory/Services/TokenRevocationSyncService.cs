@@ -70,7 +70,9 @@ internal sealed partial class TokenRevocationSyncService : BackgroundService
     /// <summary>
     /// Executes the synchronization loop: yields to unblock host startup, loads revoked tokens
     /// immediately, then periodically refreshes the cache from the repository using a
-    /// <see cref="PeriodicTimer"/> to avoid interval drift.
+    /// <see cref="PeriodicTimer"/> to avoid interval drift. Cancellation disposes the timer,
+    /// causing <see cref="PeriodicTimer.WaitForNextTickAsync"/> to return <c>false</c> and
+    /// exit the loop naturally.
     /// </summary>
     /// <param name="stoppingToken">Token signaled when the host is shutting down.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -81,23 +83,16 @@ internal sealed partial class TokenRevocationSyncService : BackgroundService
 
         var baseInterval = TimeSpan.FromSeconds(_settings.TokenRevocationCache.SyncIntervalSeconds);
         using var timer = new PeriodicTimer(baseInterval);
-        try
+        using var _ = stoppingToken.Register(timer.Dispose);
+
+        await RunSyncCycleAsync(stoppingToken);
+
+        while (await timer.WaitForNextTickAsync(CancellationToken.None))
         {
             await RunSyncCycleAsync(stoppingToken);
+        }
 
-            while (await timer.WaitForNextTickAsync(stoppingToken))
-            {
-                await RunSyncCycleAsync(stoppingToken);
-            }
-        }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-        {
-            // Graceful shutdown — expected when the host signals stop.
-        }
-        finally
-        {
-            LogServiceStopped();
-        }
+        LogServiceStopped();
     }
 
     private async Task RunSyncCycleAsync(CancellationToken ct)
@@ -108,7 +103,8 @@ internal sealed partial class TokenRevocationSyncService : BackgroundService
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            throw;
+            // Cancellation during a sync cycle is expected during shutdown.
+            // The caller's timer-dispose pattern will exit the loop naturally.
         }
         catch (Exception ex)
         {

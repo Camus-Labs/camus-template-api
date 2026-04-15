@@ -49,16 +49,12 @@ namespace emc.camus.documentation.swagger
                 ConfigureApiVersions(options, settings);
                 ConfigureSecurityDefinitions(options, settings);
                 ConfigureSecurityRequirements(options, settings);
-                ConfigureXmlComments(options, settings, targetAssembly);
+                ConfigureXmlComments(options, targetAssembly);
                 options.EnableAnnotations();
-                ConfigureFilters(options, settings);
+                ConfigureFilters(options);
             });
 
-            // Register Swagger examples from the target assembly if example filters are enabled
-            if (settings.EnableExampleFilters)
-            {
-                builder.Services.AddSwaggerExamplesFromAssemblies(targetAssembly);
-            }
+            builder.Services.AddSwaggerExamplesFromAssemblies(targetAssembly);
 
             return builder;
         }
@@ -204,13 +200,8 @@ namespace emc.camus.documentation.swagger
         /// <summary>
         /// Configures XML comment documentation.
         /// </summary>
-        private static void ConfigureXmlComments(SwaggerGenOptions options, SwaggerSettings settings, Assembly targetAssembly)
+        private static void ConfigureXmlComments(SwaggerGenOptions options, Assembly targetAssembly)
         {
-            if (!settings.IncludeXmlComments)
-            {
-                return;
-            }
-
             var xmlFile = $"{targetAssembly.GetName().Name}.xml";
             var xmlPath = Path.Join(AppContext.BaseDirectory, xmlFile);
             if (File.Exists(xmlPath))
@@ -222,14 +213,10 @@ namespace emc.camus.documentation.swagger
         /// <summary>
         /// Configures Swagger filters.
         /// </summary>
-        private static void ConfigureFilters(SwaggerGenOptions options, SwaggerSettings settings)
+        private static void ConfigureFilters(SwaggerGenOptions options)
         {
             options.OperationFilter<DefaultApiResponsesOperationFilter>();
-
-            if (settings.EnableExampleFilters)
-            {
-                options.ExampleFilters();
-            }
+            options.ExampleFilters();
         }
 
         /// <summary>

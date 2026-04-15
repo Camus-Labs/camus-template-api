@@ -39,23 +39,19 @@ public sealed class UsernameHeaderMiddleware
     /// <param name="context">The HTTP context.</param>
     public async Task InvokeAsync(HttpContext context)
     {
-        // Capture username early to avoid issues with null Identity
-        // Use "anonymous" for unauthenticated requests to maintain consistent observability
-        var username = context.User?.Identity?.IsAuthenticated == true
-            ? context.User.Identity.Name
+        context.Response.OnStarting(AddUsernameHeader, context.Response);
+        await _next(context);
+    }
+
+    private static Task AddUsernameHeader(object state)
+    {
+        var response = (HttpResponse)state;
+        var identity = response.HttpContext.User.Identity;
+        var username = identity != null && identity.IsAuthenticated && identity.Name != null
+            ? identity.Name
             : "anonymous";
 
-        context.Response.OnStarting(() =>
-        {
-            var headers = context.Response.Headers;
-
-            if (!string.IsNullOrWhiteSpace(username) && !headers.ContainsKey(Headers.Username))
-            {
-                headers[Headers.Username] = username;
-            }
-            return Task.CompletedTask;
-        });
-
-        await _next(context);
+        response.Headers[Headers.Username] = username;
+        return Task.CompletedTask;
     }
 }

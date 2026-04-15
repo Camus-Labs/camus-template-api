@@ -28,16 +28,6 @@ namespace emc.camus.documentation.swagger.Configurations
         public List<string> SecuritySchemes { get; set; } = new();
 
         /// <summary>
-        /// Gets or sets whether to include XML comments from the API assembly.
-        /// </summary>
-        public bool IncludeXmlComments { get; set; }
-
-        /// <summary>
-        /// Gets or sets whether to enable example filters.
-        /// </summary>
-        public bool EnableExampleFilters { get; set; }
-
-        /// <summary>
         /// Validates the Swagger settings configuration.
         /// </summary>
         /// <exception cref="InvalidOperationException">

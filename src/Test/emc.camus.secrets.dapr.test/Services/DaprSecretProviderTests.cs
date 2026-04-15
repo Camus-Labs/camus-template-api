@@ -111,7 +111,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider();
 
         // Act
-        var act = () => provider.LoadSecretsAsync(null!);
+        var act = () => provider.LoadSecretsAsync(null!, TestContext.Current.CancellationToken);
 
         // Assert
         (await act.Should().ThrowAsync<ArgumentNullException>())
@@ -125,7 +125,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider();
 
         // Act
-        var act = () => provider.LoadSecretsAsync(Enumerable.Empty<string>());
+        var act = () => provider.LoadSecretsAsync(Enumerable.Empty<string>(), TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().NotThrowAsync();
@@ -139,7 +139,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider();
 
         // Act
-        var act = () => provider.LoadSecretsAsync(names);
+        var act = () => provider.LoadSecretsAsync(names, TestContext.Current.CancellationToken);
 
         // Assert
         (await act.Should().ThrowAsync<ArgumentException>()
@@ -154,7 +154,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider();
 
         // Act
-        await provider.LoadSecretsAsync(new[] { ValidSecretName });
+        await provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
 
         // Assert
         var result = provider.GetSecret(ValidSecretName);
@@ -176,7 +176,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider(handler: handler);
 
         // Act
-        await provider.LoadSecretsAsync(new[] { ValidSecretName, anotherSecretName });
+        await provider.LoadSecretsAsync(new[] { ValidSecretName, anotherSecretName }, TestContext.Current.CancellationToken);
 
         // Assert
         provider.GetSecret(ValidSecretName).Should().Be(ValidSecretValue);
@@ -191,7 +191,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider(handler: handler);
 
         // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName });
+        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -206,7 +206,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider(handler: handler);
 
         // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName });
+        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -223,7 +223,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider(handler: handler);
 
         // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName });
+        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -238,7 +238,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider(handler: handler);
 
         // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName });
+        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -255,7 +255,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider(handler: handler);
 
         // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName });
+        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -274,7 +274,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider(handler: handler);
 
         // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName });
+        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -289,7 +289,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider(handler: handler);
 
         // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName });
+        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
 
         // Assert
         (await act.Should().ThrowAsync<InvalidOperationException>()
@@ -334,7 +334,7 @@ public class DaprSecretProviderTests
     {
         // Arrange
         var provider = CreateProvider();
-        await provider.LoadSecretsAsync(new[] { ValidSecretName });
+        await provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
 
         // Act
         var result = provider.GetSecret(ValidSecretName);

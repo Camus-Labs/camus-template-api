@@ -59,7 +59,7 @@ public class ApiInfoServiceTests
         var service = CreateService();
 
         // Act
-        var result = await service.GetByVersionAsync(filter);
+        var result = await service.GetByVersionAsync(filter, TestContext.Current.CancellationToken);
 
         // Assert
         result.Version.Should().Be(ValidVersion);
@@ -74,7 +74,7 @@ public class ApiInfoServiceTests
         var service = CreateService();
 
         // Act
-        var act = () => service.GetByVersionAsync(null!);
+        var act = () => service.GetByVersionAsync(null!, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
@@ -92,7 +92,7 @@ public class ApiInfoServiceTests
         var service = CreateService();
 
         // Act
-        var act = () => service.GetByVersionAsync(filter);
+        var act = () => service.GetByVersionAsync(filter, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<KeyNotFoundException>();
@@ -109,7 +109,7 @@ public class ApiInfoServiceTests
         var service = CreateService();
 
         // Act
-        var act = () => service.GetByVersionAsync(filter);
+        var act = () => service.GetByVersionAsync(filter, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -125,7 +125,7 @@ public class ApiInfoServiceTests
         var service = CreateService();
 
         // Act
-        await service.InitializeAsync();
+        await service.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         _repositoryMock.Verify(r => r.InitializeAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -139,7 +139,7 @@ public class ApiInfoServiceTests
         var service = CreateService();
 
         // Act
-        var act = () => service.InitializeAsync();
+        var act = () => service.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()

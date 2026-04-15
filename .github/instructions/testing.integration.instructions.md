@@ -11,7 +11,7 @@ applyTo: "src/Test/**integration.test/**"
     - [ ] `[Trait("Category", "Integration")]` on every test class — enables CI filtering via
           `dotnet test --filter "Category=Integration"`
     - [ ] No mocks for infrastructure — tests use real database connections, real HTTP clients, real middleware
-    - [ ] `MartinCostello.Logging.XUnit` for routing application logs to xUnit test output — enables
+    - [ ] `MartinCostello.Logging.XUnit.v3` for routing application logs to xUnit test output — enables
           debugging test failures in IDE and CI
 
 2. Fixture Management

@@ -34,7 +34,7 @@ namespace emc.camus.observability.otel.Middleware
             {
                 var headers = context.Response.Headers;
 
-                if (!string.IsNullOrWhiteSpace(traceId) && !headers.ContainsKey(Headers.TraceId))
+                if (!headers.ContainsKey(Headers.TraceId))
                 {
                     headers[Headers.TraceId] = traceId;
                 }

@@ -5,7 +5,6 @@ using emc.camus.api.integration.test.Helpers;
 using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V1;
 using FluentAssertions;
-using Xunit.Abstractions;
 
 namespace emc.camus.api.integration.test.ApiInfo;
 
@@ -23,20 +22,24 @@ public class ApiInfoPostgreSqlEndpointTests : IAsyncLifetime
         _client = factory.CreateClient();
     }
 
-    public async Task InitializeAsync() => await _factory.ResetDatabaseAsync();
+    public async ValueTask InitializeAsync() => await _factory.ResetDatabaseAsync();
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync()
+    {
+        GC.SuppressFinalize(this);
+        return ValueTask.CompletedTask;
+    }
 
     [Fact]
     public async Task GetInfo_PostgreSqlPersistence_ReturnsOkWithApiInfo()
     {
         // Act
-        var response = await _client.GetAsync("/api/v1.0/apiinfo/info");
+        var response = await _client.GetAsync("/api/v1.0/apiinfo/info", TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
 
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse<ApiInfoResponse>>();
+        var body = await response.Content.ReadFromJsonAsync<ApiResponse<ApiInfoResponse>>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body!.Data.Should().NotBeNull();
         body.Data!.Version.Should().Be("1.0");

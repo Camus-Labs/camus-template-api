@@ -5,7 +5,6 @@ using emc.camus.api.integration.test.Helpers;
 using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V1;
 using FluentAssertions;
-using Xunit.Abstractions;
 
 namespace emc.camus.api.integration.test.ApiInfo;
 
@@ -27,12 +26,12 @@ public class ApiInfoInMemoryEndpointTests
     public async Task GetInfo_PublicEndpoint_ReturnsOkWithApiInfo()
     {
         // Act
-        var response = await _client.GetAsync("/api/v1.0/apiinfo/info");
+        var response = await _client.GetAsync("/api/v1.0/apiinfo/info", TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
 
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse<ApiInfoResponse>>();
+        var body = await response.Content.ReadFromJsonAsync<ApiResponse<ApiInfoResponse>>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body!.Data.Should().NotBeNull();
         body.Data!.Version.Should().Be("1.0");
@@ -47,12 +46,12 @@ public class ApiInfoInMemoryEndpointTests
         var client = _factory.CreateApiKeyClient();
 
         // Act
-        var response = await client.GetAsync("/api/v2.0/apiinfo/info-apikey");
+        var response = await client.GetAsync("/api/v2.0/apiinfo/info-apikey", TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
 
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse<ApiInfoResponse>>();
+        var body = await response.Content.ReadFromJsonAsync<ApiResponse<ApiInfoResponse>>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body!.Data.Should().NotBeNull();
         body.Data!.Version.Should().Be("2.0");
@@ -62,7 +61,7 @@ public class ApiInfoInMemoryEndpointTests
     public async Task GetInfoApiKey_NoApiKey_ReturnsUnauthorized()
     {
         // Act
-        var response = await _client.GetAsync("/api/v2.0/apiinfo/info-apikey");
+        var response = await _client.GetAsync("/api/v2.0/apiinfo/info-apikey", TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
@@ -76,12 +75,12 @@ public class ApiInfoInMemoryEndpointTests
         var client = _factory.CreateJwtClient();
 
         // Act
-        var response = await client.GetAsync("/api/v2.0/apiinfo/info-jwt");
+        var response = await client.GetAsync("/api/v2.0/apiinfo/info-jwt", TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
 
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse<ApiInfoResponse>>();
+        var body = await response.Content.ReadFromJsonAsync<ApiResponse<ApiInfoResponse>>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body!.Data.Should().NotBeNull();
         body.Data!.Version.Should().Be("2.0");
@@ -91,7 +90,7 @@ public class ApiInfoInMemoryEndpointTests
     public async Task GetInfoJwt_NoToken_ReturnsUnauthorized()
     {
         // Act
-        var response = await _client.GetAsync("/api/v2.0/apiinfo/info-jwt");
+        var response = await _client.GetAsync("/api/v2.0/apiinfo/info-jwt", TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);

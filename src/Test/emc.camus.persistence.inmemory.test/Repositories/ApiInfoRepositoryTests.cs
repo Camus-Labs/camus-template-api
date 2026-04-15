@@ -30,7 +30,7 @@ public class ApiInfoRepositoryTests
         var repository = new ApiInfoRepository(settings);
 
         // Act
-        var act = () => repository.InitializeAsync();
+        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().NotThrowAsync();
@@ -42,10 +42,10 @@ public class ApiInfoRepositoryTests
         // Arrange
         var settings = CreateValidSettings();
         var repository = new ApiInfoRepository(settings);
-        await repository.InitializeAsync();
+        await repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var act = () => repository.InitializeAsync();
+        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -61,7 +61,7 @@ public class ApiInfoRepositoryTests
         var repository = new ApiInfoRepository(settings);
 
         // Act
-        var act = () => repository.InitializeAsync();
+        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().NotThrowAsync();
@@ -82,10 +82,10 @@ public class ApiInfoRepositoryTests
             }
         });
         var repository = new ApiInfoRepository(settings);
-        await repository.InitializeAsync();
+        await repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var result = await repository.GetByVersionAsync(InMemoryModelSettingsFactory.DefaultApiVersion);
+        var result = await repository.GetByVersionAsync(InMemoryModelSettingsFactory.DefaultApiVersion, TestContext.Current.CancellationToken);
 
         // Assert
         result.Features.Should().BeEmpty();
@@ -99,10 +99,10 @@ public class ApiInfoRepositoryTests
         // Arrange
         var settings = CreateValidSettings();
         var repository = new ApiInfoRepository(settings);
-        await repository.InitializeAsync();
+        await repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var result = await repository.GetByVersionAsync(InMemoryModelSettingsFactory.DefaultApiVersion);
+        var result = await repository.GetByVersionAsync(InMemoryModelSettingsFactory.DefaultApiVersion, TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -127,10 +127,10 @@ public class ApiInfoRepositoryTests
             }
         });
         var repository = new ApiInfoRepository(settings);
-        await repository.InitializeAsync();
+        await repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var result = await repository.GetByVersionAsync("v1");
+        var result = await repository.GetByVersionAsync("v1", TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -143,10 +143,10 @@ public class ApiInfoRepositoryTests
         // Arrange
         var settings = CreateValidSettings();
         var repository = new ApiInfoRepository(settings);
-        await repository.InitializeAsync();
+        await repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var act = () => repository.GetByVersionAsync("99.0");
+        var act = () => repository.GetByVersionAsync("99.0", TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<KeyNotFoundException>()
@@ -161,7 +161,7 @@ public class ApiInfoRepositoryTests
         var repository = new ApiInfoRepository(settings);
 
         // Act
-        var act = () => repository.GetByVersionAsync("1.0");
+        var act = () => repository.GetByVersionAsync("1.0", TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -177,10 +177,10 @@ public class ApiInfoRepositoryTests
         // Arrange
         var settings = CreateValidSettings();
         var repository = new ApiInfoRepository(settings);
-        await repository.InitializeAsync();
+        await repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var act = () => repository.GetByVersionAsync(version!);
+        var act = () => repository.GetByVersionAsync(version!, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
@@ -203,7 +203,7 @@ public class ApiInfoRepositoryTests
         var repository = new ApiInfoRepository(settings);
 
         // Act
-        var act = () => repository.InitializeAsync();
+        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
@@ -224,10 +224,10 @@ public class ApiInfoRepositoryTests
             }
         });
         var repository = new ApiInfoRepository(settings);
-        await repository.InitializeAsync();
+        await repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var result = await repository.GetByVersionAsync("1.0");
+        var result = await repository.GetByVersionAsync("1.0", TestContext.Current.CancellationToken);
 
         // Assert
         result.Features.Should().BeEmpty();

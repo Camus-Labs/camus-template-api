@@ -49,7 +49,7 @@ public class UserRepositoryTests
         var repository = new UserRepository(settings, _mockSecretProvider.Object);
 
         // Act
-        var act = () => repository.InitializeAsync();
+        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().NotThrowAsync();
@@ -63,10 +63,10 @@ public class UserRepositoryTests
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
         var repository = new UserRepository(settings, _mockSecretProvider.Object);
-        await repository.InitializeAsync();
+        await repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var act = () => repository.InitializeAsync();
+        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -85,7 +85,7 @@ public class UserRepositoryTests
         var repository = new UserRepository(settings, _mockSecretProvider.Object);
 
         // Act
-        var act = () => repository.InitializeAsync();
+        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -110,7 +110,7 @@ public class UserRepositoryTests
         var repository = await CreateInitializedRepository(settings);
 
         // Act
-        var result = await repository.ValidateCredentialsAsync("adminuser", "adminpass");
+        var result = await repository.ValidateCredentialsAsync("adminuser", "adminpass", TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -131,7 +131,7 @@ public class UserRepositoryTests
         var repository = await CreateInitializedRepository(settings);
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync(username, password);
+        var act = () => repository.ValidateCredentialsAsync(username, password, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<UnauthorizedAccessException>()
@@ -146,7 +146,7 @@ public class UserRepositoryTests
         var repository = new UserRepository(settings, _mockSecretProvider.Object);
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync("adminuser", "adminpass");
+        var act = () => repository.ValidateCredentialsAsync("adminuser", "adminpass", TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -166,7 +166,7 @@ public class UserRepositoryTests
         var repository = await CreateInitializedRepository(settings);
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync(username!, "adminpass");
+        var act = () => repository.ValidateCredentialsAsync(username!, "adminpass", TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
@@ -185,7 +185,7 @@ public class UserRepositoryTests
         var repository = await CreateInitializedRepository(settings);
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync("adminuser", password!);
+        var act = () => repository.ValidateCredentialsAsync("adminuser", password!, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
@@ -201,10 +201,10 @@ public class UserRepositoryTests
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
         var repository = await CreateInitializedRepository(settings);
-        var user = await repository.ValidateCredentialsAsync("adminuser", "adminpass");
+        var user = await repository.ValidateCredentialsAsync("adminuser", "adminpass", TestContext.Current.CancellationToken);
 
         // Act
-        var result = await repository.GetByIdAsync(user.Id);
+        var result = await repository.GetByIdAsync(user.Id, TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -223,7 +223,7 @@ public class UserRepositoryTests
         var nonExistentId = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
         // Act
-        var act = () => repository.GetByIdAsync(nonExistentId);
+        var act = () => repository.GetByIdAsync(nonExistentId, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<KeyNotFoundException>()
@@ -240,7 +240,7 @@ public class UserRepositoryTests
         var repository = await CreateInitializedRepository(settings);
 
         // Act
-        var act = () => repository.GetByIdAsync(Guid.Empty);
+        var act = () => repository.GetByIdAsync(Guid.Empty, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
@@ -255,7 +255,7 @@ public class UserRepositoryTests
         var userId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
         // Act
-        var act = () => repository.GetByIdAsync(userId);
+        var act = () => repository.GetByIdAsync(userId, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -272,10 +272,10 @@ public class UserRepositoryTests
         SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
         var settings = CreateValidSettings();
         var repository = await CreateInitializedRepository(settings);
-        var user = await repository.ValidateCredentialsAsync("adminuser", "adminpass");
+        var user = await repository.ValidateCredentialsAsync("adminuser", "adminpass", TestContext.Current.CancellationToken);
 
         // Act
-        var act = () => repository.UpdateLastLoginAsync(user.Id);
+        var act = () => repository.UpdateLastLoginAsync(user.Id, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().NotThrowAsync();
@@ -291,7 +291,7 @@ public class UserRepositoryTests
         var repository = await CreateInitializedRepository(settings);
 
         // Act
-        var act = () => repository.UpdateLastLoginAsync(Guid.Empty);
+        var act = () => repository.UpdateLastLoginAsync(Guid.Empty, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
@@ -311,7 +311,7 @@ public class UserRepositoryTests
         var repository = await CreateInitializedRepository(settings);
 
         // Act
-        var result = await repository.ValidateCredentialsAsync("readeruser", "readerpass");
+        var result = await repository.ValidateCredentialsAsync("readeruser", "readerpass", TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -346,7 +346,7 @@ public class UserRepositoryTests
         var repository = await CreateInitializedRepository(settings);
 
         // Act
-        var result = await repository.ValidateCredentialsAsync("adminuser", "adminpass");
+        var result = await repository.ValidateCredentialsAsync("adminuser", "adminpass", TestContext.Current.CancellationToken);
 
         // Assert
         result.Roles.Should().HaveCount(2);
@@ -363,7 +363,7 @@ public class UserRepositoryTests
     private async Task<UserRepository> CreateInitializedRepository(InMemoryModelSettings settings)
     {
         var repository = new UserRepository(settings, _mockSecretProvider.Object);
-        await repository.InitializeAsync();
+        await repository.InitializeAsync(TestContext.Current.CancellationToken);
         return repository;
     }
 

@@ -96,7 +96,7 @@ public class ApiInfoRepositoryTests : IDisposable
         var repository = CreateInitializedRepository();
 
         // Act
-        var act = () => repository.InitializeAsync();
+        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -113,10 +113,10 @@ public class ApiInfoRepositoryTests : IDisposable
             .ReturnsAsync(true);
 
         // Act
-        await repository.InitializeAsync();
+        await repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var act = () => repository.InitializeAsync();
+        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*already initialized*");
     }
@@ -131,7 +131,7 @@ public class ApiInfoRepositoryTests : IDisposable
             .ReturnsAsync(false);
 
         // Act
-        var act = () => repository.InitializeAsync();
+        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -147,7 +147,7 @@ public class ApiInfoRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.GetByVersionAsync("1.0");
+        var act = () => repository.GetByVersionAsync("1.0", TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -164,7 +164,7 @@ public class ApiInfoRepositoryTests : IDisposable
         var repository = CreateInitializedRepository();
 
         // Act
-        var act = () => repository.GetByVersionAsync(version!);
+        var act = () => repository.GetByVersionAsync(version!, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>()
@@ -181,7 +181,7 @@ public class ApiInfoRepositoryTests : IDisposable
             .ReturnsAsync((ApiInfoModel?)null);
 
         // Act
-        var act = () => repository.GetByVersionAsync("2.0");
+        var act = () => repository.GetByVersionAsync("2.0", TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<KeyNotFoundException>()
@@ -198,7 +198,7 @@ public class ApiInfoRepositoryTests : IDisposable
             .ReturnsAsync(new ApiInfoModel { Name = "TestApi", Version = "1.0", Status = "active", Features = ApiFeatures });
 
         // Act
-        var result = await repository.GetByVersionAsync("1.0");
+        var result = await repository.GetByVersionAsync("1.0", TestContext.Current.CancellationToken);
 
         // Assert
         result.Name.Should().Be("TestApi");

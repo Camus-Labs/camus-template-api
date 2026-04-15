@@ -5,7 +5,6 @@ using emc.camus.api.integration.test.Helpers;
 using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V2;
 using FluentAssertions;
-using Xunit.Abstractions;
 
 namespace emc.camus.api.integration.test.Auth;
 
@@ -29,12 +28,12 @@ public class AuthInMemoryEndpointTests
         var request = new { Username = "admin", Password = "admin-password" };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/v2.0/auth/authenticate", request);
+        var response = await client.PostAsJsonAsync("/api/v2.0/auth/authenticate", request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
 
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse<AuthenticateUserResponse>>();
+        var body = await response.Content.ReadFromJsonAsync<ApiResponse<AuthenticateUserResponse>>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body!.Data.Should().NotBeNull();
         body.Data!.Token.Should().NotBeNullOrWhiteSpace();
@@ -49,7 +48,7 @@ public class AuthInMemoryEndpointTests
         var request = new { Username = "admin", Password = "wrong-password" };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/v2.0/auth/authenticate", request);
+        var response = await client.PostAsJsonAsync("/api/v2.0/auth/authenticate", request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
@@ -64,7 +63,7 @@ public class AuthInMemoryEndpointTests
         var request = new { Username = "admin", Password = "admin-password" };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/v2.0/auth/authenticate", request);
+        var response = await client.PostAsJsonAsync("/api/v2.0/auth/authenticate", request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
