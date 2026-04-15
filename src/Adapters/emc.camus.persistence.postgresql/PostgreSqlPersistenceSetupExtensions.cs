@@ -36,13 +36,15 @@ namespace emc.camus.persistence.postgresql
             // Enable Dapper snake_case → PascalCase column mapping (e.g., password_hash → PasswordHash)
             Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
-            // Register database connection factory
-            builder.Services.AddSingleton<IConnectionFactory, ConnectionFactory>();
+            // Register database connection factory (scoped: depends on scoped IUserContext for audit session variables)
+            builder.Services.AddScoped<IConnectionFactory, ConnectionFactory>();
 
             // Register initialization state (singleton: shared across scoped repositories within one container)
             builder.Services.AddSingleton<InitializationState>();
 
             // Register unit of work (scoped: one per request, shared across repositories)
+             // Registered as concrete type for internal repository access (GetConnectionAsync),
+            // and forwarded to IUnitOfWork for application-layer consumers.
             builder.Services.AddScoped<UnitOfWork>();
             builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork>());
 
@@ -75,7 +77,7 @@ namespace emc.camus.persistence.postgresql
                 "postgresql",
                 sp =>
                 {
-                    var unitOfWork = sp.GetRequiredService<UnitOfWork>();
+                    var unitOfWork = sp.GetRequiredService<IUnitOfWork>();
                     return new HealthCheck(unitOfWork);
                 },
                 failureStatus: null,

@@ -1,3 +1,4 @@
+using emc.camus.application.Common;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace emc.camus.persistence.postgresql.Services;
@@ -8,13 +9,13 @@ namespace emc.camus.persistence.postgresql.Services;
 /// </summary>
 internal sealed class HealthCheck : IHealthCheck
 {
-    private readonly UnitOfWork _unitOfWork;
+    private readonly IUnitOfWork _unitOfWork;
 
     /// <summary>
     /// Creates the health check with the specified unit of work.
     /// </summary>
     /// <param name="unitOfWork">The unit of work used to verify database connectivity.</param>
-    public HealthCheck(UnitOfWork unitOfWork)
+    public HealthCheck(IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(unitOfWork);
 
@@ -32,7 +33,7 @@ internal sealed class HealthCheck : IHealthCheck
     {
         try
         {
-            await _unitOfWork.GetConnectionAsync(cancellationToken);
+            await _unitOfWork.CheckConnectivityAsync(cancellationToken);
 
             return HealthCheckResult.Healthy();
         }

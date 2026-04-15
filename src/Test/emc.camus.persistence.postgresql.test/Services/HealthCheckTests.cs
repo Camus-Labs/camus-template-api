@@ -1,4 +1,4 @@
-using System.Data.Common;
+using emc.camus.application.Common;
 using FluentAssertions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using emc.camus.persistence.postgresql.Services;
@@ -7,13 +7,7 @@ namespace emc.camus.persistence.postgresql.test.Services;
 
 public class HealthCheckTests
 {
-    private readonly Mock<IConnectionFactory> _mockConnectionFactory = new();
-    private readonly Mock<DbConnection> _mockConnection = new();
-
-    private UnitOfWork CreateUnitOfWork()
-    {
-        return new UnitOfWork(_mockConnectionFactory.Object);
-    }
+    private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
 
     // --- Constructor ---
 
@@ -21,7 +15,7 @@ public class HealthCheckTests
     public void Constructor_NullUnitOfWork_ThrowsArgumentNullException()
     {
         // Arrange
-        UnitOfWork? unitOfWork = null;
+        IUnitOfWork? unitOfWork = null;
 
         // Act
         var act = () => new HealthCheck(unitOfWork!);
@@ -37,10 +31,9 @@ public class HealthCheckTests
     public async Task CheckHealthAsync_DatabaseReachable_ReturnsHealthy()
     {
         // Arrange
-        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_mockConnection.Object);
-        var unitOfWork = CreateUnitOfWork();
-        var healthCheck = new HealthCheck(unitOfWork);
+        _mockUnitOfWork.Setup(u => u.CheckConnectivityAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        var healthCheck = new HealthCheck(_mockUnitOfWork.Object);
 
         // Act
         var result = await healthCheck.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
@@ -53,10 +46,9 @@ public class HealthCheckTests
     public async Task CheckHealthAsync_DatabaseUnreachable_ReturnsUnhealthy()
     {
         // Arrange
-        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>()))
+        _mockUnitOfWork.Setup(u => u.CheckConnectivityAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Connection failed"));
-        var unitOfWork = CreateUnitOfWork();
-        var healthCheck = new HealthCheck(unitOfWork);
+        var healthCheck = new HealthCheck(_mockUnitOfWork.Object);
 
         // Act
         var result = await healthCheck.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);

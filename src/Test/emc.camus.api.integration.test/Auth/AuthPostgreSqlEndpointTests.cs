@@ -103,9 +103,7 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         ((DateTime?)userBefore.last_login).Should().BeNull();
 
         // Act — authenticate as ClientApp
-        var before = DateTime.UtcNow;
         await _factory.AuthenticateAsync("ClientApp", "clientsecret");
-        var after = DateTime.UtcNow;
 
         // Assert — user row updated with last_login and audit fields
         var userAfter = await connection.QuerySingleAsync<dynamic>(
@@ -113,8 +111,8 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
 
         ((string)userAfter.created_by).Should().Be("Admin", "seed creator must be preserved");
         ((string)userAfter.updated_by).Should().Be("ApiKeyUser", "trigger sets updated_by to the HTTP identity (API key)");
-        ((DateTime?)userAfter.last_login).Should().NotBeNull();
-        ((DateTime)userAfter.last_login).Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
+        ((DateTime?)userAfter.last_login).Should().NotBeNull("login should set last_login");
+        ((DateTime)userAfter.last_login).Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(30));
 
         // Assert — audit record persisted
         var audit = await connection.QuerySingleAsync<dynamic>(

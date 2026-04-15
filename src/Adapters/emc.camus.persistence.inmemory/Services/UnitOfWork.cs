@@ -57,4 +57,15 @@ internal sealed partial class UnitOfWork : IUnitOfWork
         LogSkippedOperation("Rollback");
         return Task.CompletedTask;
     }
+
+    /// <summary>
+    /// No-op: in-memory persistence is always reachable.
+    /// </summary>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
+    /// <returns>A completed task.</returns>
+    public Task CheckConnectivityAsync(CancellationToken ct = default)
+    {
+        LogSkippedOperation("CheckConnectivity");
+        return Task.CompletedTask;
+    }
 }

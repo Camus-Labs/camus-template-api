@@ -70,6 +70,16 @@ internal sealed class UnitOfWork : IUnitOfWork, IAsyncDisposable, IDisposable
     }
 
     /// <summary>
+    /// Verifies PostgreSQL connectivity by opening a connection if not already open.
+    /// </summary>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public async Task CheckConnectivityAsync(CancellationToken ct = default)
+    {
+        await GetConnectionAsync(ct);
+    }
+
+    /// <summary>
     /// Releases the transaction and connection resources asynchronously.
     /// </summary>
     /// <returns>A value task representing the asynchronous dispose operation.</returns>

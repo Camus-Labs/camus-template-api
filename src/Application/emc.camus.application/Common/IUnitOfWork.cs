@@ -26,4 +26,12 @@ public interface IUnitOfWork
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     Task RollbackAsync();
+
+    /// <summary>
+    /// Verifies that the underlying data store is reachable.
+    /// PostgreSQL adapters open a real connection; in-memory adapters no-op.
+    /// </summary>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task CheckConnectivityAsync(CancellationToken ct = default);
 }

@@ -43,7 +43,7 @@ namespace emc.camus.persistence.inmemory
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // Register audit repository (shared across Auth and AppData)
-            builder.Services.AddSingleton<IActionAuditRepository, ActionAuditRepository>();
+            builder.Services.AddScoped<IActionAuditRepository, ActionAuditRepository>();
 
             // Register repositories as singletons (to persist data during app lifetime)
             builder.Services.AddSingleton<IUserRepository, UserRepository>();

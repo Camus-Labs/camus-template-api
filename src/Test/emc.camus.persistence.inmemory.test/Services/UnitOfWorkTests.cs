@@ -64,4 +64,19 @@ public class UnitOfWorkTests
         await act.Should().NotThrowAsync();
     }
 
+    // --- CheckConnectivityAsync ---
+
+    [Fact]
+    public async Task CheckConnectivityAsync_WhenCalled_CompletesSuccessfully()
+    {
+        // Arrange
+        var unitOfWork = new UnitOfWork(NullLogger<UnitOfWork>.Instance);
+
+        // Act
+        var act = () => unitOfWork.CheckConnectivityAsync();
+
+        // Assert
+        await act.Should().NotThrowAsync();
+    }
+
 }
