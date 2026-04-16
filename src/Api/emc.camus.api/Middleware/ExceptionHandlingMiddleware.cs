@@ -277,38 +277,29 @@ namespace emc.camus.api.Middleware
             // Evaluate rules in order - first match wins
             var exceptionTypeName = exception.GetType().Name;
 
-            foreach (var rule in _allRules)
-            {
-                if (TryMatchRule(rule, exceptionTypeName, exception.Message, out var errorCode))
-                {
-                    return errorCode;
-                }
-            }
-
-            // No rules matched - return unknown error constant
-            return ErrorCodes.DefaultErrorCode;
+            return _allRules
+                .Select(rule => MatchErrorCode(rule, exceptionTypeName, exception.Message))
+                .FirstOrDefault(errorCode => errorCode is not null)
+                ?? ErrorCodes.DefaultErrorCode;
         }
 
         /// <summary>
         /// Evaluates a single error code mapping rule against the exception type name and message.
-        /// Returns true if the rule matches, with the matched error code in the out parameter.
+        /// Returns the matched error code, or null if the rule does not match.
         /// </summary>
-        private bool TryMatchRule(ErrorCodeMappingRule rule, string exceptionTypeName, string exceptionMessage, out string errorCode)
+        private string? MatchErrorCode(ErrorCodeMappingRule rule, string exceptionTypeName, string exceptionMessage)
         {
-            errorCode = string.Empty;
-
             // Check type match (if specified)
             if (!string.IsNullOrWhiteSpace(rule.Type) &&
                 !exceptionTypeName.Equals(rule.Type, StringComparison.OrdinalIgnoreCase))
             {
-                return false;
+                return null;
             }
 
             // Type-only match (no pattern specified)
             if (string.IsNullOrWhiteSpace(rule.Pattern))
             {
-                errorCode = rule.ErrorCode;
-                return true;
+                return rule.ErrorCode;
             }
 
             // Check pattern match
@@ -316,8 +307,7 @@ namespace emc.camus.api.Middleware
             {
                 if (Regex.IsMatch(exceptionMessage, rule.Pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(RegexTimeoutMilliseconds)))
                 {
-                    errorCode = rule.ErrorCode;
-                    return true;
+                    return rule.ErrorCode;
                 }
             }
             catch (RegexMatchTimeoutException)
@@ -325,7 +315,7 @@ namespace emc.camus.api.Middleware
                 LogRegexPatternTimeout(rule.Pattern);
             }
 
-            return false;
+            return null;
         }
 
         /// <summary>

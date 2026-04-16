@@ -122,7 +122,7 @@ public class ActionAuditRepositoryTests : IDisposable
     public async Task LogCurrentUserActionAsync_NullUserId_ThrowsInvalidOperationException()
     {
         // Arrange
-        _mockUserContext.Setup(x => x.GetCurrentUserId()).Returns((Guid?)null);
+        _mockUserContext.Setup(x => x.GetCurrentUserId()).Returns(default(Guid?));
         var repository = CreateRepository();
 
         // Act
@@ -138,7 +138,7 @@ public class ActionAuditRepositoryTests : IDisposable
     {
         // Arrange
         _mockUserContext.Setup(x => x.GetCurrentUserId()).Returns(UserId);
-        _mockUserContext.Setup(x => x.GetCurrentUsername()).Returns((string?)null);
+        _mockUserContext.Setup(x => x.GetCurrentUsername()).Returns(default(string?));
         var repository = CreateRepository();
 
         // Act

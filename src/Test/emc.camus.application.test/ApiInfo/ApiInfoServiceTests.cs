@@ -70,6 +70,25 @@ public class ApiInfoServiceTests
     }
 
     [Fact]
+    public async Task GetByVersionAsync_VersionWithoutMinor_NormalizesAndQueriesWithMinor()
+    {
+        // Arrange
+        var filter = new ApiInfoFilter("2");
+        var apiInfo = new emc.camus.domain.Auth.ApiInfo(ValidName, "2.0", ValidStatus, ValidFeatures.ToList());
+
+        _repositoryMock.Setup(r => r.GetByVersionAsync("2.0", It.IsAny<CancellationToken>())).ReturnsAsync(apiInfo);
+
+        var service = CreateService();
+
+        // Act
+        var result = await service.GetByVersionAsync(filter, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Version.Should().Be("2.0");
+        _repositoryMock.Verify(r => r.GetByVersionAsync("2.0", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task GetByVersionAsync_NullFilter_ThrowsArgumentNullException()
     {
         // Arrange

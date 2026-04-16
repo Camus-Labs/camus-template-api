@@ -178,7 +178,7 @@ public class ApiInfoRepositoryTests : IDisposable
         var repository = CreateInitializedRepository();
         _mockDataAccess
             .Setup(d => d.FindByVersionAsync(It.IsAny<IDbConnection>(), "2.0", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ApiInfoModel?)null);
+            .ReturnsAsync(default(ApiInfoModel?));
 
         // Act
         var act = () => repository.GetByVersionAsync("2.0", TestContext.Current.CancellationToken);

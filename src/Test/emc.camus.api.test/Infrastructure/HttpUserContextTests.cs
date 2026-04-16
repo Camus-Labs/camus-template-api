@@ -37,7 +37,7 @@ public class HttpUserContextTests
     {
         var mockAccessor = new Mock<IHttpContextAccessor>();
         var mockHttpContext = new Mock<HttpContext>();
-        mockHttpContext.Setup(x => x.User).Returns((ClaimsPrincipal)null!);
+        mockHttpContext.Setup(x => x.User).Returns(default(ClaimsPrincipal)!);
         mockAccessor.Setup(x => x.HttpContext).Returns(mockHttpContext.Object);
         return new HttpUserContext(mockAccessor.Object);
     }

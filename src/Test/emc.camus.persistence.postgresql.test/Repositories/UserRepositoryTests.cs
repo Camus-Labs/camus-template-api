@@ -232,7 +232,7 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateInitializedRepository();
         _mockDataAccess
             .Setup(d => d.FindByUsernameWithHashAsync(It.IsAny<IDbConnection>(), Username, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((UserModel?)null);
+            .ReturnsAsync(default(UserModel?));
 
         // Act
         var act = () => repository.ValidateCredentialsAsync(Username, "anypassword", TestContext.Current.CancellationToken);
@@ -325,7 +325,7 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateInitializedRepository();
         _mockDataAccess
             .Setup(d => d.FindByIdAsync(It.IsAny<IDbConnection>(), UserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((UserModel?)null);
+            .ReturnsAsync(default(UserModel?));
 
         // Act
         var act = () => repository.GetByIdAsync(UserId, TestContext.Current.CancellationToken);

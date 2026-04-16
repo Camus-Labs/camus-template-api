@@ -202,7 +202,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
         var repository = CreateRepository();
         _mockDataAccess
             .Setup(d => d.FindByJtiAsync(It.IsAny<IDbConnection>(), Jti, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((GeneratedTokenModel?)null);
+            .ReturnsAsync(default(GeneratedTokenModel?));
 
         // Act
         var result = await repository.GetByJtiAsync(Jti, TestContext.Current.CancellationToken);

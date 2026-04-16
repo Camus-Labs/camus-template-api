@@ -107,7 +107,7 @@ public class ApiInfoControllerTests
 
         var httpContext = new DefaultHttpContext();
         var mockVersionFeature = new Mock<IApiVersioningFeature>();
-        mockVersionFeature.Setup(f => f.RequestedApiVersion).Returns((ApiVersion?)null);
+        mockVersionFeature.Setup(f => f.RequestedApiVersion).Returns(default(ApiVersion?));
         httpContext.Features.Set(mockVersionFeature.Object);
         _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
@@ -118,7 +118,7 @@ public class ApiInfoControllerTests
         result.Should().BeOfType<OkObjectResult>();
         _mockActivitySource.Verify(
             a => a.SetRequestTags(It.IsAny<Activity?>(), It.Is<IDictionary<string, object?>>(
-                d => d.ContainsKey("api_version") && (string)d["api_version"]! == "unknown")),
+                d => (string)d["api_version"]! == "unknown")),
             Times.Once);
     }
 
@@ -153,7 +153,7 @@ public class ApiInfoControllerTests
 
         var httpContext = new DefaultHttpContext();
         var mockVersionFeature = new Mock<IApiVersioningFeature>();
-        mockVersionFeature.Setup(f => f.RequestedApiVersion).Returns((ApiVersion?)null);
+        mockVersionFeature.Setup(f => f.RequestedApiVersion).Returns(default(ApiVersion?));
         httpContext.Features.Set(mockVersionFeature.Object);
         _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
@@ -164,7 +164,7 @@ public class ApiInfoControllerTests
         result.Should().BeOfType<OkObjectResult>();
         _mockActivitySource.Verify(
             a => a.SetRequestTags(It.IsAny<Activity?>(), It.Is<IDictionary<string, object?>>(
-                d => d.ContainsKey("api_version") && (string)d["api_version"]! == "unknown")),
+                d => (string)d["api_version"]! == "unknown")),
             Times.Once);
     }
 
@@ -199,7 +199,7 @@ public class ApiInfoControllerTests
 
         var httpContext = new DefaultHttpContext();
         var mockVersionFeature = new Mock<IApiVersioningFeature>();
-        mockVersionFeature.Setup(f => f.RequestedApiVersion).Returns((ApiVersion?)null);
+        mockVersionFeature.Setup(f => f.RequestedApiVersion).Returns(default(ApiVersion?));
         httpContext.Features.Set(mockVersionFeature.Object);
         _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
@@ -210,7 +210,7 @@ public class ApiInfoControllerTests
         result.Should().BeOfType<OkObjectResult>();
         _mockActivitySource.Verify(
             a => a.SetRequestTags(It.IsAny<Activity?>(), It.Is<IDictionary<string, object?>>(
-                d => d.ContainsKey("api_version") && (string)d["api_version"]! == "unknown")),
+                d => (string)d["api_version"]! == "unknown")),
             Times.Once);
     }
 }

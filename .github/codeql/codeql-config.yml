@@ -1,5 +1,11 @@
 name: "Custom CodeQL Configuration"
 
+paths-ignore:
+  # Auto-generated xUnit entry points in build output trigger false positives
+  # (e.g. "missed ternary opportunity"). These are not our source code.
+  - "**/bin/**"
+  - "**/obj/**"
+
 # Exclude generic catch clause alerts — our Application and Adapter layers
 # intentionally catch all exceptions at service boundaries to wrap
 # infrastructure failures with business context before rethrowing.

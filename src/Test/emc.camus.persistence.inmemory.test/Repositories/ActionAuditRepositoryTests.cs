@@ -56,7 +56,7 @@ public class ActionAuditRepositoryTests
     {
         // Arrange
         var userContextMock = new Mock<IUserContext>();
-        userContextMock.Setup(x => x.GetCurrentUserId()).Returns((Guid?)null);
+        userContextMock.Setup(x => x.GetCurrentUserId()).Returns(default(Guid?));
         var repository = new ActionAuditRepository(NullLogger<ActionAuditRepository>.Instance, userContextMock.Object);
 
         // Act
@@ -73,7 +73,7 @@ public class ActionAuditRepositoryTests
         // Arrange
         var userContextMock = new Mock<IUserContext>();
         userContextMock.Setup(x => x.GetCurrentUserId()).Returns(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
-        userContextMock.Setup(x => x.GetCurrentUsername()).Returns((string?)null);
+        userContextMock.Setup(x => x.GetCurrentUsername()).Returns(default(string?));
         var repository = new ActionAuditRepository(NullLogger<ActionAuditRepository>.Instance, userContextMock.Object);
 
         // Act
