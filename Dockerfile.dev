@@ -9,17 +9,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends unzip=6.0-28 \
 
 WORKDIR /src
 
-# Copy solution and project files for restore
+# Copy solution, build props, and project files for restore
+COPY src/Directory.Build.props ./
 COPY src/CamusApp.sln ./
 COPY src/Api/emc.camus.api/*.csproj ./Api/emc.camus.api/
 COPY src/Domain/emc.camus.domain/*.csproj ./Domain/emc.camus.domain/
 COPY src/Application/emc.camus.application/*.csproj ./Application/emc.camus.application/
-COPY src/Adapters/emc.camus.persistence.postgresql/*.csproj ./Adapters/emc.camus.persistence.postgresql/
-COPY src/Adapters/emc.camus.observability.otel/*.csproj ./Adapters/emc.camus.observability.otel/
-COPY src/Adapters/emc.camus.secrets.dapr/*.csproj ./Adapters/emc.camus.secrets.dapr/
-COPY src/Adapters/emc.camus.security.jwt/*.csproj ./Adapters/emc.camus.security.jwt/
-COPY src/Adapters/emc.camus.security.apikey/*.csproj ./Adapters/emc.camus.security.apikey/
+COPY src/Adapters/emc.camus.cache.inmemory/*.csproj ./Adapters/emc.camus.cache.inmemory/
 COPY src/Adapters/emc.camus.documentation.swagger/*.csproj ./Adapters/emc.camus.documentation.swagger/
+COPY src/Adapters/emc.camus.migrations.dbup/*.csproj ./Adapters/emc.camus.migrations.dbup/
+COPY src/Adapters/emc.camus.observability.otel/*.csproj ./Adapters/emc.camus.observability.otel/
+COPY src/Adapters/emc.camus.persistence.inmemory/*.csproj ./Adapters/emc.camus.persistence.inmemory/
+COPY src/Adapters/emc.camus.persistence.postgresql/*.csproj ./Adapters/emc.camus.persistence.postgresql/
+COPY src/Adapters/emc.camus.ratelimiting.inmemory/*.csproj ./Adapters/emc.camus.ratelimiting.inmemory/
+COPY src/Adapters/emc.camus.secrets.dapr/*.csproj ./Adapters/emc.camus.secrets.dapr/
+COPY src/Adapters/emc.camus.security.apikey/*.csproj ./Adapters/emc.camus.security.apikey/
+COPY src/Adapters/emc.camus.security.jwt/*.csproj ./Adapters/emc.camus.security.jwt/
 
 # Restore dependencies
 RUN dotnet restore ./Api/emc.camus.api/emc.camus.api.csproj

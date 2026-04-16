@@ -105,6 +105,16 @@
         {
             "label": "docker-compose-up-dev",
             "type": "shell",
+            "command": "docker-compose -f docker-compose.dev.yml up -d",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "none",
+            "problemMatcher": []
+        },
+        {
+            "label": "docker-compose-up-dev-build",
+            "type": "shell",
             "command": "docker-compose -f docker-compose.dev.yml up --build -d",
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -113,7 +123,7 @@
             "problemMatcher": []
         },
         {
-            "label": "docker-compose-up-observability",
+            "label": "docker-compose-up-dev-no-api",
             "type": "shell",
             "command": "docker-compose -f docker-compose.dev.yml up postgres otel-collector jaeger loki prometheus grafana -d",
             "options": {

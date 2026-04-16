@@ -22,7 +22,7 @@
             "pipeTransport": {
                 "pipeCwd": "${workspaceFolder}",
                 "pipeProgram": "docker",
-                "pipeArgs": ["exec", "-i", "camus-api-dev"],
+                "pipeArgs": ["exec", "-i", "camus-app"],
                 "debuggerPath": "/vsdbg/vsdbg",
                 "quoteArgs": false
             },

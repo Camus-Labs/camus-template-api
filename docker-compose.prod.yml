@@ -1,10 +1,12 @@
+name: camus
+
 services:
   # Main API
-  api:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: camus-api-prod
+    container_name: camus-app
     ports:
       - "80:80"
     environment:
@@ -17,8 +19,6 @@ services:
       - OpenTelemetry__Metrics__OtlpEndpoint=http://otel-collector:4317
       - OpenTelemetry__Logs__Exporter=otlp
       - OpenTelemetry__Logs__OtlpEndpoint=http://otel-collector:4317
-      # Database connection
-      - ConnectionStrings__DefaultConnection=${DATABASE_CONNECTION_STRING}
     depends_on:
       - otel-collector
     networks:

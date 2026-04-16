@@ -1,15 +1,25 @@
+name: camus
+
 services:
   # Main API - with hot reload and debugging support
-  api:
+  app:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: camus-api-dev
+    container_name: camus-app
     ports:
       - "5001:80"    # Application port (avoiding conflict with host API on 5001)
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:80
+      # Database host override (container network name instead of localhost)
+      - DatabaseSettings__Host=camus-postgres
+      # Use PostgreSQL persistence provider
+      - DataPersistenceSettings__Provider=PostgreSQL
+      # Enable database migrations on startup
+      - DBUpSettings__Enabled=true
+      # Dapr sidecar host (container name on the network instead of localhost)
+      - DaprSecretProviderSettings__BaseHost=camus-dapr-sidecar
       # OpenTelemetry configuration
       - OpenTelemetry__Tracing__Exporter=otlp
       - OpenTelemetry__Tracing__OtlpEndpoint=http://otel-collector:4317
@@ -26,6 +36,27 @@ services:
     depends_on:
       - postgres
       - otel-collector
+      - dapr-sidecar
+    networks:
+      - camus-dev
+
+  # Dapr Sidecar
+  dapr-sidecar:
+    image: "daprio/daprd:latest"
+    container_name: camus-dapr-sidecar
+    working_dir: /components
+    command:
+      [
+        "/daprd",
+        "--app-id", "camus-app",
+        "--app-channel-address", "camus-app",
+        "--app-port", "80",
+        "--dapr-http-port", "3500",
+        "--dapr-grpc-port", "50001",
+        "--resources-path", "/components",
+      ]
+    volumes:
+      - ./src/Infrastructure/dapr:/components:ro
     networks:
       - camus-dev
 
