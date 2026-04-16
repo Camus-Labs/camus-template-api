@@ -26,7 +26,7 @@ public class RevokeTokenResponseExample
             {
                 Jti = Guid.NewGuid(),
                 TokenUsername = "testuser-ci-deploy",
-                Permissions = new List<string> { "read", "write" },
+                Permissions = new List<string> { "api.read", "api.write" },
                 ExpiresOn = DateTime.UtcNow.AddDays(30),
                 CreatedAt = DateTime.UtcNow.AddDays(-1),
                 IsRevoked = true,

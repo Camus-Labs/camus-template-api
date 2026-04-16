@@ -22,7 +22,7 @@ public class GenerateTokenRequestExample
         {
             UsernameSuffix = "ci-deploy",
             ExpiresOn = DateTime.UtcNow.AddDays(30),
-            Permissions = new List<string> { "read", "write" }
+            Permissions = new List<string> { "api.read", "api.write" }
         };
     }
 }

@@ -31,7 +31,7 @@ public class GeneratedTokenSummaryPagedExample
                     {
                         Jti = Guid.NewGuid(),
                         TokenUsername = "testuser-ci-deploy",
-                        Permissions = new List<string> { "read", "write" },
+                        Permissions = new List<string> { "api.read", "api.write" },
                         ExpiresOn = DateTime.UtcNow.AddDays(30),
                         CreatedAt = DateTime.UtcNow.AddDays(-1),
                         IsRevoked = false,
@@ -42,7 +42,7 @@ public class GeneratedTokenSummaryPagedExample
                     {
                         Jti = Guid.NewGuid(),
                         TokenUsername = "testuser-staging",
-                        Permissions = new List<string> { "read" },
+                        Permissions = new List<string> { "api.read" },
                         ExpiresOn = DateTime.UtcNow.AddDays(-5),
                         CreatedAt = DateTime.UtcNow.AddDays(-30),
                         IsRevoked = true,
