@@ -64,7 +64,7 @@ public class TokenRevocationSyncServiceTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_WithoutRepository_LogsError()
+    public async Task ExecuteAsync_WithoutRepository_LogsWarning()
     {
         // Arrange — no IGeneratedTokenRepository registered
         var scopeFactory = CreateScopeFactory(repository: null);
@@ -78,9 +78,9 @@ public class TokenRevocationSyncServiceTests
         await Task.Delay(100, CancellationToken.None);
         await service.StopAsync(CancellationToken.None);
 
-        // Assert — cache remains empty, error logged
+        // Assert — cache remains empty, warning logged
         _cache.IsRevoked(RevokedJti).Should().BeFalse();
-        VerifyLoggedAtLevel(LogLevel.Error);
+        VerifyLoggedAtLevel(LogLevel.Warning);
     }
 
     [Fact]

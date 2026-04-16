@@ -31,7 +31,7 @@ internal sealed partial class TokenRevocationSyncService : BackgroundService
         Message = "Token revocation sync service stopped.")]
     private partial void LogServiceStopped();
 
-    [LoggerMessage(Level = LogLevel.Error,
+    [LoggerMessage(Level = LogLevel.Warning,
         Message = "No IGeneratedTokenRepository registered — token revocation sync requires a persistence adapter.")]
     private partial void LogNoRepositoryRegistered();
 

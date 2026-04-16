@@ -22,6 +22,11 @@ internal sealed class InMemoryCacheSettings
     /// <exception cref="InvalidOperationException">Thrown when any setting is invalid.</exception>
     public void Validate()
     {
+        ValidateTokenRevocationCache();
+    }
+
+    private void ValidateTokenRevocationCache()
+    {
         TokenRevocationCache.Validate();
     }
 }

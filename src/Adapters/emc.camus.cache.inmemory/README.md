@@ -114,8 +114,9 @@ deployments**. Revoked tokens are not shared across application instances.
 For production environments with horizontal scaling (Kubernetes, Azure App Service scale-out), use a
 Redis-backed implementation instead.
 
-⚠️ **No Persistence** — All revocation data is lost when the application restarts. After a restart, previously
-revoked tokens will be accepted until they expire naturally.
+⚠️ **No Persistence** — All revocation data is lost from in-memory storage when the application restarts. When
+`SyncEnabled` is `true` and a persistence adapter is registered, the cache is repopulated from the repository on
+startup. Without sync or persistence, previously revoked tokens will be accepted until they expire naturally.
 
 ---
 

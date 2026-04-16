@@ -8,6 +8,7 @@ internal sealed class TokenRevocationCacheSettings
 {
     private const int MinSyncIntervalSeconds = 10;
     private const int MaxSyncIntervalSeconds = 86400;
+    private const int DefaultSyncIntervalSeconds = 300;
 
     /// <summary>
     /// Gets or sets whether background synchronization with persistence is enabled.
@@ -20,7 +21,7 @@ internal sealed class TokenRevocationCacheSettings
     /// Gets or sets the interval in seconds between cache synchronization cycles.
     /// Defaults to 300 seconds (5 minutes).
     /// </summary>
-    public int SyncIntervalSeconds { get; set; } = 300;
+    public int SyncIntervalSeconds { get; set; } = DefaultSyncIntervalSeconds;
 
     /// <summary>
     /// Validates the token revocation cache settings.
