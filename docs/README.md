@@ -1,6 +1,6 @@
 # Documentation Hub
 
-Complete technical documentation for the Camus API Template.
+Complete technical documentation for the Camus API.
 
 ---
 

@@ -1,6 +1,6 @@
 # Contributing to Camus API
 
-Thank you for contributing to the Camus API Template. This guide covers the rules and conventions every
+Thank you for contributing to the Camus API. This guide covers the rules and conventions every
 contributor must follow.
 
 ---

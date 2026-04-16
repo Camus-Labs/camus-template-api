@@ -26,12 +26,14 @@ versioning, and interactive testing through Swagger UI.
 
 ## 🚀 Usage
 
-### 1. Register in Program.cs
+### Register in Program.cs
 
 Call `builder.AddSwaggerDocumentation()` to register Swagger services, then call `app.UseSwaggerDocumentation()` to
 enable the middleware. See `SwaggerSetupExtensions` in this adapter for the full registration API.
 
-### 2. Configure Settings
+---
+
+## ⚙️ Configuration
 
 In `appsettings.json`:
 
@@ -51,11 +53,7 @@ In `appsettings.json`:
         "Description": "Enhanced API with additional features"
       }
     ],
-    "SecuritySchemes": [ "Bearer", "ApiKey" ],
-    "IncludeXmlComments": true,
-    "EnableAnnotations": true,
-    "EnableExampleFilters": true,
-    "RedirectRootToSwagger": true
+    "SecuritySchemes": [ "Bearer", "ApiKey" ]
   }
 }
 ```
@@ -66,14 +64,10 @@ In `appsettings.json`:
 - **Versions** - Array of API versions to document (required when enabled)
   - **Version** - Version identifier (e.g., "v1", "v2")
   - **Title** - Display title for this version
-  - **Description** - Version description (optional)
+  - **Description** - Version description
 - **SecuritySchemes** - Authentication schemes to document (`"Bearer"`, `"ApiKey"`)
-- **IncludeXmlComments** - Include XML documentation comments (default: `false`)
-- **EnableAnnotations** - Enable Swagger annotations (default: `false`)
-- **EnableExampleFilters** - Enable request/response examples (default: `false`)
-- **RedirectRootToSwagger** - Redirect `/` to Swagger UI (default: `true`)
 
-### 3. Access Swagger UI
+### Access Swagger UI
 
 Once running, navigate to:
 
@@ -215,7 +209,7 @@ The adapter registers Swagger services and middleware via two extension methods 
 1. **`builder.AddSwaggerDocumentation()`** — Reads `SwaggerSettings` from configuration, validates versions and security
   schemes, and registers SwaggerGen with OpenAPI documents, security definitions, XML comments, and annotation support.
 2. **`app.UseSwaggerDocumentation()`** — Activates Swagger and SwaggerUI middleware only when `Enabled: true` and the
-  environment is Development. Optionally redirects the root URL to Swagger UI.
+  environment is Development. Redirects the root URL to Swagger UI.
 
 Call these in `Program.cs` after other service registrations and before `app.Run()`.
 
@@ -227,7 +221,7 @@ Call these in `Program.cs` after other service registrations and before `app.Run
 | ------- | ------------ |
 | Swagger UI not loading | `SwaggerSettings:Enabled` is `false` or environment is not Development |
 | No endpoints visible | Controllers missing `[ApiVersion]` attribute or route template mismatch |
-| XML comments not appearing | `IncludeXmlComments` is `false` or XML doc file not generated (check `Directory.Build.props`) |
+| XML comments not appearing | XML doc file not generated (check `Directory.Build.props`) |
 | Security "Authorize" button missing | `SecuritySchemes` array is empty or contains invalid values |
 | 404 on `/swagger` | `UseSwaggerDocumentation()` not called or called after `app.Run()` |
 
@@ -247,20 +241,7 @@ Call these in `Program.cs` after other service registrations and before `app.Run
 - `Swashbuckle.AspNetCore` - Swagger generation and UI
 - `Swashbuckle.AspNetCore.Annotations` - Enhanced documentation attributes
 - `Swashbuckle.AspNetCore.Filters` - Request/response examples
-- Microsoft.AspNetCore.Mvc.Versioning
-- Microsoft.Extensions.Configuration
-- Microsoft.Extensions.DependencyInjection
+- `Asp.Versioning.Mvc.ApiExplorer` - API versioning support
+- `Microsoft.AspNetCore.OpenApi` - OpenAPI integration
 
----
-
-## 💡 Best Practices
-
-- ✅ Use XML comments for all public APIs
-- ✅ Provide request/response examples
-- ✅ Document all possible status codes
-- ✅ Use meaningful operation IDs
-- ✅ Group endpoints logically with tags
-- ✅ Keep descriptions concise but informative
-- ✅ Version your API properly
-- ❌ Don't expose internal implementation details
 - ❌ Don't document deprecated endpoints without marking them

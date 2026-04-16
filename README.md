@@ -1,4 +1,4 @@
-# Camus API Template
+# Camus API
 
 A modern, production-ready **.NET 9.0 REST API template** built with **Hexagonal Architecture (Ports & Adapters)**. This
 template provides infrastructure adapters and architectural patterns for building scalable, maintainable, and secure

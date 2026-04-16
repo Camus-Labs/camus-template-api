@@ -226,7 +226,7 @@ When adding new repositories:
 
 ## 📝 License
 
-Part of Camus API Template - See main repository for license information.
+Part of Camus API - See main repository for license information.
 
 ---
 
