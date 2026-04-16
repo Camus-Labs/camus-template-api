@@ -42,7 +42,7 @@ services:
 
   # Dapr Sidecar
   dapr-sidecar:
-    image: "daprio/daprd:latest"
+    image: "daprio/daprd:1.16.13"
     container_name: camus-dapr-sidecar
     working_dir: /components
     command:
@@ -83,7 +83,7 @@ services:
 
   # OpenTelemetry Collector
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    image: otel/opentelemetry-collector-contrib:0.150.1
     container_name: camus-otel-collector
     command: ["--config=/etc/otelcol/config.yaml"]
     ports:
@@ -100,18 +100,21 @@ services:
 
   # Jaeger (Distributed Tracing)
   jaeger:
-    image: jaegertracing/jaeger:latest
+    image: jaegertracing/jaeger:2.17.0
     container_name: camus-jaeger
     ports:
       - "16686:16686"  # Jaeger UI
       - "4317"         # OTLP gRPC (internal only, used by otel-collector)
       - "4318"         # OTLP HTTP (internal only)
+    volumes:
+      - ./src/Infrastructure/observability/jaeger-config.yaml:/jaeger/config.yaml:ro
+      - jaeger-data:/badger
     networks:
       - camus-dev
 
   # Loki (Log Aggregation)
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.7.1
     container_name: camus-loki
     command: -config.file=/etc/loki/config.yml
     ports:
@@ -124,7 +127,7 @@ services:
 
   # Prometheus (Metrics Storage)
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.11.2
     container_name: camus-prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -142,7 +145,7 @@ services:
 
   # Grafana (Visualization)
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:12.4.3
     container_name: camus-grafana
     ports:
       - "3000:3000"
@@ -151,6 +154,7 @@ services:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-exploretraces-app
     volumes:
       - ./src/Infrastructure/observability/grafana-config.yaml:/etc/grafana/provisioning/datasources/grafana-config.yaml:ro
       - grafana-data:/var/lib/grafana
@@ -166,6 +170,7 @@ volumes:
   loki-data:
   prometheus-data:
   grafana-data:
+  jaeger-data:
 
 networks:
   camus-dev:

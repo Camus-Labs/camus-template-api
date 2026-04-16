@@ -42,7 +42,7 @@ In `appsettings.json`:
 
 ```json
 {
-  "OpenTelemetry": {
+  "OpenTelemetrySettings": {
     "Tracing": {
       "Exporter": "Otlp",
       "OtlpEndpoint": "http://localhost:4317"
@@ -144,7 +144,7 @@ stack.
 
 ```json
 {
-  "OpenTelemetry": {
+  "OpenTelemetrySettings": {
     "Tracing": {
       "Exporter": "Console"
     },
@@ -159,7 +159,7 @@ stack.
 
 ```json
 {
-  "OpenTelemetry": {
+  "OpenTelemetrySettings": {
     "Tracing": {
       "Exporter": "Otlp",
       "OtlpEndpoint": "http://otel-collector:4317"
@@ -173,7 +173,7 @@ stack.
 
 ```json
 {
-  "OpenTelemetry": {
+  "OpenTelemetrySettings": {
     "Tracing": {
       "Exporter": "Jaeger",
       "JaegerEndpoint": "http://localhost:6831"
@@ -186,9 +186,9 @@ stack.
 
 ## 🎯 Manual Instrumentation
 
-Inject `IActivitySourceWrapper` to create custom spans for business-critical operations. Call `StartActivity(name,
-kind)` to open a span, set tags for context, and set error status on failures. The wrapper is disposed automatically
-at the end of the `using` block.
+Inject `IActivitySourceWrapper` to create custom spans for business-critical operations. Call
+`StartActivity(name, operationType)` to open a span, set tags for context, and set error status on failures. The wrapper
+is disposed automatically at the end of the `using` block.
 
 See `IActivitySourceWrapper` in the Application layer for the interface contract, and `ObservabilitySetupExtensions.cs`
 for registration details.
@@ -251,9 +251,8 @@ name to `AddObservability()`. See `ObservabilitySetupExtensions.cs` for paramete
 The adapter registers all observability services via two extension methods in `ObservabilitySetupExtensions.cs`:
 
 1. **`builder.AddObservability(serviceName, serviceVersion, instanceId, environmentName)`** —
-   Configures OpenTelemetry tracing, metrics, and Serilog structured logging based on
-   `appsettings.json`. Registers the selected exporters and enriches telemetry with service
-   resource attributes.
+   Configures OpenTelemetry tracing, metrics, and Serilog structured logging based on `appsettings.json`. Registers
+   the selected exporters and enriches telemetry with service resource attributes.
 2. **`app.UseObservability()`** — Adds middleware that copies the current trace ID into the
    `Trace-Id` response header for request correlation.
 
@@ -300,6 +299,7 @@ Call these in `Program.cs` early in the pipeline, before authentication and rout
 - `Serilog.Sinks.Console` - Console log sink
 - `Serilog.AspNetCore` - Structured logging
 - `Serilog.Sinks.OpenTelemetry` - Serilog OTLP sink
+- `Npgsql.OpenTelemetry` - PostgreSQL distributed tracing instrumentation
 
 ---
 

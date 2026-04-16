@@ -74,7 +74,11 @@ az containerapp create \
   --ingress external \
   --env-vars \
     ASPNETCORE_ENVIRONMENT=Production \
-    ConnectionStrings__DefaultConnection=secretref:db-connection
+    DatabaseSettings__Host=secretref:db-host \
+    DatabaseSettings__Port=5432 \
+    DatabaseSettings__Database=secretref:db-name \
+    DatabaseSettings__UserSecretName=db-user \
+    DatabaseSettings__PasswordSecretName=db-password
 ```
 
 ### Configure Scaling

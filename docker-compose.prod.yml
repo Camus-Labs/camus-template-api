@@ -36,7 +36,7 @@ services:
 
   # OpenTelemetry Collector (Sidecar pattern)
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    image: otel/opentelemetry-collector-contrib:0.150.1
     container_name: camus-otel-collector-prod
     command: ["--config=/etc/otelcol/config.yaml"]
     ports:

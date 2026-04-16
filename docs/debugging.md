@@ -85,7 +85,7 @@ Available tasks (`Cmd+Shift+P` → **Tasks: Run Task**):
 | Task                              | Purpose                                                  |
 | --------------------------------- | -------------------------------------------------------- |
 | `docker-compose-up-dev`           | Start full stack (API + observability)                   |
-| `docker-compose-up-observability` | Start only observability (use with `watch-api` on host)  |
+| `docker-compose-up-dev-no-api`    | Start only observability (use with `watch-api` on host)  |
 | `docker-compose-down`             | Stop and remove containers                               |
 | `watch-api`                       | Run API on host with hot reload (fastest iteration)      |
 
@@ -187,12 +187,12 @@ Override in `docker-compose.dev.yml` or `.env` file:
 ```env
 ASPNETCORE_ENVIRONMENT=Development
 POSTGRES_PASSWORD=camus_dev_password
-OpenTelemetry__Tracing__Exporter=otlp
+OpenTelemetrySettings__Tracing__Exporter=otlp
 ```
 
 ## 📝 Notes
 
 - **Volumes persist data** - Database and Grafana dashboards survive `down`
 - **Images cached** - Subsequent `up` commands are fast (~3-5s)
-- **Port 5001** reserved for debugger (may not be needed with vsdbg)
+- **Port 5001** mapped to the containerized API (host port 5001 → container port 80)
 - **macOS users:** `:cached` volume option optimizes performance

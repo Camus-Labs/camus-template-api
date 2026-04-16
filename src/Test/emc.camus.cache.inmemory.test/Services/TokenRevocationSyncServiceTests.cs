@@ -3,6 +3,7 @@ using Moq;
 using emc.camus.application.Auth;
 using emc.camus.cache.inmemory.Configurations;
 using emc.camus.cache.inmemory.Services;
+using emc.camus.cache.inmemory.test.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -51,12 +52,9 @@ public class TokenRevocationSyncServiceTests
         var scopeFactory = CreateScopeFactory(repositoryMock.Object);
         var service = new TokenRevocationSyncService(_cache, scopeFactory, _settings, _loggerMock.Object);
 
-        using var cts = new CancellationTokenSource();
-
-        // Act — start the service and cancel after the first sync cycle
-        cts.CancelAfter(TimeSpan.FromMilliseconds(200));
-        await service.StartAsync(cts.Token);
-        await Task.Delay(100, CancellationToken.None);
+        // Act
+        await service.StartAsync(CancellationToken.None);
+        await AsyncWaitHelper.WaitUntilAsync(() => _cache.IsRevoked(RevokedJti));
         await service.StopAsync(CancellationToken.None);
 
         // Assert
@@ -70,12 +68,9 @@ public class TokenRevocationSyncServiceTests
         var scopeFactory = CreateScopeFactory(repository: null);
         var service = new TokenRevocationSyncService(_cache, scopeFactory, _settings, _loggerMock.Object);
 
-        using var cts = new CancellationTokenSource();
-
         // Act
-        cts.CancelAfter(TimeSpan.FromMilliseconds(200));
-        await service.StartAsync(cts.Token);
-        await Task.Delay(100, CancellationToken.None);
+        await service.StartAsync(CancellationToken.None);
+        await AsyncWaitHelper.WaitUntilAsync(() => _logEntries.Any(e => e.Level == LogLevel.Warning));
         await service.StopAsync(CancellationToken.None);
 
         // Assert — cache remains empty, warning logged
@@ -109,13 +104,9 @@ public class TokenRevocationSyncServiceTests
         var scopeFactory = CreateScopeFactory(repositoryMock.Object);
         var service = new TokenRevocationSyncService(_cache, scopeFactory, shortIntervalSettings, _loggerMock.Object);
 
-        using var cts = new CancellationTokenSource();
-
-        // Act — service should not crash on repository failure
-        await service.StartAsync(cts.Token);
-        // Wait enough for: initial sync (fails) + backoff (2^1 * 10 = 20s, but capped by cancellation)
-        // The service will be waiting in Task.Delay during backoff — cancel to verify it doesn't crash
-        await Task.Delay(200, CancellationToken.None);
+        // Act
+        await service.StartAsync(CancellationToken.None);
+        await AsyncWaitHelper.WaitUntilAsync(() => _logEntries.Any(e => e.Level == LogLevel.Error));
         await service.StopAsync(CancellationToken.None);
 
         // Assert — error logged, service did not crash
@@ -138,12 +129,9 @@ public class TokenRevocationSyncServiceTests
         var scopeFactory = CreateScopeFactory(repositoryMock.Object);
         var service = new TokenRevocationSyncService(_cache, scopeFactory, _settings, _loggerMock.Object);
 
-        using var cts = new CancellationTokenSource();
-
         // Act
-        cts.CancelAfter(TimeSpan.FromMilliseconds(200));
-        await service.StartAsync(cts.Token);
-        await Task.Delay(100, CancellationToken.None);
+        await service.StartAsync(CancellationToken.None);
+        await AsyncWaitHelper.WaitUntilAsync(() => _cache.IsRevoked(RevokedJti));
         await service.StopAsync(CancellationToken.None);
 
         // Assert — old entry replaced, new entry present
@@ -169,9 +157,9 @@ public class TokenRevocationSyncServiceTests
         var scopeFactory = CreateScopeFactory(repositoryMock.Object);
         var service = new TokenRevocationSyncService(_cache, scopeFactory, _settings, _loggerMock.Object);
 
-        // Act — service should exit cleanly without logging an error
+        // Act
         await service.StartAsync(cts.Token);
-        await Task.Delay(200, CancellationToken.None);
+        await AsyncWaitHelper.WaitUntilAsync(() => _logEntries.Any(e => e.Level == LogLevel.Information && e.Message.Contains("stopped")));
         await service.StopAsync(CancellationToken.None);
 
         // Assert — no error logged, service stopped gracefully with shutdown info log
@@ -202,9 +190,9 @@ public class TokenRevocationSyncServiceTests
 
         using var cts = new CancellationTokenSource();
 
-        // Act — let the service run long enough for the initial sync + at least one timer tick
+        // Act
         await service.StartAsync(cts.Token);
-        await Task.Delay(1500, CancellationToken.None);
+        await AsyncWaitHelper.WaitUntilAsync(() => callCount >= 2);
         await service.StopAsync(CancellationToken.None);
 
         // Assert — repository called at least twice (initial + one periodic tick)

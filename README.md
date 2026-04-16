@@ -121,8 +121,8 @@ and dependency flow.
 
 2. **Configure secrets** (Development):
   
-   Edit `src/Infrastructure/dapr/secrets.json` with your development credentials. See the
-   [Dapr Components README](src/Infrastructure/dapr/README.md) for the secrets file format and examples.
+   Edit `src/Infrastructure/dapr/secrets.json` with your development credentials. See the [Dapr Components
+   README](src/Infrastructure/dapr/README.md) for the secrets file format and examples.
 
 3. **Run the API**:
 

@@ -13,7 +13,8 @@ applyTo: "{src/Test/**,!src/Test/**integration.test/**}"
     - [ ] Mock adapters when testing application layer
     - [ ] Mock DataAccess interfaces when testing repository implementations
     - [ ] No `Mock.Verify*()` on methods whose return value is already captured and asserted
-    - [ ] Configure mocks with only the methods the test exercises — no blanket `Setup` for unused members
+    - [ ] Configure mocks with only the methods the class exercises — no `Setup` for members that no test
+          in the class uses
 
 2. Isolation & Setup
 
