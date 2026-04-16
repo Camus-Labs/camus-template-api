@@ -60,3 +60,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - In-memory cache background service (`TokenRevocationSyncService`) that periodically synchronizes the token
   revocation cache with the persistence layer at a configurable interval, with scoped repository resolution and
   graceful skip when no persistence is registered
+- Automatic PostgreSQL query tracing via `Npgsql.OpenTelemetry` (`AddNpgsql()`), producing child spans per SQL
+  command with `db.statement`, `db.system`, `db.name`, and duration
