@@ -1,11 +1,9 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 using emc.camus.application.Auth;
 using emc.camus.application.Common;
 using emc.camus.application.Secrets;
@@ -24,6 +22,7 @@ public static class AuthenticatedClientHelper
 {
     /// <summary>
     /// Creates an <see cref="HttpClient"/> with a valid JWT Bearer token in the Authorization header.
+    /// Uses the registered <see cref="ITokenGenerator"/> from the test server's DI container.
     /// </summary>
     /// <param name="factory">The factory to create the client from.</param>
     /// <param name="permissions">Permissions to include as claims in the token.</param>
@@ -35,35 +34,19 @@ public static class AuthenticatedClientHelper
         var client = factory.CreateClient();
 
         using var scope = factory.Services.CreateScope();
-        var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-        var signingCredentials = scope.ServiceProvider.GetRequiredService<SigningCredentials>();
+        var tokenGenerator = scope.ServiceProvider.GetRequiredService<ITokenGenerator>();
 
-        var issuer = config["JwtSettings:Issuer"];
-        var audience = config["JwtSettings:Audience"];
+        var permissionClaims = permissions
+            .Select(p => new Claim(Permissions.ClaimType, p))
+            .ToList();
 
-        var userId = Guid.NewGuid();
-        var claims = new List<Claim>
-        {
-            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new(JwtRegisteredClaimNames.UniqueName, "test-user"),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        };
+        var authToken = tokenGenerator.GenerateToken(
+            Guid.NewGuid(),
+            "test-user",
+            additionalClaims: permissionClaims);
 
-        foreach (var permission in permissions)
-        {
-            claims.Add(new Claim(Permissions.ClaimType, permission));
-        }
-
-        var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(30),
-            signingCredentials: signingCredentials);
-
-        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
         client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenString);
+            new AuthenticationHeaderValue("Bearer", authToken.Token);
 
         return client;
     }

@@ -144,7 +144,7 @@ namespace emc.camus.security.jwt
                         },
                         OnForbidden = context =>
                         {
-                            var userName = context.Principal?.Identity?.Name ?? "Unknown";
+                            var userName = context.HttpContext.User.Identity?.Name ?? "Unknown";
                             throw new InvalidOperationException($"You do not have permission to access this resource. User: {userName}");
                         }
                     };

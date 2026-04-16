@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
+using System.Text.Json;
 using Dapper;
 using Npgsql;
 using Microsoft.Extensions.Configuration;
@@ -337,6 +338,26 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         // Assert — framework rejects the expired token before OnTokenValidated fires
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
         await response.Should().HaveErrorCode("jwt_token_expired");
+    }
+
+    [Fact]
+    public async Task GetTokens_JwtWithoutTokenCreatePermission_ReturnsForbiddenWithUsername()
+    {
+        // Arrange — authenticate as ClientApp (ReadWrite role: api.read + api.write, no token.create)
+        var client = await _factory.AuthenticateAsync("ClientApp", "clientsecret");
+
+        // Act
+        var response = await client.GetAsync("/api/v2.0/auth/tokens", TestContext.Current.CancellationToken);
+
+        // Assert
+        var bodyString = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, $"Response body: {bodyString}");
+
+        var body = JsonDocument.Parse(bodyString).RootElement;
+        body.GetProperty("error").GetString().Should().Be("forbidden");
+
+        var detail = body.GetProperty("detail").GetString();
+        detail.Should().Contain("ClientApp", because: "the forbidden response should identify the authenticated user, not 'Unknown'");
     }
 
 }

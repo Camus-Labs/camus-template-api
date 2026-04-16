@@ -228,13 +228,13 @@ namespace emc.camus.api.Middleware
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
                 };
             }
-            else if (exception.Message.Contains("permission", StringComparison.OrdinalIgnoreCase))
+            else if (exception.Message.Contains("You do not have permission", StringComparison.OrdinalIgnoreCase))
             {
                 return new ProblemDetails
                 {
                     Status = (int)HttpStatusCode.Forbidden,
                     Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.Forbidden),
-                    Detail = "You do not have permission to access this resource.",
+                    Detail = exception.Message,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
                 };
             }
