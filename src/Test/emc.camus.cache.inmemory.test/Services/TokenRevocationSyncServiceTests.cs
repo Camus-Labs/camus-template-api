@@ -1,10 +1,10 @@
+using System.Collections.Concurrent;
 using FluentAssertions;
 using Moq;
 using emc.camus.application.Auth;
 using emc.camus.cache.inmemory.Configurations;
 using emc.camus.cache.inmemory.Services;
 using emc.camus.cache.inmemory.test.Helpers;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace emc.camus.cache.inmemory.test.Services;
@@ -16,7 +16,7 @@ public class TokenRevocationSyncServiceTests
     private readonly TokenRevocationCache _cache = new();
     private readonly InMemoryCacheSettings _settings = new() { TokenRevocationCache = new() { SyncIntervalSeconds = 10 } };
     private readonly Mock<ILogger<TokenRevocationSyncService>> _loggerMock = new();
-    private readonly List<(LogLevel Level, string Message)> _logEntries = [];
+    private readonly ConcurrentBag<(LogLevel Level, string Message)> _logEntries = [];
 
     public TokenRevocationSyncServiceTests()
     {
@@ -31,11 +31,8 @@ public class TokenRevocationSyncServiceTests
             .Callback(new InvocationAction(invocation =>
             {
                 var level = (LogLevel)invocation.Arguments[0];
-                var formatter = invocation.Arguments[4];
                 var state = invocation.Arguments[2];
-                var exception = invocation.Arguments[3] as Exception;
-                var message = formatter.GetType().GetMethod("Invoke")!
-                    .Invoke(formatter, [state, exception]) as string ?? "";
+                var message = state?.ToString() ?? "";
                 _logEntries.Add((level, message));
             }));
     }
@@ -49,7 +46,7 @@ public class TokenRevocationSyncServiceTests
             .Setup(r => r.GetActiveRevokedJtisAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HashSet<Guid> { RevokedJti });
 
-        var scopeFactory = CreateScopeFactory(repositoryMock.Object);
+        var scopeFactory = ScopeFactoryBuilder.Create(repositoryMock.Object);
         var service = new TokenRevocationSyncService(_cache, scopeFactory, _settings, _loggerMock.Object);
 
         // Act
@@ -65,7 +62,7 @@ public class TokenRevocationSyncServiceTests
     public async Task ExecuteAsync_WithoutRepository_LogsWarning()
     {
         // Arrange — no IGeneratedTokenRepository registered
-        var scopeFactory = CreateScopeFactory(repository: null);
+        var scopeFactory = ScopeFactoryBuilder.Create(repository: null);
         var service = new TokenRevocationSyncService(_cache, scopeFactory, _settings, _loggerMock.Object);
 
         // Act
@@ -86,22 +83,13 @@ public class TokenRevocationSyncServiceTests
         {
             TokenRevocationCache = new() { SyncIntervalSeconds = 10 }
         };
-        var callCount = 0;
         var repositoryMock = new Mock<IGeneratedTokenRepository>();
         repositoryMock
-            .Setup(r => r.GetActiveRevokedJtisAsync(It.IsAny<CancellationToken>()))
-            .Returns<CancellationToken>(ct =>
-            {
-                callCount++;
-                if (callCount == 1)
-                {
-                    throw new InvalidOperationException("Database connection failed.");
-                }
+            .SetupSequence(r => r.GetActiveRevokedJtisAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Database connection failed."))
+            .ReturnsAsync(new HashSet<Guid> { RevokedJti });
 
-                return Task.FromResult(new HashSet<Guid> { RevokedJti });
-            });
-
-        var scopeFactory = CreateScopeFactory(repositoryMock.Object);
+        var scopeFactory = ScopeFactoryBuilder.Create(repositoryMock.Object);
         var service = new TokenRevocationSyncService(_cache, scopeFactory, shortIntervalSettings, _loggerMock.Object);
 
         // Act
@@ -126,7 +114,7 @@ public class TokenRevocationSyncServiceTests
             .Setup(r => r.GetActiveRevokedJtisAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HashSet<Guid> { RevokedJti });
 
-        var scopeFactory = CreateScopeFactory(repositoryMock.Object);
+        var scopeFactory = ScopeFactoryBuilder.Create(repositoryMock.Object);
         var service = new TokenRevocationSyncService(_cache, scopeFactory, _settings, _loggerMock.Object);
 
         // Act
@@ -154,7 +142,7 @@ public class TokenRevocationSyncServiceTests
                 return Task.FromResult(new HashSet<Guid>());
             });
 
-        var scopeFactory = CreateScopeFactory(repositoryMock.Object);
+        var scopeFactory = ScopeFactoryBuilder.Create(repositoryMock.Object);
         var service = new TokenRevocationSyncService(_cache, scopeFactory, _settings, _loggerMock.Object);
 
         // Act
@@ -185,7 +173,7 @@ public class TokenRevocationSyncServiceTests
                 return Task.FromResult(new HashSet<Guid> { RevokedJti });
             });
 
-        var scopeFactory = CreateScopeFactory(repositoryMock.Object);
+        var scopeFactory = ScopeFactoryBuilder.Create(repositoryMock.Object);
         var service = new TokenRevocationSyncService(_cache, scopeFactory, shortIntervalSettings, _loggerMock.Object);
 
         using var cts = new CancellationTokenSource();
@@ -224,24 +212,4 @@ public class TokenRevocationSyncServiceTests
             Times.Never);
     }
 
-    private static IServiceScopeFactory CreateScopeFactory(IGeneratedTokenRepository? repository)
-    {
-        var services = new ServiceCollection();
-        if (repository != null)
-        {
-            services.AddSingleton(repository);
-        }
-        var serviceProvider = services.BuildServiceProvider();
-
-        var scopeFactoryMock = new Mock<IServiceScopeFactory>();
-        scopeFactoryMock
-            .Setup(f => f.CreateScope())
-            .Returns(() =>
-            {
-                var scope = serviceProvider.CreateScope();
-                return scope;
-            });
-
-        return scopeFactoryMock.Object;
-    }
 }

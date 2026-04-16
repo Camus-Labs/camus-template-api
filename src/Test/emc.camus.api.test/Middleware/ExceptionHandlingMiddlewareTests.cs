@@ -14,6 +14,7 @@ using emc.camus.api.Metrics;
 using emc.camus.api.Middleware;
 using emc.camus.application.Common;
 using emc.camus.application.Exceptions;
+using emc.camus.domain.Exceptions;
 
 namespace emc.camus.api.test.Middleware;
 
@@ -102,6 +103,7 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         yield return new object[] { new UnauthorizedAccessException("Access denied"), HttpStatusCode.Unauthorized };
         yield return new object[] { new RateLimitExceededException("strict", 10, 60, 30, 1234567890), HttpStatusCode.TooManyRequests };
         yield return new object[] { new DataConflictException("A generated token with username 'Admin-test' already exists."), HttpStatusCode.Conflict };
+        yield return new object[] { new DomainException("Permissions not a subset of creator's permissions."), HttpStatusCode.UnprocessableEntity };
     }
 
     [Theory]
@@ -230,6 +232,11 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         {
             new RateLimitExceededException("strict", 10, 60, 30, 1234567890),
             ErrorCodes.RateLimitExceeded
+        };
+        yield return new object[]
+        {
+            new DomainException("Permissions not a subset of creator's permissions."),
+            ErrorCodes.DomainRuleViolation
         };
     }
 

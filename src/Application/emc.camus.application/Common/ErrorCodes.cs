@@ -73,6 +73,12 @@ public static class ErrorCodes
         public const string DataConflict = "data_conflict";
 
         /// <summary>
+        /// Error code for 422 Unprocessable Entity responses.
+        /// Indicates a domain business rule was violated.
+        /// </summary>
+        public const string DomainRuleViolation = "domain_rule_violation";
+
+        /// <summary>
         /// Error code for 429 Too Many Requests responses.
         /// Indicates the rate limit has been exceeded.
         /// </summary>

@@ -102,6 +102,14 @@ services:
   jaeger:
     image: jaegertracing/jaeger:2.17.0
     container_name: camus-jaeger
+    user: "root"
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        adduser -D -u 10001 -G root jaeger 2>/dev/null;
+        mkdir -p /badger/key /badger/data &&
+        chown -R 10001:0 /badger &&
+        exec su -s /bin/sh jaeger -c '/cmd/jaeger/jaeger-linux --config /jaeger/config.yaml'
     ports:
       - "16686:16686"  # Jaeger UI
       - "4317"         # OTLP gRPC (internal only, used by otel-collector)

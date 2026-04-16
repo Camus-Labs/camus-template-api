@@ -8,6 +8,7 @@ using emc.camus.api.Configurations;
 using emc.camus.api.Metrics;
 using emc.camus.application.Common;
 using emc.camus.application.Exceptions;
+using emc.camus.domain.Exceptions;
 
 namespace emc.camus.api.Middleware
 {
@@ -36,6 +37,7 @@ namespace emc.camus.api.Middleware
         {
             new() { Type = nameof(RateLimitExceededException), ErrorCode = ErrorCodes.RateLimitExceeded },
             new() { Type = nameof(DataConflictException), ErrorCode = ErrorCodes.DataConflict },
+            new() { Type = nameof(DomainException), ErrorCode = ErrorCodes.DomainRuleViolation },
             new() { Type = nameof(KeyNotFoundException), ErrorCode = ErrorCodes.NotFound },
             // JWT-specific error patterns (most specific first)
             new() { Type = nameof(UnauthorizedAccessException), Pattern = "jwt.*expired|token.*expired", ErrorCode = ErrorCodes.JwtTokenExpired },
@@ -200,6 +202,13 @@ namespace emc.camus.api.Middleware
                     Title = ReasonPhrases.GetReasonPhrase((int)HttpStatusCode.Conflict),
                     Detail = exception.Message,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+                },
+                DomainException => new ProblemDetails
+                {
+                    Status = StatusCodes.Status422UnprocessableEntity,
+                    Title = ReasonPhrases.GetReasonPhrase(StatusCodes.Status422UnprocessableEntity),
+                    Detail = exception.Message,
+                    Type = "https://tools.ietf.org/html/rfc4918#section-11.2"
                 },
                 InvalidOperationException invalidOpEx => CreateInvalidOperationProblemDetails(invalidOpEx),
                 _ => new ProblemDetails
