@@ -13,12 +13,12 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:80
       # OpenTelemetry configuration
-      - OpenTelemetry__Tracing__Exporter=otlp
-      - OpenTelemetry__Tracing__OtlpEndpoint=http://otel-collector:4317
-      - OpenTelemetry__Metrics__Exporter=otlp
-      - OpenTelemetry__Metrics__OtlpEndpoint=http://otel-collector:4317
-      - OpenTelemetry__Logs__Exporter=otlp
-      - OpenTelemetry__Logs__OtlpEndpoint=http://otel-collector:4317
+      - OpenTelemetrySettings__Tracing__Exporter=otlp
+      - OpenTelemetrySettings__Tracing__OtlpEndpoint=http://otel-collector:4317
+      - OpenTelemetrySettings__Metrics__Exporter=otlp
+      - OpenTelemetrySettings__Metrics__OtlpEndpoint=http://otel-collector:4317
+      - OpenTelemetrySettings__Logs__Exporter=otlp
+      - OpenTelemetrySettings__Logs__OtlpEndpoint=http://otel-collector:4317
     depends_on:
       - otel-collector
     networks:

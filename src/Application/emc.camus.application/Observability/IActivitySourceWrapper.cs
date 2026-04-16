@@ -53,6 +53,14 @@ namespace emc.camus.application.Observability
         void ActivityFailed(Activity? activity, Exception ex);
 
         /// <summary>
+        /// Adds a timestamped event with optional tags to the activity.
+        /// </summary>
+        /// <param name="activity">The activity to add the event to.</param>
+        /// <param name="name">The event name.</param>
+        /// <param name="tags">Optional tags to attach to the event.</param>
+        void AddEvent(Activity? activity, string name, IDictionary<string, object?>? tags = null);
+
+        /// <summary>
         /// Starts an activity and executes the provided async function returning a value, marking success or failure automatically.
         /// </summary>
         /// <typeparam name="T">The return type of the function.</typeparam>

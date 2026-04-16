@@ -28,8 +28,8 @@ builder.Host.ConfigureHostOptions(options =>
 
 // Define service name for telemetry
 string SERVICE_NAME = Assembly.GetExecutingAssembly().GetName().Name ?? "unknown-service-name";
-// Get the service version from the assembly (matches <Version> in csproj)
-string SERVICE_VERSION = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown-service-version";
+// Get the service version from the assembly (matches <Version> in Directory.Build.props)
+string SERVICE_VERSION = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown-service-version";
 // Define a consistent instance id once and pass it to the adapter
 string INSTANCE_ID = $"{Environment.MachineName}-{Environment.ProcessId}";
 // Define environment name once for consistent resource attributes

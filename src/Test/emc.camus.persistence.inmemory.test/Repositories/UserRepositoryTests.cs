@@ -119,6 +119,26 @@ public class UserRepositoryTests
     }
 
     [Theory]
+    [InlineData("ADMINUSER")]
+    [InlineData("AdminUser")]
+    [InlineData("aDmInUsEr")]
+    public async Task ValidateCredentialsAsync_CaseInsensitiveUsername_ReturnsUser(string username)
+    {
+        // Arrange
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultUsernameSecret, "adminuser");
+        SetupSecretProvider(InMemoryModelSettingsFactory.DefaultPasswordSecret, "adminpass");
+        var settings = CreateValidSettings();
+        var repository = await CreateInitializedRepository(settings);
+
+        // Act
+        var result = await repository.ValidateCredentialsAsync(username, "adminpass", TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Username.Should().Be("adminuser");
+    }
+
+    [Theory]
     [InlineData("unknownuser", "adminpass", "*User not found*")]
     [InlineData("adminuser", "wrongpassword", "*mismatch*")]
     public async Task ValidateCredentialsAsync_InvalidCredentials_ThrowsUnauthorizedAccessException(

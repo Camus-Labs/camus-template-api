@@ -59,7 +59,7 @@ internal sealed class UserDataAccess : IUserDataAccess
                 username,
                 password_hash
             FROM camus.users
-            WHERE username = @Username";
+            WHERE LOWER(username) = LOWER(@Username)";
 
         return await connection.QuerySingleOrDefaultAsync<UserModel>(
             new CommandDefinition(userSql, new { username }, cancellationToken: ct));

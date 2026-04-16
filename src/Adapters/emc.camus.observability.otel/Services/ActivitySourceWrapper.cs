@@ -119,14 +119,34 @@ namespace emc.camus.observability.otel.Services
             if (activity == null) return;
             activity.SetTag("otel.status_code", "ERROR");
             activity.SetTag("otel.status_description", ex.Message);
-            // Add an 'exception' event with attributes for better trace correlation
-            var exceptionTags = new ActivityTagsCollection
+            AddEvent(activity, "exception", new Dictionary<string, object?>
             {
                 { "exception.type", ex.GetType().FullName },
                 { "exception.message", ex.Message },
                 { "exception.stacktrace", ex.StackTrace ?? string.Empty }
-            };
-            activity.AddEvent(new ActivityEvent("exception", DateTimeOffset.UtcNow, exceptionTags));
+            });
+        }
+
+        /// <summary>
+        /// Adds a timestamped event with optional tags to the activity.
+        /// </summary>
+        /// <param name="activity">The activity to add the event to.</param>
+        /// <param name="name">The event name.</param>
+        /// <param name="tags">Optional tags to attach to the event.</param>
+        public void AddEvent(Activity? activity, string name, IDictionary<string, object?>? tags = null)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(name);
+            if (activity == null) return;
+
+            var eventTags = new ActivityTagsCollection();
+            if (tags != null)
+            {
+                foreach (var tag in tags)
+                {
+                    eventTags.Add(tag.Key, tag.Value);
+                }
+            }
+            activity.AddEvent(new ActivityEvent(name, DateTimeOffset.UtcNow, eventTags));
         }
 
 

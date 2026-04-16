@@ -290,6 +290,72 @@ public class ActivitySourceWrapperTests : IDisposable
             .And.ParamName.Should().Be("ex");
     }
 
+    // --- AddEvent ---
+
+    [Fact]
+    public void AddEvent_WithActivityAndTags_AddsEventWithTags()
+    {
+        // Arrange
+        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
+        var tags = new Dictionary<string, object?>
+        {
+            { "cache.key", "user:123" },
+            { "cache.hit", false }
+        };
+
+        // Act
+        _wrapper.AddEvent(activity, "cache_miss", tags);
+
+        // Assert
+        activity!.Events.Should().ContainSingle(e => e.Name == "cache_miss");
+        var evt = activity.Events.Single(e => e.Name == "cache_miss");
+        evt.Tags.Should().Contain(t => t.Key == "cache.key" && (string)t.Value! == "user:123");
+        evt.Tags.Should().Contain(t => t.Key == "cache.hit" && (bool)t.Value! == false);
+    }
+
+    [Fact]
+    public void AddEvent_WithActivityAndNoTags_AddsEventWithoutTags()
+    {
+        // Arrange
+        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
+
+        // Act
+        _wrapper.AddEvent(activity, "credentials_validated");
+
+        // Assert
+        activity!.Events.Should().ContainSingle(e => e.Name == "credentials_validated");
+        var evt = activity.Events.Single(e => e.Name == "credentials_validated");
+        evt.Tags.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AddEvent_NullActivity_DoesNotThrow()
+    {
+        // Arrange
+        // Act
+        var act = () => _wrapper.AddEvent(null, "some_event");
+
+        // Assert
+        act.Should().NotThrow();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void AddEvent_InvalidName_ThrowsArgumentException(string? name)
+    {
+        // Arrange
+        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
+
+        // Act
+        var act = () => _wrapper.AddEvent(activity, name!);
+
+        // Assert
+        act.Should().Throw<ArgumentException>()
+            .And.ParamName.Should().Be("name");
+    }
+
     // --- StartActivityAndRunAsync ---
 
     [Fact]

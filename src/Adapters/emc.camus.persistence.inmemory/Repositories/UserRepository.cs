@@ -59,7 +59,7 @@ internal sealed class UserRepository : IUserRepository
         ).ToList();
 
         // Load users from configuration and index by username for fast lookup
-        _usersByUsername = new Dictionary<string, (User, string)>();
+        _usersByUsername = new Dictionary<string, (User, string)>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var userConfig in _settings.Users)
         {

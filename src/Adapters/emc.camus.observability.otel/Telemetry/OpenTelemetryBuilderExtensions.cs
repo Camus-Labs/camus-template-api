@@ -6,6 +6,7 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using Microsoft.AspNetCore.Builder;
+using Npgsql;
 using emc.camus.observability.otel.Configurations;
 using emc.camus.application.Observability;
 using System.Diagnostics.CodeAnalysis;
@@ -92,6 +93,7 @@ namespace emc.camus.observability.otel.Telemetry
                     .UseResourceAttributes(serviceName, serviceVersion, instanceId, environmentName)
                     .AddAspNetCoreInstrumentationWithEnrichment()
                     .AddHttpClientInstrumentation()
+                    .AddNpgsql()
                     .ConfigureTracingExporter(settings);
             });
 
