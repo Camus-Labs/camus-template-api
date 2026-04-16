@@ -26,7 +26,7 @@ public class ApiInfoInMemoryEndpointTests
     public async Task GetInfo_PublicEndpoint_ReturnsOkWithApiInfo()
     {
         // Act
-        var response = await _client.GetAsync("/api/v1.0/apiinfo/info", TestContext.Current.CancellationToken);
+        var response = await _client.GetAsync("/api/v1/apiinfo/info", TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -46,7 +46,7 @@ public class ApiInfoInMemoryEndpointTests
         var client = _factory.CreateApiKeyClient();
 
         // Act
-        var response = await client.GetAsync("/api/v2.0/apiinfo/info-apikey", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync("/api/v2/apiinfo/info-apikey", TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -61,7 +61,7 @@ public class ApiInfoInMemoryEndpointTests
     public async Task GetInfoApiKey_NoApiKey_ReturnsUnauthorized()
     {
         // Act
-        var response = await _client.GetAsync("/api/v2.0/apiinfo/info-apikey", TestContext.Current.CancellationToken);
+        var response = await _client.GetAsync("/api/v2/apiinfo/info-apikey", TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
@@ -75,7 +75,7 @@ public class ApiInfoInMemoryEndpointTests
         var client = _factory.CreateJwtClient();
 
         // Act
-        var response = await client.GetAsync("/api/v2.0/apiinfo/info-jwt", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -90,7 +90,7 @@ public class ApiInfoInMemoryEndpointTests
     public async Task GetInfoJwt_NoToken_ReturnsUnauthorized()
     {
         // Act
-        var response = await _client.GetAsync("/api/v2.0/apiinfo/info-jwt", TestContext.Current.CancellationToken);
+        var response = await _client.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);

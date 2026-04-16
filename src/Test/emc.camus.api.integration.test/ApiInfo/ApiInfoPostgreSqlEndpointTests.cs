@@ -34,7 +34,7 @@ public class ApiInfoPostgreSqlEndpointTests : IAsyncLifetime
     public async Task GetInfo_PostgreSqlPersistence_ReturnsOkWithApiInfo()
     {
         // Act
-        var response = await _client.GetAsync("/api/v1.0/apiinfo/info", TestContext.Current.CancellationToken);
+        var response = await _client.GetAsync("/api/v1/apiinfo/info", TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);

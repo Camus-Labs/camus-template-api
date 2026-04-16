@@ -86,7 +86,7 @@ public static class AuthenticatedClientHelper
         var apiKeyClient = factory.CreateApiKeyClient();
         var authRequest = new { Username = username, Password = password };
 
-        var authResponse = await apiKeyClient.PostAsJsonAsync("/api/v2.0/auth/authenticate", authRequest);
+        var authResponse = await apiKeyClient.PostAsJsonAsync("/api/v2/auth/authenticate", authRequest);
         await authResponse.Should().HaveStatusCode(HttpStatusCode.OK, $"authentication for '{username}' must succeed for test setup");
 
         var authBody = await authResponse.Content.ReadFromJsonAsync<ApiResponse<AuthenticateUserResponse>>();

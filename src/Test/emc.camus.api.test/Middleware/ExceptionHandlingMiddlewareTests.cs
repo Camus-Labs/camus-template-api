@@ -127,7 +127,7 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
 
     [Theory]
     [InlineData("Token not found in repository", HttpStatusCode.NotFound)]
-    [InlineData("Insufficient permission to perform action", HttpStatusCode.Forbidden)]
+    [InlineData("You do not have permission to access this resource. User: test-user", HttpStatusCode.Forbidden)]
     [InlineData("Invalid Setting", HttpStatusCode.InternalServerError)]
     public async Task InvokeAsync_InvalidOperationException_ReturnsExpectedStatusCode(
         string message, HttpStatusCode expectedStatusCode)

@@ -2,6 +2,7 @@ using System.Linq;
 using FluentAssertions;
 using Moq;
 using emc.camus.application.ApiInfo;
+using emc.camus.application.Observability;
 using emc.camus.domain.Auth;
 
 namespace emc.camus.application.test.ApiInfo;
@@ -14,10 +15,11 @@ public class ApiInfoServiceTests
     private static readonly IReadOnlyList<string> ValidFeatures = ["Auth", "Tokens"];
 
     private readonly Mock<IApiInfoRepository> _repositoryMock = new();
+    private readonly Mock<IActivitySourceWrapper> _activitySourceMock = new();
 
     private ApiInfoService CreateService()
     {
-        return new ApiInfoService(_repositoryMock.Object);
+        return new ApiInfoService(_repositoryMock.Object, _activitySourceMock.Object);
     }
 
     // --- Constructor ---
@@ -38,7 +40,7 @@ public class ApiInfoServiceTests
     {
         // Arrange
         // Act
-        var act = () => new ApiInfoService(null!);
+        var act = () => new ApiInfoService(null!, _activitySourceMock.Object);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()

@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using emc.camus.application.Common;
+using emc.camus.application.Observability;
 
 namespace emc.camus.application.ApiInfo;
 
@@ -16,16 +18,20 @@ namespace emc.camus.application.ApiInfo;
 public class ApiInfoService : IApiInfoService
 {
     private readonly IApiInfoRepository _repository;
+    private readonly IActivitySourceWrapper _activitySource;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ApiInfoService"/> class.
     /// </summary>
     /// <param name="repository">Repository for retrieving API information.</param>
-    public ApiInfoService(IApiInfoRepository repository)
+    /// <param name="activitySource">Activity source for setting execution tags.</param>
+    public ApiInfoService(IApiInfoRepository repository, IActivitySourceWrapper activitySource)
     {
         ArgumentNullException.ThrowIfNull(repository);
+        ArgumentNullException.ThrowIfNull(activitySource);
 
         _repository = repository;
+        _activitySource = activitySource;
     }
 
     /// <summary>
@@ -41,8 +47,16 @@ public class ApiInfoService : IApiInfoService
         ArgumentNullException.ThrowIfNull(filter);
         try
         {
+            // Normalize version: "2" → "2.0" (URL segment may omit minor version)
+            var version = filter.Version.Contains('.') ? filter.Version : $"{filter.Version}.0";
+
+            _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
+            {
+                { "normalized_version", version }
+            });
+
             // Call repository to get domain entity (KeyNotFoundException bubbles up)
-            var apiInfo = await _repository.GetByVersionAsync(filter.Version, ct);
+            var apiInfo = await _repository.GetByVersionAsync(version, ct);
 
             // Convert domain entity to application result
             return new ApiInfoDetailView(

@@ -28,7 +28,7 @@ public class AuthInMemoryEndpointTests
         var request = new { Username = "admin", Password = "admin-password" };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/v2.0/auth/authenticate", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -48,7 +48,7 @@ public class AuthInMemoryEndpointTests
         var request = new { Username = "admin", Password = "wrong-password" };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/v2.0/auth/authenticate", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
@@ -63,7 +63,7 @@ public class AuthInMemoryEndpointTests
         var request = new { Username = "admin", Password = "admin-password" };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/v2.0/auth/authenticate", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);

@@ -44,7 +44,7 @@ public class TokenRevocationCachePostgreSqlTests : IAsyncLifetime
         tokenClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", generatedToken);
 
-        var preRevokeResponse = await tokenClient.GetAsync("/api/v2.0/apiinfo/info-jwt", TestContext.Current.CancellationToken);
+        var preRevokeResponse = await tokenClient.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
         await preRevokeResponse.Should().HaveStatusCode(HttpStatusCode.OK, "token must be accepted before revocation");
 
         // Revoke directly in the database — the cache does NOT know about this yet
@@ -59,7 +59,7 @@ public class TokenRevocationCachePostgreSqlTests : IAsyncLifetime
         synced.Should().BeTrue("background sync service should load revoked JTIs from the database within the sync interval");
 
         // Assert — the token is now rejected by the JWT validation pipeline
-        var response = await tokenClient.GetAsync("/api/v2.0/apiinfo/info-jwt", TestContext.Current.CancellationToken);
+        var response = await tokenClient.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
         await response.Should().HaveErrorCode("jwt_token_revoked");
     }
@@ -87,7 +87,7 @@ public class TokenRevocationCachePostgreSqlTests : IAsyncLifetime
             Permissions = new[] { "api.read" },
         };
 
-        var response = await client.PostAsJsonAsync("/api/v2.0/auth/generate-token", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonAsync("/api/v2/auth/generate-token", request, TestContext.Current.CancellationToken);
         await response.Should().HaveStatusCode(HttpStatusCode.Created, "token generation must succeed for test setup");
 
         var body = await response.Content.ReadFromJsonAsync<ApiResponse<GenerateTokenResponse>>(TestContext.Current.CancellationToken);
