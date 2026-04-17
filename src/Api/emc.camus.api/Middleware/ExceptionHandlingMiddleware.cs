@@ -61,6 +61,8 @@ namespace emc.camus.api.Middleware
             new() { Type = nameof(ArgumentNullException), ErrorCode = ErrorCodes.BadRequest },
             new() { Type = nameof(InvalidOperationException), Pattern = "not.?found", ErrorCode = ErrorCodes.NotFound },
             new() { Type = nameof(InvalidOperationException), Pattern = "permission", ErrorCode = ErrorCodes.Forbidden },
+            new() { Type = nameof(OperationCanceledException), ErrorCode = ErrorCodes.RequestTimeout },
+            new() { Type = nameof(TaskCanceledException), ErrorCode = ErrorCodes.RequestTimeout },
             new() { Pattern = "secret|configuration", ErrorCode = ErrorCodes.InternalServerError }
         }.AsReadOnly();
 
@@ -167,6 +169,13 @@ namespace emc.camus.api.Middleware
         {
             return exception switch
             {
+                OperationCanceledException => new ProblemDetails
+                    {
+                        Status = StatusCodes.Status504GatewayTimeout,
+                        Title = ReasonPhrases.GetReasonPhrase(StatusCodes.Status504GatewayTimeout),
+                        Detail = "The request timed out before the server finished processing.",
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.6.5"
+                    },
                 ArgumentException => new ProblemDetails
                 {
                     Status = (int)HttpStatusCode.BadRequest,

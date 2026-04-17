@@ -104,6 +104,7 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         yield return new object[] { new RateLimitExceededException("strict", 10, 60, 30, 1234567890), HttpStatusCode.TooManyRequests };
         yield return new object[] { new DataConflictException("A generated token with username 'Admin-test' already exists."), HttpStatusCode.Conflict };
         yield return new object[] { new DomainException("Permissions not a subset of creator's permissions."), HttpStatusCode.UnprocessableEntity };
+        yield return new object[] { new OperationCanceledException("The operation was canceled."), HttpStatusCode.GatewayTimeout };
     }
 
     [Theory]

@@ -100,12 +100,12 @@ app.UseSecurityHeaders();
 // Must be BEFORE exception handling so trace IDs are available in error logs
 app.UseObservability();
 
-// Step 21: Global exception handling middleware (catches auth, authz, and app exceptions)
+// Step 21: Apply request timeouts (BEFORE error handling so timeout exceptions propagate to it)
+app.UseRequestTimeoutPolicies();
+
+// Step 22: Global exception handling middleware (catches auth, authz, timeout, and app exceptions)
 // Must be EARLY in pipeline to catch exceptions from rate limiting, auth, etc.
 app.UseErrorHandling();
-
-// Step 22: Apply request timeouts (AFTER error handling so timeout exceptions are caught)
-app.UseRequestTimeoutPolicies();
 
 // Step 23: Enable Swagger UI in development
 app.UseSwaggerDocumentation();

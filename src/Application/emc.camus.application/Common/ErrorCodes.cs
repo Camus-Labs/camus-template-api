@@ -85,6 +85,13 @@ public static class ErrorCodes
         public const string RateLimitExceeded = "rate_limit_exceeded";
 
         /// <summary>
+        /// Error code for 504 Gateway Timeout responses.
+        /// Indicates the request was cancelled before the server finished processing,
+        /// either by server-side timeout policy or client disconnect.
+        /// </summary>
+        public const string RequestTimeout = "request_timeout";
+
+        /// <summary>
         /// Error code for 500 Internal Server Error responses.
         /// Indicates an unexpected error occurred on the server.
         /// </summary>
