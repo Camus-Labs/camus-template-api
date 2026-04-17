@@ -99,6 +99,12 @@ Detailed usage guides for infrastructure adapters:
 
 ---
 
+## Story Templates
+
+- **[User Story Template](stories/_user_story_template.md)** - Standard template for writing user stories
+
+---
+
 ## 📦 Layer Documentation
 
 Core layer architecture and contracts:

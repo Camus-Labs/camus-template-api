@@ -2,7 +2,7 @@
 
 Swagger/OpenAPI documentation adapter for Camus applications.
 
-> **📖 Parent Documentation:** [Main README](../../../README.md) | [Architecture Guide](../../../docs/architecture.md)
+> Parent Documentation: [Main README](../../../README.md) | [Architecture Guide](../../../docs/architecture.md)
 
 ---
 
@@ -98,7 +98,7 @@ source files for annotation patterns.
 ### JWT Bearer Token
 
 1. Click **"Authorize"** button in Swagger UI
-2. Get token from `/api/v2/auth/token` endpoint
+2. Get token from `/api/v2/auth/authenticate` endpoint
 3. Enter: `Bearer <your-token>`
 4. Click **"Authorize"**
 5. Test protected endpoints
@@ -106,7 +106,7 @@ source files for annotation patterns.
 ### API Key
 
 1. Click **"Authorize"** button
-2. Enter your API key in the `X-Api-Key` field
+2. Enter your API key in the `Api-Key` field
 3. Click **"Authorize"**
 4. Test protected endpoints
 
@@ -142,25 +142,14 @@ See `SwaggerSetupExtensions.cs` for the existing configuration.
 
 ---
 
-## 🏭 Production Configuration
-
-### Disable Swagger in Production (Optional)
-
-The `UseSwaggerDocumentation()` extension checks the `Enabled` setting and the hosting environment. Swagger is only
-active when `Enabled: true` and the environment is Development. See `SwaggerSetupExtensions.cs` for the built-in
-environment check.
-
----
-
 ## ⚠️ Limitations & Constraints
 
 ### Development-Only by Default
 
 - **Disabled in Production**: `Enabled: false` by default for security
-- **Environment Check**: `UseSwaggerDocumentation()` only activates in Development environment
-- **Explicit Override Required**: Must set `Enabled: true` AND configure for non-development use
-
-The middleware checks both the `Enabled` flag and the hosting environment before activating.
+- **Environment Check**: `UseSwaggerDocumentation()` only activates when `Enabled: true` and the environment is
+  Development — see `SwaggerSetupExtensions.cs` for the built-in environment check
+- **No Built-In Override**: Code changes are required to serve Swagger outside Development
 
 ### Security Considerations
 
@@ -206,8 +195,8 @@ Configuration is validated at startup with fail-fast behavior:
 
 The adapter registers Swagger services and middleware via two extension methods in `SwaggerSetupExtensions.cs`:
 
-1. **`builder.AddSwaggerDocumentation()`** — Reads `SwaggerSettings` from configuration, validates versions and security
-  schemes, and registers SwaggerGen with OpenAPI documents, security definitions, XML comments, and annotation support.
+1. **`builder.AddSwaggerDocumentation()`** — Reads `SwaggerSettings` from configuration, validates versions and
+  security schemes, and registers SwaggerGen with OpenAPI docs, security definitions, XML comments, and annotations.
 2. **`app.UseSwaggerDocumentation()`** — Activates Swagger and SwaggerUI middleware only when `Enabled: true` and the
   environment is Development. Redirects the root URL to Swagger UI.
 
@@ -243,5 +232,3 @@ Call these in `Program.cs` after other service registrations and before `app.Run
 - `Swashbuckle.AspNetCore.Filters` - Request/response examples
 - `Asp.Versioning.Mvc.ApiExplorer` - API versioning support
 - `Microsoft.AspNetCore.OpenApi` - OpenAPI integration
-
-- ❌ Don't document deprecated endpoints without marking them

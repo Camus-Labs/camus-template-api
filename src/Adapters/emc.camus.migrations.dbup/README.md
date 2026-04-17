@@ -16,8 +16,7 @@ Runs ordered, embedded SQL scripts against PostgreSQL at application startup. Tr
 
 ## ✨ Features
 
-- 📦 **Embedded SQL Scripts** — Migration files compiled into the assembly
-  from `src/Infrastructure/database/migrations/`
+- 📦 **Embedded SQL Scripts** — Migration files from `src/Infrastructure/database/migrations/` compiled into the assembly
 - 🔐 **Secret-Based Credentials** — Admin credentials fetched via `ISecretProvider` at startup
 - 🔁 **Idempotent** — Already-applied scripts are skipped automatically
 - 📋 **Schema Versioning** — Applied migrations tracked in `public.camus_schemaversions`
@@ -31,7 +30,7 @@ Runs ordered, embedded SQL scripts against PostgreSQL at application startup. Tr
 ### Wire up in `Program.cs`
 
 1. Call `builder.AddDaprSecrets()` to register the secret provider (must run before migrations)
-2. Call `builder.AddDatabaseMigrations()` to validate `DBUpSettings` and `DatabaseSettings`
+2. Call `builder.AddDatabaseMigrations()` to validate `DBUpSettings` and verify `DatabaseSettings` is registered in DI
 3. Call `app.UseDaprSecrets()` to initialise secrets
 4. Call `app.UseDatabaseMigrations(logger)` to execute pending migrations
 
@@ -39,15 +38,14 @@ See `DatabaseMigrationSetupExtensions` in this adapter for the full registration
 
 ### Configuration (`appsettings.json`)
 
+Database connection settings (`DatabaseSettings`) are configured in the
+[PostgreSQL Persistence Adapter](../emc.camus.persistence.postgresql/README.md). The migration adapter only requires
+`DBUpSettings`:
+
 ```json
 {
-  "DatabaseSettings": {
-    "Host": "localhost",
-    "Port": 5432,
-    "Database": "camus",
-    "AdditionalParameters": "Timeout=30;Pooling=true;SslMode=Require"
-  },
   "DBUpSettings": {
+    "Enabled": true,
     "AdminSecretName": "DBMigrationsUser",
     "PasswordSecretName": "DBMigrationsSecret"
   }
@@ -63,12 +61,13 @@ See `DatabaseMigrationSetupExtensions` in this adapter for the full registration
 | Setting | Required | Description |
 | ------- | -------- | ----------- |
 | `DBUpSettings.Enabled` | ✅ | Enable or disable migrations; when `false`, registration and execution are no-ops; default: `false` |
-| `DBUpSettings.AdminSecretName` | ✅ | Secret name for DB admin username |
-| `DBUpSettings.PasswordSecretName` | ✅ | Secret name for DB admin password |
-| `DatabaseSettings.Host` | ✅ | PostgreSQL server hostname |
-| `DatabaseSettings.Port` | ✅ | PostgreSQL server port |
-| `DatabaseSettings.Database` | ✅ | Target database name |
-| `DatabaseSettings.AdditionalParameters` | ❌ | Extra Npgsql connection string parameters |
+| `DBUpSettings.AdminSecretName` | ✅* | Secret name for DB admin username |
+| `DBUpSettings.PasswordSecretName` | ✅* | Secret name for DB admin password |
+
+> *\* Required only when `Enabled` is `true`.*
+>
+> For `DatabaseSettings` properties (`Host`, `Port`, `Database`, `AdditionalParameters`), see the
+> [PostgreSQL Persistence Adapter](../emc.camus.persistence.postgresql/README.md).
 
 ---
 
@@ -116,11 +115,11 @@ API (Program.cs)
 
 The adapter registers migration services via two extension methods in `DatabaseMigrationSetupExtensions.cs`:
 
-1. **`builder.AddDatabaseMigrations()`** — Validates that `DBUpSettings` and `DatabaseSettings`
-   sections exist in configuration and registers migration services.
-2. **`app.UseDatabaseMigrations(logger)`** — Resolves `ISecretProvider` to fetch admin credentials,
-   builds the connection string, and runs DbUp against embedded SQL scripts. Logs each applied
-   migration.
+1. **`builder.AddDatabaseMigrations()`** — Loads `DBUpSettings` from configuration (defaults to disabled when absent),
+   validates settings, registers `DBUpSettings` as a singleton, and — when enabled — verifies that `DatabaseSettings`
+   is registered in DI.
+2. **`app.UseDatabaseMigrations(logger)`** — Resolves `ISecretProvider` to fetch admin credentials, builds the
+   connection string, and runs DbUp against embedded SQL scripts. Logs each applied migration.
 
 Call `AddDaprSecrets()` and `UseDaprSecrets()` before `UseDatabaseMigrations()` so credentials are available.
 
@@ -130,8 +129,9 @@ Call `AddDaprSecrets()` and `UseDaprSecrets()` before `UseDatabaseMigrations()` 
 
 | Symptom | Likely Cause |
 | ------- | ------------ |
-| `DBUpSettings configuration is missing` | Missing `DBUpSettings` section in config |
-| `Secret 'DBMigrationsUser' not found` | Secret name mismatch or Dapr sidecar not running |
+| `AdminSecretName cannot be null or empty.` | `Enabled` is `true` but `AdminSecretName` is blank or missing |
+| `DatabaseSettings is not registered in DI` | `AddPersistence()` was not called before `AddDatabaseMigrations()` |
+| `Database admin username secret '…' not found or empty` | Secret name mismatch or Dapr sidecar not running |
 | `Database migration failed` | SQL error in a script — check logs for the failing statement |
 | `Failed to run database migrations` | PostgreSQL unreachable — verify host, port, and firewall |
 

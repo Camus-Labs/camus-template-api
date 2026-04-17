@@ -218,10 +218,12 @@ for the full pipeline, agent roles, and approval gates.
 - [Security (API Key)](src/Adapters/emc.camus.security.apikey/README.md)
 - [Secrets (Dapr)](src/Adapters/emc.camus.secrets.dapr/README.md)
 - [Persistence (PostgreSQL)](src/Adapters/emc.camus.persistence.postgresql/README.md)
-- [Migrations (DbUp)](src/Adapters/emc.camus.migrations.dbup/README.md)
+- [Migrations (DbUp)](src/Adapters/emc.camus.migrations.dbup/README.md) — Ordered embedded SQL scripts with DbUp for
+  PostgreSQL schema versioning
 - [Cache (Memory)](src/Adapters/emc.camus.cache.inmemory/README.md)
 - [Persistence (Memory)](src/Adapters/emc.camus.persistence.inmemory/README.md)
-- [Documentation (Swagger)](src/Adapters/emc.camus.documentation.swagger/README.md)
+- [Documentation (Swagger)](src/Adapters/emc.camus.documentation.swagger/README.md) — OpenAPI 3.0 documentation with
+  multi-version support and Swagger UI
 
 ---
 

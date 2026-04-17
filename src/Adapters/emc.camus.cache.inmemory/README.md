@@ -41,9 +41,9 @@ adapter for the full registration API.
 ┌──────────────────────────────────────┐
 │      Application Layer               │
 │      ITokenRevocationCache           │
-└───────────────┬──────────────────────┘
-                │ depends on
-┌───────────────▼──────────────────────┐
+└───────────────▲──────────────────────┘
+                │ implements
+┌───────────────┴──────────────────────┐
 │       Adapter Layer                  │
 │    TokenRevocationCache              │
 │  (implements ITokenRevocationCache)  │
