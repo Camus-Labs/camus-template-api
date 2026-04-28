@@ -22,6 +22,12 @@ public sealed class StubSecretProvider : ISecretProvider
         ["DBMigrationsSecret"] = "postgres",
     };
 
+    /// <summary>
+    /// When <c>true</c>, <see cref="CheckConnectivityAsync"/> throws to simulate an unreachable secret store.
+    /// Static so test classes can toggle the flag without resolving the singleton instance from DI.
+    /// </summary>
+    public static bool SimulateConnectivityFailure { get; set; }
+
     public Task LoadSecretsAsync(IEnumerable<string> secretNames, CancellationToken ct = default)
     {
         return Task.CompletedTask;
@@ -32,6 +38,13 @@ public sealed class StubSecretProvider : ISecretProvider
         return _secrets.TryGetValue(name, out var value)
             ? value
             : throw new KeyNotFoundException($"Test secret '{name}' not configured.");
+    }
+
+    public Task CheckConnectivityAsync(CancellationToken ct = default)
+    {
+        return SimulateConnectivityFailure
+            ? Task.FromException(new InvalidOperationException("Simulated secret store connectivity failure"))
+            : Task.CompletedTask;
     }
 
     private static string GenerateTestRsaKey()

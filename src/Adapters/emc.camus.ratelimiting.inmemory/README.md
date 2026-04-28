@@ -46,9 +46,7 @@ to protect auth endpoints from brute force attacks.
 
 **1. Add reference to your API project:**
 
-```bash
-dotnet add reference ../../Adapters/emc.camus.ratelimiting.inmemory/emc.camus.ratelimiting.inmemory.csproj
-```
+Add a `<ProjectReference>` element targeting this adapter's `.csproj` to your API project file.
 
 **2. Configure in `Program.cs`:**
 
@@ -115,12 +113,12 @@ adapter with a Redis-backed implementation that shares state across instances.
 | **Nginx** | X-Forwarded-For | ⚠️ Must add `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` |
 | **HAProxy** | X-Forwarded-For | ⚠️ Must enable `option forwardfor` |
 | **Azure/AWS/GCP Load Balancers** | X-Forwarded-For | ✅ Automatic |
-| **CloudFlare CDN** | CF-Connecting-IP + X-Forwarded-For | ✅ Automatic |
 
 **Without proxy headers**: All requests from the same proxy IP share one rate limit (security risk in production).
 
-The adapter logs a warning on first request if no proxy headers are detected. Review logs and ensure
-`UseForwardedHeaders()` is configured in [Program.cs](../../Api/emc.camus.api/Program.cs#L58-L62).
+The adapter logs a warning when an invalid IP format is found in the `X-Forwarded-For` header, which may
+indicate header tampering or proxy misconfiguration. Ensure `UseForwardedHeaders()` is called before rate limiting
+— see `UseTransportSecurity()` in [TransportSecuritySetupExtensions.cs](../../Api/emc.camus.api/Extensions/TransportSecuritySetupExtensions.cs).
 
 ## Metrics
 
@@ -160,8 +158,8 @@ Includes `Retry-After` header and an RFC 7807 Problem Details body with the `rat
 | `RateLimit-Limit` | Maximum requests allowed in the window |
 | `RateLimit-Reset` | Unix timestamp when the window resets |
 | `Retry-After` | Seconds until the client can retry (429 only) |
-| `X-RateLimit-Policy` | Name of the applied rate limit policy |
-| `X-RateLimit-Window` | Duration of the rate limit window in seconds |
+| `RateLimit-Policy` | Name of the applied rate limit policy |
+| `RateLimit-Window` | Duration of the rate limit window in seconds |
 
 ## Clean Architecture
 
@@ -218,7 +216,7 @@ The adapter registers rate limiting services via two extension methods in `InMem
 | ------- | ------------ |
 | All requests share one rate limit | `UseForwardedHeaders()` not called before rate limiting when behind a proxy |
 | 429 responses with default policy | No `[RateLimit]` attribute on endpoint — falls back to `default` policy |
-| `InMemoryRateLimitingSettings configuration is missing` | Missing `InMemoryRateLimitingSettings` section in `appsettings.json` |
+| Unexpected default rate limits (250/50/500) | Missing `InMemoryRateLimitingSettings` section — defaults apply silently |
 | Rate limit not applied to endpoint | Endpoint path matches an entry in `ExemptPaths` |
 | Metrics not appearing | OpenTelemetry adapter not registered or meter name mismatch |
 
@@ -234,7 +232,7 @@ The adapter registers rate limiting services via two extension methods in `InMem
 ## Related Documentation
 
 - [Architecture Guide](../../../docs/architecture.md)
-- [Authentication Guide](../../../docs/authentication.md)
+- [Deployment Guide — Security Checklist](../../../docs/deployment.md#security-checklist)
 
 ---
 

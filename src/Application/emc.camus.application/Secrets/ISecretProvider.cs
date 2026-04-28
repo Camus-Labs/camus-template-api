@@ -19,5 +19,12 @@ namespace emc.camus.application.Secrets
         /// <param name="name">The name of the secret to retrieve.</param>
         /// <returns>The secret value.</returns>
         string GetSecret(string name);
+
+        /// <summary>
+        /// Verifies that the underlying secret store is reachable.
+        /// </summary>
+        /// <param name="ct">Cancellation token for cooperative cancellation.</param>
+        /// <returns>A task representing the asynchronous connectivity check.</returns>
+        Task CheckConnectivityAsync(CancellationToken ct = default);
     }
 }

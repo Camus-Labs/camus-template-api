@@ -27,7 +27,7 @@ internal sealed class FakeHttpMessageHandler : HttpMessageHandler
 
     protected override Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
         if (_exception != null)
         {

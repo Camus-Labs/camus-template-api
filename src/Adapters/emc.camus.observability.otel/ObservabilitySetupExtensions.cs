@@ -50,11 +50,11 @@ namespace emc.camus.observability.otel
 
             builder.Host.UseSerilogWithOpenTelemetry(settings, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);
             builder.Services.AddOpenTelemetryServices(settings, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);
-            
+
             // Register ActivitySource and wrapper for distributed tracing
             builder.Services.AddSingleton(_ => new ActivitySource(normalizedServiceName, normalizedServiceVersion));
             builder.Services.AddSingleton<IActivitySourceWrapper, ActivitySourceWrapper>();
-            
+
             // Ensure Serilog flushes on shutdown to avoid log loss
             builder.Services.AddHostedService<SerilogFlushHostedService>();
 

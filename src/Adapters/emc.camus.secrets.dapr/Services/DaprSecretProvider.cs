@@ -56,10 +56,7 @@ namespace emc.camus.secrets.dapr.Services
                 return;
             }
 
-            if (secretNamesList.Any(s => string.IsNullOrWhiteSpace(s)))
-            {
-                throw new ArgumentException("Secret names cannot contain null or whitespace entries.", nameof(secretNames));
-            }
+            ValidateSecretNames(secretNamesList);
 
             foreach (var secretName in secretNamesList)
             {
@@ -83,6 +80,14 @@ namespace emc.camus.secrets.dapr.Services
             }
 
             throw new InvalidOperationException($"Secret '{name}' not found in loaded secrets. Ensure it was included in the list of secrets to load and that it exists in the Dapr secret store.");
+        }
+
+        private static void ValidateSecretNames(List<string> secretNames)
+        {
+            if (secretNames.Any(s => string.IsNullOrWhiteSpace(s)))
+            {
+                throw new ArgumentException("Secret names cannot contain null or whitespace entries.", nameof(secretNames));
+            }
         }
 
         /// <summary>
@@ -164,13 +169,20 @@ namespace emc.camus.secrets.dapr.Services
         /// Verifies that the configured Dapr secret store is reachable by requesting
         /// a bulk secret listing.
         /// </summary>
-        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <param name="ct">The cancellation token.</param>
         /// <returns>A task representing the asynchronous connectivity check.</returns>
-        /// <exception cref="HttpRequestException">Thrown when the secret store is unreachable.</exception>
-        internal async Task CheckConnectivityAsync(CancellationToken cancellationToken)
+        /// <exception cref="InvalidOperationException">Thrown when the secret store is unreachable.</exception>
+        public async Task CheckConnectivityAsync(CancellationToken ct = default)
         {
-            using var response = await _httpClient.GetAsync("bulk", cancellationToken);
-            response.EnsureSuccessStatusCode();
+            try
+            {
+                using var response = await _httpClient.GetAsync("bulk", ct);
+                response.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to check connectivity for secret store '{_settings.SecretStoreName}'", ex);
+            }
         }
     }
 }

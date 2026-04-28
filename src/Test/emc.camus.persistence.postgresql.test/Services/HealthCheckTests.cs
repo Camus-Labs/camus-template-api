@@ -40,6 +40,7 @@ public class HealthCheckTests
 
         // Assert
         result.Status.Should().Be(HealthStatus.Healthy);
+        result.Description.Should().Be("PostgreSQL database is reachable");
     }
 
     [Fact]

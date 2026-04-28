@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using emc.camus.application.Common;
 using emc.camus.application.Configurations;
 using emc.camus.persistence.postgresql;
 using emc.camus.secrets.dapr;
@@ -50,13 +52,16 @@ namespace emc.camus.api.Extensions
         /// <list type="bullet">
         /// <item><c>/health</c> — overall health (runs all registered checks)</item>
         /// <item><c>/alive</c> — liveness probe (always returns 200 if process is running)</item>
-        /// <item><c>/ready</c> — readiness probe (runs checks tagged with "ready")</item>
+        /// <item><c>/ready</c> — readiness probe (runs checks tagged with HealthCheckTags.Ready)</item>
         /// </list>
         /// </remarks>
         public static WebApplication UseHealthChecks(this WebApplication app)
         {
-            // Overall health — runs all registered checks
-            app.MapHealthChecks("/health").AllowAnonymous();
+            // Overall health — runs all registered checks, returns per-check JSON details
+            app.MapHealthChecks("/health", new HealthCheckOptions
+            {
+                ResponseWriter = WriteDetailedJsonResponse
+            }).AllowAnonymous();
 
             // Liveness probe — always healthy if the process is running
             app.MapHealthChecks("/alive", new HealthCheckOptions
@@ -64,13 +69,42 @@ namespace emc.camus.api.Extensions
                 Predicate = _ => false
             }).AllowAnonymous();
 
-            // Readiness probe — only checks tagged with "ready"
+            // Readiness probe — only checks tagged with HealthCheckTags.Ready
             app.MapHealthChecks("/ready", new HealthCheckOptions
             {
-                Predicate = check => check.Tags.Contains("ready")
+                Predicate = check => check.Tags.Contains(HealthCheckTags.Ready)
             }).AllowAnonymous();
 
             return app;
+        }
+
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = false
+        };
+
+        /// <summary>
+        /// Writes a JSON response containing the overall status and per-check details.
+        /// </summary>
+        private static async Task WriteDetailedJsonResponse(HttpContext context, HealthReport report)
+        {
+            context.Response.ContentType = "application/json";
+
+            var response = new
+            {
+                status = report.Status.ToString(),
+                checks = report.Entries.Select(entry => new
+                {
+                    name = entry.Key,
+                    status = entry.Value.Status.ToString(),
+                    description = entry.Value.Description,
+                    duration = entry.Value.Duration.TotalMilliseconds
+                })
+            };
+
+            await context.Response.WriteAsync(
+                JsonSerializer.Serialize(response, JsonOptions));
         }
     }
 }

@@ -1,6 +1,7 @@
 using System.Net;
 using FluentAssertions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using emc.camus.application.Secrets;
 using emc.camus.secrets.dapr.Configurations;
 using emc.camus.secrets.dapr.Services;
 using emc.camus.secrets.dapr.test.Helpers;
@@ -35,7 +36,7 @@ public class DaprSecretHealthCheckTests
     public void Constructor_NullSecretProvider_ThrowsArgumentNullException()
     {
         // Arrange
-        DaprSecretProvider? secretProvider = null;
+        ISecretProvider? secretProvider = null;
 
         // Act
         var act = () => new DaprSecretHealthCheck(secretProvider!);
@@ -60,6 +61,7 @@ public class DaprSecretHealthCheckTests
 
         // Assert
         result.Status.Should().Be(HealthStatus.Healthy);
+        result.Description.Should().Be("Dapr secret store is reachable");
     }
 
     [Fact]
@@ -92,6 +94,7 @@ public class DaprSecretHealthCheckTests
         // Assert
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Be("Dapr secret store is unreachable");
-        result.Exception.Should().BeOfType<HttpRequestException>();
+        result.Exception.Should().BeOfType<InvalidOperationException>()
+            .Which.InnerException.Should().BeOfType<HttpRequestException>();
     }
 }

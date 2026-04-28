@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using emc.camus.application.Common;
 using emc.camus.application.Secrets;
 using emc.camus.secrets.dapr.Configurations;
 using emc.camus.secrets.dapr.Services;
@@ -15,7 +16,6 @@ namespace emc.camus.secrets.dapr
     [ExcludeFromCodeCoverage]
     public static class DaprSecretsSetupExtensions
     {
-        private static readonly string[] ReadyTag = new[] { "ready" };
         /// <summary>
         /// Adds Dapr secret provider services.
         /// </summary>
@@ -32,12 +32,12 @@ namespace emc.camus.secrets.dapr
             var settings = builder.Configuration.GetSection(DaprSecretProviderSettings.ConfigurationSectionName).Get<DaprSecretProviderSettings>() ?? new DaprSecretProviderSettings();
             settings.Validate();
             builder.Services.AddSingleton(settings);
-            
+
             // Register DaprSecretProvider with HttpClient
             builder.Services.AddHttpClient<DaprSecretProvider>();
-            
+
             // Register as ISecretProvider singleton
-            builder.Services.AddSingleton<ISecretProvider>(provider => 
+            builder.Services.AddSingleton<ISecretProvider>(provider =>
                 provider.GetRequiredService<DaprSecretProvider>());
 
             return builder;
@@ -55,7 +55,7 @@ namespace emc.camus.secrets.dapr
         {
             // Force ISecretProvider singleton creation during startup
             var secretProvider = app.Services.GetRequiredService<ISecretProvider>();
-            
+
             // Load all configured secrets and fail fast if there are any issues
             var settings = app.Services.GetRequiredService<DaprSecretProviderSettings>();
             secretProvider.LoadSecretsAsync(settings.SecretNames).GetAwaiter().GetResult();
@@ -64,7 +64,7 @@ namespace emc.camus.secrets.dapr
         }
 
         /// <summary>
-        /// Registers a Dapr secret store health check tagged with "ready" for readiness probes.
+        /// Registers a Dapr secret store health check tagged with HealthCheckTags.Ready for readiness probes.
         /// Resolves <see cref="DaprSecretProvider"/> at runtime to verify secret store connectivity.
         /// </summary>
         /// <param name="builder">The health checks builder.</param>
@@ -75,11 +75,11 @@ namespace emc.camus.secrets.dapr
                 "dapr-secrets",
                 sp =>
                 {
-                    var secretProvider = sp.GetRequiredService<DaprSecretProvider>();
+                    var secretProvider = sp.GetRequiredService<ISecretProvider>();
                     return new DaprSecretHealthCheck(secretProvider);
                 },
                 failureStatus: null,
-                tags: ReadyTag));
+                tags: [HealthCheckTags.Ready]));
 
             return builder;
         }

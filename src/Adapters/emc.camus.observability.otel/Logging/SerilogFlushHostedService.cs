@@ -15,7 +15,7 @@ namespace emc.camus.observability.otel.Logging
         /// <summary>
         /// No-op on start; required by IHostedService.
         /// </summary>
-        public Task StartAsync(CancellationToken cancellationToken)
+        public Task StartAsync(CancellationToken ct)
         {
             return Task.CompletedTask;
         }
@@ -23,7 +23,7 @@ namespace emc.camus.observability.otel.Logging
         /// <summary>
         /// Flushes and closes Serilog on application stop to ensure all logs are written.
         /// </summary>
-        public Task StopAsync(CancellationToken cancellationToken)
+        public Task StopAsync(CancellationToken ct)
         {
             Log.CloseAndFlush();
             return Task.CompletedTask;

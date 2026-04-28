@@ -1,3 +1,4 @@
+using emc.camus.application.Secrets;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace emc.camus.secrets.dapr.Services;
@@ -8,13 +9,13 @@ namespace emc.camus.secrets.dapr.Services;
 /// </summary>
 internal sealed class DaprSecretHealthCheck : IHealthCheck
 {
-    private readonly DaprSecretProvider _secretProvider;
+    private readonly ISecretProvider _secretProvider;
 
     /// <summary>
-    /// Creates the health check with the specified Dapr secret provider.
+    /// Creates the health check with the specified secret provider.
     /// </summary>
     /// <param name="secretProvider">The secret provider used to verify store connectivity.</param>
-    public DaprSecretHealthCheck(DaprSecretProvider secretProvider)
+    public DaprSecretHealthCheck(ISecretProvider secretProvider)
     {
         ArgumentNullException.ThrowIfNull(secretProvider);
 
@@ -25,16 +26,16 @@ internal sealed class DaprSecretHealthCheck : IHealthCheck
     /// Checks Dapr secret store accessibility by delegating to the provider's connectivity check.
     /// </summary>
     /// <param name="context">The health check context.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="ct">The cancellation token.</param>
     /// <returns>Healthy if the secret store is reachable, Unhealthy otherwise.</returns>
     public async Task<HealthCheckResult> CheckHealthAsync(
-        HealthCheckContext context, CancellationToken cancellationToken = default)
+        HealthCheckContext context, CancellationToken ct = default)
     {
         try
         {
-            await _secretProvider.CheckConnectivityAsync(cancellationToken);
+            await _secretProvider.CheckConnectivityAsync(ct);
 
-            return HealthCheckResult.Healthy();
+            return HealthCheckResult.Healthy("Dapr secret store is reachable");
         }
         catch (Exception ex)
         {

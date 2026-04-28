@@ -1,5 +1,8 @@
 using emc.camus.api.integration.test.Helpers;
+using emc.camus.application.Common;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
 using Respawn;
 using Testcontainers.PostgreSql;
@@ -71,5 +74,15 @@ public class ApiPostgreSqlFactory : ApiFactoryBase
         builder.UseSetting("DBUpSettings:AdminSecretName", "DBMigrationsUser");
         builder.UseSetting("DBUpSettings:PasswordSecretName", "DBMigrationsSecret");
         builder.UseSetting("InMemoryCacheSettings:TokenRevocationCache:SyncIntervalSeconds", "10");
+
+        builder.ConfigureServices(services =>
+        {
+            // Capture the original IUnitOfWork factory before replacing it with the decorator.
+            var originalDescriptor = services.Last(d => d.ServiceType == typeof(IUnitOfWork));
+            services.RemoveAll<IUnitOfWork>();
+            services.AddScoped<IUnitOfWork>(sp =>
+                new UnitOfWorkConnectivityDecorator(
+                    (IUnitOfWork)originalDescriptor.ImplementationFactory!(sp)));
+        });
     }
 }

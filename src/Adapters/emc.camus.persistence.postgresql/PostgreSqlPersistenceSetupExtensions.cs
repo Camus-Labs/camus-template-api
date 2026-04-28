@@ -18,7 +18,6 @@ namespace emc.camus.persistence.postgresql
     [ExcludeFromCodeCoverage]
     public static class PostgreSqlPersistenceSetupExtensions
     {
-        private static readonly string[] ReadyTag = new[] { "ready" };
         /// <summary>
         /// Adds PostgreSQL persistence services including connection factory, unit of work, and all repositories.
         /// </summary>
@@ -66,7 +65,7 @@ namespace emc.camus.persistence.postgresql
         }
 
         /// <summary>
-        /// Registers a PostgreSQL health check tagged with "ready" for readiness probes.
+        /// Registers a PostgreSQL health check tagged with HealthCheckTags.Ready for readiness probes.
         /// Resolves <see cref="UnitOfWork"/> at runtime to verify database connectivity.
         /// </summary>
         /// <param name="builder">The health checks builder.</param>
@@ -81,7 +80,7 @@ namespace emc.camus.persistence.postgresql
                     return new HealthCheck(unitOfWork);
                 },
                 failureStatus: null,
-                tags: ReadyTag));
+                tags: [HealthCheckTags.Ready]));
 
             return builder;
         }

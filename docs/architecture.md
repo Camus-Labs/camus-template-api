@@ -72,5 +72,7 @@ through the API composition root. See the following guides for architectural and
 - **Authentication** — [Authentication Guide](authentication.md) covers JWT and API Key mechanisms
 - **Observability** — [Observability Adapter](../src/Adapters/emc.camus.observability.otel/README.md) and
   [Infrastructure Configuration](../src/Infrastructure/observability/README.md) cover the telemetry pipeline
+- **Rate Limiting** — [Rate Limiting Adapter](../src/Adapters/emc.camus.ratelimiting.inmemory/README.md)
+  covers IP-based sliding window rate limiting with policy-based configuration
 - **Request Timeouts** — Configured in the API layer via ASP.NET Core built-in request timeouts with named
   policies (default, tight, extended) and appsettings-driven durations

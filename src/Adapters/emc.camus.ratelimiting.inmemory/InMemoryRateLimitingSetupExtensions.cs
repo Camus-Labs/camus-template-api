@@ -81,7 +81,7 @@ namespace emc.camus.ratelimiting.inmemory
                 });
 
                 // Configure rejection handler with logging and metrics
-                options.OnRejected = (context, cancellationToken) =>
+                options.OnRejected = (context, ct) =>
                 {
                     HandleRateLimitRejection(context, settings);
                     return new ValueTask();

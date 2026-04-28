@@ -21,6 +21,7 @@ AWS Secrets Manager, etc.) without code changes.
 - ⚙️ **Configurable** - Settings via `appsettings.json`
 - 🚀 **Fail-Fast** - Validates secret access at startup
 - 🎯 **Dependency Injection** - Seamless ASP.NET Core integration
+- 🩺 **Health Check** - Readiness probe via Dapr secret store connectivity check
 
 ---
 
@@ -147,12 +148,14 @@ running Dapr sidecar.
 
 ## 🔗 Integration
 
-The adapter registers the Dapr secret provider via two extension methods in `DaprSecretsSetupExtensions.cs`:
+The adapter registers the Dapr secret provider via three extension methods in `DaprSecretsSetupExtensions.cs`:
 
-1. **`builder.AddDaprSecrets()`** — Reads `DaprSecretProviderSettings` from configuration and
-   registers `DaprSecretProvider` as the `ISecretProvider` singleton.
-2. **`app.UseDaprSecrets()`** — Resolves `ISecretProvider` from DI and calls `LoadSecretsAsync()` to
-   fetch all configured secrets at startup (fail-fast pattern).
+1. **`builder.AddDaprSecrets()`** — Reads `DaprSecretProviderSettings` from configuration and registers
+   `DaprSecretProvider` as the `ISecretProvider` singleton.
+2. **`app.UseDaprSecrets()`** — Resolves `ISecretProvider` from DI and calls `LoadSecretsAsync()` to fetch all
+   configured secrets at startup (fail-fast pattern).
+3. **`builder.AddDaprSecretHealthCheck()`** — Registers a readiness health check tagged with `HealthCheckTags.Ready`
+   that delegates to `ISecretProvider.CheckConnectivityAsync()` to verify Dapr secret store availability.
 
 Call `AddDaprSecrets()` before any adapter that depends on `ISecretProvider` (e.g., JWT, API Key, migrations).
 
@@ -162,7 +165,7 @@ Call `AddDaprSecrets()` before any adapter that depends on `ISecretProvider` (e.
 
 | Symptom | Likely Cause |
 | ------- | ------------ |
-| `DaprSecretProviderSettings configuration is missing` | Missing `DaprSecretProviderSettings` section in `appsettings.json` |
+| `At least one secret name must be specified in SecretNames` | `DaprSecretProviderSettings` section absent or `SecretNames` list empty in `appsettings.json` |
 | `Failed to retrieve secret 'X'` | Secret name mismatch or Dapr sidecar not running |
 | Connection refused on port 3500 | Dapr sidecar not started — run `dapr run` or check container setup |
 | Secrets empty in production | Secret store component name doesn't match `SecretStoreName` setting |
