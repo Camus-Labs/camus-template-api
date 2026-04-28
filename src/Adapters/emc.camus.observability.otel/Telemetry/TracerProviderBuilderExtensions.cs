@@ -65,34 +65,39 @@ namespace emc.camus.observability.otel.Telemetry
         }
 
         /// <summary>
-        /// Enriches activity with HTTP request information including authentication details.
+        /// Enriches activity with HTTP request information.
+        /// Authentication enrichment is deferred to <see cref="EnrichWithHttpResponse"/> because
+        /// this callback fires before the authentication middleware populates <c>HttpContext.User</c>.
         /// </summary>
         private static void EnrichWithHttpRequest(Activity activity, HttpRequest request)
         {
-            var isAuthenticated = request.HttpContext.User?.Identity?.IsAuthenticated ?? false;
+        }
+
+        /// <summary>
+        /// Enriches activity with HTTP response information including authentication details and routing.
+        /// Authentication tags are set here (not in request enrichment) because
+        /// <c>HttpContext.User</c> is only populated after the authentication middleware runs.
+        /// </summary>
+        private static void EnrichWithHttpResponse(Activity activity, HttpResponse response)
+        {
+            var isAuthenticated = response.HttpContext.User?.Identity?.IsAuthenticated ?? false;
             activity.SetTag("enduser.authenticated", isAuthenticated);
 
             if (isAuthenticated)
             {
-                var endUser = request.HttpContext.User?.Identity?.Name;
+                var endUser = response.HttpContext.User?.Identity?.Name;
                 if (!string.IsNullOrWhiteSpace(endUser))
                 {
                     activity.SetTag("enduser.name", endUser);
                 }
 
-                var subClaim = request.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier);
+                var subClaim = response.HttpContext.User?.FindFirst(ClaimTypes.NameIdentifier);
                 if (subClaim != null && Guid.TryParse(subClaim.Value, out _))
                 {
                     activity.SetTag("enduser.id", subClaim.Value);
                 }
             }
-        }
 
-        /// <summary>
-        /// Enriches activity with HTTP response information including routing details.
-        /// </summary>
-        private static void EnrichWithHttpResponse(Activity activity, HttpResponse response)
-        {
             var routeData = response.HttpContext.GetRouteData();
             
             var controller = routeData?.Values["controller"]?.ToString();

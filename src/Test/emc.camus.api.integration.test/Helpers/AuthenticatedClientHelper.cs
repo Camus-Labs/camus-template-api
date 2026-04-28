@@ -31,6 +31,24 @@ public static class AuthenticatedClientHelper
         this Fixtures.ApiFactoryBase factory,
         params string[] permissions)
     {
+        return factory.CreateJwtClient(Guid.NewGuid(), "test-user", permissions);
+    }
+
+    /// <summary>
+    /// Creates an <see cref="HttpClient"/> with a valid JWT Bearer token using a specific user ID and username.
+    /// Uses the registered <see cref="ITokenGenerator"/> from the test server's DI container.
+    /// </summary>
+    /// <param name="factory">The factory to create the client from.</param>
+    /// <param name="userId">The user ID to include as the subject claim.</param>
+    /// <param name="username">The username to include as the name claim.</param>
+    /// <param name="permissions">Permissions to include as claims in the token.</param>
+    /// <returns>An authenticated <see cref="HttpClient"/>.</returns>
+    public static HttpClient CreateJwtClient(
+        this Fixtures.ApiFactoryBase factory,
+        Guid userId,
+        string username,
+        params string[] permissions)
+    {
         var client = factory.CreateClient();
 
         using var scope = factory.Services.CreateScope();
@@ -41,8 +59,8 @@ public static class AuthenticatedClientHelper
             .ToList();
 
         var authToken = tokenGenerator.GenerateToken(
-            Guid.NewGuid(),
-            "test-user",
+            userId,
+            username,
             additionalClaims: permissionClaims);
 
         client.DefaultRequestHeaders.Authorization =
