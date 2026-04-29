@@ -12,7 +12,12 @@ namespace emc.camus.persistence.postgresql.DataAccess;
 [ExcludeFromCodeCoverage]
 internal sealed class ApiInfoDataAccess : IApiInfoDataAccess
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// Checks whether the api_info table exists in the database schema.
+    /// </summary>
+    /// <param name="connection">The database connection to use.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
+    /// <returns>True if the table exists; otherwise false.</returns>
     public async Task<bool> CheckTableExistsAsync(IDbConnection connection, CancellationToken ct = default)
     {
         const string checkTableSql = @"
@@ -26,7 +31,13 @@ internal sealed class ApiInfoDataAccess : IApiInfoDataAccess
             new CommandDefinition(checkTableSql, cancellationToken: ct));
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Finds API info by version.
+    /// </summary>
+    /// <param name="connection">The database connection to use.</param>
+    /// <param name="version">The API version to look up.</param>
+    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
+    /// <returns>The API info model if found; otherwise null.</returns>
     public async Task<ApiInfoModel?> FindByVersionAsync(IDbConnection connection, string version, CancellationToken ct = default)
     {
         const string sql = @"
