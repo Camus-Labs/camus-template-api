@@ -244,18 +244,21 @@ from `ToSortParams()` stub; Application/Adapter tests pass because their product
 
 | Boundary | Factory | Test Class | Test Method | Change |
 | --- | --- | --- | --- | --- |
-| [cross-layer boundary] | [factory class name] | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [New, Modified, Existing] |
+| HTTP → Controller → Service → Repo → DB (sorted query) | ApiPostgreSqlFactory | AuthPostgreSqlEndpointTests | GetTokens_SortByCreatedAtDesc_ReturnsTokensInCorrectOrder | New |
+| HTTP → Controller validation (invalid sort params → 400) | ApiPostgreSqlFactory | AuthPostgreSqlEndpointTests | GetTokens_SortByWithoutDirection_ReturnsBadRequest | New |
+| HTTP → Controller → Service → Repo → DB (sort + pagination) | ApiPostgreSqlFactory | AuthPostgreSqlEndpointTests | GetTokens_SortByCreatedAtWithPagination_ReturnsCorrectPageSubset | New |
+| HTTP → Controller → Service → Repo → DB (no sort = default order) | ApiPostgreSqlFactory | AuthPostgreSqlEndpointTests | GetTokens_AfterGenerating_ReturnsPagedTokensFromDatabase | Existing |
 
 ### Integration Test Findings
 
 | # | Test | Failure | Root Cause Analysis | Affected File |
 | --- | --- | --- | --- | --- |
-| [n] | [test method] | [failure description] | [analysis] | [production file path] |
+| — | — | No failures | All 57 integration tests passed | — |
 
 ### Integration Tester Handoff Gate
 
-- All cross-layer boundaries identified and covered: `[Yes | No]`
-- All integration tests pass: `[Yes | No]`
-- No unresolved production code findings: `[Yes | No]`
-- Ready for review: `[Yes | No]`
-- Integration Tester sign-off: `[Name, Date]`
+- All cross-layer boundaries identified and covered: `Yes`
+- All integration tests pass: `Yes`
+- No unresolved production code findings: `Yes`
+- Ready for review: `Yes`
+- Integration Tester sign-off: `Integration Tester, 2026-04-29`

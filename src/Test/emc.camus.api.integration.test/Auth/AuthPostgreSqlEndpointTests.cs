@@ -360,4 +360,104 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         detail.Should().Contain("ClientApp", because: "the forbidden response should identify the authenticated user, not 'Unknown'");
     }
 
+    [Fact]
+    public async Task GetTokens_SortByCreatedAtDesc_ReturnsTokensInCorrectOrder()
+    {
+        // Arrange — generate three tokens with distinct suffixes and staggered creation times
+        var client = await _factory.AuthenticateAsync("Admin", "adminsecret");
+
+        var suffixes = new[] { "sort-a", "sort-b", "sort-c" };
+        foreach (var suffix in suffixes)
+        {
+            var request = new
+            {
+                UsernameSuffix = suffix,
+                ExpiresOn = DateTime.UtcNow.AddHours(2),
+                Permissions = new[] { "api.read" },
+            };
+
+            var genResponse = await client.PostAsJsonAsync("/api/v2/auth/generate-token", request, TestContext.Current.CancellationToken);
+            await genResponse.Should().HaveStatusCode(HttpStatusCode.Created, $"token generation for '{suffix}' must succeed for test setup");
+        }
+
+        // Act
+        var response = await client.GetAsync("/api/v2/auth/tokens?Page=1&PageSize=50&sortBy=createdAt&sortDirection=desc", TestContext.Current.CancellationToken);
+
+        // Assert
+        await response.Should().HaveStatusCode(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<ApiResponse<PagedResponse<GeneratedTokenSummaryDto>>>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body!.Data.Should().NotBeNull();
+        body.Data!.Items.Should().HaveCount(3);
+
+        var createdDates = body.Data.Items.Select(t => t.CreatedAt).ToList();
+        createdDates.Should().BeInDescendingOrder();
+    }
+
+    [Fact]
+    public async Task GetTokens_SortByWithoutDirection_ReturnsBadRequest()
+    {
+        // Arrange
+        var client = await _factory.AuthenticateAsync("Admin", "adminsecret");
+
+        // Act
+        var response = await client.GetAsync("/api/v2/auth/tokens?Page=1&PageSize=50&sortBy=createdAt", TestContext.Current.CancellationToken);
+
+        // Assert
+        await response.Should().HaveStatusCode(HttpStatusCode.BadRequest);
+        await response.Should().HaveErrorCode("bad_request");
+    }
+
+    [Fact]
+    public async Task GetTokens_SortByCreatedAtWithPagination_ReturnsCorrectPageSubset()
+    {
+        // Arrange — generate three tokens
+        var client = await _factory.AuthenticateAsync("Admin", "adminsecret");
+
+        var suffixes = new[] { "page-1", "page-2", "page-3" };
+        foreach (var suffix in suffixes)
+        {
+            var request = new
+            {
+                UsernameSuffix = suffix,
+                ExpiresOn = DateTime.UtcNow.AddHours(2),
+                Permissions = new[] { "api.read" },
+            };
+
+            var genResponse = await client.PostAsJsonAsync("/api/v2/auth/generate-token", request, TestContext.Current.CancellationToken);
+            await genResponse.Should().HaveStatusCode(HttpStatusCode.Created, $"token generation for '{suffix}' must succeed for test setup");
+        }
+
+        // Act — get page 1 with size 2 (sorted by createdAt asc)
+        var page1Response = await client.GetAsync("/api/v2/auth/tokens?Page=1&PageSize=2&sortBy=createdAt&sortDirection=asc", TestContext.Current.CancellationToken);
+        var page2Response = await client.GetAsync("/api/v2/auth/tokens?Page=2&PageSize=2&sortBy=createdAt&sortDirection=asc", TestContext.Current.CancellationToken);
+
+        // Assert — page 1
+        await page1Response.Should().HaveStatusCode(HttpStatusCode.OK);
+        var page1Body = await page1Response.Content.ReadFromJsonAsync<ApiResponse<PagedResponse<GeneratedTokenSummaryDto>>>(TestContext.Current.CancellationToken);
+        page1Body.Should().NotBeNull();
+        page1Body!.Data.Should().NotBeNull();
+        page1Body.Data!.Items.Should().HaveCount(2);
+        page1Body.Data.TotalCount.Should().Be(3);
+
+        // Assert — page 2
+        await page2Response.Should().HaveStatusCode(HttpStatusCode.OK);
+        var page2Body = await page2Response.Content.ReadFromJsonAsync<ApiResponse<PagedResponse<GeneratedTokenSummaryDto>>>(TestContext.Current.CancellationToken);
+        page2Body.Should().NotBeNull();
+        page2Body!.Data.Should().NotBeNull();
+        page2Body.Data!.Items.Should().HaveCount(1);
+        page2Body.Data.TotalCount.Should().Be(3);
+
+        // Assert — page 2 item was created after page 1 items (sorting applied before pagination)
+        var page1LastCreatedAt = page1Body.Data.Items.Last().CreatedAt;
+        var page2FirstCreatedAt = page2Body.Data.Items.First().CreatedAt;
+        page2FirstCreatedAt.Should().BeOnOrAfter(page1LastCreatedAt, "page 2 items should come after page 1 items in ascending createdAt order");
+
+        // Assert — no overlap between pages
+        var page1Jtis = page1Body.Data.Items.Select(t => t.Jti).ToHashSet();
+        var page2Jtis = page2Body.Data.Items.Select(t => t.Jti).ToHashSet();
+        page1Jtis.Should().NotIntersectWith(page2Jtis);
+    }
+
 }
