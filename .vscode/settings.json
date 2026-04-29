@@ -14,6 +14,12 @@
         "editor.wordWrap": "off"
     },
     "dotnet.unitTests.runSettingsPath": "./coverlet.runsettings",
+    "json.schemas": [
+        {
+            "fileMatch": ["**/xunit.runner.json"],
+            "url": "https://xunit.net/schema/current/xunit.runner.schema.json"
+        }
+    ],
     "sqltools.connections": [
         {
             "ssh": "Disabled",

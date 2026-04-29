@@ -19,6 +19,8 @@ concerns like stub secrets, rate-limit overrides, and xUnit log routing.
 | ------- | ------- | -------------- |
 | `ApiPostgreSqlFactory` | PostgreSQL (Testcontainers) | Real container, DBUp migrations, Respawn reset |
 | `ApiInMemoryFactory` | In-memory | No external dependencies |
+| `ApiRateLimitingFactory` | In-memory | Tight rate limits for IP-partition testing |
+| `ApiTimeoutFactory` | In-memory | Short request timeouts for timeout testing |
 
 ### Collection Fixtures
 
@@ -29,6 +31,16 @@ multiple containers and prevents `CryptoProviderFactory` static cache collisions
 | ---------- | ------- | ------- |
 | `PostgreSqlTestGroup` | `ApiPostgreSqlFactory` | Shares a single PostgreSQL container across all PostgreSQL test classes |
 | `InMemoryTestGroup` | `ApiInMemoryFactory` | Shares a single in-memory host across all in-memory test classes |
+| `RateLimitingTestGroup` | `ApiRateLimitingFactory` | Shares a single host with tight rate limits for IP-partition tests |
+| `TimeoutTestGroup` | `ApiTimeoutFactory` | Shares a single host with short timeouts for timeout tests |
+
+> **Parallel collections are disabled** via `xunit.runner.json` (`parallelizeTestCollections: false`).
+> `WebApplicationFactory<Program>` with the minimal hosting model uses a global `DiagnosticSource` listener
+> to intercept `WebApplication.CreateBuilder()`. When xUnit runs collections in parallel, multiple factories
+> subscribe their listeners concurrently, causing `UseSetting` configuration values from one factory to leak
+> into another factory's host. This produces flaky failures where rate-limit or timeout settings from one
+> variant are applied to a different variant's host. Sequential collection execution eliminates the
+> cross-wiring.
 
 ### Database Reset Strategy
 
@@ -94,7 +106,9 @@ collisions. Ensure `StubSecretProvider` generates per-instance keys (not static)
 ### Tests pass individually but fail when run together
 
 Test classes targeting the same infrastructure must use `[Collection(...)]` instead of `IClassFixture<T>`.
-Collection fixtures guarantee sequential execution within the same collection and share a single factory instance.
+Collection fixtures guarantee sequential execution within the same collection and share a single factory
+instance. Additionally, parallel collection execution must remain disabled in `xunit.runner.json` — see
+[Collection Fixtures](#collection-fixtures) for details on the `DiagnosticSource` cross-wiring issue.
 
 ### Docker-related failures in CI
 

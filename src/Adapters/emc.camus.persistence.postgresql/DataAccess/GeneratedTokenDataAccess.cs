@@ -155,13 +155,17 @@ internal sealed class GeneratedTokenDataAccess : IGeneratedTokenDataAccess
         if (excludeRevoked) whereClause += " AND is_revoked = false";
         if (excludeExpired) whereClause += " AND expires_on > @Now";
 
+        var orderByClause = sortColumn is not null && sortDirection is not null
+            ? $"ORDER BY {sortColumn} {sortDirection} NULLS LAST"
+            : "ORDER BY created_at DESC";
+
         var sql = $@"
             SELECT
                 jti, creator_user_id, creator_username, token_username,
                 permissions, expires_on, created_at, is_revoked, revoked_at
             FROM camus.generated_tokens
             {whereClause}
-            ORDER BY created_at DESC
+            {orderByClause}
             LIMIT @PageSize OFFSET @Offset";
 
         var parameters = new DynamicParameters();

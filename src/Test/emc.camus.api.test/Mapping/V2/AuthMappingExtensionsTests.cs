@@ -212,14 +212,16 @@ public class AuthMappingExtensionsTests
         result.Direction.Should().Be(expectedDirection);
     }
 
-    [Fact]
-    public void ToSortParams_InvalidSortBy_ThrowsArgumentException()
+    [Theory]
+    [InlineData("invalidField", "asc", "*sortBy*")]
+    [InlineData("createdAt", "invalid", "*sortDirection*")]
+    public void ToSortParams_InvalidValue_ThrowsArgumentException(string sortBy, string sortDirection, string expectedMessagePattern)
     {
         // Arrange
         var query = new GetGeneratedTokensQuery
         {
-            SortBy = "invalidField",
-            SortDirection = "asc"
+            SortBy = sortBy,
+            SortDirection = sortDirection
         };
 
         // Act
@@ -227,7 +229,7 @@ public class AuthMappingExtensionsTests
 
         // Assert
         act.Should().Throw<ArgumentException>()
-            .WithMessage("*sortBy*");
+            .WithMessage(expectedMessagePattern);
     }
 
     [Theory]

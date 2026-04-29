@@ -233,10 +233,10 @@ from `ToSortParams()` stub; Application/Adapter tests pass because their product
 
 ### Developer Handoff Gate
 
-- All tests pass (TDD green): `[Yes | No]`
-- Build succeeds with zero warnings: `[Yes | No]`
-- Ready for code review: `[Yes | No]`
-- Developer sign-off: `[Name, Date]`
+- All tests pass (TDD green): `Yes`
+- Build succeeds with zero warnings: `Yes`
+- Ready for code review: `Yes`
+- Developer sign-off: `Developer, 2026-04-28`
 
 ## Section D - Integration Testing
 
