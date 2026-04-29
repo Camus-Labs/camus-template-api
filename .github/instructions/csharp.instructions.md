@@ -15,7 +15,8 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
     - [ ] No `<inheritdoc />` — every public type and member has its own explicit XML documentation
     - [ ] No dead code — no unused private constructors, methods, fields, properties, or variables
     - [ ] All async methods on interfaces and their implementations accept `CancellationToken ct = default` as the
-          last parameter — exception: fire-and-forget operations that must run to completion
+          last parameter — exception: operations that must run to completion (fire-and-forget, observability wrappers,
+          compensating actions)
     - [ ] Async methods use async overloads of library and framework APIs — never synchronous versions
     - [ ] `CancellationToken` is forwarded to every awaited call that accepts one — never silently dropped
     - [ ] Compensating actions (rollback, cleanup, dispose) omit `CancellationToken` from their signature or

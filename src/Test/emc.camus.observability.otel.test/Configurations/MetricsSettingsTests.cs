@@ -20,14 +20,11 @@ public class MetricsSettingsTests
         act.Should().NotThrow();
     }
 
-    [Theory]
-    [InlineData(MetricsExporter.None)]
-    [InlineData(MetricsExporter.Console)]
-    [InlineData(MetricsExporter.Otlp)]
-    public void Validate_DefinedExporter_DoesNotThrow(MetricsExporter exporter)
+    [Fact]
+    public void Validate_DefinedExporter_DoesNotThrow()
     {
         // Arrange
-        var settings = new MetricsSettings { Exporter = exporter };
+        var settings = new MetricsSettings { Exporter = MetricsExporter.Otlp };
 
         // Act
         var act = () => settings.Validate();

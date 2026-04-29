@@ -291,7 +291,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .Setup(d => d.CountByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _mockDataAccess
-            .Setup(d => d.GetPageByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, 10, 0, It.IsAny<CancellationToken>()))
+            .Setup(d => d.GetPageByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, 10, 0, It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[]
             {
                 new GeneratedTokenModel
@@ -323,11 +323,75 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .ReturnsAsync(0);
 
         // Act
-        await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), filter, TestContext.Current.CancellationToken);
+        await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), filter, ct: TestContext.Current.CancellationToken);
 
         // Assert
         _mockDataAccess.Verify(d => d.CountByCreatorUserIdAsync(
             It.IsAny<IDbConnection>(), CreatorUserId, true, true, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(GeneratedTokenSortField.CreatedAt, SortDirection.Desc, "created_at", "DESC")]
+    [InlineData(GeneratedTokenSortField.ExpiresOn, SortDirection.Asc, "expires_on", "ASC")]
+    [InlineData(GeneratedTokenSortField.TokenUsername, SortDirection.Asc, "token_username", "ASC")]
+    [InlineData(GeneratedTokenSortField.RevokedAt, SortDirection.Desc, "revoked_at", "DESC")]
+    public async Task GetPagedByCreatorUserIdAsync_WithSort_PassesMappedColumnAndDirectionToDataAccess(
+        GeneratedTokenSortField field, SortDirection direction, string expectedColumn, string expectedDirection)
+    {
+        // Arrange
+        var repository = CreateRepository();
+        var sort = new GeneratedTokenSortParams(field, direction);
+        _mockDataAccess
+            .Setup(d => d.CountByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+        _mockDataAccess
+            .Setup(d => d.GetPageByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, 25, 0, expectedColumn, expectedDirection, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new GeneratedTokenModel
+                {
+                    Jti = Jti, CreatorUserId = CreatorUserId, CreatorUsername = "creator",
+                    TokenUsername = "creator-suffix", Permissions = TokenPermissions,
+                    ExpiresOn = DateTime.UtcNow.AddDays(30), CreatedAt = DateTime.UtcNow,
+                    IsRevoked = false
+                }
+            });
+
+        // Act
+        await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), sort: sort, ct: TestContext.Current.CancellationToken);
+
+        // Assert
+        _mockDataAccess.Verify(d => d.GetPageByCreatorUserIdAsync(
+            It.IsAny<IDbConnection>(), CreatorUserId, false, false, 25, 0, expectedColumn, expectedDirection, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetPagedByCreatorUserIdAsync_WithoutSort_PassesNullSortToDataAccess()
+    {
+        // Arrange
+        var repository = CreateRepository();
+        _mockDataAccess
+            .Setup(d => d.CountByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+        _mockDataAccess
+            .Setup(d => d.GetPageByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, 25, 0, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new GeneratedTokenModel
+                {
+                    Jti = Jti, CreatorUserId = CreatorUserId, CreatorUsername = "creator",
+                    TokenUsername = "creator-suffix", Permissions = TokenPermissions,
+                    ExpiresOn = DateTime.UtcNow.AddDays(30), CreatedAt = DateTime.UtcNow,
+                    IsRevoked = false
+                }
+            });
+
+        // Act
+        await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), ct: TestContext.Current.CancellationToken);
+
+        // Assert
+        _mockDataAccess.Verify(d => d.GetPageByCreatorUserIdAsync(
+            It.IsAny<IDbConnection>(), CreatorUserId, false, false, 25, 0, null, null, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // --- SaveAsync ---

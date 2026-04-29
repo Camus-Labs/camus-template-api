@@ -28,9 +28,10 @@ public interface IAuthService
     /// </summary>
     /// <param name="pagination">Pagination parameters (page number and page size).</param>
     /// <param name="filter">Optional filter criteria for the query.</param>
+    /// <param name="sort">Optional sort parameters for ordering results.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A paged result of token summaries for the current user.</returns>
-    Task<PagedResult<GeneratedTokenSummaryView>> GetGeneratedTokensAsync(PaginationParams pagination, GeneratedTokenFilter? filter = null, CancellationToken ct = default);
+    Task<PagedResult<GeneratedTokenSummaryView>> GetGeneratedTokensAsync(PaginationParams pagination, GeneratedTokenFilter? filter = null, GeneratedTokenSortParams? sort = null, CancellationToken ct = default);
 
     /// <summary>
     /// Revokes a generated token by its JTI. Only the creator of the token can revoke it.

@@ -449,13 +449,13 @@ public class AuthServiceTests
         var pagedTokens = new PagedResult<GeneratedToken>([token], 1, 1, 25);
 
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _generatedTokenRepositoryMock.Setup(r => r.GetPagedByCreatorUserIdAsync(ValidUserId, pagination, filter, It.IsAny<CancellationToken>()))
+        _generatedTokenRepositoryMock.Setup(r => r.GetPagedByCreatorUserIdAsync(ValidUserId, pagination, filter, It.IsAny<GeneratedTokenSortParams?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedTokens);
 
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
         // Act
-        var result = await service.GetGeneratedTokensAsync(pagination, filter, TestContext.Current.CancellationToken);
+        var result = await service.GetGeneratedTokensAsync(pagination, filter, ct: TestContext.Current.CancellationToken);
 
         // Assert
         result.Items.Should().ContainSingle();
@@ -518,7 +518,7 @@ public class AuthServiceTests
         // Arrange
         var pagination = new PaginationParams();
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _generatedTokenRepositoryMock.Setup(r => r.GetPagedByCreatorUserIdAsync(ValidUserId, pagination, null, It.IsAny<CancellationToken>()))
+        _generatedTokenRepositoryMock.Setup(r => r.GetPagedByCreatorUserIdAsync(ValidUserId, pagination, null, It.IsAny<GeneratedTokenSortParams?>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("DB connection failed"));
 
         var service = CreateService(_generatedTokenRepositoryMock.Object);
@@ -537,7 +537,7 @@ public class AuthServiceTests
         // Arrange
         var pagination = new PaginationParams();
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _generatedTokenRepositoryMock.Setup(r => r.GetPagedByCreatorUserIdAsync(ValidUserId, pagination, null, It.IsAny<CancellationToken>()))
+        _generatedTokenRepositoryMock.Setup(r => r.GetPagedByCreatorUserIdAsync(ValidUserId, pagination, null, It.IsAny<GeneratedTokenSortParams?>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ArgumentException("Invalid filter value"));
 
         var service = CreateService(_generatedTokenRepositoryMock.Object);

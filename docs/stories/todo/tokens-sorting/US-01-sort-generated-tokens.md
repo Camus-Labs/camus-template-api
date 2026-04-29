@@ -194,23 +194,42 @@ descriptive error message
 
 | AC | Test Class | Test Method | Layer | Change |
 | --- | --- | --- | --- | --- |
-| AC-01 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
-| AC-02 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
-| AC-03 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
+| AC-01..04 | AuthMappingExtensionsTests | ToSortParams_ValidFieldAndDirection_ReturnsMappedSortParams [Theory] | Api | New |
+| AC-01..04 | GeneratedTokenRepositoryTests | GetPagedByCreatorUserIdAsync_WithSort_PassesMappedColumnAndDirectionToDataAccess [Theory] | Adapter | New |
+| AC-05 | AuthMappingExtensionsTests | ToSortParams_BothNull_ReturnsNull | Api | New |
+| AC-05 | GeneratedTokenRepositoryTests | GetPagedByCreatorUserIdAsync_WithoutSort_PassesNullSortToDataAccess | Adapter | New |
+| AC-06 | AuthMappingExtensionsTests | ToSortParams_InvalidSortBy_ThrowsArgumentException | Api | New |
+| AC-07..08 | AuthMappingExtensionsTests | ToSortParams_OnlyOneProvided_ThrowsArgumentException [Theory] | Api | New |
+| AC-09 | GeneratedTokenRepositoryTests | GetPagedByCreatorUserIdAsync_WithSort_PassesMappedColumnAndDirectionToDataAccess [Theory] | Adapter | New |
+| N/A | SortDirectionExtensionsTests | ToSql_Asc_ReturnsASC | Application | New |
+| N/A | SortDirectionExtensionsTests | ToSql_Desc_ReturnsDESC | Application | New |
+| N/A | GeneratedTokenSortParamsTests | Constructor_ValidFieldAndDirection_SetsProperties [Theory] | Application | New |
 
 ### Skeleton Inventory
 
 | Layer | Stub File | Change | Types | Members |
 | --- | --- | --- | --- | --- |
-| [Domain, Application, Api, Adapter] | [src/.../FileName.cs] | [New, Modified] | [class, interface, record] | [method signatures, properties] |
+| Application | `src/Application/emc.camus.application/Common/SortDirection.cs` | New | enum `SortDirection`, static class `SortDirectionExtensions` | `Asc`, `Desc`, `ToSql()` |
+| Application | `src/Application/emc.camus.application/Auth/AuthSorting.cs` | New | enum `GeneratedTokenSortField`, record `GeneratedTokenSortParams` | `TokenUsername`, `ExpiresOn`, `CreatedAt`, `RevokedAt`, `Field`, `Direction` |
+| Application | `src/Application/emc.camus.application/Auth/IAuthService.cs` | Modified | interface `IAuthService` | `GetGeneratedTokensAsync` — added `GeneratedTokenSortParams? sort = null` |
+| Application | `src/Application/emc.camus.application/Auth/IGeneratedTokenRepository.cs` | Modified | interface `IGeneratedTokenRepository` | `GetPagedByCreatorUserIdAsync` — added `GeneratedTokenSortParams? sort = null` |
+| Application | `src/Application/emc.camus.application/Auth/AuthService.cs` | Modified | class `AuthService` | `GetGeneratedTokensAsync` — passes `sort` to repository |
+| Api | `src/Api/emc.camus.api/Models/Requests/V2/GetGeneratedTokensQuery.cs` | Modified | class `GetGeneratedTokensQuery` | Added `SortBy`, `SortDirection` string? properties |
+| Api | `src/Api/emc.camus.api/Mapping/V2/AuthMappingExtensions.cs` | Modified | static class `AuthMappingExtensions` | Added `ToSortParams()` (stub: `throw NotImplementedException`) |
+| Api | `src/Api/emc.camus.api/Controllers/AuthController.cs` | Modified | class `AuthController` | `GetGeneratedTokens` — calls `ToSortParams()`, passes sort, adds trace tags |
+| Adapter | `src/Adapters/emc.camus.persistence.postgresql/Repositories/GeneratedTokenRepository.cs` | Modified | class `GeneratedTokenRepository` | Added `SortFieldColumnMap`, maps sort to column/direction via `ToSql()` |
+| Adapter | `src/Adapters/emc.camus.persistence.postgresql/DataAccess/IGeneratedTokenDataAccess.cs` | Modified | interface `IGeneratedTokenDataAccess` | `GetPageByCreatorUserIdAsync` — added `sortColumn`, `sortDirection` optional params |
+| Adapter | `src/Adapters/emc.camus.persistence.postgresql/DataAccess/GeneratedTokenDataAccess.cs` | Modified | class `GeneratedTokenDataAccess` | `GetPageByCreatorUserIdAsync` — added sort params (stub: not yet applied to SQL) |
 
 ### Tester Handoff Gate
 
-- Every acceptance criterion has at least one test method: `[Yes | No]`
-- Skeleton inventory complete and user-approved: `[Yes | No]`
-- Tests compile and fail for the right reason (TDD red): `[Yes | No]`
-- Ready for implementation: `[Yes | No]`
-- Tester sign-off: `[Name, Date]`
+- Every acceptance criterion has at least one test method: `Yes`
+- Skeleton inventory complete and user-approved: `Yes`
+- Tests compile and fail for the right reason (TDD red): `Yes` — 7 API mapping tests fail with `NotImplementedException`
+from `ToSortParams()` stub; Application/Adapter tests pass because their production code (enums, dictionary map,
+`ToSql()`) is trivially complete
+- Ready for implementation: `Yes`
+- Tester sign-off: `Unit Tester, 2026-04-28`
 
 ### Developer Handoff Gate
 

@@ -162,12 +162,15 @@ namespace emc.camus.api.Controllers
                     { "page", query.Page },
                     { "page_size", query.PageSize },
                     { "exclude_revoked", query.ExcludeRevoked },
-                    { "exclude_expired", query.ExcludeExpired }
+                    { "exclude_expired", query.ExcludeExpired },
+                    { "sort_by", query.SortBy },
+                    { "sort_direction", query.SortDirection }
                 });
 
                 var pagination = query.ToPaginationParams();
                 var filter = query.ToFilter();
-                var pagedResult = await _authService.GetGeneratedTokensAsync(pagination, filter, ct);
+                var sort = query.ToSortParams();
+                var pagedResult = await _authService.GetGeneratedTokensAsync(pagination, filter, sort, ct);
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {

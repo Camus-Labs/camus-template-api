@@ -173,6 +173,83 @@ public class AuthMappingExtensionsTests
         filter.ExcludeExpired.Should().BeFalse();
     }
 
+    // --- ToSortParams (GetGeneratedTokensQuery) ---
+
+    [Fact]
+    public void ToSortParams_BothNull_ReturnsNull()
+    {
+        // Arrange
+        var query = new GetGeneratedTokensQuery();
+
+        // Act
+        var result = query.ToSortParams();
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("createdAt", "desc", GeneratedTokenSortField.CreatedAt, emc.camus.application.Common.SortDirection.Desc)]
+    [InlineData("expiresOn", "asc", GeneratedTokenSortField.ExpiresOn, emc.camus.application.Common.SortDirection.Asc)]
+    [InlineData("tokenUsername", "asc", GeneratedTokenSortField.TokenUsername, emc.camus.application.Common.SortDirection.Asc)]
+    [InlineData("revokedAt", "desc", GeneratedTokenSortField.RevokedAt, emc.camus.application.Common.SortDirection.Desc)]
+    public void ToSortParams_ValidFieldAndDirection_ReturnsMappedSortParams(
+        string sortBy, string sortDirection, GeneratedTokenSortField expectedField, emc.camus.application.Common.SortDirection expectedDirection)
+    {
+        // Arrange
+        var query = new GetGeneratedTokensQuery
+        {
+            SortBy = sortBy,
+            SortDirection = sortDirection
+        };
+
+        // Act
+        var result = query.ToSortParams();
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.Field.Should().Be(expectedField);
+        result.Direction.Should().Be(expectedDirection);
+    }
+
+    [Fact]
+    public void ToSortParams_InvalidSortBy_ThrowsArgumentException()
+    {
+        // Arrange
+        var query = new GetGeneratedTokensQuery
+        {
+            SortBy = "invalidField",
+            SortDirection = "asc"
+        };
+
+        // Act
+        var act = () => query.ToSortParams();
+
+        // Assert
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*sortBy*");
+    }
+
+    [Theory]
+    [InlineData("createdAt", null)]
+    [InlineData(null, "asc")]
+    public void ToSortParams_OnlyOneProvided_ThrowsArgumentException(string? sortBy, string? sortDirection)
+    {
+        // Arrange
+        var query = new GetGeneratedTokensQuery
+        {
+            SortBy = sortBy,
+            SortDirection = sortDirection
+        };
+
+        // Act
+        var act = () => query.ToSortParams();
+
+        // Assert
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*sortBy*sortDirection*");
+    }
+
     // --- ToRevokeTokenCommand ---
 
     [Fact]

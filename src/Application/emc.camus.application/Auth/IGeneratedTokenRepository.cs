@@ -31,9 +31,10 @@ public interface IGeneratedTokenRepository
     /// <param name="creatorUserId">The user ID of the creator.</param>
     /// <param name="pagination">Pagination parameters (page number and page size).</param>
     /// <param name="filter">Optional filter criteria for the query.</param>
+    /// <param name="sort">Optional sort parameters for ordering results.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A paged result containing the tokens and pagination metadata.</returns>
-    Task<PagedResult<GeneratedToken>> GetPagedByCreatorUserIdAsync(Guid creatorUserId, PaginationParams pagination, GeneratedTokenFilter? filter = null, CancellationToken ct = default);
+    Task<PagedResult<GeneratedToken>> GetPagedByCreatorUserIdAsync(Guid creatorUserId, PaginationParams pagination, GeneratedTokenFilter? filter = null, GeneratedTokenSortParams? sort = null, CancellationToken ct = default);
 
     /// <summary>
     /// Persists the current state of a generated token (e.g., after Revoke()).
