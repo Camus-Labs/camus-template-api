@@ -129,4 +129,18 @@ public static class AuthenticatedClientHelper
 
         return Guid.Parse(jti);
     }
+
+    /// <summary>
+    /// Replaces the default X-Forwarded-For header with the specified IP address.
+    /// Returns the same client for fluent chaining.
+    /// </summary>
+    /// <param name="client">The HTTP client to configure.</param>
+    /// <param name="ipAddress">The IP address to set in the X-Forwarded-For header.</param>
+    /// <returns>The same <see cref="HttpClient"/> for fluent chaining.</returns>
+    public static HttpClient WithIp(this HttpClient client, string ipAddress)
+    {
+        client.DefaultRequestHeaders.Remove("X-Forwarded-For");
+        client.DefaultRequestHeaders.Add("X-Forwarded-For", ipAddress);
+        return client;
+    }
 }
