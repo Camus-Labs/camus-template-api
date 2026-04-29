@@ -12,7 +12,8 @@
 
 ### Story Statement
 
-As an `authenticated API consumer with token.create permission`, I want `to sort the list of generated tokens by a specified field and direction`, so that `I can organize token results according to my needs when reviewing them`.
+As an `authenticated API consumer with token.create permission`, I want `to sort the list of generated tokens by a
+specified field and direction`, so that `I can organize token results according to my needs when reviewing them`.
 
 ### Business Value
 
@@ -35,12 +36,15 @@ As an `authenticated API consumer with token.create permission`, I want `to sort
 
 ### Functional Requirements
 
-- FR-01: The `GET /api/v2/auth/tokens` endpoint accepts an optional `SortBy` query parameter with allowed values: `tokenUsername`, `expiresOn`, `createdAt`, `revokedAt`
-- FR-02: The `GET /api/v2/auth/tokens` endpoint accepts an optional `SortDirection` query parameter with allowed values: `asc`, `desc`
+- FR-01: The `GET /api/v2/auth/tokens` endpoint accepts an optional `SortBy` query parameter with allowed values:
+`tokenUsername`, `expiresOn`, `createdAt`, `revokedAt`
+- FR-02: The `GET /api/v2/auth/tokens` endpoint accepts an optional `SortDirection` query parameter with allowed values:
+`asc`, `desc`
 - FR-03: When `SortBy` is provided without `SortDirection`, the API returns a 400 Bad Request validation error
 - FR-04: When `SortDirection` is provided without `SortBy`, the API returns a 400 Bad Request validation error
 - FR-05: When neither `SortBy` nor `SortDirection` is provided, results are returned in database-default order
-- FR-06: When an invalid value is provided for `SortBy` or `SortDirection`, the API returns a 400 Bad Request with a descriptive error message
+- FR-06: When an invalid value is provided for `SortBy` or `SortDirection`, the API returns a 400 Bad Request with a
+descriptive error message
 - FR-07: Sorting is applied before pagination (sort the full result set, then paginate)
 
 ### Non-Functional Requirements
@@ -56,7 +60,8 @@ As an `authenticated API consumer with token.create permission`, I want `to sort
 - AC-01: A request with `?sortBy=createdAt&sortDirection=desc` returns tokens ordered by creation date descending
 - AC-02: A request with `?sortBy=expiresOn&sortDirection=asc` returns tokens ordered by expiration date ascending
 - AC-03: A request with `?sortBy=tokenUsername&sortDirection=asc` returns tokens ordered alphabetically by token username
-- AC-04: A request with `?sortBy=revokedAt&sortDirection=desc` returns tokens ordered by revocation date descending (null values sorted last)
+- AC-04: A request with `?sortBy=revokedAt&sortDirection=desc` returns tokens ordered by revocation date descending
+(null values sorted last)
 - AC-05: A request without sort parameters returns tokens in database-default order
 - AC-06: A request with `?sortBy=invalidField&sortDirection=asc` returns 400 Bad Request with a validation error
 - AC-07: A request with `?sortBy=createdAt` (missing direction) returns 400 Bad Request with a validation error
@@ -73,7 +78,8 @@ As an `authenticated API consumer with token.create permission`, I want `to sort
 ### Risks and Open Questions
 
 - Risks:
-  - Sorting by `revokedAt` involves nullable column — null-handling behavior (nulls last) must be consistent across database engines
+  - Sorting by `revokedAt` involves nullable column — null-handling behavior (nulls last) must be consistent across
+  database engines
 - Open questions:
   - None
 
@@ -92,51 +98,95 @@ As an `authenticated API consumer with token.create permission`, I want `to sort
 
 ## Section B - Architect Definition
 
-Do not include code snippets.
-
 ### Layer Impact Matrix
 
 - Domain
-  - Change summary: [What changes in domain behavior]
-  - Potential files/folders to touch: `[src/Domain/... ]`
+  - Change summary: No changes. Sorting is a query concern; domain entities (`GeneratedToken`) and business rules are
+    unaffected. The sortable fields (`TokenUsername`, `ExpiresOn`, `CreatedAt`, `RevokedAt`) already exist on the entity.
+  - Potential files/folders to touch: `None`
 - Application
-  - Change summary: [What changes in use cases | contracts]
-  - Potential files/folders to touch: `[src/Application/... ]`
-- API
-  - Change summary: [What changes in HTTP surface]
-  - Backward compatibility: `[Backward compatible | Breaking]`
-  - Potential files/folders to touch: `[src/Api/... ]`
-- Adapters
-  - Change summary: [What changes in implementations | integrations]
-  - Potential files/folders to touch: `[src/Adapters/... ]`
+  - Change summary: Introduce sorting contract types to the `Auth` namespace. Add a sort parameters type (sort field
+    enum and sort direction enum) to express the allowed sort fields and directions. Extend `GeneratedTokenFilter` (or
+    introduce a sibling record) to carry the optional sort field and sort direction. Update the `IAuthService` and
+    `AuthService.GetGeneratedTokensAsync` signatures to accept the sort parameters. Update the
+    `IGeneratedTokenRepository.GetPagedByCreatorUserIdAsync` signature to accept the sort parameters so the persistence
+    adapter can apply ORDER BY at the database level (FR-07: sorting before pagination).
+  - Potential files/folders to touch: `src/Application/emc.camus.application/Auth/AuthFilters.cs`,
+    `src/Application/emc.camus.application/Auth/IGeneratedTokenRepository.cs`,
+    `src/Application/emc.camus.application/Auth/IAuthService.cs`,
+    `src/Application/emc.camus.application/Auth/AuthService.cs`
 - Database Schema
-  - Change summary: [What migrations, table, or index changes are required]
-  - Potential files/folders to touch: `[src/Infrastructure/database/migrations/... ]`
+  - Change summary: No new migrations required. The sortable columns (`token_username`, `expires_on`, `created_at`,
+    `revoked_at`) already exist on `camus.generated_tokens`. Existing indexes on `creator_user_id` and `expires_on`
+    partially support sorting. A composite index on `(creator_user_id, created_at)` may be added in a future performance
+    story if profiling indicates a need, but is not required for correctness now.
+  - Potential files/folders to touch: `None`
+- API
+  - Change summary: Add optional `SortBy` and `SortDirection` query parameters to `GetGeneratedTokensQuery`. Add
+    cross-property validation so that both must be present or both absent (FR-03, FR-04). Add value validation for
+    allowed enum values (FR-06). Extend `AuthMappingExtensions.ToFilter` to map the new query parameters to the
+    application-layer sort parameters. Include `sort_by` and `sort_direction` in the activity/trace tags set on the
+    `GetGeneratedTokens` action.
+  - Backward compatibility: `Backward compatible` — both parameters are optional and when omitted the endpoint behaves
+    identically to today (database-default order)
+  - Potential files/folders to touch: `src/Api/emc.camus.api/Models/Requests/V2/GetGeneratedTokensQuery.cs`,
+    `src/Api/emc.camus.api/Mapping/V2/AuthMappingExtensions.cs`,
+    `src/Api/emc.camus.api/Controllers/AuthController.cs`
+- Adapters
+  - Change summary: Update `GeneratedTokenRepository.GetPagedByCreatorUserIdAsync` in the PostgreSQL persistence adapter
+    to accept the sort parameters and construct the ORDER BY clause. The sort field must be mapped to a safe,
+    allow-listed column name (not user input directly) to prevent SQL injection. The `IGeneratedTokenDataAccess` interface
+    and its Dapper implementation must be updated to accept the sort column and direction and apply them in the SQL
+    query. For `revokedAt` sorting, use `NULLS LAST` to satisfy AC-04.
+  - Potential files/folders to touch:
+    `src/Adapters/emc.camus.persistence.postgresql/Repositories/GeneratedTokenRepository.cs`,
+    `src/Adapters/emc.camus.persistence.postgresql/DataAccess/IGeneratedTokenDataAccess.cs`,
+    `src/Adapters/emc.camus.persistence.postgresql/DataAccess/GeneratedTokenDataAccess.cs`
 - Tests
-  - Change summary: [What new or updated tests are required]
-  - Potential files/folders to touch: `[src/Test/... ]`
+  - Change summary: Add unit tests for the new application-layer sort parameter types and validation. Add unit tests for
+    `GetGeneratedTokensQuery` cross-property validation (both present, both absent, one missing). Add unit tests for
+    `AuthMappingExtensions` sort parameter mapping. Add unit tests for `AuthService.GetGeneratedTokensAsync` pass-through
+    of sort parameters. Add unit tests for `GeneratedTokenRepository` to verify correct ORDER BY clause construction
+    and null handling. Update existing integration tests to cover sorted pagination scenarios (AC-01 through AC-09).
+  - Potential files/folders to touch: `src/Test/emc.camus.api.test/`,
+    `src/Test/emc.camus.application.test/`,
+    `src/Test/emc.camus.persistence.postgresql.test/`,
+    `src/Test/emc.camus.api.integration.test/`
 
 ### Cross-Cutting Concern Decisions
 
-Architectural decisions for satisfying the NFRs defined in Section A.
-
-- [NFR category]: [Design decision and implementation approach]
+- Security: Sort field mapping in the persistence adapter must use an allow-list of column names (enum-to-column
+  dictionary) rather than interpolating user-provided strings into SQL. This prevents SQL injection even though the API
+  layer validates the enum values. No additional AuthN/AuthZ changes needed — existing JWT + `token.create` permission
+  requirement remains unchanged.
+- Performance: Sorting is performed at the database level (ORDER BY in SQL) before pagination (LIMIT/OFFSET), so only
+  the requested page is materialized in memory. Existing indexes on `creator_user_id` and `expires_on` provide partial
+  coverage. No new indexes are required at this time; if query profiling reveals degradation for specific sort fields, a
+  composite index migration can be added as a follow-up.
+- Observability: Add `sort_by` and `sort_direction` as activity/trace tags in the `GetGeneratedTokens` controller action
+  alongside the existing pagination and filter tags. No new metrics or alert rules required.
+- Reliability: No additional reliability measures needed. When sort parameters are absent, the endpoint falls back to
+  database-default ordering (current behavior), ensuring no behavioral regression.
+- Compliance: No additional compliance requirements.
 
 ### Delivery and Rollout Notes
 
-- Rollout strategy: [Phased | flagged | full rollout approach]
-- Rollback strategy: [How to revert safely and quickly]
-- Operational readiness checks: [Monitoring, alerts, runbook updates]
+- Rollout strategy: Full rollout. Both query parameters are optional and additive; the endpoint is fully backward
+  compatible. No feature flag needed.
+- Rollback strategy: Revert the deployment to the prior version. No database migration is involved, so rollback is a
+  code-only redeployment with zero data impact.
+- Operational readiness checks: Verify `sort_by` and `sort_direction` tags appear in traces after deployment. Confirm
+  endpoint latency remains within existing baseline via existing Grafana dashboards.
 
 ### Architect Handoff Readiness
 
-- Layer impacts are fully mapped: `[Yes | No]`
-- Port | contract impacts assessed: `[Yes | No]`
-- Backward compatibility decision documented: `[Yes | No]`
-- Cross-cutting concern decisions addressed: `[Yes | No]`
-- Rollout and rollback strategies defined: `[Yes | No]`
-- Ready for implementation: `[Yes | No]`
-- Architect sign-off: `[Name, Date]`
+- Layer impacts are fully mapped: `Yes`
+- Port | contract impacts assessed: `Yes`
+- Backward compatibility decision documented: `Yes`
+- Cross-cutting concern decisions addressed: `Yes`
+- Rollout and rollback strategies defined: `Yes`
+- Ready for implementation: `Yes`
+- Architect sign-off: `Architect, 2026-04-28`
 
 ## Section C - Implementation Tracking
 

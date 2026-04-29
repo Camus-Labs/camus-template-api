@@ -82,8 +82,6 @@ As a `[persona]`, I want `[capability]`, so that `[outcome]`.
 
 ## Section B - Architect Definition
 
-Do not include code snippets.
-
 ### Layer Impact Matrix
 
 - Domain
