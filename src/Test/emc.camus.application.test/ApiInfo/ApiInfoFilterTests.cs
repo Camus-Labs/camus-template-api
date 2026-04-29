@@ -34,4 +34,18 @@ public class ApiInfoFilterTests
         act.Should().Throw<ArgumentException>()
             .And.ParamName.Should().Be("version");
     }
+
+    [Fact]
+    public void Constructor_VersionExceedsMaxLength_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var longVersion = new string('a', 51);
+
+        // Act
+        var act = () => new ApiInfoFilter(longVersion);
+
+        // Assert
+        act.Should().Throw<ArgumentOutOfRangeException>()
+            .And.ParamName.Should().Be("version");
+    }
 }

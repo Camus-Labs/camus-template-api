@@ -1,3 +1,5 @@
+using emc.camus.domain.Auth;
+
 namespace emc.camus.application.Auth;
 
 /// <summary>
@@ -20,6 +22,7 @@ public sealed record AuthenticateUserCommand
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
         ArgumentException.ThrowIfNullOrWhiteSpace(password);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(username.Length, User.MaxUsernameLength, nameof(username));
         Username = username;
         Password = password;
     }
@@ -50,6 +53,7 @@ public sealed record GenerateTokenCommand
     public GenerateTokenCommand(string usernameSuffix, DateTime expiresOn, List<string> permissions)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(usernameSuffix);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(usernameSuffix.Length, GeneratedToken.MaxSuffixLength, nameof(usernameSuffix));
         ArgumentOutOfRangeException.ThrowIfEqual(expiresOn, default);
         ArgumentNullException.ThrowIfNull(permissions);
         ArgumentOutOfRangeException.ThrowIfLessThan(permissions.Count, 1);

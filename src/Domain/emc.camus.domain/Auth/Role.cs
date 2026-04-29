@@ -5,6 +5,9 @@ namespace emc.camus.domain.Auth;
 /// </summary>
 public class Role
 {
+    /// <summary>Maximum allowed length for a role name (matches DB VARCHAR constraint).</summary>
+    public const int MaxNameLength = 100;
+
     /// <summary>
     /// Gets the unique identifier for the role.
     /// </summary>
@@ -37,6 +40,7 @@ public class Role
     public Role(string name, string? description = null, List<string>? permissions = null, Guid? id = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(name.Length, MaxNameLength, nameof(name));
 
         if (id.HasValue)
             ArgumentOutOfRangeException.ThrowIfEqual(id.Value, Guid.Empty);

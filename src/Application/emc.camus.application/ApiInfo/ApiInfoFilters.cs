@@ -1,3 +1,5 @@
+using DomainApiInfo = emc.camus.domain.Auth.ApiInfo;
+
 namespace emc.camus.application.ApiInfo;
 
 /// <summary>
@@ -15,6 +17,7 @@ public sealed record ApiInfoFilter
     public ApiInfoFilter(string version)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(version.Length, DomainApiInfo.MaxVersionLength, nameof(version));
         Version = version;
     }
 }

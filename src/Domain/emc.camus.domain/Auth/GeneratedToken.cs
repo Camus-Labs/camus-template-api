@@ -9,7 +9,8 @@ namespace emc.camus.domain.Auth;
 /// </summary>
 public class GeneratedToken
 {
-    private const int MaxSuffixLength = 20;
+    /// <summary>Maximum allowed length for the token username suffix (matches DB constraint).</summary>
+    public const int MaxSuffixLength = 20;
     private static readonly Regex SuffixPattern = new(@"^[a-zA-Z0-9._-]+$", RegexOptions.Compiled);
 
     /// <summary>

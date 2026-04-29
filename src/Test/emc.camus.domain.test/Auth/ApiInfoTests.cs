@@ -104,6 +104,48 @@ public class ApiInfoTests
             .And.ParamName.Should().Be("name");
     }
 
+    [Fact]
+    public void Constructor_NameExceedsMaxLength_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var longName = new string('a', 201);
+
+        // Act
+        var act = () => new ApiInfo(longName, ValidVersion, ValidStatus);
+
+        // Assert
+        act.Should().Throw<ArgumentOutOfRangeException>()
+            .And.ParamName.Should().Be("name");
+    }
+
+    [Fact]
+    public void Constructor_VersionExceedsMaxLength_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var longVersion = new string('a', 51);
+
+        // Act
+        var act = () => new ApiInfo(ValidName, longVersion, ValidStatus);
+
+        // Assert
+        act.Should().Throw<ArgumentOutOfRangeException>()
+            .And.ParamName.Should().Be("version");
+    }
+
+    [Fact]
+    public void Constructor_StatusExceedsMaxLength_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var longStatus = new string('a', 101);
+
+        // Act
+        var act = () => new ApiInfo(ValidName, ValidVersion, longStatus);
+
+        // Assert
+        act.Should().Throw<ArgumentOutOfRangeException>()
+            .And.ParamName.Should().Be("status");
+    }
+
 
 
     // --- Reconstitute ---

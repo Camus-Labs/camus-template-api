@@ -44,6 +44,20 @@ public class GenerateTokenCommandTests
     }
 
     [Fact]
+    public void Constructor_SuffixExceedsMaxLength_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var longSuffix = new string('a', 21);
+
+        // Act
+        var act = () => new GenerateTokenCommand(longSuffix, ValidExpiration, [Permissions.ApiRead]);
+
+        // Assert
+        act.Should().Throw<ArgumentOutOfRangeException>()
+            .And.ParamName.Should().Be("usernameSuffix");
+    }
+
+    [Fact]
     public void Constructor_DefaultExpiration_ThrowsArgumentOutOfRangeException()
     {
         // Arrange

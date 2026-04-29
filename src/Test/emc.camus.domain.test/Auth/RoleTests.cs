@@ -99,6 +99,20 @@ public class RoleTests
         role.Permissions.Should().BeEmpty();
     }
 
+    [Fact]
+    public void Constructor_NameExceedsMaxLength_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var longName = new string('a', 101);
+
+        // Act
+        var act = () => new Role(longName);
+
+        // Assert
+        act.Should().Throw<ArgumentOutOfRangeException>()
+            .And.ParamName.Should().Be("name");
+    }
+
     // --- Reconstitute ---
 
     [Fact]

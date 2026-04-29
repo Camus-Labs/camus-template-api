@@ -5,6 +5,14 @@ namespace emc.camus.domain.Auth;
 /// </summary>
 public class ApiInfo
 {
+    /// <summary>Maximum allowed length for the API name (matches DB VARCHAR constraint).</summary>
+    public const int MaxNameLength = 200;
+
+    /// <summary>Maximum allowed length for the API version (matches DB VARCHAR constraint).</summary>
+    public const int MaxVersionLength = 50;
+
+    /// <summary>Maximum allowed length for the API status (matches DB VARCHAR constraint).</summary>
+    public const int MaxStatusLength = 100;
 
     /// <summary>
     /// The name of the API.
@@ -39,6 +47,9 @@ public class ApiInfo
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
         ArgumentException.ThrowIfNullOrWhiteSpace(status);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(name.Length, MaxNameLength, nameof(name));
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(version.Length, MaxVersionLength, nameof(version));
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(status.Length, MaxStatusLength, nameof(status));
 
         Name = name;
         Version = version;

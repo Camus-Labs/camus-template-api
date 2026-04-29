@@ -5,6 +5,9 @@ namespace emc.camus.domain.Auth;
 /// </summary>
 public class User
 {
+    /// <summary>Maximum allowed length for a username (matches DB VARCHAR constraint).</summary>
+    public const int MaxUsernameLength = 200;
+
     /// <summary>
     /// Gets the unique identifier for the user.
     /// </summary>
@@ -31,6 +34,7 @@ public class User
     public User(string username, List<Role>? roles = null, Guid? id = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(username.Length, MaxUsernameLength, nameof(username));
 
         if (id.HasValue)
             ArgumentOutOfRangeException.ThrowIfEqual(id.Value, Guid.Empty);

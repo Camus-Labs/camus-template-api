@@ -102,6 +102,20 @@ public class UserTests
         user.Roles.Should().BeEmpty();
     }
 
+    [Fact]
+    public void Constructor_UsernameExceedsMaxLength_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var longUsername = new string('a', 201);
+
+        // Act
+        var act = () => new User(longUsername);
+
+        // Assert
+        act.Should().Throw<ArgumentOutOfRangeException>()
+            .And.ParamName.Should().Be("username");
+    }
+
     // --- Reconstitute ---
 
     [Fact]

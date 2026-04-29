@@ -54,4 +54,18 @@ public class AuthenticateUserCommandTests
         act.Should().Throw<ArgumentException>()
             .And.ParamName.Should().Be("password");
     }
+
+    [Fact]
+    public void Constructor_UsernameExceedsMaxLength_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var longUsername = new string('a', 201);
+
+        // Act
+        var act = () => new AuthenticateUserCommand(longUsername, ValidPassword);
+
+        // Assert
+        act.Should().Throw<ArgumentOutOfRangeException>()
+            .And.ParamName.Should().Be("username");
+    }
 }
