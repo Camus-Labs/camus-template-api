@@ -119,17 +119,19 @@ internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
     public async Task<PagedResult<GeneratedToken>> GetPagedByCreatorUserIdAsync(
         Guid creatorUserId,
         PaginationParams pagination,
-        GeneratedTokenFilter? filter = null,
-        GeneratedTokenSortParams? sort = null,
+        GeneratedTokenFilter filter,
+        GeneratedTokenSortParams sort,
         CancellationToken ct = default)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(creatorUserId, Guid.Empty);
         ArgumentNullException.ThrowIfNull(pagination);
+        ArgumentNullException.ThrowIfNull(filter);
+        ArgumentNullException.ThrowIfNull(sort);
 
         var connection = await _unitOfWork.GetConnectionAsync(ct);
 
-        var excludeRevoked = filter?.ExcludeRevoked == true;
-        var excludeExpired = filter?.ExcludeExpired == true;
+        var excludeRevoked = filter.ExcludeRevoked;
+        var excludeExpired = filter.ExcludeExpired;
 
         var totalCount = await _dataAccess.CountByCreatorUserIdAsync(
             connection, creatorUserId, excludeRevoked, excludeExpired, ct);
@@ -139,14 +141,8 @@ internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
             return new PagedResult<GeneratedToken>([], 0, pagination.Page, pagination.PageSize);
         }
 
-        string? sortColumn = null;
-        string? sortDirection = null;
-
-        if (sort is not null)
-        {
-            sortColumn = SortFieldColumnMap[sort.Field];
-            sortDirection = sort.Direction.ToSql();
-        }
+        string? sortColumn = sort.Field is not null ? SortFieldColumnMap[sort.Field.Value] : null;
+        string? sortDirection = sort.Direction?.ToSql();
 
         var results = await _dataAccess.GetPageByCreatorUserIdAsync(
             connection, creatorUserId, excludeRevoked, excludeExpired, pagination.PageSize, pagination.Offset, sortColumn, sortDirection, ct);

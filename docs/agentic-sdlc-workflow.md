@@ -40,11 +40,16 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 │  │  Output: Integration tests + Section D + status report                │
 │  │  Gate:   Human reviews findings, approves integration status          │
 │  ▼                                                                       │
-│  Phase 5: REVIEW ─────────── @reviewer.code + @documentation.fix        │
+│  Phase 5: REVIEW ─────────── @concurrent.reviewer.code + docs            │
 │  │  Input:  Uncommitted files from previous phases                       │
-│  │  Step 1: @reviewer.code uncommitted (final code compliance check)     │
-│  │  Step 2: @documentation.fix uncommitted (fix docs until compliant)    │
+│  │  Step 1: @concurrent.reviewer.code branch (multi-model review)        │
+│  │  Step 2: @concurrent.reviewer.documentation branch (docs review)      │
 │  │  Gate:   Human reviews reports, approves final quality                │
+│  ▼                                                                       │
+│  Phase 6: TECHNICAL WRITER ─ @technical_writer                           │
+│  │  Input:  Story file with Review phase complete (both PASS)            │
+│  │  Output: Version + CHANGELOG + Swagger + Postman + XML docs + lint    │
+│  │  Gate:   Human reviews documentation updates                          │
 │  ▼                                                                       │
 │  POST: COMPLETE & COMMIT ─── User action                                 │
 │  │  Action: Move stories to done/, bump version, update changelog        │
@@ -192,52 +197,78 @@ Example: `@integration.tester #file:docs/stories/user-profiles/US-01-create-prof
 
 **Your role:** Review the integration test report. If findings exist, decide whether to fix production code
 (using `@code.fix` or `@developer`) and re-run `@integration-tester`, or accept the findings and proceed.
-Approve before moving to final review.
+Approve before moving to review.
 
 ---
 
-### Phase 5: Review — `@reviewer.code` + `@documentation.fix`
+### Phase 5: Review — `@concurrent.reviewer.code` + `@concurrent.reviewer.documentation`
 
 Both steps are **required** before commit. Code changes frequently affect documentation — new adapters need READMEs,
 API endpoint changes require architecture and authentication doc updates, and new configuration keys must appear in the
 relevant adapter README. Skipping Step 2 causes documentation drift.
 
-**Step 1 — Code review:** `@reviewer.code` → pass the keyword `uncommitted`.
+**Step 1 — Code review:** `@concurrent.reviewer.code` → check `[branch_name]`.
 
-Example: `@reviewer.code uncommitted`
+Example: `@concurrent.reviewer.code check [branch_name]`
 
-`@reviewer.code` resolves all uncommitted `.cs` files via `git diff`, matches each file to its instruction checklists,
-dispatches three sub-agents (Codex, Opus, Sonnet), and produces a consolidated compliance report.
+`@concurrent.reviewer.code` resolves all branch `.cs` files via `git diff`, matches each file to its instruction
+checklists, dispatches three sub-agents (Codex, Opus, Sonnet), and produces a consolidated compliance report.
 
-**Step 2 — Documentation fix:** `@documentation.fix` → pass the keyword `uncommitted`.
+**Step 2 — Documentation review:** `@concurrent.reviewer.documentation` → check `[branch_name]`.
 
-Example: `@documentation.fix uncommitted`
+Example: `@concurrent.reviewer.documentation check [branch_name]`
 
-`@documentation.fix` resolves all uncommitted `.md` files via `git diff`, evaluates them against the documentation
-conventions checklist, applies fixes, then invokes `@reviewer.documentation` to verify compliance — iterating up to
-5 automatic fix cycles plus 5 user-guided cycles until the reviewer returns PASS. Run this step even when no `.md`
-files were explicitly changed — the agent detects whether new or modified code requires documentation updates
-to adapter READMEs, `docs/architecture.md`, or `docs/authentication.md`.
+`@concurrent.reviewer.documentation` resolves all branch `.md` files via `git diff`, evaluates them against the
+documentation conventions checklist using three sub-agents, and produces a consolidated compliance report.
 
 **Your role:** Review both reports. For the code review, fix any FAIL findings using `@code.fix` and re-run.
-For documentation, `@documentation.fix` handles fixes automatically — review its final report and approve when
-both show PASS. Do not merge until both steps produce a PASS verdict.
+For documentation, fix any FAIL findings using `@documentation.fix` and re-run. Do not proceed until both steps
+produce a PASS verdict.
+
+---
+
+### Phase 6: Technical Writer — `@technical_writer`
+
+**Invoke:** `@technical_writer` → provide the path to a story file after both concurrent reviews pass.
+
+Example: `@technical_writer #file:docs/stories/todo/user-profiles/US-01-create-profile.md`
+
+**What the agent does:**
+
+1. Validates the Integration Tester Handoff Gate is fully passing and both Phase 5 reviews produced PASS
+2. Reads the story file, CONTRIBUTING.md versioning standard, current CHANGELOG, and Directory.Build.props
+3. Determines the Semantic Versioning bump type (MAJOR, MINOR, or PATCH) based on the story's changes
+4. Bumps the version in `src/Directory.Build.props` and adds a new CHANGELOG section with entries grouped under
+   Keep a Changelog subsections (Added, Changed, Fixed, Removed, Security, Deprecated)
+5. Updates Swagger/OpenAPI XML annotations for new or modified controller actions
+6. Updates the Postman collection with new or modified requests
+7. Adds XML documentation comments for new public types, methods, and properties
+8. Builds to verify changes compile, fixing errors up to 5 times
+9. Runs Markdown linting and fixes any errors up to 5 times
+10. Populates Section E — Version Update, CHANGELOG Entry, Documentation Updates, and evaluates the Technical Writer
+    Handoff Gate
+
+**Deliverable:** Updated `Directory.Build.props`, `CHANGELOG.md`, Swagger annotations, Postman collection, XML docs,
+Markdown lint passing, Section E populated, Technical Writer Handoff Report.
+
+**Your role:** Review the version bump rationale, CHANGELOG entry accuracy, and Swagger/XML documentation quality.
+Approve before finalizing.
 
 ---
 
 ### Post: Complete & Commit — User Action
 
-After Phase 5 produces PASS for both code and documentation reviews, finalize the feature.
+After Phase 6 (Technical Writer) completes and is approved, finalize the feature.
 
 **Steps:**
 
 1. Move the story folder from `docs/stories/todo/{request-slug}/` to `docs/stories/done/{request-slug}/`
-2. Bump the version in `src/Directory.Build.props` and add a matching `CHANGELOG.md` entry
-   (see [Contributing — Versioning Standard](../CONTRIBUTING.md#versioning-standard))
+2. Confirm the version bump and CHANGELOG entry from Phase 6 are correct
 3. Commit all changes to the feature branch
 
-**Your role:** Confirm stories are moved to `done/`, version is bumped, changelog is updated, all changes
-are committed, and the feature branch is ready for merge. Use the story details as the PR request details.
+**Your role:** Confirm stories are moved to `done/`, version and changelog are correct (already updated by
+`@technical_writer` in Phase 6), all changes are committed, and the feature branch is ready for merge. Use the
+story details as the PR request details.
 
 ---
 
@@ -251,8 +282,9 @@ are committed, and the feature branch is ready for merge. Use the story details 
 | 2 | `@unit.tester` | Story file (Sections A + B complete) | Stub files + test files + Section C |
 | 3 | `@developer` | Story file (Section C tests in RED) | Implementation + code review approved |
 | 4 | `@integration.tester` | Story file (Developer Handoff Gate complete) | Integration tests + Section D + status report |
-| 5a | `@reviewer.code` | `uncommitted` | Consolidated code compliance report (multi-model) |
-| 5b | `@documentation.fix` | `uncommitted`, file, or directory | Documentation fixed + compliance report |
+| 5a | `@concurrent.reviewer.code` | branch name | Consolidated code compliance report (multi-model) |
+| 5b | `@concurrent.reviewer.documentation` | branch name | Consolidated documentation compliance report (multi-model) |
+| 6 | `@technical_writer` | Story file (Review phase PASS) | Version bump + CHANGELOG + Swagger + Postman + XML docs + Section E |
 | Post | User | All phases PASS | Stories moved to `done/`, changes committed |
 
 ## Tips
@@ -263,18 +295,21 @@ are committed, and the feature branch is ready for merge. Use the story details 
   updates it, the code reviewer verifies against it.
 - **Section D is the integration test tracker** — the integration tester populates it (Integration Test Traceability +
   Findings), with human approval before writing any tests.
-- **Phase 5 is mandatory** — both `@reviewer.code uncommitted` and `@documentation.fix uncommitted` must produce
-  PASS before merging. Run them sequentially: code review first, documentation fix second.
-- **`@documentation.fix` handles the fix loop automatically** — it invokes `@reviewer.documentation` internally and
-  iterates until the reviewer returns PASS or the iteration limit is reached. Run it even when you did not edit `.md`
-  files — code changes often require documentation updates.
+- **Section E is the documentation tracker** — the technical writer populates it (Version Update, CHANGELOG Entry,
+  Documentation Updates), automating version bumps and changelog management.
+- **Phase 5 is mandatory** — both `@concurrent.reviewer.code` and `@concurrent.reviewer.documentation` must
+  produce PASS before the technical writer can proceed. Run them sequentially: code review first, documentation
+  review second.
+- **`@documentation.fix` handles the fix loop automatically** — it invokes `@concurrent.reviewer.documentation`
+  internally and iterates until the reviewer returns PASS or the iteration limit is reached. Use it to fix any
+  documentation FAIL findings from Phase 5.
 - **Use `@code.fix`** for ad-hoc code fixes outside the story workflow (bugs, tech debt).
 - **Use `@documentation.fix`** standalone to fix any documentation scope — file, directory, layer, or `uncommitted`.
 - **Use `@reviewer.code`** standalone to review any `.cs` scope — file, directory, layer, or `uncommitted`.
 - **Use `@reviewer.documentation`** standalone to validate docs without fixing (read-only review).
 - **Create the `feat_` branch first** — all agent work happens on a feature branch, never directly on `main`.
 - **Stories live in `todo/` during development** — agents create and update stories under `docs/stories/todo/`.
-- **Move stories to `done/` after final review** — once Phase 4 passes, move the story folder from `todo/` to
+- **Move stories to `done/` after technical writing** — once Phase 6 passes, move the story folder from `todo/` to
   `done/` and commit.
 - **The story file is the single source of truth** — all agents reference and update it.
 - **Any agent can run standalone** — useful for reviewing existing code outside the full workflow.

@@ -35,15 +35,9 @@ public class RateLimitingIpPartitionTests
         // Arrange
         var client = _factory.CreateClient().WithIp("10.0.0.1");
         var ct = TestContext.Current.CancellationToken;
+        await RateLimitHelper.ExhaustRateLimitWithAssertAsync(client, RelaxedEndpoint, ApiRateLimitingFactory.RelaxedPolicyPermitLimit, ct);
 
-        // Act — send requests up to the permit limit (should succeed)
-        for (var i = 0; i < ApiRateLimitingFactory.RelaxedPolicyPermitLimit; i++)
-        {
-            var successResponse = await client.GetAsync(RelaxedEndpoint, ct);
-            await successResponse.Should().HaveStatusCode(HttpStatusCode.OK);
-        }
-
-        // Act — next request exceeds the limit
+        // Act
         var rejectedResponse = await client.GetAsync(RelaxedEndpoint, ct);
 
         // Assert
@@ -64,23 +58,16 @@ public class RateLimitingIpPartitionTests
         var clientA = _factory.CreateClient().WithIp("10.1.0.1");
         var clientB = _factory.CreateClient().WithIp("10.1.0.2");
         var ct = TestContext.Current.CancellationToken;
+        await RateLimitHelper.ExhaustRateLimitAsync(clientA, RelaxedEndpoint, ApiRateLimitingFactory.RelaxedPolicyPermitLimit, ct);
 
-        // Exhaust the rate limit for IP A
-        for (var i = 0; i < ApiRateLimitingFactory.RelaxedPolicyPermitLimit; i++)
-        {
-            await clientA.GetAsync(RelaxedEndpoint, ct);
-        }
-
-        // Act — IP B sends its first request (should not be throttled by IP A's usage)
+        // Act
         var responseBFirst = await clientB.GetAsync(RelaxedEndpoint, ct);
+        var responseAExtra = await clientA.GetAsync(RelaxedEndpoint, ct);
 
         // Assert — IP B is independent, still within its own budget
         await responseBFirst.Should().HaveStatusCode(HttpStatusCode.OK);
 
-        // Act — IP A is still throttled
-        var responseAExtra = await clientA.GetAsync(RelaxedEndpoint, ct);
-
-        // Assert
+        // Assert — IP A is still throttled
         await responseAExtra.Should().HaveStatusCode(HttpStatusCode.TooManyRequests);
         await responseAExtra.Should().HaveErrorCode(ErrorCodes.RateLimitExceeded);
     }
@@ -94,11 +81,7 @@ public class RateLimitingIpPartitionTests
         var ct = TestContext.Current.CancellationToken;
 
         // Exhaust both IPs' rate limits
-        for (var i = 0; i < ApiRateLimitingFactory.RelaxedPolicyPermitLimit; i++)
-        {
-            await clientA.GetAsync(RelaxedEndpoint, ct);
-            await clientB.GetAsync(RelaxedEndpoint, ct);
-        }
+        await RateLimitHelper.ExhaustRateLimitForBothAsync(clientA, clientB, RelaxedEndpoint, ApiRateLimitingFactory.RelaxedPolicyPermitLimit, ct);
 
         // Act
         var responseA = await clientA.GetAsync(RelaxedEndpoint, ct);
@@ -117,15 +100,9 @@ public class RateLimitingIpPartitionTests
         // Arrange
         var client = _factory.CreateClient().WithIp("10.4.0.1");
         var ct = TestContext.Current.CancellationToken;
+        await RateLimitHelper.ExhaustRateLimitWithAssertAsync(client, RelaxedEndpoint, ApiRateLimitingFactory.RelaxedPolicyPermitLimit, ct);
 
-        // Act — send requests up to the relaxed limit (should all succeed)
-        for (var i = 0; i < ApiRateLimitingFactory.RelaxedPolicyPermitLimit; i++)
-        {
-            var response = await client.GetAsync(RelaxedEndpoint, ct);
-            await response.Should().HaveStatusCode(HttpStatusCode.OK);
-        }
-
-        // Act — next request exceeds the relaxed limit
+        // Act
         var rejectedResponse = await client.GetAsync(RelaxedEndpoint, ct);
 
         // Assert — throttled at relaxed limit, response confirms relaxed policy
@@ -142,18 +119,12 @@ public class RateLimitingIpPartitionTests
     [Fact]
     public async Task DefaultPolicy_ThrottlesAtDefaultLimit_NotRelaxedOrStrictLimit()
     {
-        // Arrange — JWT-authenticated client hitting a default-policy endpoint
+        // Arrange
         var client = _factory.CreateJwtClient().WithIp("10.5.0.1");
         var ct = TestContext.Current.CancellationToken;
+        await RateLimitHelper.ExhaustRateLimitWithAssertAsync(client, DefaultEndpoint, ApiRateLimitingFactory.DefaultPolicyPermitLimit, ct);
 
-        // Act — send requests up to the default limit (should all succeed)
-        for (var i = 0; i < ApiRateLimitingFactory.DefaultPolicyPermitLimit; i++)
-        {
-            var response = await client.GetAsync(DefaultEndpoint, ct);
-            await response.Should().HaveStatusCode(HttpStatusCode.OK);
-        }
-
-        // Act — next request exceeds the default limit
+        // Act
         var rejectedResponse = await client.GetAsync(DefaultEndpoint, ct);
 
         // Assert — throttled at default limit, response confirms default policy
@@ -174,12 +145,9 @@ public class RateLimitingIpPartitionTests
         var client = _factory.CreateApiKeyClient().WithIp("10.6.0.1");
         var ct = TestContext.Current.CancellationToken;
 
-        // Act — send requests up to the strict limit (expect 400 since we're posting empty body,
+        // Arrange — exhaust permits up to the strict limit (expect 400 since we're posting empty body,
         // but rate limiting happens before action execution so the request still consumes a permit)
-        for (var i = 0; i < ApiRateLimitingFactory.StrictPolicyPermitLimit; i++)
-        {
-            await client.PostAsync(StrictEndpoint, null, ct);
-        }
+        await RateLimitHelper.ExhaustRateLimitPostAsync(client, StrictEndpoint, ApiRateLimitingFactory.StrictPolicyPermitLimit, ct);
 
         // Act — next request exceeds the strict limit
         var rejectedResponse = await client.PostAsync(StrictEndpoint, null, ct);
@@ -203,10 +171,7 @@ public class RateLimitingIpPartitionTests
         var ct = TestContext.Current.CancellationToken;
 
         // Exhaust the rate limit
-        for (var i = 0; i < ApiRateLimitingFactory.RelaxedPolicyPermitLimit; i++)
-        {
-            await client.GetAsync(RelaxedEndpoint, ct);
-        }
+        await RateLimitHelper.ExhaustRateLimitAsync(client, RelaxedEndpoint, ApiRateLimitingFactory.RelaxedPolicyPermitLimit, ct);
 
         // Verify the limit is actually exhausted
         var rejectedResponse = await client.GetAsync(RelaxedEndpoint, ct);

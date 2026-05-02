@@ -21,7 +21,9 @@ public class HealthCheckPostgreSqlHealthyTests
     [Fact]
     public async Task AliveEndpoint_AnonymousRequest_ReturnsHealthyWithBody()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var response = await _client.GetAsync("/alive", TestContext.Current.CancellationToken);
 
         // Assert
@@ -33,7 +35,9 @@ public class HealthCheckPostgreSqlHealthyTests
     [Fact]
     public async Task HealthEndpoint_AnonymousRequest_ReturnsHealthyJsonWithBothChecks()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var response = await _client.GetAsync("/health", TestContext.Current.CancellationToken);
 
         // Assert
@@ -60,7 +64,9 @@ public class HealthCheckPostgreSqlHealthyTests
     [Fact]
     public async Task ReadyEndpoint_AnonymousRequest_ReturnsHealthyWithBody()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var response = await _client.GetAsync("/ready", TestContext.Current.CancellationToken);
 
         // Assert

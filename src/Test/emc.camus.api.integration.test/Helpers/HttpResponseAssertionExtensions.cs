@@ -53,10 +53,10 @@ public static class HttpResponseAssertionExtensions
         var response = (HttpResponseMessage)assertions.Subject;
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
 
-        body.TryGetProperty("error", out var errorProperty).Should().BeTrue(
+        body.EnumerateObject().Select(p => p.Name).Should().Contain("error",
             $"response body should contain an 'error' property but was: {body}");
 
-        errorProperty.GetString().Should().Be(
+        body.GetProperty("error").GetString().Should().Be(
             expectedErrorCode,
             because,
             becauseArgs);

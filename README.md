@@ -13,13 +13,12 @@ architecture, authentication, deployment, and debugging.
 
 **Ready-to-use Infrastructure Adapters:**
 
-- 🔐 Authentication (JWT Bearer + API Key)
-- �️ Rate Limiting (Sliding Window Algorithm)
-- ⏱️ Request Timeouts (Per-Endpoint Policies)
-- 📊 Observability (OpenTelemetry + Serilog)
-- 🗄️ Data Persistence (PostgreSQL + Dapper)
-- 🔒 Secrets Management (Dapr)
-- 📚 API Documentation (Swagger/OpenAPI)
+- 🔐 [Authentication](src/Adapters/emc.camus.security.jwt/README.md) — JWT Bearer + API Key
+- 🛡️ [Rate Limiting](src/Adapters/emc.camus.ratelimiting.inmemory/README.md) — Sliding Window Algorithm
+- 📊 [Observability](src/Adapters/emc.camus.observability.otel/README.md) — OpenTelemetry + Serilog
+- 🗄️ [Data Persistence](src/Adapters/emc.camus.persistence.postgresql/README.md) — PostgreSQL + Dapper
+- 🔒 [Secrets Management](src/Adapters/emc.camus.secrets.dapr/README.md) — Dapr
+- 📚 [API Documentation](src/Adapters/emc.camus.documentation.swagger/README.md) — Swagger/OpenAPI
 
 **Architectural Foundation:**
 
@@ -212,7 +211,8 @@ for the full pipeline, agent roles, and approval gates.
 
 **Adapter Documentation:**
 
-- [Observability (OpenTelemetry)](src/Adapters/emc.camus.observability.otel/README.md)
+- [Observability (OpenTelemetry)](src/Adapters/emc.camus.observability.otel/README.md) — Distributed tracing,
+  metrics, and structured logging via OpenTelemetry and Serilog
 - [Rate Limiting (Memory)](src/Adapters/emc.camus.ratelimiting.inmemory/README.md)
 - [Security (JWT)](src/Adapters/emc.camus.security.jwt/README.md)
 - [Security (API Key)](src/Adapters/emc.camus.security.apikey/README.md)

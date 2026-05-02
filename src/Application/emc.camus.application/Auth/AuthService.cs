@@ -213,9 +213,11 @@ public class AuthService : IAuthService
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A paged result of token summaries for the current user.</returns>
     /// <exception cref="InvalidOperationException">Thrown when user context is unavailable or database operations fail.</exception>
-    public virtual async Task<PagedResult<GeneratedTokenSummaryView>> GetGeneratedTokensAsync(PaginationParams pagination, GeneratedTokenFilter? filter = null, GeneratedTokenSortParams? sort = null, CancellationToken ct = default)
+    public virtual async Task<PagedResult<GeneratedTokenSummaryView>> GetGeneratedTokensAsync(PaginationParams pagination, GeneratedTokenFilter filter, GeneratedTokenSortParams sort, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(pagination);
+        ArgumentNullException.ThrowIfNull(filter);
+        ArgumentNullException.ThrowIfNull(sort);
 
         var currentUserId = _userContext.GetCurrentUserId()
             ?? throw new InvalidOperationException("User ID is not available. Ensure the user is authenticated.");

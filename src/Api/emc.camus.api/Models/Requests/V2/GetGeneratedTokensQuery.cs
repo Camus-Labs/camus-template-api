@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using emc.camus.api.Models.Requests;
 
 namespace emc.camus.api.Models.Requests.V2;
@@ -5,6 +6,7 @@ namespace emc.camus.api.Models.Requests.V2;
 /// <summary>
 /// Query parameters for the GET tokens endpoint with filtering, sorting, and pagination.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class GetGeneratedTokensQuery : PaginationQuery
 {
     /// <summary>

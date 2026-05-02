@@ -16,8 +16,9 @@ public class GeneratedTokenSummaryPagedExample
 {
     /// <summary>
     /// Returns an example paginated token list response for API documentation.
+    /// Demonstrates results sorted by createdAt descending (most recent first).
     /// </summary>
-    /// <returns>Example response with sample token summaries and pagination metadata.</returns>
+    /// <returns>Example response with sample token summaries, pagination metadata, and sort order applied.</returns>
     public ApiResponse<PagedResponse<GeneratedTokenSummaryDto>> GetExamples()
     {
         return new ApiResponse<PagedResponse<GeneratedTokenSummaryDto>>

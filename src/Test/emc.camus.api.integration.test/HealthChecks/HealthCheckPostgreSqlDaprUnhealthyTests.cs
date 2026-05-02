@@ -28,7 +28,9 @@ public class HealthCheckPostgreSqlDaprUnhealthyTests : IDisposable
     [Fact]
     public async Task AliveEndpoint_SecretStoreUnreachable_StillReturnsHealthy()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var response = await _client.GetAsync("/alive", TestContext.Current.CancellationToken);
 
         // Assert — liveness probe skips all checks, always healthy
@@ -40,7 +42,9 @@ public class HealthCheckPostgreSqlDaprUnhealthyTests : IDisposable
     [Fact]
     public async Task HealthEndpoint_SecretStoreUnreachable_ReturnsUnhealthyJsonWithDbStillHealthy()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var response = await _client.GetAsync("/health", TestContext.Current.CancellationToken);
 
         // Assert
@@ -68,7 +72,9 @@ public class HealthCheckPostgreSqlDaprUnhealthyTests : IDisposable
     [Fact]
     public async Task ReadyEndpoint_SecretStoreUnreachable_ReturnsUnhealthyWithBody()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var response = await _client.GetAsync("/ready", TestContext.Current.CancellationToken);
 
         // Assert

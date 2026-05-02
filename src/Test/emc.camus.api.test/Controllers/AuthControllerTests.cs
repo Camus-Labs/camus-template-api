@@ -160,7 +160,7 @@ public class AuthControllerTests
             .Setup(s => s.GetGeneratedTokensAsync(
                 It.IsAny<PaginationParams>(),
                 It.IsAny<GeneratedTokenFilter>(),
-                It.IsAny<GeneratedTokenSortParams?>(),
+                It.IsAny<GeneratedTokenSortParams>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -188,7 +188,7 @@ public class AuthControllerTests
             .Setup(s => s.GetGeneratedTokensAsync(
                 It.IsAny<PaginationParams>(),
                 It.IsAny<GeneratedTokenFilter>(),
-                It.IsAny<GeneratedTokenSortParams?>(),
+                It.IsAny<GeneratedTokenSortParams>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 

@@ -101,39 +101,14 @@ public static class AuthMappingExtensions
 
     /// <summary>
     /// Converts sort query parameters to application-layer sort params.
-    /// Returns null when no sort parameters are specified.
+    /// When both <see cref="GetGeneratedTokensQuery.SortBy"/> and <see cref="GetGeneratedTokensQuery.SortDirection"/>
+    /// are null, returns an instance with no sorting applied.
     /// </summary>
     /// <param name="query">The query from the API request.</param>
-    /// <returns>Sort parameters for the application layer, or null if not specified.</returns>
-    /// <exception cref="ArgumentException">Thrown when only one of sortBy/sortDirection is provided or when an invalid value is specified.</exception>
-    /// <remarks>
-    /// Validation lives here rather than in <see cref="GeneratedTokenSortParams"/> because the constructor
-    /// accepts typed enums. String-to-enum coercion and the cross-property both-or-neither check are
-    /// API-shape concerns that cannot move to the application-layer record.
-    /// </remarks>
-    public static GeneratedTokenSortParams? ToSortParams(this GetGeneratedTokensQuery query)
+    /// <returns>Sort parameters for the application layer.</returns>
+    public static GeneratedTokenSortParams ToSortParams(this GetGeneratedTokensQuery query)
     {
-        if (query.SortBy is null && query.SortDirection is null)
-        {
-            return null;
-        }
-
-        if (query.SortBy is null || query.SortDirection is null)
-        {
-            throw new ArgumentException("Both sortBy and sortDirection must be provided together.");
-        }
-
-        if (!Enum.TryParse<GeneratedTokenSortField>(query.SortBy, ignoreCase: true, out var field))
-        {
-            throw new ArgumentException($"Invalid value for sortBy: '{query.SortBy}'. Allowed values: tokenUsername, expiresOn, createdAt, revokedAt.");
-        }
-
-        if (!Enum.TryParse<emc.camus.application.Common.SortDirection>(query.SortDirection, ignoreCase: true, out var direction))
-        {
-            throw new ArgumentException($"Invalid value for sortDirection: '{query.SortDirection}'. Allowed values: asc, desc.");
-        }
-
-        return new GeneratedTokenSortParams(field, direction);
+        return new GeneratedTokenSortParams(query.SortBy, query.SortDirection);
     }
 
     /// <summary>

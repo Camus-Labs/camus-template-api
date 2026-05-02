@@ -24,7 +24,7 @@ specified field and direction`, so that `I can organize token results according 
 
 - Adding optional `SortBy` query parameter accepting: `tokenUsername`, `expiresOn`, `createdAt`, `revokedAt`
 - Adding optional `SortDirection` query parameter accepting: `asc`, `desc`
-- When no sort parameters are provided, results return in database-default order (current behavior)
+- When no sort parameters are provided, results return ordered by `created_at DESC`
 - Single-field sorting only
 
 ### Out of Scope
@@ -42,7 +42,7 @@ specified field and direction`, so that `I can organize token results according 
 `asc`, `desc`
 - FR-03: When `SortBy` is provided without `SortDirection`, the API returns a 400 Bad Request validation error
 - FR-04: When `SortDirection` is provided without `SortBy`, the API returns a 400 Bad Request validation error
-- FR-05: When neither `SortBy` nor `SortDirection` is provided, results are returned in database-default order
+- FR-05: When neither `SortBy` nor `SortDirection` is provided, results are returned in `created_at DESC` order
 - FR-06: When an invalid value is provided for `SortBy` or `SortDirection`, the API returns a 400 Bad Request with a
 descriptive error message
 - FR-07: Sorting is applied before pagination (sort the full result set, then paginate)
@@ -211,23 +211,23 @@ descriptive error message
 | --- | --- | --- | --- | --- |
 | Application | `src/Application/emc.camus.application/Common/SortDirection.cs` | New | enum `SortDirection`, static class `SortDirectionExtensions` | `Asc`, `Desc`, `ToSql()` |
 | Application | `src/Application/emc.camus.application/Auth/AuthSorting.cs` | New | enum `GeneratedTokenSortField`, record `GeneratedTokenSortParams` | `TokenUsername`, `ExpiresOn`, `CreatedAt`, `RevokedAt`, `Field`, `Direction` |
-| Application | `src/Application/emc.camus.application/Auth/IAuthService.cs` | Modified | interface `IAuthService` | `GetGeneratedTokensAsync` — added `GeneratedTokenSortParams? sort = null` |
-| Application | `src/Application/emc.camus.application/Auth/IGeneratedTokenRepository.cs` | Modified | interface `IGeneratedTokenRepository` | `GetPagedByCreatorUserIdAsync` — added `GeneratedTokenSortParams? sort = null` |
+| Application | `src/Application/emc.camus.application/Auth/IAuthService.cs` | Modified | interface `IAuthService` | `GetGeneratedTokensAsync` — added `GeneratedTokenSortParams sort` |
+| Application | `src/Application/emc.camus.application/Auth/IGeneratedTokenRepository.cs` | Modified | interface `IGeneratedTokenRepository` | `GetPagedByCreatorUserIdAsync` — added `GeneratedTokenSortParams sort` |
 | Application | `src/Application/emc.camus.application/Auth/AuthService.cs` | Modified | class `AuthService` | `GetGeneratedTokensAsync` — passes `sort` to repository |
 | Api | `src/Api/emc.camus.api/Models/Requests/V2/GetGeneratedTokensQuery.cs` | Modified | class `GetGeneratedTokensQuery` | Added `SortBy`, `SortDirection` string? properties |
-| Api | `src/Api/emc.camus.api/Mapping/V2/AuthMappingExtensions.cs` | Modified | static class `AuthMappingExtensions` | Added `ToSortParams()` (stub: `throw NotImplementedException`) |
+| Api | `src/Api/emc.camus.api/Mapping/V2/AuthMappingExtensions.cs` | Modified | static class `AuthMappingExtensions` | Added `ToSortParams()` — parses `SortBy`/`SortDirection` into `GeneratedTokenSortParams` |
 | Api | `src/Api/emc.camus.api/Controllers/AuthController.cs` | Modified | class `AuthController` | `GetGeneratedTokens` — calls `ToSortParams()`, passes sort, adds trace tags |
 | Adapter | `src/Adapters/emc.camus.persistence.postgresql/Repositories/GeneratedTokenRepository.cs` | Modified | class `GeneratedTokenRepository` | Added `SortFieldColumnMap`, maps sort to column/direction via `ToSql()` |
 | Adapter | `src/Adapters/emc.camus.persistence.postgresql/DataAccess/IGeneratedTokenDataAccess.cs` | Modified | interface `IGeneratedTokenDataAccess` | `GetPageByCreatorUserIdAsync` — added `sortColumn`, `sortDirection` optional params |
-| Adapter | `src/Adapters/emc.camus.persistence.postgresql/DataAccess/GeneratedTokenDataAccess.cs` | Modified | class `GeneratedTokenDataAccess` | `GetPageByCreatorUserIdAsync` — added sort params (stub: not yet applied to SQL) |
+| Adapter | `src/Adapters/emc.camus.persistence.postgresql/DataAccess/GeneratedTokenDataAccess.cs` | Modified | class `GeneratedTokenDataAccess` | `GetPageByCreatorUserIdAsync` — applies ORDER BY with mapped column + direction and NULLS LAST |
 
 ### Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `Yes`
 - Skeleton inventory complete and user-approved: `Yes`
-- Tests compile and fail for the right reason (TDD red): `Yes` — 7 API mapping tests fail with `NotImplementedException`
-from `ToSortParams()` stub; Application/Adapter tests pass because their production code (enums, dictionary map,
-`ToSql()`) is trivially complete
+- Tests compile and fail for the right reason (TDD red): `Yes` — all tests initially failed before implementation;
+Application/Adapter tests pass because their production code (enums, dictionary map, `ToSql()`) is trivially
+complete
 - Ready for implementation: `Yes`
 - Tester sign-off: `Unit Tester, 2026-04-28`
 

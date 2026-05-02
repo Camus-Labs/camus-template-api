@@ -1,13 +1,9 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
-using System.Security.Claims;
 using System.Text.Json;
 using Dapper;
 using Npgsql;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 using emc.camus.api.integration.test.Fixtures;
 using emc.camus.api.integration.test.Helpers;
 using emc.camus.api.Models.Dtos.V2;
@@ -283,7 +279,7 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         var generatedToken = generateBody!.Data!.Token;
         var jti = AuthenticatedClientHelper.ExtractJti(generatedToken);
 
-        // Assert — the generated token works on a JWT-protected endpoint before revocation
+        // Arrange — verify token is accepted before revocation
         var tokenClient = _factory.CreateClient();
         tokenClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", generatedToken);
@@ -305,32 +301,8 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
     [Fact]
     public async Task ExpiredToken_UsedOnProtectedEndpoint_ReturnsUnauthorizedWithExpiredCode()
     {
-        // Arrange — create a JWT that expires almost immediately
-        using var scope = _factory.Services.CreateScope();
-        var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-        var signingCredentials = scope.ServiceProvider.GetRequiredService<SigningCredentials>();
-
-        var claims = new List<Claim>
-        {
-            new(JwtRegisteredClaimNames.Sub, "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
-            new(JwtRegisteredClaimNames.UniqueName, "expired-test-user"),
-            new(JwtRegisteredClaimNames.Jti, "ffffffff-ffff-ffff-ffff-ffffffffffff"),
-        };
-
-        var token = new JwtSecurityToken(
-            issuer: config["JwtSettings:Issuer"],
-            audience: config["JwtSettings:Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddMilliseconds(50),
-            signingCredentials: signingCredentials);
-
-        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-
-        SpinWait.SpinUntil(() => DateTime.UtcNow > token.ValidTo);
-
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenString);
+        // Arrange
+        var client = _factory.CreateExpiredJwtClient();
 
         // Act
         var response = await client.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
@@ -350,63 +322,12 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         var response = await client.GetAsync("/api/v2/auth/tokens", TestContext.Current.CancellationToken);
 
         // Assert
-        var bodyString = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, $"Response body: {bodyString}");
+        await response.Should().HaveStatusCode(HttpStatusCode.Forbidden);
+        await response.Should().HaveErrorCode("forbidden");
 
-        var body = JsonDocument.Parse(bodyString).RootElement;
-        body.GetProperty("error").GetString().Should().Be("forbidden");
-
-        var detail = body.GetProperty("detail").GetString();
-        detail.Should().Contain("ClientApp", because: "the forbidden response should identify the authenticated user, not 'Unknown'");
-    }
-
-    [Fact]
-    public async Task GetTokens_SortByCreatedAtDesc_ReturnsTokensInCorrectOrder()
-    {
-        // Arrange — generate three tokens with distinct suffixes and staggered creation times
-        var client = await _factory.AuthenticateAsync("Admin", "adminsecret");
-
-        var suffixes = new[] { "sort-a", "sort-b", "sort-c" };
-        foreach (var suffix in suffixes)
-        {
-            var request = new
-            {
-                UsernameSuffix = suffix,
-                ExpiresOn = DateTime.UtcNow.AddHours(2),
-                Permissions = new[] { "api.read" },
-            };
-
-            var genResponse = await client.PostAsJsonAsync("/api/v2/auth/generate-token", request, TestContext.Current.CancellationToken);
-            await genResponse.Should().HaveStatusCode(HttpStatusCode.Created, $"token generation for '{suffix}' must succeed for test setup");
-        }
-
-        // Act
-        var response = await client.GetAsync("/api/v2/auth/tokens?Page=1&PageSize=50&sortBy=createdAt&sortDirection=desc", TestContext.Current.CancellationToken);
-
-        // Assert
-        await response.Should().HaveStatusCode(HttpStatusCode.OK);
-
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse<PagedResponse<GeneratedTokenSummaryDto>>>(TestContext.Current.CancellationToken);
-        body.Should().NotBeNull();
-        body!.Data.Should().NotBeNull();
-        body.Data!.Items.Should().HaveCount(3);
-
-        var createdDates = body.Data.Items.Select(t => t.CreatedAt).ToList();
-        createdDates.Should().BeInDescendingOrder();
-    }
-
-    [Fact]
-    public async Task GetTokens_SortByWithoutDirection_ReturnsBadRequest()
-    {
-        // Arrange
-        var client = await _factory.AuthenticateAsync("Admin", "adminsecret");
-
-        // Act
-        var response = await client.GetAsync("/api/v2/auth/tokens?Page=1&PageSize=50&sortBy=createdAt", TestContext.Current.CancellationToken);
-
-        // Assert
-        await response.Should().HaveStatusCode(HttpStatusCode.BadRequest);
-        await response.Should().HaveErrorCode("bad_request");
+        var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        body.RootElement.GetProperty("detail").GetString().Should()
+            .Contain("ClientApp", because: "the forbidden response should identify the authenticated user, not 'Unknown'");
     }
 
     [Fact]
@@ -416,18 +337,7 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         var client = await _factory.AuthenticateAsync("Admin", "adminsecret");
 
         var suffixes = new[] { "page-1", "page-2", "page-3" };
-        foreach (var suffix in suffixes)
-        {
-            var request = new
-            {
-                UsernameSuffix = suffix,
-                ExpiresOn = DateTime.UtcNow.AddHours(2),
-                Permissions = new[] { "api.read" },
-            };
-
-            var genResponse = await client.PostAsJsonAsync("/api/v2/auth/generate-token", request, TestContext.Current.CancellationToken);
-            await genResponse.Should().HaveStatusCode(HttpStatusCode.Created, $"token generation for '{suffix}' must succeed for test setup");
-        }
+        await TokenGenerationHelper.GenerateTokensAsync(client, suffixes, TestContext.Current.CancellationToken);
 
         // Act — get page 1 with size 2 (sorted by createdAt asc)
         var page1Response = await client.GetAsync("/api/v2/auth/tokens?Page=1&PageSize=2&sortBy=createdAt&sortDirection=asc", TestContext.Current.CancellationToken);

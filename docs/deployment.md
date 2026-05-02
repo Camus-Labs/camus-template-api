@@ -26,22 +26,9 @@ Start the production stack using the `docker-compose.prod.yml` file in detached 
 
 ### 3. Environment Configuration
 
-Override configuration via environment variables using the `__` separator:
-
-```env
-# Database
-DatabaseSettings__Host=db
-DatabaseSettings__Port=5432
-DatabaseSettings__Database=camus
-DatabaseSettings__UserSecretName=DBUser
-DatabaseSettings__PasswordSecretName=DBSecret
-
-# Persistence provider
-DataPersistenceSettings__Provider=PostgreSQL
-
-# Observability
-APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=your-key
-```
+Override configuration via environment variables using the `__` separator. See the
+[Persistence Adapter README](../src/Adapters/emc.camus.persistence.postgresql/README.md#2-configure-application-settings)
+for the full `DatabaseSettings` and `DataPersistenceSettings` JSON structure.
 
 Secrets (JWT private key, API key, database passwords) are managed through Dapr secret stores — see the
 [Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md) for details.
@@ -50,74 +37,33 @@ Secrets (JWT private key, API key, database passwords) are managed through Dapr 
 
 ### Quick Deploy
 
-```bash
-# Create resource group
-az group create --name camus-rg --location eastus
+Use the [Azure Container Apps documentation](https://learn.microsoft.com/en-us/azure/container-apps/) to deploy
+the production image. The deployment requires:
 
-# Create container app environment
-az containerapp env create \
-  --name camus-env \
-  --resource-group camus-rg \
-  --location eastus
-
-# Deploy container app
-az containerapp create \
-  --name camus-api \
-  --resource-group camus-rg \
-  --environment camus-env \
-  --image your-registry/camus-api:latest \
-  --target-port 80 \
-  --ingress external \
-  --env-vars \
-    ASPNETCORE_ENVIRONMENT=Production \
-    DatabaseSettings__Host=secretref:db-host \
-    DatabaseSettings__Port=5432 \
-    DatabaseSettings__Database=secretref:db-name \
-    DatabaseSettings__UserSecretName=db-user \
-    DatabaseSettings__PasswordSecretName=db-password
-```
+1. A resource group and Container Apps environment
+2. The container image published to your registry
+3. Ingress configured for external traffic on port 80
+4. Environment variables mapped to the JSON settings structure above
+5. Secret references for database credentials
 
 ### Configure Scaling
 
-```bash
-az containerapp update \
-  --name camus-api \
-  --resource-group camus-rg \
-  --min-replicas 1 \
-  --max-replicas 10 \
-  --scale-rule-name http-rule \
-  --scale-rule-type http \
-  --scale-rule-http-concurrency 50
-```
+Configure HTTP-based autoscaling with a concurrency target of 50 requests per replica, scaling between 1 and 10
+replicas. See [Azure Container Apps scaling rules](https://learn.microsoft.com/en-us/azure/container-apps/scale-app)
+for configuration details.
 
 ## Monitoring
 
 ### Application Insights Integration
 
-Set connection string in environment:
-
-```env
-APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=xxx;IngestionEndpoint=https://xxx
-```
+Set the Application Insights connection string in your deployment configuration via the
+`APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable.
 
 ### Prometheus Metrics
 
-Expose metrics endpoint:
-
-```yaml
-- name: metrics
-  containerPort: 80
-  protocol: TCP
-```
-
-Scrape configuration:
-
-```yaml
-- job_name: 'camus-api'
-  static_configs:
-    - targets: ['camus-api:80']
-  metrics_path: '/metrics'
-```
+Expose a container port named `metrics` on port 80 (TCP) in your pod spec. Configure Prometheus to scrape the
+`/metrics` path on that target. The metrics endpoint is exposed by the OpenTelemetry adapter — see the
+[Observability Adapter README](../src/Adapters/emc.camus.observability.otel/README.md) for configuration details.
 
 ## Dapr Secret Store Configuration
 
@@ -167,37 +113,21 @@ settings structure.
 
 ## Rollback Strategy
 
-```bash
-# Tag current version
-docker tag camus-api:latest camus-api:v1.0.0
-
-# Deploy new version
-docker tag camus-api:latest camus-api:v1.1.0
-docker-compose up -d
-
-# Rollback if needed
-docker tag camus-api:v1.0.0 camus-api:latest
-docker-compose up -d --force-recreate
-```
+To roll back a deployment, re-tag the previous known-good image as `latest` and recreate the containers using
+`docker-compose up -d --force-recreate`. Maintain version tags (e.g., `v1.0.0`, `v1.1.0`) for each release to enable
+quick rollback to any prior version.
 
 ## Troubleshooting
 
 ### Container won't start
 
-```bash
-# Check logs
-docker logs camus-api-prod
-
-# Inspect container
-docker inspect camus-api-prod
-```
+Check container logs and inspect the container state using `docker logs` and `docker inspect` for the production
+container name.
 
 ### Database connection issues
 
-```bash
-# Verify PostgreSQL is reachable from the container
-docker exec -it camus-api-prod pg_isready -h db
-```
+Verify PostgreSQL is reachable from the container by running `pg_isready` inside the container targeting the
+database host.
 
 ### Performance issues
 

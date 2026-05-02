@@ -176,7 +176,7 @@ public class AuthMappingExtensionsTests
     // --- ToSortParams (GetGeneratedTokensQuery) ---
 
     [Fact]
-    public void ToSortParams_BothNull_ReturnsNull()
+    public void ToSortParams_BothNull_ReturnsInstanceWithNoSorting()
     {
         // Arrange
         var query = new GetGeneratedTokensQuery();
@@ -185,7 +185,8 @@ public class AuthMappingExtensionsTests
         var result = query.ToSortParams();
 
         // Assert
-        result.Should().BeNull();
+        result.Should().NotBeNull();
+        result.Field.Should().BeNull();
     }
 
     [Theory]
@@ -208,48 +209,8 @@ public class AuthMappingExtensionsTests
 
         // Assert
         result.Should().NotBeNull();
-        result!.Field.Should().Be(expectedField);
+        result.Field.Should().Be(expectedField);
         result.Direction.Should().Be(expectedDirection);
-    }
-
-    [Theory]
-    [InlineData("invalidField", "asc", "*sortBy*")]
-    [InlineData("createdAt", "invalid", "*sortDirection*")]
-    public void ToSortParams_InvalidValue_ThrowsArgumentException(string sortBy, string sortDirection, string expectedMessagePattern)
-    {
-        // Arrange
-        var query = new GetGeneratedTokensQuery
-        {
-            SortBy = sortBy,
-            SortDirection = sortDirection
-        };
-
-        // Act
-        var act = () => query.ToSortParams();
-
-        // Assert
-        act.Should().Throw<ArgumentException>()
-            .WithMessage(expectedMessagePattern);
-    }
-
-    [Theory]
-    [InlineData("createdAt", null)]
-    [InlineData(null, "asc")]
-    public void ToSortParams_OnlyOneProvided_ThrowsArgumentException(string? sortBy, string? sortDirection)
-    {
-        // Arrange
-        var query = new GetGeneratedTokensQuery
-        {
-            SortBy = sortBy,
-            SortDirection = sortDirection
-        };
-
-        // Act
-        var act = () => query.ToSortParams();
-
-        // Assert
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("*sortBy*sortDirection*");
     }
 
     // --- ToRevokeTokenCommand ---

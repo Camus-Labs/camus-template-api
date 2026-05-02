@@ -21,9 +21,10 @@ applyTo: "src/Application/**/*.cs"
           shape as a Result
     - [ ] Query-input records live in `*Filters.cs` as non-positional sealed records with default parameter values —
           exception: required lookup keys (e.g., entity ID, version) that identify a specific entity stay required
+    - [ ] Sort-input types (enums and sort-param records) live in `*Sorting.cs` — distinct from filters
     - [ ] Query-output records live in `*Views.cs` as non-positional sealed records
-    - [ ] Service method parameters are Application-layer types (`*Command`, `*Filter`, `PaginationParams`) — never
-          raw primitives, domain entities, or API models
+    - [ ] Service method parameters are Application-layer types (`*Command`, `*Filter`, `*SortParams`,
+          `PaginationParams`) — never raw primitives, domain entities, or API models
     - [ ] Service methods return View or Result types
     - [ ] View names contain the entity and a content/shape qualifier — never a filter-dimension qualifier
           (`GeneratedTokenSummaryView`, not `GeneratedTokenByUserView`)

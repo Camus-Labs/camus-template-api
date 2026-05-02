@@ -102,6 +102,8 @@ Detailed usage guides for infrastructure adapters:
 ## Story Templates
 
 - **[User Story Template](stories/_user_story_template.md)** - Standard template for writing user stories
+- **[US-01: Sort Generated Tokens](stories/todo/tokens-sorting/US-01-sort-generated-tokens.md)** - Token listing
+  sort support
 
 ---
 
@@ -137,6 +139,7 @@ Infrastructure component setup guides:
 ## 🔗 Quick Links
 
 - [← Main README](../README.md) - Project overview and quick start
+- [Changelog](../CHANGELOG.md) - Version history and release notes
 - [Security Policy](../SECURITY.md) - Vulnerability reporting
 - [API Reference](http://localhost:5000/swagger) - Interactive Swagger UI (when running)
 
@@ -157,17 +160,6 @@ Infrastructure component setup guides:
 2. Configure observability stack for monitoring
 3. Follow [Deployment](deployment.md) guide for production setup
 4. Review [Security Policy](../SECURITY.md) for security best practices
-
----
-
-## 📝 Documentation Principles
-
-This documentation follows these principles:
-
-- **No Duplication**: Each document covers a specific topic without repeating content
-- **Cross-Referenced**: Documents link to related content instead of duplicating it
-- **Layered**: Start with overviews, dive deeper in specialized documents
-- **Up-to-Date**: Documentation lives close to code (adapter READMEs in adapter folders)
 
 ---
 
