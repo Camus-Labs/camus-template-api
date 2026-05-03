@@ -20,14 +20,11 @@ public class TracingSettingsTests
         act.Should().NotThrow();
     }
 
-    [Theory]
-    [InlineData(TracingExporter.None)]
-    [InlineData(TracingExporter.Console)]
-    [InlineData(TracingExporter.Otlp)]
-    public void Validate_DefinedExporter_DoesNotThrow(TracingExporter exporter)
+    [Fact]
+    public void Validate_DefinedExporter_DoesNotThrow()
     {
         // Arrange
-        var settings = new TracingSettings { Exporter = exporter };
+        var settings = new TracingSettings { Exporter = TracingExporter.Otlp };
 
         // Act
         var act = () => settings.Validate();

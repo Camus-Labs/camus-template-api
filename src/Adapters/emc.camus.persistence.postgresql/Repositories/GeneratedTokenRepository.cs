@@ -14,6 +14,18 @@ namespace emc.camus.persistence.postgresql.Repositories;
 /// </summary>
 internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
 {
+    /// <summary>
+    /// Maps <see cref="GeneratedTokenSortField"/> values to safe, allow-listed database column names.
+    /// </summary>
+    private static readonly Dictionary<GeneratedTokenSortField, string> SortFieldColumnMap =
+        new Dictionary<GeneratedTokenSortField, string>
+        {
+            { GeneratedTokenSortField.TokenUsername, "token_username" },
+            { GeneratedTokenSortField.ExpiresOn, "expires_on" },
+            { GeneratedTokenSortField.CreatedAt, "created_at" },
+            { GeneratedTokenSortField.RevokedAt, "revoked_at" }
+        };
+
     private readonly UnitOfWork _unitOfWork;
     private readonly IGeneratedTokenDataAccess _dataAccess;
 
@@ -100,22 +112,26 @@ internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
     /// <param name="creatorUserId">The user ID of the creator.</param>
     /// <param name="pagination">Pagination parameters (page number and page size).</param>
     /// <param name="filter">Optional filter criteria for excluding revoked or expired tokens.</param>
+    /// <param name="sort">Optional sort parameters for ordering results.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A paged result containing the matching tokens and pagination metadata.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="pagination"/> is null.</exception>
     public async Task<PagedResult<GeneratedToken>> GetPagedByCreatorUserIdAsync(
         Guid creatorUserId,
         PaginationParams pagination,
-        GeneratedTokenFilter? filter = null,
+        GeneratedTokenFilter filter,
+        GeneratedTokenSortParams sort,
         CancellationToken ct = default)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(creatorUserId, Guid.Empty);
         ArgumentNullException.ThrowIfNull(pagination);
+        ArgumentNullException.ThrowIfNull(filter);
+        ArgumentNullException.ThrowIfNull(sort);
 
         var connection = await _unitOfWork.GetConnectionAsync(ct);
 
-        var excludeRevoked = filter?.ExcludeRevoked == true;
-        var excludeExpired = filter?.ExcludeExpired == true;
+        var excludeRevoked = filter.ExcludeRevoked;
+        var excludeExpired = filter.ExcludeExpired;
 
         var totalCount = await _dataAccess.CountByCreatorUserIdAsync(
             connection, creatorUserId, excludeRevoked, excludeExpired, ct);
@@ -125,8 +141,11 @@ internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
             return new PagedResult<GeneratedToken>([], 0, pagination.Page, pagination.PageSize);
         }
 
+        string? sortColumn = sort.Field is not null ? SortFieldColumnMap[sort.Field.Value] : null;
+        string? sortDirection = sort.Direction?.ToSql();
+
         var results = await _dataAccess.GetPageByCreatorUserIdAsync(
-            connection, creatorUserId, excludeRevoked, excludeExpired, pagination.PageSize, pagination.Offset, ct);
+            connection, creatorUserId, excludeRevoked, excludeExpired, pagination.PageSize, pagination.Offset, sortColumn, sortDirection, ct);
 
         var items = results.Select(r => r.ToEntity()).ToList();
 

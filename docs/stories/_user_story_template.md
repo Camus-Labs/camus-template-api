@@ -82,8 +82,6 @@ As a `[persona]`, I want `[capability]`, so that `[outcome]`.
 
 ## Section B - Architect Definition
 
-Do not include code snippets.
-
 ### Layer Impact Matrix
 
 - Domain
@@ -180,3 +178,44 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - No unresolved production code findings: `[Yes | No]`
 - Ready for review: `[Yes | No]`
 - Integration Tester sign-off: `[Name, Date]`
+
+## Section E - Technical Writer
+
+### Version Update
+
+- Previous version: `[X.X.X]`
+- New version: `[X.X.X]`
+- Bump type: `[MAJOR | MINOR | PATCH | APPEND]`
+- Reason: `[one-sentence justification]`
+
+### CHANGELOG Entry
+
+```markdown
+## [X.X.X] - YYYY-MM-DD
+
+### `[Added | Changed | Deprecated | Removed | Fixed | Security]`
+
+- [entry 1]
+- [entry 2]
+```
+
+### Documentation Updates
+
+- Swagger annotations updated: `[count]` endpoint(s)
+- Postman requests updated: `[count]` request(s)
+- XML documentation added: `[count]` public API(s)
+- Files modified:
+  - `[file path 1]`
+  - `[file path 2]`
+
+### Technical Writer Handoff Gate
+
+- Version in Directory.Build.props matches confirmed decision: `[Yes | No | N/A]`
+- CHANGELOG entry matches new version and date: `[Yes | No | N/A]`
+- Swagger examples reflect new/changed endpoints: `[Yes | No | N/A]`
+- Postman collection reflects new/changed requests: `[Yes | No | N/A]`
+- XML documentation covers new public APIs: `[Yes | No | N/A]`
+- Markdown linting passes with zero errors: `[Yes | No]`
+- Build succeeds with zero errors and warnings: `[Yes | No]`
+- Ready for review: `[Yes | No]`
+- Technical Writer sign-off: `[Name, Date]`

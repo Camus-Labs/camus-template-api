@@ -1,6 +1,8 @@
 using System.Net;
 using emc.camus.api.integration.test.Fixtures;
 using emc.camus.api.integration.test.Helpers;
+using emc.camus.application.ApiInfo;
+using emc.camus.application.Common;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -29,7 +31,7 @@ public class RequestTimeoutInMemoryTests
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.GatewayTimeout);
-        await response.Should().HaveErrorCode("request_timeout");
+        await response.Should().HaveErrorCode(ErrorCodes.RequestTimeout);
     }
 
     [Fact]

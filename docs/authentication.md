@@ -35,9 +35,8 @@ detailed claims documentation and usage examples.
 
 ## Error Responses
 
-- 401 Unauthorized: Token missing/expired/invalid
+- 401 Unauthorized: Token missing/expired/invalid or invalid credentials
 - 403 Forbidden: Valid token, insufficient permissions
-- 400 Bad Request: Invalid credentials
 
 ## Architecture
 

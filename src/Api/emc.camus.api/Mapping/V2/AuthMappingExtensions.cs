@@ -100,6 +100,18 @@ public static class AuthMappingExtensions
     }
 
     /// <summary>
+    /// Converts sort query parameters to application-layer sort params.
+    /// When both <see cref="GetGeneratedTokensQuery.SortBy"/> and <see cref="GetGeneratedTokensQuery.SortDirection"/>
+    /// are null, returns an instance with no sorting applied.
+    /// </summary>
+    /// <param name="query">The query from the API request.</param>
+    /// <returns>Sort parameters for the application layer.</returns>
+    public static GeneratedTokenSortParams ToSortParams(this GetGeneratedTokensQuery query)
+    {
+        return new GeneratedTokenSortParams(query.SortBy, query.SortDirection);
+    }
+
+    /// <summary>
     /// Creates a <see cref="RevokeTokenCommand"/> from a JTI.
     /// </summary>
     /// <param name="jti">The JWT ID from the route.</param>

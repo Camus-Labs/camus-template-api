@@ -139,7 +139,7 @@ namespace emc.camus.api.Controllers
 
         /// <summary>
         /// Retrieves a paginated list of generated tokens created by the currently authenticated user.
-        /// Supports filtering by revocation and expiration status.
+        /// Supports filtering by revocation and expiration status, and sorting by tokenUsername, expiresOn, createdAt, or revokedAt.
         /// Requires JWT authentication and token.create permission.
         /// Available for API version >=2.0.
         /// </summary>
@@ -150,7 +150,7 @@ namespace emc.camus.api.Controllers
         [Authorize(AuthenticationSchemes = AuthenticationSchemes.JwtBearer, Policy = Permissions.TokenCreate)]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
-            Description = "Retrieves a paginated list of generated tokens for the current user. Supports filtering by revocation/expiration status. Requires token.create permission."
+            Description = "Retrieves a paginated list of generated tokens for the current user. Supports filtering by revocation/expiration status and sorting by tokenUsername, expiresOn, createdAt, or revokedAt (asc/desc). Requires token.create permission."
         )]
         [ProducesResponseType(typeof(ApiResponse<PagedResponse<GeneratedTokenSummaryDto>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetGeneratedTokens([FromQuery] GetGeneratedTokensQuery query, CancellationToken ct)
@@ -162,12 +162,15 @@ namespace emc.camus.api.Controllers
                     { "page", query.Page },
                     { "page_size", query.PageSize },
                     { "exclude_revoked", query.ExcludeRevoked },
-                    { "exclude_expired", query.ExcludeExpired }
+                    { "exclude_expired", query.ExcludeExpired },
+                    { "sort_by", query.SortBy },
+                    { "sort_direction", query.SortDirection }
                 });
 
                 var pagination = query.ToPaginationParams();
                 var filter = query.ToFilter();
-                var pagedResult = await _authService.GetGeneratedTokensAsync(pagination, filter, ct);
+                var sort = query.ToSortParams();
+                var pagedResult = await _authService.GetGeneratedTokensAsync(pagination, filter, sort, ct);
 
                 _activitySource.SetResponseTags(activity, new Dictionary<string, object?>
                 {

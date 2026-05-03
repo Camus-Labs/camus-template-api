@@ -13,9 +13,8 @@ This setup enables **hot reload** and **VS Code debugging** for the containerize
 
 ### 1. Start Full Stack with Hot Reload
 
-```bash
-docker-compose -f docker-compose.dev.yml up --build
-```
+Run the VS Code task **`docker-compose-up-dev-build`** (or execute `docker-compose -f docker-compose.dev.yml up --build`
+from the workspace root).
 
 **What happens:**
 
@@ -95,62 +94,37 @@ Available tasks (`Cmd+Shift+P` → **Tasks: Run Task**):
 
 **Best for:** Testing complete containerized setup
 
-```bash
-# Start everything
-docker-compose -f docker-compose.dev.yml up --build
-
-# Attach debugger from VS Code (F5 → ".NET Attach to Container")
-# Edit code → Auto-rebuild → Debug continues
-
-# Stop when done
-docker-compose -f docker-compose.dev.yml down
-```
+1. Run task **`docker-compose-up-dev-build`** to start all services
+2. Attach debugger from VS Code (F5 → ".NET Attach to Container")
+3. Edit code → Auto-rebuild → Debug continues
+4. Run task **`docker-compose-down`** when done
 
 ### Workflow 2: Hybrid (Fastest)
 
 **Best for:** Day-to-day coding with fastest iteration
 
-```bash
-# Start observability only
-docker-compose -f docker-compose.dev.yml up postgres otel-collector jaeger loki prometheus grafana -d
-
-# Run API on host with hot reload
-dotnet watch --project src/Api/emc.camus.api/emc.camus.api.csproj
-
-# Or use VS Code task: Run Task → "watch-api"
-# Debug on host (F5 → ".NET Launch API (Host)")
-```
+1. Run task **`docker-compose-up-dev-no-api`** to start only the observability stack
+2. Run task **`watch-api`** to start the API on the host with hot reload
+3. Debug on host (F5 → ".NET Launch API (Host)")
 
 ### Workflow 3: Production Test
 
 **Best for:** Testing before deployment
 
-```bash
-# Build production image
-docker build -t camus-api:latest .
-
-# Run with production config
-docker-compose -f docker-compose.prod.yml up
-```
+1. Build the production image using the root `Dockerfile`
+2. Run using the `docker-compose.prod.yml` stack
 
 ## 🐛 Troubleshooting
 
 ### Debugger won't attach
 
-**Solution:** Ensure container is running and has `vsdbg` installed
-
-```bash
-docker exec -it camus-api-dev ls /vsdbg
-```
+**Solution:** Ensure the container is running and has `vsdbg` installed. Exec into the `camus-api-dev` container and
+verify the `/vsdbg` directory exists.
 
 ### Hot reload not working
 
-**Solution:** Check volume mount permissions
-
-```bash
-docker-compose -f docker-compose.dev.yml down -v
-docker-compose -f docker-compose.dev.yml up --build
-```
+**Solution:** Check volume mount permissions. Run task **`docker-compose-down-clean-data`** to remove volumes, then
+run task **`docker-compose-up-dev-build`** to rebuild.
 
 ### Breakpoints not hitting
 
@@ -164,12 +138,8 @@ docker-compose -f docker-compose.dev.yml up --build
 
 ### Build errors after code changes
 
-**Solution:** Clean and rebuild
-
-```bash
-docker-compose -f docker-compose.dev.yml down
-docker-compose -f docker-compose.dev.yml up --build --force-recreate api
-```
+**Solution:** Run task **`docker-compose-down`** to stop containers, then run task **`docker-compose-up-dev-build`**
+to force a clean rebuild of the API service.
 
 ## 📊 Access Points
 

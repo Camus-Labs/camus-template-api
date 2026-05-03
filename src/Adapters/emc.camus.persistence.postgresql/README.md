@@ -94,6 +94,14 @@ Manages user authentication and authorization:
 - `InitializeAsync()` - Validates database connection and schema
 - `ValidateCredentialsAsync(username, password)` - Authenticates users and loads roles
 
+#### GeneratedTokenRepository
+
+Manages generated token persistence with sorting and filtering:
+
+- `GetPagedByCreatorUserIdAsync(creatorUserId, pagination, filter, sort)` - Retrieves paged tokens with sorting
+- `CreateAsync(generatedToken)` - Persists a new generated token
+- `SaveAsync(generatedToken)` - Persists the current state of a generated token (e.g., after revocation)
+
 ---
 
 ## 📊 Database Schema Management

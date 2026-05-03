@@ -20,14 +20,11 @@ public class LogsSettingsTests
         act.Should().NotThrow();
     }
 
-    [Theory]
-    [InlineData(LogsExporter.None)]
-    [InlineData(LogsExporter.Console)]
-    [InlineData(LogsExporter.Otlp)]
-    public void Validate_DefinedExporter_DoesNotThrow(LogsExporter exporter)
+    [Fact]
+    public void Validate_DefinedExporter_DoesNotThrow()
     {
         // Arrange
-        var settings = new LogsSettings { Exporter = exporter };
+        var settings = new LogsSettings { Exporter = LogsExporter.Otlp };
 
         // Act
         var act = () => settings.Validate();

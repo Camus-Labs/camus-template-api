@@ -780,7 +780,7 @@
 											}
 										],
 										"url": {
-											"raw": "{{baseUrl}}/api/v2/Auth/tokens?page=1&pageSize=25&excludeRevoked=false&excludeExpired=false",
+											"raw": "{{baseUrl}}/api/v2/Auth/tokens?page=1&pageSize=25&excludeRevoked=false&excludeExpired=false&sortBy=createdAt&sortDirection=desc",
 											"host": [
 												"{{baseUrl}}"
 											],
@@ -806,10 +806,20 @@
 												{
 													"key": "excludeExpired",
 													"value": "false"
+												},
+												{
+													"key": "sortBy",
+													"value": "createdAt",
+													"description": "Field to sort by. Allowed: tokenUsername, expiresOn, createdAt, revokedAt."
+												},
+												{
+													"key": "sortDirection",
+													"value": "desc",
+													"description": "Sort direction. Allowed: asc, desc."
 												}
 											]
 										},
-										"description": "Retrieves a paginated list of generated tokens for the current user. Supports filtering by revocation/expiration status. Requires JWT authentication with token.create permission."
+										"description": "Retrieves a paginated list of generated tokens for the current user. Supports filtering by revocation/expiration status and sorting by tokenUsername, expiresOn, createdAt, or revokedAt (asc/desc). Requires JWT authentication with token.create permission."
 									},
 									"response": [
 										{

@@ -137,7 +137,7 @@ internal sealed class GeneratedTokenDataAccess : IGeneratedTokenDataAccess
     }
 
     /// <summary>
-    /// Retrieves a page of generated tokens for a creator user with optional filtering.
+    /// Retrieves a page of generated tokens for a creator user with optional filtering and sorting.
     /// </summary>
     /// <param name="connection">The database connection to use.</param>
     /// <param name="creatorUserId">The creator user ID.</param>
@@ -145,13 +145,19 @@ internal sealed class GeneratedTokenDataAccess : IGeneratedTokenDataAccess
     /// <param name="excludeExpired">Whether to exclude expired tokens.</param>
     /// <param name="pageSize">The page size.</param>
     /// <param name="offset">The offset for pagination.</param>
+    /// <param name="sortColumn">The allow-listed column name to sort by, or null for default ordering.</param>
+    /// <param name="sortDirection">The sort direction ("ASC" or "DESC"), or null for default ordering.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The matching generated token models.</returns>
-    public async Task<IEnumerable<GeneratedTokenModel>> GetPageByCreatorUserIdAsync(IDbConnection connection, Guid creatorUserId, bool excludeRevoked, bool excludeExpired, int pageSize, int offset, CancellationToken ct = default)
+    public async Task<IEnumerable<GeneratedTokenModel>> GetPageByCreatorUserIdAsync(IDbConnection connection, Guid creatorUserId, bool excludeRevoked, bool excludeExpired, int pageSize, int offset, string? sortColumn = null, string? sortDirection = null, CancellationToken ct = default)
     {
         var whereClause = "WHERE creator_user_id = @CreatorUserId";
         if (excludeRevoked) whereClause += " AND is_revoked = false";
         if (excludeExpired) whereClause += " AND expires_on > @Now";
+
+        var orderByClause = sortColumn is not null && sortDirection is not null
+            ? $"ORDER BY {sortColumn} {sortDirection} NULLS LAST"
+            : "ORDER BY created_at DESC";
 
         var sql = $@"
             SELECT
@@ -159,7 +165,7 @@ internal sealed class GeneratedTokenDataAccess : IGeneratedTokenDataAccess
                 permissions, expires_on, created_at, is_revoked, revoked_at
             FROM camus.generated_tokens
             {whereClause}
-            ORDER BY created_at DESC
+            {orderByClause}
             LIMIT @PageSize OFFSET @Offset";
 
         var parameters = new DynamicParameters();

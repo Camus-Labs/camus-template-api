@@ -209,12 +209,15 @@ public class AuthService : IAuthService
     /// </summary>
     /// <param name="pagination">Pagination parameters (page number and page size).</param>
     /// <param name="filter">Optional filter criteria for the query.</param>
+    /// <param name="sort">Optional sort parameters for ordering results.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A paged result of token summaries for the current user.</returns>
     /// <exception cref="InvalidOperationException">Thrown when user context is unavailable or database operations fail.</exception>
-    public virtual async Task<PagedResult<GeneratedTokenSummaryView>> GetGeneratedTokensAsync(PaginationParams pagination, GeneratedTokenFilter? filter = null, CancellationToken ct = default)
+    public virtual async Task<PagedResult<GeneratedTokenSummaryView>> GetGeneratedTokensAsync(PaginationParams pagination, GeneratedTokenFilter filter, GeneratedTokenSortParams sort, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(pagination);
+        ArgumentNullException.ThrowIfNull(filter);
+        ArgumentNullException.ThrowIfNull(sort);
 
         var currentUserId = _userContext.GetCurrentUserId()
             ?? throw new InvalidOperationException("User ID is not available. Ensure the user is authenticated.");
@@ -225,7 +228,7 @@ public class AuthService : IAuthService
         }
         try
         {
-            var pagedTokens = await _generatedTokenRepository.GetPagedByCreatorUserIdAsync(currentUserId, pagination, filter, ct);
+            var pagedTokens = await _generatedTokenRepository.GetPagedByCreatorUserIdAsync(currentUserId, pagination, filter, sort, ct);
 
             var items = pagedTokens.Items.Select(t => t.ToSummaryView()).ToList();
 

@@ -9,6 +9,12 @@ using FluentAssertions;
 
 namespace emc.camus.api.integration.test.PostgreSqlPersistence;
 
+/// <summary>
+/// Tests transaction isolation semantics (uncommitted read visibility, rollback, commit)
+/// at the UnitOfWork/repository level. These tests intentionally resolve services from DI
+/// rather than going through the HTTP pipeline because transaction boundary behavior cannot
+/// be observed from an HTTP endpoint alone.
+/// </summary>
 [Trait("Category", "Integration")]
 [Collection(PostgreSqlTestGroup.Name)]
 public class UnitOfWorkTransactionPostgreSqlTests : IAsyncLifetime
@@ -44,27 +50,21 @@ public class UnitOfWorkTransactionPostgreSqlTests : IAsyncLifetime
             ["api.read"], DateTime.UtcNow.AddHours(2),
             DateTime.UtcNow, false, null);
 
-        // Act — begin transaction and insert a token
+        // Act
         await unitOfWork.BeginTransactionAsync(TestContext.Current.CancellationToken);
         await tokenRepository.CreateAsync(token, TestContext.Current.CancellationToken);
-
-        // Assert — row is visible within the transaction via the same repository
         var duringTransaction = await tokenRepository.GetByJtiAsync(jti, TestContext.Current.CancellationToken);
-        duringTransaction!.TokenUsername.Should().Be("Admin-rollback-test", "inserted row must be readable within the transaction");
-
-        // Assert — row is NOT visible from an outside connection (transaction isolation)
         await using var outsideConnection = new NpgsqlConnection(_factory.ConnectionString);
         await outsideConnection.OpenAsync(TestContext.Current.CancellationToken);
         var countOutside = await outsideConnection.ExecuteScalarAsync<int>(
             "SELECT COUNT(*) FROM camus.generated_tokens WHERE jti = @Jti",
             new { Jti = jti });
-        countOutside.Should().Be(0, "uncommitted row should not be visible outside the transaction");
-
-        // Act — rollback the transaction
         await unitOfWork.RollbackAsync();
-
-        // Assert — row is gone after rollback
         var afterRollback = await tokenRepository.GetByJtiAsync(jti, TestContext.Current.CancellationToken);
+
+        // Assert
+        duringTransaction!.TokenUsername.Should().Be("Admin-rollback-test", "inserted row must be readable within the transaction");
+        countOutside.Should().Be(0, "uncommitted row should not be visible outside the transaction");
         afterRollback.Should().BeNull("rolled-back row must not be persisted");
     }
 
@@ -83,25 +83,21 @@ public class UnitOfWorkTransactionPostgreSqlTests : IAsyncLifetime
             ["api.read"], DateTime.UtcNow.AddHours(2),
             DateTime.UtcNow, false, null);
 
-        // Act — begin transaction, insert a token
+        // Act
         await unitOfWork.BeginTransactionAsync(TestContext.Current.CancellationToken);
         await tokenRepository.CreateAsync(token, TestContext.Current.CancellationToken);
-
-        // Assert — row is NOT visible from an outside connection before commit
         await using var connection = new NpgsqlConnection(_factory.ConnectionString);
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         var countBeforeCommit = await connection.ExecuteScalarAsync<int>(
             "SELECT COUNT(*) FROM camus.generated_tokens WHERE jti = @Jti",
             new { Jti = jti });
-        countBeforeCommit.Should().Be(0, "uncommitted row should not be visible outside the transaction");
-
-        // Act — commit
         await unitOfWork.CommitAsync(TestContext.Current.CancellationToken);
-
-        // Assert — row is visible from the outside connection after commit
         var countAfterCommit = await connection.ExecuteScalarAsync<int>(
             "SELECT COUNT(*) FROM camus.generated_tokens WHERE jti = @Jti",
             new { Jti = jti });
+
+        // Assert
+        countBeforeCommit.Should().Be(0, "uncommitted row should not be visible outside the transaction");
         countAfterCommit.Should().Be(1, "committed row must be visible outside the transaction");
     }
 }

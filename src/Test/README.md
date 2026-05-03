@@ -30,9 +30,7 @@ and auto-generated code from coverage metrics, and outputs Cobertura XML format 
 | Moq | Mocking framework for dependency isolation |
 | Coverlet | Code coverage collection |
 
-### Project Mapping
-
-#### Unit Test Projects
+### Unit Test Projects
 
 Each unit test project mirrors a production project with a `.test` suffix:
 
@@ -50,8 +48,9 @@ Each unit test project mirrors a production project with a `.test` suffix:
 | `emc.camus.secrets.dapr.test` | `Adapters/emc.camus.secrets.dapr` |
 | `emc.camus.security.apikey.test` | `Adapters/emc.camus.security.apikey` |
 | `emc.camus.security.jwt.test` | `Adapters/emc.camus.security.jwt` |
+| `emc.camus.migrations.dbup.test` | `Adapters/emc.camus.migrations.dbup` |
 
-#### Integration Test Project
+### Integration Test Project
 
 | Test Project | Scope |
 | ------------ | ----- |
@@ -85,8 +84,9 @@ Or use the VS Code tasks: **test-unit**, **test-integration**, **test-all**.
 
 Generate a coverage report using the VS Code tasks:
 
-1. Run the **test-with-coverage** task — executes unit tests with Coverlet collection
-2. Run the **test-coverage-report** task — generates an HTML report and opens it in the browser
+1. Run the **test-refresh-coverage-report** task — executes unit tests with Coverlet collection and generates an
+  HTML report
+2. Run the **test-open-coverage-report** task — opens the generated HTML report in the browser
 
 Coverage output lands in `src/Test/*/TestResults/` (git-ignored). The HTML report is generated in `coveragereport/`
 at the repository root.
@@ -107,8 +107,8 @@ the correct relative path.
 
 ### Coverage report shows 0% or is missing
 
-Ensure the **test-with-coverage** task runs before generating the report. The task cleans previous `TestResults/`
-directories, rebuilds, and collects fresh coverage data.
+Ensure the **test-refresh-coverage-report** task runs before generating the report. The task cleans previous
+`TestResults/` directories, rebuilds, and collects fresh coverage data.
 
 ### Tests pass locally but fail in CI
 

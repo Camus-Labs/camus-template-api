@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - YYYY-MM-DD
+## [1.0.0] - 2026-05-01
 
 ### Added
 
@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - JWT Bearer authentication with RSA256 signature validation
 - API Key authentication for service-to-service communication
 - Token generation, listing, and revocation endpoints
+- Server-side sorting for token listing with configurable field and direction (sortBy/sortDirection query parameters)
 - Dapr-based secrets management for credentials and keys
 - CORS configuration with policy-based origin control
 - Rate limiting adapter with policy-based sliding window algorithm
@@ -28,7 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Database migration scripts management
 - Connection pooling and resilience configuration
 - Entity-centric and parameter-based write patterns in repository adapters
-- OpenTelemetry integration with multiple exporters (OTLP, Jaeger, Zipkin, Console)
+- OpenTelemetry integration with multiple exporters (OTLP, Console, None)
 - Distributed tracing with trace context propagation
 - OpenTelemetry metrics for rate limit tracking (hits, rejections, undefined policies)
 - Prometheus-compatible metrics export

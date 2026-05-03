@@ -19,7 +19,7 @@ Collector for flexible telemetry routing.
 - 📊 **Distributed Tracing** - Request flow visualization across services
 - 📈 **Metrics Collection** - ASP.NET Core, HTTP client, and runtime metrics
 - 📝 **Structured Logging** - Serilog with OpenTelemetry integration
-- 🔄 **Multiple Exporters** - Console, OTLP, Jaeger, Zipkin, Prometheus
+- 🔄 **Multiple Exporters** - Console, OTLP, None (per signal)
 - 🎯 **Activity Source Wrapper** - Easy manual instrumentation
 - ⚙️ **Configurable** - Settings via `appsettings.json`
 
@@ -85,27 +85,30 @@ In `appsettings.json`:
 | Exporter | Value | Use Case |
 | -------- | ----- | -------- |
 | OTLP | `"Otlp"` | Recommended - sends to OpenTelemetry Collector |
-| Jaeger | `"Jaeger"` | Direct export to Jaeger (port 6831) |
-| Zipkin | `"Zipkin"` | Direct export to Zipkin |
 | Console | `"Console"` | Development debugging |
+| None | `"None"` | Disables tracing export |
 
 ### Metrics Exporters
 
 | Exporter | Value | Use Case |
 | -------- | ----- | -------- |
 | OTLP | `"Otlp"` | Recommended - sends to OpenTelemetry Collector |
-| Prometheus | `"Prometheus"` | Direct Prometheus scraping (port 9464) |
 | Console | `"Console"` | Development debugging |
+| None | `"None"` | Disables metrics export |
 
 ### Logs Exporters
 
-| Exporter | Value        | Use Case                                         |
-|----------|--------------|--------------------------------------------------|
-| OTLP     | `"Otlp"`     | Recommended - sends to OpenTelemetry Collector   |
-| Console  | `"Console"`  | Development debugging                            |
+| Exporter | Value        | Use Case                                                       |
+|----------|--------------|----------------------------------------------------------------|
+| OTLP     | `"Otlp"`     | Recommended - sends to OpenTelemetry Collector                 |
+| Console  | `"Console"`  | No-op — console output is controlled by `Logs.Console.Enabled` |
+| None     | `"None"`     | Disables logs export                                           |
 
-> **💡 Recommendation:** Use OTLP exporter to send all telemetry to the OpenTelemetry Collector,
-which handles routing to Jaeger, Prometheus, Loki, etc. This provides maximum flexibility without code changes.
+> **💡 Note:** Unlike tracing and metrics, the `Console` exporter value for logs does not activate console
+> output. Set `Logs.Console.Enabled: true` in the `Logs.Console` subsection instead.
+>
+> **💡 Recommendation:** Use OTLP exporter to send all telemetry to the OpenTelemetry Collector, which handles
+> routing to Jaeger, Prometheus, Loki, etc. This provides maximum flexibility without code changes.
 
 ---
 
@@ -132,9 +135,8 @@ Your Application (with this adapter)
              (Visualization)
 ```
 
-> **📖 Stack Configuration:** See
-[Observability Components README](../../Infrastructure/observability/README.md) for setting up the observability
-stack.
+> **📖 Stack Configuration:** See [Observability Components README](../../Infrastructure/observability/README.md)
+> for setting up the observability stack.
 
 ---
 
@@ -155,7 +157,7 @@ stack.
 }
 ```
 
-### Production (Azure Monitor)
+### Production (OTLP Collector)
 
 ```json
 {
@@ -163,20 +165,6 @@ stack.
     "Tracing": {
       "Exporter": "Otlp",
       "OtlpEndpoint": "http://otel-collector:4317"
-    }
-  },
-  "APPLICATIONINSIGHTS_CONNECTION_STRING": "InstrumentationKey=..."
-}
-```
-
-### Direct Jaeger Export
-
-```json
-{
-  "OpenTelemetrySettings": {
-    "Tracing": {
-      "Exporter": "Jaeger",
-      "JaegerEndpoint": "http://localhost:6831"
     }
   }
 }
@@ -186,9 +174,9 @@ stack.
 
 ## 🎯 Manual Instrumentation
 
-Inject `IActivitySourceWrapper` to create custom spans for business-critical operations. Call
-`StartActivity(name, operationType)` to open a span, set tags for context, and set error status on failures. The wrapper
-is disposed automatically at the end of the `using` block.
+Inject `IActivitySourceWrapper` to create custom spans for business-critical operations. Call `StartActivity(name,
+operationType)` to open a span, set tags for context, and set error status on failures. The `Activity` returned
+by `StartActivity` is disposed automatically at the end of the `using` block.
 
 See `IActivitySourceWrapper` in the Application layer for the interface contract, and `ObservabilitySetupExtensions.cs`
 for registration details.
@@ -202,27 +190,15 @@ The adapter configures Serilog for structured logging. Logs are automatically en
 
 ### Log Levels
 
-```json
-{
-  "Serilog": {
-    "MinimumLevel": {
-      "Default": "Information",
-      "Override": {
-        "Microsoft": "Warning",
-        "System": "Warning",
-        "Microsoft.AspNetCore": "Information"
-      }
-    }
-  }
-}
-```
+Configure log levels in the `Serilog` section shown in the main configuration example above. Use the
+`MinimumLevel.Override` dictionary to set per-namespace levels (e.g., suppress noisy `Microsoft` logs at `Warning`).
 
 ---
 
 ## 🔗 Response Trace ID Middleware
 
-The `UseObservability()` method adds middleware that includes the `Trace-Id` header in all HTTP responses for
-distributed tracing correlation.
+The `UseObservability()` method adds the `Trace-Id` response header middleware and enables Serilog structured HTTP
+request logging via `UseSerilogRequestLogging()` for distributed tracing correlation.
 
 **Benefits:**
 
@@ -236,8 +212,8 @@ distributed tracing correlation.
 
 ### Sampling
 
-Implement sampling to reduce overhead in high-traffic scenarios. Configure a `TraceIdRatioBasedSampler`
-(e.g., 0.1 for 10% of traces) via the OpenTelemetry tracing builder.
+Implement sampling to reduce overhead in high-traffic scenarios. Configure a ratio-based sampler (e.g., 10%
+of traces) via the OpenTelemetry tracing builder to control trace volume.
 
 ### Resource Attributes
 
@@ -250,13 +226,14 @@ name to `AddObservability()`. See `ObservabilitySetupExtensions.cs` for paramete
 
 The adapter registers all observability services via two extension methods in `ObservabilitySetupExtensions.cs`:
 
-1. **`builder.AddObservability(serviceName, serviceVersion, instanceId, environmentName)`** —
-   Configures OpenTelemetry tracing, metrics, and Serilog structured logging based on `appsettings.json`. Registers
-   the selected exporters and enriches telemetry with service resource attributes.
-2. **`app.UseObservability()`** — Adds middleware that copies the current trace ID into the
-   `Trace-Id` response header for request correlation.
+1. **`builder.AddObservability(serviceName, serviceVersion, instanceId, environmentName)`** — Configures OpenTelemetry
+   tracing, metrics, and Serilog structured logging based on `appsettings.json`. Registers the selected exporters and
+   enriches telemetry with service resource attributes.
+2. **`app.UseObservability()`** — Adds the `Trace-Id` response header middleware and enables Serilog structured
+   HTTP request logging via `UseSerilogRequestLogging()`.
 
-Call these in `Program.cs` early in the pipeline, before authentication and routing middleware.
+Call these in `Program.cs` early in the pipeline, before exception handling middleware, so that trace IDs are
+available in error logs.
 
 ---
 
@@ -274,12 +251,11 @@ Call these in `Program.cs` early in the pipeline, before authentication and rout
 
 ## 🔗 Related Documentation
 
-- **[Observability Stack README](../../Infrastructure/observability/README.md)** - Infrastructure
-  setup (Jaeger, Prometheus, Grafana)
+- **[Observability Stack README](../../Infrastructure/observability/README.md)** - Infrastructure setup (Jaeger,
+  Prometheus, Grafana)
 - **[Architecture Guide](../../../docs/architecture.md)** - Observability architecture overview
 - **[Debugging Guide](../../../docs/debugging.md)** - Using observability in development
-- **[OpenTelemetry Documentation](https://opentelemetry.io/docs/instrumentation/net/)** - Official
-  .NET instrumentation guide
+- **[OpenTelemetry Docs](https://opentelemetry.io/docs/instrumentation/net/)** - Official .NET instrumentation guide
 
 ---
 
@@ -300,6 +276,14 @@ Call these in `Program.cs` early in the pipeline, before authentication and rout
 - `Serilog.AspNetCore` - Structured logging
 - `Serilog.Sinks.OpenTelemetry` - Serilog OTLP sink
 - `Npgsql.OpenTelemetry` - PostgreSQL distributed tracing instrumentation
+
+---
+
+## ⚠️ Limitations
+
+- Sampling is not configured by default — all traces are exported, which may cause high volume in production
+- OTLP export uses gRPC (port 4317) only — HTTP transport (port 4318) is not configured out of the box
+- No built-in rate limiting on metrics or log export — rely on the OpenTelemetry Collector for throttling
 
 ---
 

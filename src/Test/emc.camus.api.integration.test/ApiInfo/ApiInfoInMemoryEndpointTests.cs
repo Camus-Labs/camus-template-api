@@ -25,6 +25,8 @@ public class ApiInfoInMemoryEndpointTests
     [Fact]
     public async Task GetInfo_PublicEndpoint_ReturnsOkWithApiInfo()
     {
+        // Arrange
+
         // Act
         var response = await _client.GetAsync("/api/v1/apiinfo/info", TestContext.Current.CancellationToken);
 
@@ -60,6 +62,8 @@ public class ApiInfoInMemoryEndpointTests
     [Fact]
     public async Task GetInfoApiKey_NoApiKey_ReturnsUnauthorized()
     {
+        // Arrange
+
         // Act
         var response = await _client.GetAsync("/api/v2/apiinfo/info-apikey", TestContext.Current.CancellationToken);
 
@@ -89,6 +93,8 @@ public class ApiInfoInMemoryEndpointTests
     [Fact]
     public async Task GetInfoJwt_NoToken_ReturnsUnauthorized()
     {
+        // Arrange
+
         // Act
         var response = await _client.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
 

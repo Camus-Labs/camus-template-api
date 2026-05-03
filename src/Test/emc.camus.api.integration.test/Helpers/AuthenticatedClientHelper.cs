@@ -20,6 +20,7 @@ namespace emc.camus.api.integration.test.Helpers;
 /// </summary>
 public static class AuthenticatedClientHelper
 {
+
     /// <summary>
     /// Creates an <see cref="HttpClient"/> with a valid JWT Bearer token in the Authorization header.
     /// Uses the registered <see cref="ITokenGenerator"/> from the test server's DI container.
@@ -31,7 +32,7 @@ public static class AuthenticatedClientHelper
         this Fixtures.ApiFactoryBase factory,
         params string[] permissions)
     {
-        return factory.CreateJwtClient(Guid.NewGuid(), "test-user", permissions);
+        return factory.CreateJwtClient(Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"), "test-user", permissions);
     }
 
     /// <summary>
@@ -128,6 +129,44 @@ public static class AuthenticatedClientHelper
         var jti = jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
 
         return Guid.Parse(jti);
+    }
+
+    /// <summary>
+    /// Creates an <see cref="HttpClient"/> with an expired JWT Bearer token.
+    /// The token is generated with real signing credentials and a near-zero lifetime,
+    /// then the method waits for expiration before returning.
+    /// </summary>
+    /// <param name="factory">The factory to create the client from.</param>
+    /// <returns>An <see cref="HttpClient"/> whose JWT has already expired.</returns>
+    public static HttpClient CreateExpiredJwtClient(this Fixtures.ApiFactoryBase factory)
+    {
+        using var scope = factory.Services.CreateScope();
+        var config = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();
+        var signingCredentials = scope.ServiceProvider.GetRequiredService<Microsoft.IdentityModel.Tokens.SigningCredentials>();
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
+            new(JwtRegisteredClaimNames.UniqueName, "expired-test-user"),
+            new(JwtRegisteredClaimNames.Jti, "ffffffff-ffff-ffff-ffff-ffffffffffff"),
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: config["JwtSettings:Issuer"],
+            audience: config["JwtSettings:Audience"],
+            claims: claims,
+            expires: DateTime.UtcNow.AddMilliseconds(50),
+            signingCredentials: signingCredentials);
+
+        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+        SpinWait.SpinUntil(() => DateTime.UtcNow > token.ValidTo);
+
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", tokenString);
+
+        return client;
     }
 
     /// <summary>

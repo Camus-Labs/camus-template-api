@@ -46,6 +46,9 @@ Authentication-related contracts and services:
 - **`IUserRepository`** - Repository contract for user credential validation and retrieval
 - **`IGeneratedTokenRepository`** - Repository contract for managing generated tokens
 - **`GenerateTokenResult`** - Token generation result model
+- **`GeneratedTokenFilter`** - Filter criteria record for generated token queries
+- **`GeneratedTokenSortField`** - Enum for sortable fields (TokenUsername, ExpiresOn, CreatedAt, RevokedAt)
+- **`GeneratedTokenSortParams`** - Encapsulates optional sort field and direction for token queries
 - **`AuthenticationSchemes`** - Authentication scheme name constants (`Bearer`, `ApiKey`)
 
 ### `Observability/`
@@ -80,9 +83,10 @@ Application-wide constants and shared contracts:
 - **`PaginationParams`** - Pagination parameters model
 - **`ErrorCodes`** - Standardized error codes for API responses (`bad_request`, `unauthorized`,
   `rate_limit_exceeded`, etc.)
-- **`Headers`** - Custom HTTP header name constants (`X-Api-Key`, `X-Trace-Id`, rate limit
+- **`Headers`** - Custom HTTP header name constants (`Api-Key`, `Trace-Id`, rate limit
   headers)
 - **`MediaTypes`** - Custom media type constants (`application/problem+json`)
+- **`SortDirection`** - Enum for sort direction (Asc, Desc)
 
 ### `Configurations/`
 
@@ -99,25 +103,6 @@ Configuration types used by persistence and infrastructure:
 Custom exceptions:
 
 - **`RateLimitExceededException`** - Exception thrown when rate limits are exceeded
-
----
-
-## 🔌 Interface Placement Decision Framework
-
-**When to place an interface in Application layer:**
-
-| Consumer | Decision | Reasoning |
-| -------- | -------- | --------- |
-| **API layer** | ✅ Keep in Application | Prevents API from depending on adapter implementations |
-| **Multiple adapters** | ✅ Keep in Application | Shared contract across multiple implementations |
-| **Single adapter only** | ⚠️ Move to adapter | No need for abstraction if only one consumer |
-| **Nobody (future use)** | ❌ Remove it | YAGNI - don't build abstractions until needed |
-
-**Examples from this project:**
-
-- **`ITokenGenerator`** - ✅ In Application (consumed by API `AuthController`)
-- **`ISecretProvider`** - ✅ In Application (consumed by multiple adapters: JWT, ApiKey)
-- **`IActivitySourceWrapper`** - ✅ In Application (consumed by API middleware and potentially multiple adapters)
 
 ---
 
@@ -209,13 +194,13 @@ See [RateLimitPolicies.cs](RateLimiting/RateLimitPolicies.cs) for complete polic
 
 ### Custom Headers
 
-- `X-Api-Key` - API Key authentication
-- `X-Trace-Id` - Distributed tracing correlation
+- `Api-Key` - API Key authentication
+- `Trace-Id` - Distributed tracing correlation
 - `RateLimit-Limit` - Max requests allowed
 - `RateLimit-Reset` - Reset timestamp
 - `Retry-After` - Retry after seconds
-- `X-RateLimit-Policy` - Applied policy name
-- `X-RateLimit-Window` - Window duration
+- `RateLimit-Policy` - Applied policy name
+- `RateLimit-Window` - Window duration
 
 ---
 

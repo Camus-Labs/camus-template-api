@@ -10,7 +10,8 @@ applyTo: "src/Test/**integration.test/**"
     - [ ] `WebApplicationFactory<Program>` for API integration tests — tests the full HTTP pipeline in-process
     - [ ] `[Trait("Category", "Integration")]` on every test class — enables CI filtering via
           `dotnet test --filter "Category=Integration"`
-    - [ ] No mocks for infrastructure — tests use real database connections, real HTTP clients, real middleware
+    - [ ] No `Mock<>`, `Substitute.For<>`, or `Fake<>` wrapping database, HTTP, or middleware types —
+          tests use real database connections, real HTTP clients, real middleware
     - [ ] `MartinCostello.Logging.XUnit.v3` for routing application logs to xUnit test output — enables
           debugging test failures in IDE and CI
 
@@ -42,13 +43,12 @@ applyTo: "src/Test/**integration.test/**"
 
 3. Scope & Coverage
 
-    - [ ] One happy path + one key failure path per feature boundary — not exhaustive input permutation testing
-    - [ ] Every test class exercises at least two layers (e.g., API → Application, Application → Persistence) —
-          single-layer logic belongs in unit tests
-    - [ ] No `Assert.Equal` or FluentAssertions checks on pure in-memory computation results that involve zero
-          infrastructure calls — those assertions belong in unit tests
-    - [ ] All integration tests go through the HTTP pipeline via `HttpClient` — no direct service-class
-          invocation
+    - [ ] Input permutations and single-field validation (e.g., missing parameter → 400, invalid enum → 400)
+          live in unit tests — integration tests prove that layers collaborate correctly end-to-end
+    - [ ] No `Assert.Equal` or FluentAssertions `.Should().Be()` on values obtained without `HttpClient`,
+          database query, or external service call in the same test method
+    - [ ] All test methods invoke the system via `HttpClient` — no direct service-class resolution from DI
+          unless the class has a `// Justification:` comment explaining why HTTP observation is insufficient
 
 4. Organization
 
