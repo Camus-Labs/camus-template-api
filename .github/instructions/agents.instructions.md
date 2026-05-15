@@ -60,7 +60,6 @@ applyTo: ".github/agents/**/*.agent.md"
     - [ ] Process section exists (H2 `## Process`)
     - [ ] Each step carries a sequential number
     - [ ] Each step starts with ONE action verb
-    - [ ] 3–10 total steps
     - [ ] No vague qualifiers ("as needed", "consider", "optionally", "may")
     - [ ] Conditionals have explicit ELSE or default
     - [ ] Loops have max-iteration bound
@@ -68,7 +67,7 @@ applyTo: ".github/agents/**/*.agent.md"
     - [ ] Last step produces the output
     - [ ] One bounded action per step — sub-item enumeration within one target is fine; no independent evaluations
     - [ ] No two steps share the same leading action verb and direct object
-    - [ ] Every process-computed value has a placeholder in the template
+    - [ ] Every process-computed value has a placeholder in the template or is consumed by a subsequent step
 
 8. Rules
 

@@ -24,7 +24,8 @@ applyTo: ".github/prompts/**/*.prompt.md"
     - [ ] `description` field value is at most 1024 characters
     - [ ] `mode` field present
     - [ ] `mode` field is one of: `agent`, `ask`, `edit`
-    - [ ] `argument-hint` field present and describes how to invoke the prompt
+    - [ ] `argument-hint` field present
+    - [ ] `argument-hint` value describes how to invoke the prompt
     - [ ] No under-declared tools — used in steps but not listed
 
 3. Goal

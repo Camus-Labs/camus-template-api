@@ -58,9 +58,8 @@ Read and internalize this file before starting:
   result, stop and produce the output report with Verdict set to FAIL using the reason from the skill; on `SUCCESS`
   result, use the merged results and proceed to Step 4.
 
-4. Run the `markdown-lint` skill on each file in the resolved list (max 50 files) — if any merged section from
-  Step 3 is FAIL, skip linting and proceed to Step 5; otherwise run the skill — on `SUCCESS` result, proceed to
-  Step 5; on `FAIL` result, include each violation in the merged findings list and proceed to Step 5.
+4. Run the `markdown-lint` skill with `all` — on `SUCCESS` result, proceed to Step 5; on `FAIL` result, include each
+  violation in the merged findings list and proceed to Step 5.
 
 5. Return the consolidated Documentation Review Report in the output format below using the skill results —
   deliver the report; stop.

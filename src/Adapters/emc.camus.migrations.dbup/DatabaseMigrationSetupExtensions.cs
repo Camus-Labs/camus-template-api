@@ -17,9 +17,6 @@ namespace emc.camus.migrations.dbup
     [ExcludeFromCodeCoverage]
     public static partial class DatabaseMigrationSetupExtensions
     {
-        private const string DefaultSchema = "public";
-        private const string DefaultSchemaVersionsTable = "camus_schemaversions";
-
         [LoggerMessage(Level = LogLevel.Information,
             Message = "Starting database migrations...")]
         private static partial void LogMigrationStarting(ILogger logger);
@@ -104,7 +101,7 @@ namespace emc.camus.migrations.dbup
                 if (secretProvider == null)
                 {
                     throw new InvalidOperationException(
-                        "Database migrations are configured to use secrets but ISecretProvider is not registered in DI");
+                        "UseDatabaseMigrations failed: ISecretProvider is not registered in DI");
                 }
 
                 LogCredentialsFetchFromSecrets(logger);
@@ -116,13 +113,13 @@ namespace emc.camus.migrations.dbup
                 if (string.IsNullOrWhiteSpace(adminUsername))
                 {
                     throw new InvalidOperationException(
-                        $"Database admin username secret '{migrationsSettings.AdminSecretName}' not found or empty");
+                        $"UseDatabaseMigrations failed: admin username secret '{migrationsSettings.AdminSecretName}' not found or empty");
                 }
 
                 if (string.IsNullOrWhiteSpace(adminPassword))
                 {
                     throw new InvalidOperationException(
-                        $"Database admin password secret '{migrationsSettings.PasswordSecretName}' not found or empty");
+                        $"UseDatabaseMigrations failed: admin password secret '{migrationsSettings.PasswordSecretName}' not found or empty");
                 }
 
                 // Build connection string using DatabaseSettings with admin credentials
@@ -141,7 +138,7 @@ namespace emc.camus.migrations.dbup
                         Assembly.GetExecutingAssembly(),
                         script => script.EndsWith(".sql", StringComparison.Ordinal))
                     .WithVariablesDisabled() // Disable variable substitution to avoid conflicts with bcrypt hashes ($2a$)
-                    .JournalToPostgresqlTable(DefaultSchema, DefaultSchemaVersionsTable)
+                    .JournalToPostgresqlTable("public", "camus_schemaversions")
                     .LogToConsole()
                     .Build();
 
@@ -157,7 +154,8 @@ namespace emc.camus.migrations.dbup
 
                 if (!result.Successful)
                 {
-                    throw new InvalidOperationException($"Database migration failed: {result.Error.Message}", result.Error);
+                    throw new InvalidOperationException(
+                        $"Database migration failed: {result.Error?.Message ?? "(no details)"}", result.Error);
                 }
 
                 LogMigrationCompleted(logger);

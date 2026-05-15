@@ -66,8 +66,8 @@ interfaces but never on each other.
 
 ## Cross-Cutting Concerns
 
-Observability, security, rate limiting, and request timeouts are implemented as cross-cutting concerns wired
-through the API composition root. See the following guides for architectural and configuration details:
+Observability, security, rate limiting, request timeouts, and idempotency are implemented as cross-cutting
+concerns wired through the API composition root. See the following guides for architectural and configuration details:
 
 - **Authentication** — [Authentication Guide](authentication.md) covers JWT and API Key mechanisms
 - **Observability** — [Observability Adapter](../src/Adapters/emc.camus.observability.otel/README.md) and
@@ -76,3 +76,5 @@ through the API composition root. See the following guides for architectural and
   covers IP-based sliding window rate limiting with policy-based configuration
 - **Request Timeouts** — Configured in the API layer via ASP.NET Core built-in request timeouts with named
   policies (default, tight, extended) and appsettings-driven durations
+- **Idempotency** — Header-enforced per-endpoint idempotency key validation with configurable TTL policies;
+  see [API Layer README](../src/Api/emc.camus.api/README.md) for configuration details

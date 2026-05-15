@@ -9,14 +9,14 @@ API Key authentication adapter for Camus applications.
 
 ## 📋 Overview
 
-This adapter implements API Key authentication using the `X-Api-Key` header, providing a simple authentication
+This adapter implements API Key authentication using the `Api-Key` header, providing a simple authentication
 mechanism for service-to-service communication or legacy client support.
 
 ---
 
 ## ✨ Features
 
-- 🔑 **Header-Based Authentication** - Uses `X-Api-Key` header
+- 🔑 **Header-Based Authentication** - Uses `Api-Key` header
 - 🔒 **Secure Key Storage** - Keys retrieved from secret provider
 - 🎯 **ASP.NET Core Integration** - Standard authentication middleware
 - 🔄 **Interface-Based** - Depends on `ISecretProvider` from Application layer
@@ -42,14 +42,14 @@ In `appsettings.json`:
 ```json
 {
   "ApiKeySettings": {
-    "SecretKeyName": "XApiKey"  // Optional - defaults to "XApiKey"
+    "ApiKeySecretName": "XApiKey"
   }
 }
 ```
 
-> **Note:** The `SecretKeyName` setting is optional and defaults to `"XApiKey"`. Only configure
+> **Note:** The `ApiKeySecretName` setting is optional and defaults to `"XApiKey"`. Only configure
 this if you need to use a different secret name.
-> **Note:** The API Key header name is fixed as `X-Api-Key` and cannot be configured.
+> **Note:** The API Key header name is fixed as `Api-Key` and cannot be configured.
 
 ### 3. Protect Endpoints
 
@@ -68,7 +68,7 @@ See controller source files in `src/Api/emc.camus.api/Controllers/` for examples
 ```text
 Client Request
     ↓
-HTTP Header: X-Api-Key: your-api-key-here
+HTTP Header: Api-Key: your-api-key-here
     ↓
 ApiKeyAuthenticationHandler
     ├─→ Extracts key from header
@@ -106,10 +106,8 @@ The adapter retrieves the expected API key from `ISecretProvider`:
 
 **Production** (Azure Key Vault, AWS Secrets Manager, etc.):
 
-```bash
-# Azure CLI
-az keyvault secret set --vault-name your-vault --name XApiKey --value "prod-key-xyz"
-```
+In production, set the secret named `XApiKey` using your cloud provider's secrets UI or CLI.
+See your platform documentation (e.g., Azure Key Vault, AWS Secrets Manager) for details.
 
 > **📖 Secrets Management:** See [Dapr Secrets Adapter](../emc.camus.secrets.dapr/README.md) for
 secret provider configuration.
@@ -174,7 +172,7 @@ See `src/Test/` for existing test examples.
 
 ### Integration Tests
 
-Use `WebApplicationFactory` to create a test client, set the `X-Api-Key` header, and assert on the response
+Use `WebApplicationFactory` to create a test client, set the `Api-Key` header, and assert on the response
 status code. See test projects in `src/Test/` for integration test patterns.
 
 ---
@@ -205,9 +203,9 @@ API-key authentication.
 
 | Symptom | Likely Cause |
 | ------- | ------------ |
-| 401 on every request | Secret provider not returning the expected key, or `X-Api-Key` header missing |
-| `SecretKeyName` not found | Secret name in `ApiKeySettings` doesn't match a secret in the store |
-| Header ignored | Using wrong header name — must be `X-Api-Key` (case-sensitive) |
+| 401 on every request | Secret provider not returning the expected key, or `Api-Key` header missing |
+| `ApiKeySecretName` not found | Secret name in `ApiKeySettings` doesn't match a secret in the store |
+| Header ignored | Using wrong header name — must be `Api-Key` (case-sensitive) |
 | Works locally, fails in production | Secret store not configured for production environment |
 | High `apikey_authentication_failures_total` | Possible brute-force attempt or client misconfiguration |
 
@@ -228,32 +226,8 @@ The adapter exports the following metrics via OpenTelemetry:
   - `failure_reason`: Error code (`authentication_required` | `invalid_credentials`)
   - `endpoint`: The request path that was attempted
 
-**Example Queries:**
-
-```promql
-# Rate of API Key authentication failures over 5 minutes
-rate(apikey_authentication_failures_total[5m])
-
-# Total failures by reason
-sum by (failure_reason) (apikey_authentication_failures_total)
-
-# Failures by endpoint
-sum by (endpoint) (apikey_authentication_failures_total)
-```
-
-**Alerting Example:**
-
-```yaml
-# Alert on high API Key authentication failure rate
-- alert: HighApiKeyAuthFailureRate
-  expr: rate(apikey_authentication_failures_total[5m]) > 10
-  for: 5m
-  labels:
-    severity: warning
-  annotations:
-    summary: "High API Key authentication failure rate detected"
-    description: "More than 10 API Key auth failures per second over 5 minutes"
-```
+Pre-built query panels and alerting thresholds for this metric are available in the
+observability stack configuration under `src/Infrastructure/observability/`.
 
 ---
 

@@ -40,29 +40,29 @@ Read and internalize this file before starting:
 
 ## Process
 
-1. Invoke the `resolve-scope` skill with the provided `scope` — on `FAIL`, stop and produce the output report with
-  Verdict set to FAIL using the reason from the skill; on `SUCCESS`, use the resolved file list and count and proceed
-  to Step 2.
+1. Invoke the `resolve-scope` skill with the provided `scope` — on `FAIL`, stop and produce the output report setting
+  Status to ERROR and Verdict to N/A with the reason from the skill; on `SUCCESS`, use the resolved file list and
+  count and proceed to Step 2.
 
 2. Execute the full review process defined in `review.documentation.prompt.md`, passing the resolved file list as
   `modified_files` — follow every step, rule, and output format in the prompt; on a `PASS` verdict, set status to
-  FIXED and proceed to Step 6; on any other verdict, proceed to Step 3.
+  FIXED and proceed to Step 5; on any other verdict, proceed to Step 3.
 
 3. Fix all reported violations in the documentation files — address each finding; when a violation has a single
   unambiguous resolution, apply it directly; when multiple valid resolutions exist, present the options to the user
   and apply the chosen resolution.
 
 4. Repeat from Step 2 — increment the iteration count each cycle; after 5 cycles without a PASS verdict, set status
-  to BLOCKED and proceed to Step 6.
+  to BLOCKED and proceed to Step 5.
 
-5. Run the `markdown-lint` skill on each file in the resolved list — on no findings, proceed to Step 7; on findings,
-  proceed to Step 6.
+5. Run the `markdown-lint` skill with `all` — on no findings, proceed to Step 8; on findings, proceed to Step 6.
 
-6. Apply fixes for each reported lint violation and re-invoke the `markdown-lint` skill — repeat up to 2 additional
-  times; on unfixed findings after retries, include them in the output report and proceed to Step 7; on no remaining
-  findings, proceed to Step 7.
+6. Apply fixes for each reported lint violation.
 
-7. Produce the output report using the output template and stop.
+7. Re-invoke the `markdown-lint` skill — repeat from Step 6 up to 2 additional times; on unfixed findings after
+  retries, include them in the output report and proceed to Step 8; on no remaining findings, proceed to Step 8.
+
+8. Produce the output report using the output template and stop.
 
 ## Rules
 

@@ -83,7 +83,7 @@ Application-wide constants and shared contracts:
 - **`PaginationParams`** - Pagination parameters model
 - **`ErrorCodes`** - Standardized error codes for API responses (`bad_request`, `unauthorized`,
   `rate_limit_exceeded`, etc.)
-- **`Headers`** - Custom HTTP header name constants (`Api-Key`, `Trace-Id`, rate limit
+- **`Headers`** - Custom HTTP header name constants (`Api-Key`, `Trace-Id`, `Idempotency-Key`, rate limit
   headers)
 - **`MediaTypes`** - Custom media type constants (`application/problem+json`)
 - **`SortDirection`** - Enum for sort direction (Asc, Desc)
@@ -102,19 +102,14 @@ Configuration types used by persistence and infrastructure:
 
 Custom exceptions:
 
+- **`DataConflictException`** - Exception thrown when a data conflict is detected (HTTP 409)
 - **`RateLimitExceededException`** - Exception thrown when rate limits are exceeded
 
 ---
 
 ## 📦 Dependencies
 
-The Application layer has **minimal dependencies**:
-
-```xml
-<ItemGroup>
-  <PackageReference Include="System.Diagnostics.DiagnosticSource" />
-</ItemGroup>
-```
+The Application layer has **minimal dependencies** — only `System.Diagnostics.DiagnosticSource`.
 
 **Dependency Rule:** Application layer must **never depend on infrastructure packages** (database, HTTP,
 logging frameworks).
@@ -148,19 +143,8 @@ See individual adapter READMEs for implementation details:
 
 ## 📖 Usage Examples
 
-### Using RateLimit Attribute
-
-Apply `RateLimit` attribute to controllers:
-
-- `[RateLimit(RateLimitPolicies.Strict)]` for sensitive endpoints.
-- `[RateLimit(RateLimitPolicies.Relaxed)]` for high-throughput operations.
-
-See `RateLimitAttribute` and `RateLimitPolicies` in the `RateLimiting` namespace for available options.
-
-### Using Authentication Schemes
-
-Apply `[Authorize(AuthenticationSchemes = AuthenticationSchemes.JwtBearer)]` to controllers or actions requiring
-JWT authentication. See `AuthenticationSchemes` in the `Auth` namespace for available scheme constants.
+See `RateLimitAttribute` and `RateLimitPolicies` in the `RateLimiting` namespace for rate limit attribute
+usage. See `AuthenticationSchemes` in the `Auth` namespace for available authentication scheme constants.
 
 ---
 
@@ -170,12 +154,23 @@ JWT authentication. See `AuthenticationSchemes` in the `Auth` namespace for avai
 
 - `bad_request` - 400 Bad Request
 - `authentication_required` - 401 No authentication provided
+- `apikey_authentication_required` - 401 API Key missing
 - `unauthorized` - 401 General unauthorized
 - `invalid_credentials` - 401 Credentials invalid
+- `auth_invalid_credentials` - 401 Username/password authentication failed
+- `apikey_invalid_credentials` - 401 API Key invalid
 - `forbidden` - 403 Forbidden
+- `not_found` - 404 Not Found
+- `data_conflict` - 409 Conflict
+- `domain_rule_violation` - 422 Domain business rule violated
 - `rate_limit_exceeded` - 429 Too Many Requests
+- `request_timeout` - 504 Request cancelled by timeout or client disconnect
 - `internal_server_error` - 500 Server error
-- JWT-specific: `token_expired`, `invalid_token`, `invalid_signature`
+- `idempotency_key_missing` - 400 Idempotency-Key header missing on a decorated endpoint
+- `idempotency_key_invalid` - 400 Idempotency-Key header value empty or exceeds max length
+- JWT-specific: `jwt_authentication_required`, `jwt_invalid_credentials`, `jwt_token_expired`,
+  `jwt_invalid_token`, `jwt_invalid_signature`, `jwt_invalid_issuer`, `jwt_invalid_audience`,
+  `jwt_token_revoked`
 
 ### Rate Limit Policies
 
@@ -198,9 +193,9 @@ See [RateLimitPolicies.cs](RateLimiting/RateLimitPolicies.cs) for complete polic
 - `Trace-Id` - Distributed tracing correlation
 - `RateLimit-Limit` - Max requests allowed
 - `RateLimit-Reset` - Reset timestamp
-- `Retry-After` - Retry after seconds
 - `RateLimit-Policy` - Applied policy name
 - `RateLimit-Window` - Window duration
+- `Idempotency-Key` - Idempotency key identification
 
 ---
 
@@ -238,12 +233,8 @@ injection. See the extension methods in `src/Api/emc.camus.api/Extensions/` for 
 
 ## 🧪 Testing
 
-Application layer components are tested in `src/Test/emc.camus.application.test/`:
-
-```bash
-# Run Application layer tests
-dotnet test src/Test/emc.camus.application.test/
-```
+Application layer components are tested in `src/Test/emc.camus.application.test/`. Run via the VS Code
+**test-unit** task.
 
 Tests focus on:
 

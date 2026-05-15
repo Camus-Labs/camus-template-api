@@ -138,4 +138,14 @@ public static class ErrorCodes
         /// Error code when JWT token has been revoked before its expiration.
         /// </summary>
         public const string JwtTokenRevoked = "jwt_token_revoked";
+
+        /// <summary>
+        /// Error code for 400 Bad Request when the Idempotency-Key header is missing on a decorated endpoint.
+        /// </summary>
+        public const string IdempotencyKeyMissing = "idempotency_key_missing";
+
+        /// <summary>
+        /// Error code for 400 Bad Request when the Idempotency-Key header value is empty or exceeds max length.
+        /// </summary>
+        public const string IdempotencyKeyInvalid = "idempotency_key_invalid";
     }

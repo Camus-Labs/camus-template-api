@@ -59,7 +59,8 @@ descriptive error message
 
 - AC-01: A request with `?sortBy=createdAt&sortDirection=desc` returns tokens ordered by creation date descending
 - AC-02: A request with `?sortBy=expiresOn&sortDirection=asc` returns tokens ordered by expiration date ascending
-- AC-03: A request with `?sortBy=tokenUsername&sortDirection=asc` returns tokens ordered alphabetically by token username
+- AC-03: A request with `?sortBy=tokenUsername&sortDirection=asc` returns tokens ordered
+alphabetically by token username
 - AC-04: A request with `?sortBy=revokedAt&sortDirection=desc` returns tokens ordered by revocation date descending
 (null values sorted last)
 - AC-05: A request without sort parameters returns tokens in database-default order
@@ -102,7 +103,8 @@ descriptive error message
 
 - Domain
   - Change summary: No changes. Sorting is a query concern; domain entities (`GeneratedToken`) and business rules are
-    unaffected. The sortable fields (`TokenUsername`, `ExpiresOn`, `CreatedAt`, `RevokedAt`) already exist on the entity.
+    unaffected. The sortable fields (`TokenUsername`, `ExpiresOn`, `CreatedAt`, `RevokedAt`) already
+    exist on the entity.
   - Potential files/folders to touch: `None`
 - Application
   - Change summary: Introduce sorting contract types to the `Auth` namespace. Add a sort parameters type (sort field
@@ -135,7 +137,8 @@ descriptive error message
 - Adapters
   - Change summary: Update `GeneratedTokenRepository.GetPagedByCreatorUserIdAsync` in the PostgreSQL persistence adapter
     to accept the sort parameters and construct the ORDER BY clause. The sort field must be mapped to a safe,
-    allow-listed column name (not user input directly) to prevent SQL injection. The `IGeneratedTokenDataAccess` interface
+    allow-listed column name (not user input directly) to prevent SQL injection. The
+    `IGeneratedTokenDataAccess` interface
     and its Dapper implementation must be updated to accept the sort column and direction and apply them in the SQL
     query. For `revokedAt` sorting, use `NULLS LAST` to satisfy AC-04.
   - Potential files/folders to touch:
@@ -145,7 +148,8 @@ descriptive error message
 - Tests
   - Change summary: Add unit tests for the new application-layer sort parameter types and validation. Add unit tests for
     `GetGeneratedTokensQuery` cross-property validation (both present, both absent, one missing). Add unit tests for
-    `AuthMappingExtensions` sort parameter mapping. Add unit tests for `AuthService.GetGeneratedTokensAsync` pass-through
+    `AuthMappingExtensions` sort parameter mapping. Add unit tests for
+    `AuthService.GetGeneratedTokensAsync` pass-through
     of sort parameters. Add unit tests for `GeneratedTokenRepository` to verify correct ORDER BY clause construction
     and null handling. Update existing integration tests to cover sorted pagination scenarios (AC-01 through AC-09).
   - Potential files/folders to touch: `src/Test/emc.camus.api.test/`,

@@ -29,7 +29,6 @@ applyTo: ".github/skills/**/SKILL.md"
 3. Body Sections
 
     - [ ] H1 title present
-    - [ ] H1 title is a short noun phrase naming the skill capability
     - [ ] "When to Use" section exists (H2)
     - [ ] "When to Use" section lists concrete trigger scenarios as bullet points
     - [ ] "Procedure" section exists (H2)

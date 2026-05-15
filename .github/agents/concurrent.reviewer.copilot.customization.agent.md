@@ -59,14 +59,13 @@ Read and internalize this file before starting:
 3. Read `target_path` to confirm it contains content consistent with the detected type — if empty or missing a YAML
   frontmatter block, stop and report the problem; otherwise proceed to Step 4.
 
-4. Invoke the `concurrent-review` skill with `prompt_path` set to
-  `.github/prompts/review.copilot.customization.prompt.md` and `modified_files` set to a single-item list containing
-  `target_path` — on `FAIL` result, stop and produce the output report with Verdict set to FAIL using the reason
-  from the skill; on `SUCCESS` result, use the merged results and proceed to Step 5.
+4. Invoke the `concurrent-review` skill, setting `prompt_path` to
+  `.github/prompts/review.copilot.customization.prompt.md` and `modified_files` to a single-item list containing
+  `target_path` — on `FAIL` result, record the reason from the skill, set Verdict to FAIL, and proceed to Step 6;
+  on `SUCCESS` result, use the merged results and proceed to Step 5.
 
-5. Invoke the `markdown-lint` skill on `target_path` — skip and proceed to Step 6 if any merged section from Step 4
-  is FAIL; on `SUCCESS` result, proceed to Step 6; on `FAIL` result, include each as a lint violation in the merged
-  findings list and proceed to Step 6.
+5. Invoke the `markdown-lint` skill on `target_path`— on `SUCCESS` result, proceed to Step 6; on `FAIL` result, include
+  each violation in the merged findings list and proceed to Step 6.
 
 6. Return the consolidated Customization Review Report in the output format below using the skill results — set
   overall Verdict to FAIL if any merged section is FAIL, otherwise set it to PASS; set Ready for Use to Yes when

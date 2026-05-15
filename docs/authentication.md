@@ -38,7 +38,7 @@ detailed claims documentation and usage examples.
 - 401 Unauthorized: Token missing/expired/invalid or invalid credentials
 - 403 Forbidden: Valid token, insufficient permissions
 
-## Architecture
+## Authentication Architecture
 
 - Token generation is delegated to `AuthService` via the `AuthController`.
 - Credentials and signing keys are injected via DI.

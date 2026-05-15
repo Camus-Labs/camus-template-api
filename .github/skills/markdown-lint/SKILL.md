@@ -1,7 +1,7 @@
 ---
 name: markdown-lint
 description: 'Run markdownlint-cli2 --fix on .md files and return lint results for use when fixing or verifying markdown formatting compliance.'
-argument-hint: 'Provide one or more workspace-relative paths to .md files'
+argument-hint: 'Provide one or more workspace-relative paths to .md files, or "all" to lint the entire solution'
 user-invocable: false
 ---
 
@@ -14,9 +14,15 @@ user-invocable: false
 
 ## Procedure
 
-1. Receive one or more workspace-relative `.md` file paths as input.
-2. Run in terminal: `npx markdownlint-cli2 --fix "<path1>" "<path2>" ...` (quote each path).
-3. Evaluate the exit code: if 0, return `SUCCESS` — the linter auto-fixed all violations or none
+1. Receive one or more workspace-relative `.md` file paths as input, or the keyword `all`.
+2. Determine the target:
+   - If the argument is `all`, use the glob pattern `"**/*.md"` to lint every `.md` file in the
+     workspace (the `.markdownlint-cli2.jsonc` config at the repo root will apply automatically).
+   - Otherwise, quote each individual path.
+3. Run in terminal:
+   - All files: `npx markdownlint-cli2 --fix "**/*.md"`
+   - Specific files: `npx markdownlint-cli2 --fix "<path1>" "<path2>" ...`
+4. Evaluate the exit code: if 0, return `SUCCESS` — the linter auto-fixed all violations or none
    existed; otherwise, capture stdout/stderr, parse each remaining violation (file, line, rule,
    description), and return a structured `FAIL` result with unfixed findings.
 

@@ -56,6 +56,8 @@ namespace emc.camus.api.Middleware
             new() { Type = nameof(UnauthorizedAccessException), Pattern = "username.*password|password.*mismatch", ErrorCode = ErrorCodes.AuthInvalidCredentials },
             new() { Type = nameof(UnauthorizedAccessException), Pattern = "invalid|credentials|incorrect", ErrorCode = ErrorCodes.InvalidCredentials },
             new() { Type = nameof(UnauthorizedAccessException), ErrorCode = ErrorCodes.Unauthorized },
+            new() { Type = nameof(ArgumentException), Pattern = "idempotency.*key.*missing", ErrorCode = ErrorCodes.IdempotencyKeyMissing },
+            new() { Type = nameof(ArgumentException), Pattern = "idempotency.*key.*invalid", ErrorCode = ErrorCodes.IdempotencyKeyInvalid },
             new() { Type = nameof(ArgumentException), ErrorCode = ErrorCodes.BadRequest },
             new() { Type = nameof(ArgumentOutOfRangeException), ErrorCode = ErrorCodes.BadRequest },
             new() { Type = nameof(ArgumentNullException), ErrorCode = ErrorCodes.BadRequest },

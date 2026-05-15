@@ -43,4 +43,9 @@ public static class Headers
     /// Header name for rate limit window duration in seconds.
     /// </summary>
     public const string RateLimitWindow = "RateLimit-Window";
+
+    /// <summary>
+    /// Header name for idempotency key identification.
+    /// </summary>
+    public const string IdempotencyKey = "Idempotency-Key";
 }

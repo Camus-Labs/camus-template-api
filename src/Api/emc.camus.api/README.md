@@ -30,6 +30,7 @@ in `Extensions/`.
 - 🗄️ **Persistence Selection** — InMemory or PostgreSQL chosen globally via
   `DataPersistenceSettings.Provider` configuration
 - 🔑 **Secret Management** — Dapr-based secret provider loaded at startup
+- 🔏 **Idempotency Key Validation** — Header-enforced per-endpoint idempotency key validation with configurable format policies
 
 ---
 
@@ -38,15 +39,16 @@ in `Extensions/`.
 | Folder / File | Purpose |
 | --- | --- |
 | `Controllers/` | Versioned API controllers inheriting `ApiControllerBase` |
-| `Configurations/` | Strongly-typed settings classes (`CorsSettings`, `ErrorHandlingSettings`) |
+| `Configurations/` | Strongly-typed settings classes (`CorsSettings`, `ErrorHandlingSettings`, `IdempotencySettings`, `IdempotencyPolicies`) |
 | `Extensions/` | One `*SetupExtensions.cs` file per cross-cutting concern for DI registration |
 | `Infrastructure/` | Framework-dependent service implementations (e.g., `HttpUserContext`) |
 | `Mapping/` | Request → Command and Result → Response mappers, versioned per API version |
 | `Metrics/` | Custom OpenTelemetry meter and counter definitions (`ErrorMetrics`) |
-| `Middleware/` | Pipeline middleware (`ExceptionHandlingMiddleware`, `UsernameHeaderMiddleware`) |
+| `Middleware/` | Pipeline middleware (`ExceptionHandlingMiddleware`, `SecurityHeadersMiddleware`, `UsernameHeaderMiddleware`) |
 | `Models/Dtos/` | Data-transfer objects returned inside response envelopes |
 | `Models/Requests/` | Input models bound from `[FromBody]` or `[FromQuery]` |
 | `Models/Responses/` | Response envelopes (`ApiResponse<T>`, `PagedResponse<T>`) |
+| `Filters/` | Action filters and marker attributes (`IdempotencyKeyValidationFilter`, `RequireIdempotencyKeyAttribute`) |
 | `SwaggerExamples/` | `IExamplesProvider<T>` classes per API version |
 | `Program.cs` | Composition root — ordered adapter registration and middleware pipeline |
 
@@ -56,13 +58,7 @@ in `Extensions/`.
 
 ### Running Locally
 
-Start the API with the VS Code **run-api** task or from a terminal:
-
-```shell
-dotnet run --project src/Api/emc.camus.api/emc.camus.api.csproj
-```
-
-Hot-reload is available through the **watch-api** task.
+Start the API with the VS Code **run-api** task. Hot-reload is available through the **watch-api** task.
 
 > **📖 Development Setup:** See [Debugging Guide](../../../docs/debugging.md) for Docker Compose and VS Code
 debugger attachment.
@@ -112,6 +108,29 @@ Additional error-code mapping rules evaluated before the platform defaults:
 }
 ```
 
+### IdempotencySettings
+
+```json
+{
+  "IdempotencySettings": {
+    "StandardTtlSeconds": 300,
+    "LongTermTtlSeconds": 86400
+  }
+}
+```
+
+### RequestTimeoutSettings
+
+```json
+{
+  "RequestTimeoutSettings": {
+    "DefaultTimeoutSeconds": 30,
+    "TightTimeoutSeconds": 10,
+    "ExtendedTimeoutSeconds": 60
+  }
+}
+```
+
 > **📖 Other Sections:** JWT, API Key, Rate Limiting, Swagger, Observability, Persistence, and Secret settings
 are owned by their respective adapter READMEs. See [Documentation Hub](../../../docs/README.md) for links.
 
@@ -127,6 +146,7 @@ Each adapter exposes a pair of extension methods consumed in `Program.cs`:
 | --- | --- | --- |
 | Observability | `AddObservability()` | `UseObservability()` |
 | Error Handling | `AddErrorHandling()` | `UseErrorHandling()` |
+| Idempotency | `AddIdempotency()` | — |
 | API Versioning | `AddApiVersioning()` | — |
 | Swagger | `AddSwaggerDocumentation()` | `UseSwaggerDocumentation()` |
 | CORS | `AddCorsPolicy()` | `UseCorsPolicy()` |
@@ -136,6 +156,8 @@ Each adapter exposes a pair of extension methods consumed in `Program.cs`:
 | Cache | `AddInMemoryCache()` | — |
 | JWT Auth | `AddJwtAuthentication()` | — |
 | API Key Auth | `AddApiKeyAuthentication()` | — |
+| Security Headers | — | `UseSecurityHeaders()` |
+| Request Timeouts | `AddRequestTimeoutPolicies()` | `UseRequestTimeoutPolicies()` |
 | Authorization | `AddAuthorizationPolicies()` | `UseAuthorizationPolicies()` |
 | App Services | `AddApplicationServices()` | `UseApplicationServices()` |
 | Persistence | `AddPersistence()` | `UsePersistenceAsync()` |
