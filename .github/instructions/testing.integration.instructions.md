@@ -62,7 +62,6 @@ applyTo: "src/Test/**integration.test/**"
           `HaveStatusCode` extension (in `Helpers/HttpResponseAssertionExtensions.cs`) reads and includes the
           response body in the failure message for immediate diagnostics
     - [ ] Never use `response.StatusCode.Should().Be(...)` — it omits the response body on failure
-    - [ ] HTTP response assertions verify status code and response body structure
     - [ ] Failure status code assertions use `await response.Should().HaveErrorCode(expected)` — the
           `HaveErrorCode` extension (in `Helpers/HttpResponseAssertionExtensions.cs`) deserializes the
           ProblemDetails body and asserts the `error` property — not just the HTTP status code alone

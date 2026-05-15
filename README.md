@@ -123,11 +123,8 @@ and dependency flow.
    Edit `src/Infrastructure/dapr/secrets.json` with your development credentials. See the [Dapr Components
    README](src/Infrastructure/dapr/README.md) for the secrets file format and examples.
 
-3. **Run the API**:
-
-   ```bash
-   dotnet run --project src/Api/emc.camus.api/emc.camus.api.csproj
-   ```
+3. **Run the API** using the `run-api` VS Code task, or see
+   [Debugging Documentation](docs/debugging.md) for alternative run methods.
 
 4. **Explore**:
    - Swagger UI: <http://localhost:5000/swagger>
@@ -135,16 +132,11 @@ and dependency flow.
 
 ### Run with Docker
 
-```bash
-# Development (with hot-reload)
-docker-compose -f docker-compose.dev.yml up --build
+Use the `docker-compose-up-dev-build` VS Code task for development with hot-reload,
+or the production compose file for deployment.
 
-# Production
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-> **📖 Detailed Guide:** See [Debugging Documentation](docs/debugging.md) for Docker development workflow
-with VS Code debugging.
+> **📖 Detailed Guide:** See [Debugging Documentation](docs/debugging.md) for Docker development
+workflow with VS Code debugging.
 
 ---
 

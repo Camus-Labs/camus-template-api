@@ -154,10 +154,12 @@ to force a clean rebuild of the API service.
 
 Override in `docker-compose.dev.yml` or `.env` file:
 
-```env
-ASPNETCORE_ENVIRONMENT=Development
-POSTGRES_PASSWORD=camus_dev_password
-OpenTelemetrySettings__Tracing__Exporter=otlp
+```json
+{
+  "ASPNETCORE_ENVIRONMENT": "Development",
+  "POSTGRES_PASSWORD": "camus_dev_password",
+  "OpenTelemetrySettings__Tracing__Exporter": "Otlp"
+}
 ```
 
 ## 📝 Notes

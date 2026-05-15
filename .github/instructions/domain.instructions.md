@@ -1,5 +1,5 @@
 ---
-applyTo: "src/Domain/**"
+applyTo: "{src/Domain/**/*.cs,src/Domain/**/*.csproj}"
 ---
 
 # Domain Layer Conventions
@@ -16,8 +16,7 @@ applyTo: "src/Domain/**"
     - [ ] Public constructor for new entities — the only way to create a new instance
     - [ ] Public constructor validates business attributes before setting state
     - [ ] Public constructor auto-generates `Id` when the caller passes null
-    - [ ] `Reconstitute` static factory is required only when persistence must bypass constructor validation
-    - [ ] `Reconstitute`, when present, is the only way to bypass business rules — no other public API skips validation
+    - [ ] `Reconstitute` static factory, when present, is the only non-constructor path to instantiate the entity
     - [ ] `Reconstitute`, when present, accepts all fields including lifecycle/audit data
     - [ ] Business methods for state transitions (e.g., `Revoke()`) — the only way to mutate state after construction
     - [ ] Business methods that mutate state include guard clauses before any field assignment

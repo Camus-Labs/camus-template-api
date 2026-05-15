@@ -7,7 +7,7 @@ applyTo: "{src/Test/**,!src/Test/**integration.test/**}"
 1. Frameworks & Mocking
 
     - [ ] Moq as the only mocking framework — no other mocking libraries
-    - [ ] Mocks only for external dependencies (e.g., database, HTTP, file system)
+    - [ ] Mocks only for interfaces that cross process or I/O boundaries (e.g., database, HTTP, file system, clock)
     - [ ] No mocks for domain logic — test real implementations
     - [ ] Mock application services when testing controllers
     - [ ] Mock adapters when testing application layer
@@ -26,14 +26,16 @@ applyTo: "{src/Test/**,!src/Test/**integration.test/**}"
     - [ ] No reflection or access to private/internal members — assert on public return values, thrown exceptions,
           or mock interactions
     - [ ] Values shared between the constructor (or shared setup) and test assertions as `private const` or
-          `private static readonly` fields — constant array data as `private static readonly` fields (C# has no
-          `const` array; inlining allocates a new array each time) — all other values (single-method arrange/assert,
-          constructor filler not verified by any assertion, assertion-only literals) stay inline
+          `private static readonly` fields
+    - [ ] Constant array data as `private static readonly` fields — C# has no `const` array; inlining allocates
+          a new array each time
+    - [ ] Non-shared values (single-method arrange/assert, constructor filler not verified by any assertion,
+          assertion-only literals) stay inline
 
 3. Scope & Coverage
 
-    - [ ] No tests for trivial code (e.g., plain auto-properties, simple DTOs with no logic, compiler-guaranteed
-          behavior) — covered indirectly through tests that exercise real behavior
+    - [ ] No test classes targeting production classes that contain only auto-properties, parameterless
+          constructors, or no method bodies — covered indirectly through tests that exercise real behavior
     - [ ] No integration test artifacts in this scope — no `[Trait("Category", "Integration")]` annotations,
           `IAsyncLifetime` container fixtures, or `WebApplicationFactory` usage
 

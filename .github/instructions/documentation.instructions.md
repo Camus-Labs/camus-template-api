@@ -1,34 +1,41 @@
 ---
-applyTo: "{**/*.md,!.github/prompts/**,!.github/instructions/**,!.github/agents/**}"
+applyTo: "{README.md,CHANGELOG.md,CONTRIBUTING.md,SECURITY.md,docs/**/*.md,src/**/README.md}"
 ---
 
 # Documentation Conventions
 
 1. Information Ownership
 
-    - [ ] Main `README.md` contains a project-purpose section and a quick-start section
+    - [ ] Main `README.md` contains a project-purpose section
+    - [ ] Main `README.md` contains a quick-start section
     - [ ] `docs/README.md` contains a link to every `docs/*.md` guide and every adapter README
-    - [ ] Each `docs/*.md` file has a single H1 topic and no H2 sections that belong to a different guide's scope
-    - [ ] Each `docs/*.md` file contains no forward-references that defer definitions, configuration examples, or behavioral
-          descriptions to other `docs/` files
-    - [ ] Each `src/**/README.md` contains Configuration, Integration, and Troubleshooting sections
+    - [ ] Each `docs/*.md` file has exactly one H1 heading
+    - [ ] No `docs/*.md` file contains an H2 heading that matches the H1 title of another `docs/*.md` file
+    - [ ] Each `src/**/README.md` contains a Configuration section
+    - [ ] Each `src/**/README.md` contains an Integration section
+    - [ ] Each `src/**/README.md` contains a Troubleshooting section
     - [ ] `CHANGELOG.md` entries are grouped by version number and date
 
 2. Single Source of Truth
 
-    - [ ] Each configuration example appears in exactly one file — other files link to it instead of repeating it
-    - [ ] Each behavioral description appears in exactly one file — other files link to it instead of repeating it
-    - [ ] Main README summarizes adapter capabilities in one line + links to adapter README for details
-    - [ ] `docs/` guides reference adapter READMEs for configuration specifics — not the other way around
+    - [ ] No configuration example duplicated verbatim from another file matched by this glob — link to the
+          canonical location instead
+    - [ ] No runtime feature behavior description duplicated verbatim from another file matched by this glob — link
+          to the canonical location instead
+    - [ ] Main README summarizes each adapter's capabilities in one line
+    - [ ] Main README links to `src/Adapters/**/README.md` for each adapter's details
+    - [ ] `docs/` guides reference `src/Adapters/**/README.md` for configuration specifics — not the other way around
     - [ ] No coding standards, style rules, or validation rules in documentation files
 
 3. Cross-Reference Integrity
 
     - [ ] All relative links use correct Markdown link syntax and target paths consistent with the repository directory
           structure
-    - [ ] Adapter READMEs link to main README and to the `/docs/` guide that covers their feature area
-          using a `> Parent Documentation:` header pattern
-    - [ ] No orphan documentation files — every `.md` is reachable from `docs/README.md` or main `README.md`
+    - [ ] `src/Adapters/**/README.md` files link to main README
+    - [ ] `src/Adapters/**/README.md` files link to the `/docs/` guide covering their feature area
+          (e.g., `> Parent Documentation:` header)
+    - [ ] `docs/README.md` or main `README.md` links to every file matched by this glob (directly or
+          transitively) — no orphan documentation files
 
 4. Content Accuracy
 
@@ -40,9 +47,6 @@ applyTo: "{**/*.md,!.github/prompts/**,!.github/instructions/**,!.github/agents/
 
 5. Structure & Formatting
 
-    - [ ] `README.md` and `docs/*.md` files use consistent heading hierarchy (H1 title, H2 sections, H3 subsections)
-    - [ ] Limitations and known constraints documented in a dedicated section or callout block
+    - [ ] Each file has exactly one H1 heading
+    - [ ] Heading levels are not skipped (H1 → H2 → H3)
     - [ ] No `TODO`, `FIXME`, `TBD`, or `Lorem ipsum` markers in committed documentation
-    - [ ] No line exceeds 120 visible characters (grapheme clusters — an emoji with a variation selector counts as
-          one character, not two) — markdown table rows and lines inside fenced code blocks are exempt
-    - [ ] Prose lines that are not the last line of a paragraph contain at least 100 characters

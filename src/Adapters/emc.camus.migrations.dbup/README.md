@@ -38,9 +38,8 @@ See `DatabaseMigrationSetupExtensions` in this adapter for the full registration
 
 ### Configuration (`appsettings.json`)
 
-Database connection settings (`DatabaseSettings`) are configured in the
-[PostgreSQL Persistence Adapter](../emc.camus.persistence.postgresql/README.md). The migration adapter only requires
-`DBUpSettings`:
+Database connection settings (`DatabaseSettings`) are configured in the [PostgreSQL Persistence Adapter]
+(../emc.camus.persistence.postgresql/README.md). The migration adapter only requires `DBUpSettings`:
 
 ```json
 {

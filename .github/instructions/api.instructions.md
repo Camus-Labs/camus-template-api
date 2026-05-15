@@ -47,6 +47,8 @@ applyTo: "src/Api/**/*.cs"
     - [ ] Controllers contain zero validation logic
     - [ ] No try/catch in controllers — exceptions propagate to the global error-handling middleware
     - [ ] No validation attributes on model classes (`[Required]`, `[StringLength]`, `[Range]`)
+    - [ ] All HTTP error responses originate from the global error-handling middleware — no component
+          (controller, filter, or service) writes error responses directly
 
 4. Observability
 

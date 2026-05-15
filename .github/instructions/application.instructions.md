@@ -29,7 +29,7 @@ applyTo: "src/Application/**/*.cs"
     - [ ] View names contain the entity and a content/shape qualifier — never a filter-dimension qualifier
           (`GeneratedTokenSummaryView`, not `GeneratedTokenByUserView`)
     - [ ] Filter naming targets the entity (`GeneratedTokenFilter`, not `GeneratedTokenSummaryFilter`)
-    - [ ] Common types in `Common/` folder: `PaginationParams`, `PagedResult<T>`
+    - [ ] Common types in `Common/` folder (e.g.,`PaginationParams`, `PagedResult<T>`)
     - [ ] List query methods accept `PaginationParams` and return `PagedResult<T>`
 
 3. Validation & Error Handling
@@ -52,8 +52,8 @@ applyTo: "src/Application/**/*.cs"
     - [ ] Domain and validation exceptions caught by exception filters are re-thrown unchanged — never wrapped or
           swallowed
     - [ ] Infrastructure failures wrapped in `InvalidOperationException` preserving inner exception
-    - [ ] Transactional methods: inner catch calls `Rollback()` + `throw;`, outer catch wraps in
-          `InvalidOperationException` preserving inner exception
+    - [ ] Transactional methods: inner catch calls `Rollback()` + `throw;`
+    - [ ] Transactional methods: outer catch wraps in `InvalidOperationException` preserving inner exception
 
 4. Observability
 

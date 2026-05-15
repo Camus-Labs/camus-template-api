@@ -42,7 +42,7 @@ detailed claims documentation and usage examples.
 
 - Token generation is delegated to `AuthService` via the `AuthController`.
 - Credentials and signing keys are injected via DI.
-- API versioning and observability are integrated (API version is logged and tagged).
+- API versioning and observability are integrated (trace context is enriched with trace ID and span ID).
 
 ## API Key Authentication
 

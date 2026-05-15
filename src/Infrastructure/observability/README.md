@@ -77,6 +77,14 @@ Log aggregation system that receives structured logs from the OpenTelemetry Coll
 
 ---
 
+## Configuration
+
+Each YAML file in this directory configures one observability component. See the file list above for the complete
+inventory. For application-side OpenTelemetry settings (`appsettings.json` keys and exporter options), see the
+[Observability Adapter README][obs-adapter-readme].
+
+---
+
 ## 🚀 Running the Stack
 
 ### Prerequisites
@@ -86,65 +94,11 @@ Log aggregation system that receives structured logs from the OpenTelemetry Coll
 
 ### Via Docker Compose (Recommended)
 
-Run the complete observability stack using the docker-compose task:
+Run the observability stack using the VS Code task **`docker-compose-up-dev-no-api`** from the Command Palette
+(**Tasks: Run Task**), or run the equivalent `docker-compose` command from the project root.
 
-```bash
-# From project root
-docker-compose -f docker-compose.dev.yml up postgres otel-collector jaeger loki prometheus grafana -d
-```
-
-Or use the VS Code task:
-
-- **Command Palette** → **Tasks: Run Task** → `docker-compose-up-observability`
-
-### Manual Docker Commands
-
-If you prefer running containers individually:
-
-```bash
-# Create network
-docker network create camus-observability || true
-
-# Jaeger (Tracing UI)
-docker run -d --name camus-jaeger --network camus-observability \
-  -p 16686:16686 -p 4317:4317 \
-  -e SPAN_STORAGE_TYPE=memory \
-  -e MEMORY_MAX_TRACES=500000 \
-  --memory=1g --memory-swap=1g \
-  jaegertracing/all-in-one:latest
-
-# OpenTelemetry Collector
-docker run -d --name camus-otel-collector --network camus-observability \
-  -p 4317:4317 -p 4318:4318 -p 8889:8889 \
-  -v "$(pwd)/src/Infrastructure/observability/otel-collector-config.yaml:/etc/otelcol/config.yaml" \
-  otel/opentelemetry-collector-contrib:latest \
-  --config /etc/otelcol/config.yaml
-
-# Loki (Log Aggregation)
-docker run -d --name camus-loki --network camus-observability \
-  -p 3100:3100 \
-  -v "$(pwd)/src/Infrastructure/observability/loki-config.yaml:/etc/loki/config.yml:ro" \
-  grafana/loki:latest \
-  -config.file=/etc/loki/config.yml
-
-# Prometheus (Metrics)
-docker run -d --name camus-prometheus --network camus-observability \
-  -p 9090:9090 \
-  -v "$(pwd)/src/Infrastructure/observability/prometheus-config.yml:/etc/prometheus/prometheus.yml:ro" \
-  prom/prometheus:latest \
-  --config.file=/etc/prometheus/prometheus.yml \
-  --storage.tsdb.retention.time=1d \
-  --storage.tsdb.retention.size=1GB
-
-# Grafana (Dashboards)
-docker run -d --name camus-grafana --network camus-observability \
-  -p 3000:3000 \
-  -e GF_USERS_DEFAULT_THEME=dark \
-  -e GF_AUTH_ANONYMOUS_ENABLED=true \
-  -e GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer \
-  -v "$(pwd)/src/Infrastructure/observability/grafana-config.yaml:/etc/grafana/provisioning/datasources/grafana-config.yaml:ro" \
-  grafana/grafana:latest
-```
+To run individual containers manually, refer to the service definitions in `docker-compose.dev.yml` for the
+correct image versions, port mappings, volume mounts, and environment variables.
 
 ---
 
@@ -217,29 +171,8 @@ For complete configuration details, see the [Observability Adapter README][obs-a
 
 ## 🧹 Cleanup
 
-### Stop Containers
-
-```bash
-docker stop camus-otel-collector camus-prometheus camus-jaeger camus-grafana camus-loki
-```
-
-Or via Docker Compose:
-
-```bash
-docker-compose -f docker-compose.dev.yml down
-```
-
-### Remove Containers
-
-```bash
-docker rm -f camus-otel-collector camus-prometheus camus-jaeger camus-grafana camus-loki
-```
-
-### Remove Network
-
-```bash
-docker network rm camus-observability
-```
+Use the VS Code task **`docker-compose-down`** from the Command Palette (**Tasks: Run Task**) to stop and remove
+all containers. To also remove persistent volumes, use **`docker-compose-down-clean-data`** instead.
 
 ---
 

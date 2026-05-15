@@ -1,5 +1,5 @@
 ---
-description: 'Review C# source files against their matching instruction checklists and return a verdict'
+description: 'Review C# source files against matching instruction checklists to produce a compliance verdict'
 argument-hint: 'Provide the list of modified .cs files to review'
 mode: 'agent'
 tools:
@@ -14,10 +14,9 @@ tools:
 Produce a structured review report for one or more `.cs` files by matching each file to its applicable instruction
 checklists and evaluating compliance.
 
-**Success:** Report covers every checklist section from every matched instruction file and follows the exact Output
-Format template.
+**Success:** Deliver a complete, verdict-bearing report with a finding for every non-compliant item.
 
-**Failure:** Any input validation in Steps 1–2 fails, or Step 3 matches zero files.
+**Failure:** Report the first validation error and stop without producing a report.
 
 ## Context
 
@@ -42,11 +41,11 @@ Read and internalize the instruction checklists before starting:
 1. Confirm the caller supplied at least one `modified_files` entry — if the list is empty, stop and report the problem;
   otherwise proceed to Step 2.
 
-2. Read every file in `modified_files` — if any file is unreadable or is not a `.cs` file, stop and report the problem;
-  otherwise proceed to Step 3.
+2. Read every file in `modified_files` (max 50 files) — if any file is unreadable or is not a `.cs` file, stop and
+  report the problem; otherwise proceed to Step 3.
 
-3. Match each file to its applicable instruction checklists by evaluating the `applyTo` glob patterns that each
-  instruction file frontmatter declares — apply these rules in order:
+3. Match each file to its applicable instruction checklists by evaluating the `applyTo` glob patterns
+  that each instruction file frontmatter declares — apply these rules in order:
     - `src/Test/**` (excluding `*.integration.test`) → `testing.instructions` + `testing.unit.instructions`
     - `src/Test/**integration.test/**` → `testing.instructions` + `testing.integration.instructions`
     - `src/Domain/**/*.cs` → `csharp.instructions` + `domain.instructions`
@@ -55,23 +54,24 @@ Read and internalize the instruction checklists before starting:
     - `src/Adapters/emc.camus.persistence.postgresql/**/*.cs` → `csharp.instructions` + `adapters.instructions` +
       `adapters.persistence.instructions`
     - `src/Adapters/**/*.cs` (all other adapters) → `csharp.instructions` + `adapters.instructions`
-    - If no file matches any pattern, stop and report; otherwise build a combined ordered section list from the matched
-      instruction checklists and proceed to Step 4.
+    - If no file matches any pattern, stop and report; otherwise proceed to Step 4.
 
-4. Iterate through the combined section list (max 30 sections); evaluate exactly one section per iteration across ALL
-  matched files, score `PASS` only when ALL checklist items in that section pass for ALL applicable files — otherwise
-  score `FAIL` — and record each failing item as a finding; stop after evaluating all sections.
+4. Build a combined ordered section list from the matched instruction checklists and proceed to Step 5.
 
-5. Compute the overall verdict — PASS when every section is PASS, otherwise FAIL.
+5. Evaluate each section in the combined section list (max 30 sections) against ALL applicable files — score `PASS`
+  when every checklist item passes for every file, otherwise score `FAIL` and record each failing item as a finding.
 
-6. Produce the report in the exact output format below using the verdict and all findings.
+6. Compute the overall verdict — PASS when every section is PASS, otherwise FAIL.
+
+7. Produce the report in the exact output format below using the verdict and all findings.
 
 ## Rules
 
 - MUST provide evidence in the exact structure for every finding, including the file path
 - MUST include a concrete fix per finding — not generic advice
 - MUST NOT modify any target file
-- MUST NOT invent conventions — validate only against the supplied instruction checklists
+- MUST NOT invent conventions
+- MUST validate only against the supplied convention checklists
 - MUST NOT evaluate correctness of business or domain logic
 - MUST use section names exactly as they appear in the instruction files
 

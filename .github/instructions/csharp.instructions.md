@@ -6,9 +6,9 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
 
 1. Code Quality
 
-    - [ ] Numeric literals other than 0, 1, -1 that represent domain constraints, thresholds, or configuration defaults
-          appear as named const or static readonly fields — arbitrary sample values (e.g., Swagger example providers)
-          stay inline
+    - [ ] Numeric literals other than 0, 1, -1 that represent domain constraints, thresholds, or configuration
+          defaults appear as named const or static readonly fields — arbitrary sample values (e.g., Swagger example
+          providers) stay inline
     - [ ] String literals assigned as property or field default values appear as named const or static readonly fields
           — all other string literals stay inline at the call site
     - [ ] XML documentation on all public types and members
@@ -52,9 +52,9 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
 
     - [ ] LogDebug only for branching decisions, intermediate computation results, and cache key construction
     - [ ] LogInformation only for: startup/shutdown, state transitions, admin operations, scheduled jobs
-    - [ ] LogWarning only for degraded-but-recoverable conditions and security-relevant rejections — fallback
+    - [ ] LogWarning only for degraded-but-recoverable conditions and security-relevant rejections (e.g., fallback
           activation, retry attempts, threshold proximity, deprecated code-path execution, rate-limit rejections,
-          authentication failures
+          authentication failures)
     - [ ] LogError only at catch-and-terminate boundaries (global error-handling middleware, background job runners) —
           not in service methods that re-throw
 

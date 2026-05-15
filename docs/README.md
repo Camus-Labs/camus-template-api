@@ -99,11 +99,21 @@ Detailed usage guides for infrastructure adapters:
 
 ---
 
-## Story Templates
+## Story Template
 
 - **[User Story Template](stories/_user_story_template.md)** - Standard template for writing user stories
-- **[US-01: Sort Generated Tokens](stories/todo/tokens-sorting/US-01-sort-generated-tokens.md)** - Token listing
-  sort support
+
+### Completed Stories
+
+- **[US-01: Sort Generated Tokens](stories/done/tokens-sorting/US-01-sort-generated-tokens.md)** -
+  Token listing sort support
+
+### Planned Stories
+
+- **[US-01: Idempotency Key Enforcement](stories/todo/idempotency-post-endpoints/US-01-idempotency-key-enforcement.md)**
+  \- Require idempotency keys on POST endpoints
+- **[US-02: Idempotent Response Caching](stories/todo/idempotency-post-endpoints/US-02-idempotent-response-caching.md)**
+  \- Cache and replay responses for duplicate requests
 
 ---
 

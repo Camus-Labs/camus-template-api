@@ -11,7 +11,7 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 ├──────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  PRE: CREATE BRANCH ──────── User action                                 │
-│  │  Action: git checkout main && git pull && git checkout -b feat_...     │
+│  │  Action: git checkout main && git pull && git checkout -b feat_...    │
 │  │  Gate:   User confirms branch created from latest main                │
 │  ▼                                                                       │
 │  Phase 0: PRODUCT OWNER ──── @product_owner                              │
@@ -52,7 +52,7 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 │  │  Gate:   Human reviews documentation updates                          │
 │  ▼                                                                       │
 │  POST: COMPLETE & COMMIT ─── User action                                 │
-│  │  Action: Move stories to done/, bump version, update changelog        │
+│  │  Action: Move stories to done/, confirm version and changelog         │
 │  │  Gate:   User confirms all updated and committed                      │
 │  ▼                                                                       │
 │  DONE ✓                                                                  │
@@ -237,9 +237,11 @@ Example: `@technical_writer #file:docs/stories/todo/user-profiles/US-01-create-p
 
 1. Validates the Integration Tester Handoff Gate is fully passing and both Phase 5 reviews produced PASS
 2. Reads the story file, CONTRIBUTING.md versioning standard, current CHANGELOG, and Directory.Build.props
-3. Determines the Semantic Versioning bump type (MAJOR, MINOR, or PATCH) based on the story's changes
-4. Bumps the version in `src/Directory.Build.props` and adds a new CHANGELOG section with entries grouped under
-   Keep a Changelog subsections (Added, Changed, Fixed, Removed, Security, Deprecated)
+3. Determines the Semantic Versioning bump type (MAJOR, MINOR, PATCH, or APPEND) based on the story's changes —
+   presents the user with the option to bump to a new version or append entries to the latest existing version
+4. Applies the confirmed choice — bumps the version in `src/Directory.Build.props` and adds a new CHANGELOG section,
+   or appends entries to the existing latest version section — grouped under Keep a Changelog subsections (Added,
+   Changed, Fixed, Removed, Security, Deprecated)
 5. Updates Swagger/OpenAPI XML annotations for new or modified controller actions
 6. Updates the Postman collection with new or modified requests
 7. Adds XML documentation comments for new public types, methods, and properties

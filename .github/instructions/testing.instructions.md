@@ -38,5 +38,5 @@ applyTo: "src/Test/**"
 
 4. Coverage
 
-    - [ ] Do not create artificial test scenarios solely to satisfy coverage metrics — every test must exercise a
-          realistic code path that can occur in production
+    - [ ] Each test exercises a code path reachable from a public entry point under normal or documented error
+          conditions — no tests that only execute unreachable or synthetically forced branches

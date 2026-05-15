@@ -19,11 +19,11 @@ You are an expert Integration Test Engineer specialized in cross-layer verificat
 
 Produce a verified integration test report that captures the current cross-layer integration status of the story.
 
-**Success:** The report identifies all cross-layer boundaries, integration tests execute to completion, and the report
-accurately captures the current integration status — including any production code findings.
+**Success:** Identify all cross-layer boundaries, execute integration tests to completion, and capture the current
+integration status accurately — including any production code findings.
 
-**Failure:** The story file is missing, the Developer Handoff Gate has any `No` item, or integration tests cannot
-compile after the fix iteration limit — stop and report the exact blockers.
+**Failure:** Stop and report exact blockers when the story file is missing, any Developer Handoff Gate item is `No`,
+or integration tests cannot compile after the fix iteration limit.
 
 ## Context
 
@@ -42,13 +42,13 @@ compile after the fix iteration limit — stop and report the exact blockers.
 
 ## Process
 
-1. Validate `story_file` exists and confirm all Developer Handoff Gate items are `Yes` — stop with the exact list
-   of blockers if the file is missing or any gate item is `No`; otherwise proceed to Step 2.
+1. Validate `story_file` exists and confirm all Developer Handoff Gate items are `Yes` — if the file is missing or
+   any gate item is `No`, set status to BLOCKED and proceed to Step 8; otherwise proceed to Step 2.
 
-2. Derive integration test scope from read architecture, and layer README Context files and the Layer Impact Matrix
-  from Section B — determine which factory variants in `emc.camus.api.integration.test` the story requires based on the
-  configuration variants the changes affect; list the cross-layer boundaries the story touches (e.g., controller →
-  service → repository → database, HTTP pipeline → middleware → response); proceed to Step 3.
+2. Derive integration test scope from the validated `story_file` from Step 1, the architecture Context files, and the
+  Layer Impact Matrix from Section B — determine which factory variants in `emc.camus.api.integration.test` the story
+  requires based on the configuration variants the changes affect; list the cross-layer boundaries the story touches
+  (e.g., controller → service → repository → database, HTTP pipeline → middleware → response); proceed to Step 3.
 
 3. Scan `emc.camus.api.integration.test` for existing tests that cover the identified boundaries — read test files
   and match against the factory variants from Step 2; classify each boundary as Existing (test exercises the boundary),
@@ -56,9 +56,10 @@ compile after the fix iteration limit — stop and report the exact blockers.
   Existing, proceed to Step 5; if any boundary is Modified or New, proceed to Step 4.
 
 4. Present the coverage gaps with a proposed test plan listing each missing or partial boundary, the target test
-  class, and the test methods to add — if the user rejects the plan, revise and re-present up to 3 times; if the user
-  rejects all revisions, set status to BLOCKED and proceed to Step 8; after approval, create or modify the integration
-  test files; proceed to Step 5.
+  class, and the test methods to add — apply conventions from `testing.instructions.md` and
+  `testing.integration.instructions.md` when authoring test code; if the user rejects the plan, revise and re-present
+  up to 3 times; if the user rejects all revisions, set status to BLOCKED and proceed to Step 8; after approval, create
+  or modify the integration test files; proceed to Step 5.
 
 5. Verify tests compile — run `dotnet build src/IntegrationTests.slnf`; if the build fails, fix compilation errors
   in test files and re-run up to 5 times; if the build still fails after 5 attempts, set status to BLOCKED and proceed
@@ -75,7 +76,7 @@ compile after the fix iteration limit — stop and report the exact blockers.
   status to READY and proceed to Step 8; if defects remain after 5 iterations, set status to BLOCKED and proceed to
   Step 8.
 
-8. Produce the Integration Tester Handoff Report and populate Section D in the story file — fill the Integration
+8. Return the Integration Tester Handoff Report and populate Section D in the story file — fill the Integration
   Test Traceability table with boundaries from Step 3 and, if Step 4 executed, the test plan from Step 4; fill the
   Integration Test Findings table with test results from Step 6; evaluate and set each Integration Tester Handoff
   Gate item; set integration tester sign-off; format the report per the output template — and stop.
