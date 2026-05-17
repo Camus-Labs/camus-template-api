@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using emc.camus.api.integration.test.Fixtures;
 using emc.camus.api.integration.test.Helpers;
+using emc.camus.application.Common;
 using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V2;
 using FluentAssertions;
@@ -26,9 +27,10 @@ public class AuthInMemoryEndpointTests
         // Arrange
         var client = _factory.CreateApiKeyClient();
         var request = new { Username = "admin", Password = "admin-password" };
+        var before = DateTime.UtcNow;
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonWithIdempotencyKeyAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -37,7 +39,7 @@ public class AuthInMemoryEndpointTests
         body.Should().NotBeNull();
         body!.Data.Should().NotBeNull();
         body.Data!.Token.Should().NotBeNullOrWhiteSpace();
-        body.Data.ExpiresOn.Should().BeAfter(DateTime.UtcNow);
+        body.Data.ExpiresOn.Should().BeAfter(before);
     }
 
     [Fact]
@@ -48,7 +50,7 @@ public class AuthInMemoryEndpointTests
         var request = new { Username = "admin", Password = "wrong-password" };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonWithIdempotencyKeyAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
@@ -68,5 +70,20 @@ public class AuthInMemoryEndpointTests
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
         await response.Should().HaveErrorCode("apikey_authentication_required");
+    }
+
+    [Fact]
+    public async Task Authenticate_MissingIdempotencyKey_Returns400()
+    {
+        // Arrange
+        var client = _factory.CreateApiKeyClient();
+        var request = new { Username = "admin", Password = "admin-password" };
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
+
+        // Assert
+        await response.Should().HaveStatusCode(HttpStatusCode.BadRequest);
+        await response.Should().HaveErrorCode(ErrorCodes.IdempotencyKeyMissing);
     }
 }

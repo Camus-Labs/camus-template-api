@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using emc.camus.api.integration.test.Fixtures;
 using emc.camus.api.integration.test.Helpers;
+using emc.camus.application.Common;
 using FluentAssertions;
 
 namespace emc.camus.api.integration.test.Common;
@@ -65,7 +66,7 @@ public class TelemetryEnrichmentInMemoryTests
         activity.GetTagItem("enduser.authenticated").Should().NotBeNull("enrichment should always set enduser.authenticated");
         activity.GetTagItem("enduser.authenticated").Should().Be(true);
         activity.GetTagItem("enduser.name").Should().Be("ApiKeyUser");
-        activity.GetTagItem("enduser.id").Should().BeNull("API key identity has no NameIdentifier claim");
+        activity.GetTagItem("enduser.id").Should().Be("00000000-0000-0000-0000-000000000001", "API key identity uses a deterministic NameIdentifier");
         activity.GetTagItem("http.route.controller").Should().Be("ApiInfo");
         activity.GetTagItem("http.route.version").Should().Be("2");
 
@@ -109,7 +110,7 @@ public class TelemetryEnrichmentInMemoryTests
         var request = new { Username = "admin", Password = "wrong-password" };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonWithIdempotencyKeyAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
@@ -165,7 +166,7 @@ public class TelemetryEnrichmentInMemoryTests
         var request = new { UsernameSuffix = "test-token", Permissions = new[] { "api.read" } };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/v2/auth/generate-token", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonWithIdempotencyKeyAsync("/api/v2/auth/generate-token", request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Forbidden);

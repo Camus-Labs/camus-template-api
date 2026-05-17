@@ -72,3 +72,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - In-memory response cache adapter with per-user isolation and TTL-based expiration
 - Fail-open behavior allowing requests to proceed normally when the cache is unavailable
 - Idempotency cache metrics for hits, body conflicts, and cache errors
+- Idempotency implemented on `POST` endpoints — requests without the header will return HTTP 400

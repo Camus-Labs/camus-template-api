@@ -13,8 +13,10 @@ detailed configuration, settings, and security best practices.
 ## How to Get a Token
 
 Post credentials to the `POST /api/v2/auth/authenticate` endpoint to receive a JWT token, then include it
-in the `Authorization: Bearer` header on subsequent requests. See the Swagger UI at `/swagger` for the
-complete request/response specification.
+in the `Authorization: Bearer` header on subsequent requests. Both `POST /api/v2/auth/authenticate` and
+`POST /api/v2/auth/generate-token` require an `Idempotency-Key` header; requests without it receive
+HTTP 400. See the [API Layer README](../src/Api/emc.camus.api/README.md) for idempotency configuration
+details. See the Swagger UI at `/swagger` for the complete request/response specification.
 
 > **📖 Complete Usage Guide:** See [JWT Adapter README](../src/Adapters/emc.camus.security.jwt/README.md) for
 token generation, endpoint protection, and testing.

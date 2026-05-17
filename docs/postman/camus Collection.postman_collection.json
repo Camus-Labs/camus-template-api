@@ -507,6 +507,11 @@
 											{
 												"key": "Accept",
 												"value": "application/json"
+											},
+											{
+												"key": "Idempotency-Key",
+												"value": "{{$guid}}",
+												"description": "Unique idempotency key for this request. Required on all POST endpoints."
 											}
 										],
 										"body": {
@@ -530,7 +535,7 @@
 												"authenticate"
 											]
 										},
-										"description": "Authenticates a user and generates a JWT token. Requires API Key authentication. On success, the token is automatically saved to the bearerToken collection variable."
+										"description": "Authenticates a user and generates a JWT token. Requires API Key authentication. On success, the token is automatically saved to the bearerToken collection variable. Requires the Idempotency-Key header."
 									},
 									"response": [
 										{
@@ -668,6 +673,11 @@
 											{
 												"key": "Accept",
 												"value": "application/json"
+											},
+											{
+												"key": "Idempotency-Key",
+												"value": "{{$guid}}",
+												"description": "Unique idempotency key for this request. Required on all POST endpoints."
 											}
 										],
 										"body": {
@@ -691,7 +701,7 @@
 												"generate-token"
 											]
 										},
-										"description": "Generates a custom token with specified permissions and expiration. Requires JWT authentication with token.create permission."
+										"description": "Generates a custom token with specified permissions and expiration. Requires JWT authentication with token.create permission. Requires the Idempotency-Key header."
 									},
 									"response": [
 										{

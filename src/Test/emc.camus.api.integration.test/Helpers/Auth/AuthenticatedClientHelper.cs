@@ -105,7 +105,7 @@ public static class AuthenticatedClientHelper
         var apiKeyClient = factory.CreateApiKeyClient();
         var authRequest = new { Username = username, Password = password };
 
-        var authResponse = await apiKeyClient.PostAsJsonAsync("/api/v2/auth/authenticate", authRequest);
+        var authResponse = await apiKeyClient.PostAsJsonWithIdempotencyKeyAsync("/api/v2/auth/authenticate", authRequest);
         await authResponse.Should().HaveStatusCode(HttpStatusCode.OK, $"authentication for '{username}' must succeed for test setup");
 
         var authBody = await authResponse.Content.ReadFromJsonAsync<ApiResponse<AuthenticateUserResponse>>();
@@ -116,6 +116,27 @@ public static class AuthenticatedClientHelper
 
         return client;
     }
+
+    private const string AdminUsername = "Admin";
+    private const string AdminPassword = "adminsecret";
+    private const string ClientAppUsername = "ClientApp";
+    private const string ClientAppPassword = "clientsecret";
+
+    /// <summary>
+    /// Authenticates as the Admin seed user and returns an <see cref="HttpClient"/> with the resulting JWT.
+    /// </summary>
+    /// <param name="factory">The factory to create clients from.</param>
+    /// <returns>An authenticated <see cref="HttpClient"/>.</returns>
+    public static Task<HttpClient> AuthenticateAsAdminAsync(this Fixtures.ApiFactoryBase factory)
+        => factory.AuthenticateAsync(AdminUsername, AdminPassword);
+
+    /// <summary>
+    /// Authenticates as the ClientApp seed user and returns an <see cref="HttpClient"/> with the resulting JWT.
+    /// </summary>
+    /// <param name="factory">The factory to create clients from.</param>
+    /// <returns>An authenticated <see cref="HttpClient"/>.</returns>
+    public static Task<HttpClient> AuthenticateAsClientAppAsync(this Fixtures.ApiFactoryBase factory)
+        => factory.AuthenticateAsync(ClientAppUsername, ClientAppPassword);
 
     /// <summary>
     /// Extracts the JTI (JWT ID) claim from a raw JWT token string.
@@ -170,16 +191,26 @@ public static class AuthenticatedClientHelper
     }
 
     /// <summary>
-    /// Replaces the default X-Forwarded-For header with the specified IP address.
-    /// Returns the same client for fluent chaining.
+    /// Generates tokens with the specified username suffixes via the generate-token endpoint.
+    /// Asserts each generation returns <see cref="HttpStatusCode.Created"/>.
     /// </summary>
-    /// <param name="client">The HTTP client to configure.</param>
-    /// <param name="ipAddress">The IP address to set in the X-Forwarded-For header.</param>
-    /// <returns>The same <see cref="HttpClient"/> for fluent chaining.</returns>
-    public static HttpClient WithIp(this HttpClient client, string ipAddress)
+    public static async Task GenerateTokensAsync(
+        HttpClient client,
+        string[] suffixes,
+        CancellationToken ct)
     {
-        client.DefaultRequestHeaders.Remove("X-Forwarded-For");
-        client.DefaultRequestHeaders.Add("X-Forwarded-For", ipAddress);
-        return client;
+        foreach (var suffix in suffixes)
+        {
+            var request = new
+            {
+                UsernameSuffix = suffix,
+                ExpiresOn = DateTime.UtcNow.AddHours(2),
+                Permissions = new[] { "api.read" },
+            };
+
+            var response = await client.PostAsJsonWithIdempotencyKeyAsync("/api/v2/auth/generate-token", request, ct);
+            await response.Should().HaveStatusCode(HttpStatusCode.Created, $"token generation for '{suffix}' must succeed for test setup");
+        }
     }
+
 }

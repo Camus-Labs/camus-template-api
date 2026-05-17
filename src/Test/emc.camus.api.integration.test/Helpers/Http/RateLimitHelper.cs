@@ -10,7 +10,7 @@ namespace emc.camus.api.integration.test.Helpers;
 public static class RateLimitHelper
 {
     /// <summary>
-    /// Sends <paramref name="permitLimit"/> requests to the specified endpoint,
+    /// Sends <paramref name="permitLimit"/> GET requests to the specified endpoint,
     /// asserting each responds with <see cref="HttpStatusCode.OK"/>.
     /// </summary>
     public static async Task ExhaustRateLimitWithAssertAsync(
@@ -27,34 +27,23 @@ public static class RateLimitHelper
     }
 
     /// <summary>
-    /// Sends <paramref name="permitLimit"/> GET requests to the specified endpoint
-    /// without asserting response status. Used to exhaust permits regardless of individual outcomes.
+    /// Sends <paramref name="permitLimit"/> requests to the specified endpoint
+    /// without asserting response status. Uses GET by default; pass <see cref="HttpMethod.Post"/>
+    /// for POST-based endpoints.
     /// </summary>
     public static async Task ExhaustRateLimitAsync(
         HttpClient client,
         string endpoint,
         int permitLimit,
-        CancellationToken ct)
+        CancellationToken ct,
+        HttpMethod? method = null)
     {
-        for (var i = 0; i < permitLimit; i++)
-        {
-            await client.GetAsync(endpoint, ct);
-        }
-    }
+        method ??= HttpMethod.Get;
 
-    /// <summary>
-    /// Sends <paramref name="permitLimit"/> POST requests to the specified endpoint
-    /// without asserting response status. Used to exhaust permits for POST-based endpoints.
-    /// </summary>
-    public static async Task ExhaustRateLimitPostAsync(
-        HttpClient client,
-        string endpoint,
-        int permitLimit,
-        CancellationToken ct)
-    {
         for (var i = 0; i < permitLimit; i++)
         {
-            await client.PostAsync(endpoint, null, ct);
+            using var request = new HttpRequestMessage(method, endpoint);
+            await client.SendAsync(request, ct);
         }
     }
 

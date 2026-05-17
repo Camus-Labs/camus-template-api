@@ -5,12 +5,13 @@ using Npgsql;
 using Microsoft.Extensions.DependencyInjection;
 using emc.camus.api.integration.test.Fixtures;
 using emc.camus.api.integration.test.Helpers;
+using emc.camus.application.Common;
 using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V2;
 using emc.camus.application.Auth;
 using FluentAssertions;
 
-namespace emc.camus.api.integration.test.InMemoryCache;
+namespace emc.camus.api.integration.test.Auth;
 
 [Trait("Category", "Integration")]
 [Collection(PostgreSqlTestGroup.Name)]
@@ -36,7 +37,7 @@ public class TokenRevocationCachePostgreSqlTests : IAsyncLifetime
     public async Task BackgroundSync_RevokedTokenInDatabase_CacheRejectsTokenAfterSyncCycle()
     {
         // Arrange — generate a token, then revoke it directly in the DB (bypassing the API/cache)
-        var adminClient = await _factory.AuthenticateAsync("Admin", "adminsecret");
+        var adminClient = await _factory.AuthenticateAsAdminAsync();
         var (generatedToken, jti) = await GenerateTokenAsync(adminClient, "bg-sync");
 
         // Verify the token works before DB-only revocation
@@ -54,6 +55,9 @@ public class TokenRevocationCachePostgreSqlTests : IAsyncLifetime
             new { Jti = jti, Now = DateTime.UtcNow });
 
         // Act — wait for the background sync service to pick up the revocation (10s interval)
+        // Justification: ITokenRevocationCache exposes no HTTP-observable endpoint — polling the
+        // in-memory cache directly is the only way to confirm that the background sync service
+        // propagated a DB-only revocation within the sync interval.
         var cache = _factory.Services.GetRequiredService<ITokenRevocationCache>();
         var synced = await PollUntilAsync(() => cache.IsRevoked(jti), timeout: TimeSpan.FromSeconds(15));
         synced.Should().BeTrue("background sync service should load revoked JTIs from the database within the sync interval");
@@ -87,7 +91,7 @@ public class TokenRevocationCachePostgreSqlTests : IAsyncLifetime
             Permissions = new[] { "api.read" },
         };
 
-        var response = await client.PostAsJsonAsync("/api/v2/auth/generate-token", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonWithIdempotencyKeyAsync("/api/v2/auth/generate-token", request, TestContext.Current.CancellationToken);
         await response.Should().HaveStatusCode(HttpStatusCode.Created, "token generation must succeed for test setup");
 
         var body = await response.Content.ReadFromJsonAsync<ApiResponse<GenerateTokenResponse>>(TestContext.Current.CancellationToken);

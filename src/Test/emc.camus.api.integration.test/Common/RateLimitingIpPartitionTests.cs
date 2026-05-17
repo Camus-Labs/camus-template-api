@@ -147,7 +147,7 @@ public class RateLimitingIpPartitionTests
 
         // Arrange — exhaust permits up to the strict limit (expect 400 since we're posting empty body,
         // but rate limiting happens before action execution so the request still consumes a permit)
-        await RateLimitHelper.ExhaustRateLimitPostAsync(client, StrictEndpoint, ApiRateLimitingFactory.StrictPolicyPermitLimit, ct);
+        await RateLimitHelper.ExhaustRateLimitAsync(client, StrictEndpoint, ApiRateLimitingFactory.StrictPolicyPermitLimit, ct, HttpMethod.Post);
 
         // Act — next request exceeds the strict limit
         var rejectedResponse = await client.PostAsync(StrictEndpoint, null, ct);

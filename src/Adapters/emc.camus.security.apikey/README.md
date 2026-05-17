@@ -28,9 +28,7 @@ mechanism for service-to-service communication or legacy client support.
 
 ### 1. Register in Program.cs
 
-Register the secret provider (`builder.AddDaprSecrets()`) and call `builder.AddApiKeyAuthentication(serviceName)`
-to add API Key authentication.
-
+Register the secret provider and call the API Key authentication setup extension in `Program.cs`.
 Enable the standard ASP.NET Core authentication/authorization middleware.
 
 See `ApiKeySetupExtensions` in this adapter for the full registration API.
@@ -53,9 +51,8 @@ this if you need to use a different secret name.
 
 ### 3. Protect Endpoints
 
-Apply `[Authorize(AuthenticationSchemes = AuthenticationSchemes.ApiKey)]` to controllers or actions that require
-API Key authentication. To accept both JWT and API Key, combine scheme names in the `AuthenticationSchemes`
-parameter.
+Apply an API Key authorization requirement to controllers or actions that need API Key authentication.
+To accept both JWT and API Key, combine scheme names in the authorize attribute.
 
 See controller source files in `src/Api/emc.camus.api/Controllers/` for examples.
 
@@ -74,7 +71,7 @@ ApiKeyAuthenticationHandler
     ├─→ Extracts key from header
     ├─→ Retrieves expected key from ISecretProvider
     ├─→ Compares keys (constant-time comparison)
-    └─→ Creates ClaimsPrincipal if valid
+    └─→ Creates ClaimsPrincipal if valid (includes deterministic NameIdentifier claim for idempotency cache scoping)
     ↓
 [Authorize] Attribute Validation
     ↓
@@ -120,14 +117,14 @@ secret provider configuration.
 
 ```text
 ┌──────────────────────────────────────┐
-│      Application Layer               │
-│        ISecretProvider               │
-└───────────────┬──────────────────────┘
-                │ depends on
-┌───────────────▼──────────────────────┐
 │       Adapter Layer                  │
 │  ApiKeyAuthenticationHandler         │
 │  (uses ISecretProvider)              │
+└───────────────┬──────────────────────┘
+                │ depends on
+┌───────────────▼──────────────────────┐
+│      Application Layer               │
+│        ISecretProvider               │
 └───────────────┬──────────────────────┘
                 │
 ┌───────────────▼──────────────────────┐
@@ -158,8 +155,8 @@ secret provider configuration.
 
 ## 🔗 Combined with JWT
 
-To accept either JWT or API Key on an endpoint, list both scheme names in the `[Authorize]` attribute's
-`AuthenticationSchemes` parameter. See controller source files for the combined-scheme pattern.
+To accept either JWT or API Key on an endpoint, list both scheme names in the authorize attribute.
+See controller source files for the combined-scheme pattern.
 
 ---
 
@@ -188,14 +185,12 @@ status code. See test projects in `src/Test/` for integration test patterns.
 
 ## Integration
 
-The adapter registers via the extension method in `ApiKeySetupExtensions.cs`:
+The adapter registers via the extension method in `ApiKeySetupExtensions.cs`, which reads
+`ApiKeySettings` from configuration, resolves the expected API key from the secret provider,
+and registers the API-key authentication handler in the DI container.
 
-- **`builder.AddApiKeyAuthentication()`** — Reads `ApiKeySettings` from configuration, resolves
-  the expected API key from the secret provider, and registers the API-key authentication handler
-  in the DI container.
-
-Apply the `[Authorize(AuthenticationSchemes = "ApiKey")]` attribute to controllers or actions that require
-API-key authentication.
+Protect endpoints by applying an API Key authorization requirement. See controller source files
+in `src/Api/emc.camus.api/Controllers/` for the usage pattern.
 
 ---
 
@@ -205,29 +200,8 @@ API-key authentication.
 | ------- | ------------ |
 | 401 on every request | Secret provider not returning the expected key, or `Api-Key` header missing |
 | `ApiKeySecretName` not found | Secret name in `ApiKeySettings` doesn't match a secret in the store |
-| Header ignored | Using wrong header name — must be `Api-Key` (case-sensitive) |
+| Header ignored | Using wrong header name — must be `Api-Key` |
 | Works locally, fails in production | Secret store not configured for production environment |
-| High `apikey_authentication_failures_total` | Possible brute-force attempt or client misconfiguration |
-
----
-
-## Observability
-
-The adapter exports the following metrics via OpenTelemetry:
-
-### Metrics
-
-**`apikey_authentication_failures_total`**
-
-- **Type:** Counter
-- **Description:** Total number of API Key authentication failures
-- **Unit:** requests
-- **Labels:**
-  - `failure_reason`: Error code (`authentication_required` | `invalid_credentials`)
-  - `endpoint`: The request path that was attempted
-
-Pre-built query panels and alerting thresholds for this metric are available in the
-observability stack configuration under `src/Infrastructure/observability/`.
 
 ---
 

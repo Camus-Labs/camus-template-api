@@ -13,7 +13,8 @@ architecture, authentication, deployment, and debugging.
 
 **Ready-to-use Infrastructure Adapters:**
 
-- 🔐 [Authentication](src/Adapters/emc.camus.security.jwt/README.md) — JWT Bearer + API Key
+- 🔐 [Authentication (JWT)](src/Adapters/emc.camus.security.jwt/README.md) — JWT Bearer Token
+- 🔑 [Authentication (API Key)](src/Adapters/emc.camus.security.apikey/README.md) — Header-based Service-to-Service
 - 🛡️ [Rate Limiting](src/Adapters/emc.camus.ratelimiting.inmemory/README.md) — Sliding Window Algorithm
 - 📊 [Observability](src/Adapters/emc.camus.observability.otel/README.md) — OpenTelemetry + Serilog
 - 🗄️ [Data Persistence](src/Adapters/emc.camus.persistence.postgresql/README.md) — PostgreSQL + Dapper
