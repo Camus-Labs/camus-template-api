@@ -45,7 +45,7 @@ builder.AddErrorHandling(SERVICE_NAME);
 builder.AddRequestTimeoutPolicies();
 
 // Step 4: Configure idempotency key validation
-builder.AddIdempotency();
+builder.AddIdempotency(SERVICE_NAME);
 
 // Step 5: Configure API versioning
 builder.AddApiVersioning();

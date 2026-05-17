@@ -246,9 +246,9 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 
 | Boundary | Factory | Test Class | Test Method | Change |
 | --- | --- | --- | --- | --- |
-| HTTP POST → filter → 400 (missing header) | ApiInMemoryFactory | IdempotencyKeyValidationInMemoryTests | PostToDecoratedEndpoint_MissingIdempotencyKeyHeader_Returns400WithMissingErrorCode | New |
-| HTTP POST → filter → controller action (valid key) | ApiInMemoryFactory | IdempotencyKeyValidationInMemoryTests | PostToDecoratedEndpoint_ValidIdempotencyKey_Returns200WithBody | New |
-| HTTP POST → filter (no-op) → controller action | ApiInMemoryFactory | IdempotencyKeyValidationInMemoryTests | PostToUndecoratedEndpoint_NoIdempotencyKeyHeader_Returns200WithBody | New |
+| HTTP POST → filter → 400 (missing header) | ApiInMemoryFactory | IdempotencyInMemoryTests | PostToDecoratedEndpoint_MissingIdempotencyKeyHeader_Returns400WithMissingErrorCode | New |
+| HTTP POST → filter → controller action (valid key) | ApiInMemoryFactory | IdempotencyInMemoryTests | PostToDecoratedEndpoint_ValidIdempotencyKey_Returns200WithBody | New |
+| HTTP POST → filter (no-op) → controller action | ApiInMemoryFactory | IdempotencyInMemoryTests | PostToUndecoratedEndpoint_NoIdempotencyKeyHeader_Returns200WithBody | New |
 
 ### Integration Test Findings
 

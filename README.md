@@ -19,6 +19,7 @@ architecture, authentication, deployment, and debugging.
 - 🗄️ [Data Persistence](src/Adapters/emc.camus.persistence.postgresql/README.md) — PostgreSQL + Dapper
 - 🔒 [Secrets Management](src/Adapters/emc.camus.secrets.dapr/README.md) — Dapr
 - 📚 [API Documentation](src/Adapters/emc.camus.documentation.swagger/README.md) — Swagger/OpenAPI
+- 🔄 [Caching](src/Adapters/emc.camus.cache.inmemory/README.md) — In-memory token revocation and idempotency response caching
 
 **Architectural Foundation:**
 
@@ -63,7 +64,7 @@ src/
 │       └── Exceptions/                    # Domain exceptions
 │
 ├── Adapters/                              # 🔌 Infrastructure
-│   ├── emc.camus.cache.inmemory/          # Token revocation cache
+│   ├── emc.camus.cache.inmemory/          # Token revocation & idempotency response cache
 │   ├── emc.camus.documentation.swagger/   # Swagger/OpenAPI
 │   ├── emc.camus.migrations.dbup/         # Database migrations
 │   ├── emc.camus.observability.otel/      # OpenTelemetry
@@ -215,7 +216,8 @@ for the full pipeline, agent roles, and approval gates.
   implementation for PostgreSQL
 - [Migrations (DbUp)](src/Adapters/emc.camus.migrations.dbup/README.md) — Ordered embedded SQL scripts with DbUp for
   PostgreSQL schema versioning
-- [Cache (Memory)](src/Adapters/emc.camus.cache.inmemory/README.md) — In-memory token revocation caching
+- [Cache (Memory)](src/Adapters/emc.camus.cache.inmemory/README.md) — In-memory token revocation and idempotency
+  response caching
 - [Persistence (Memory)](src/Adapters/emc.camus.persistence.inmemory/README.md) — In-memory repositories for
   development and testing
 - [Documentation (Swagger)](src/Adapters/emc.camus.documentation.swagger/README.md) — OpenAPI 3.0 documentation with

@@ -36,6 +36,7 @@ namespace emc.camus.api.Middleware
         private static readonly IReadOnlyList<ErrorCodeMappingRule> PlatformRules = new List<ErrorCodeMappingRule>
         {
             new() { Type = nameof(RateLimitExceededException), ErrorCode = ErrorCodes.RateLimitExceeded },
+            new() { Type = nameof(DataConflictException), Pattern = "idempotency.*body", ErrorCode = ErrorCodes.IdempotencyBodyConflict },
             new() { Type = nameof(DataConflictException), ErrorCode = ErrorCodes.DataConflict },
             new() { Type = nameof(DomainException), ErrorCode = ErrorCodes.DomainRuleViolation },
             new() { Type = nameof(KeyNotFoundException), ErrorCode = ErrorCodes.NotFound },

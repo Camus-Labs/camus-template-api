@@ -30,7 +30,8 @@ in `Extensions/`.
 - 🗄️ **Persistence Selection** — InMemory or PostgreSQL chosen globally via
   `DataPersistenceSettings.Provider` configuration
 - 🔑 **Secret Management** — Dapr-based secret provider loaded at startup
-- 🔏 **Idempotency Key Validation** — Header-enforced per-endpoint idempotency key validation with configurable format policies
+- 🔏 **Idempotency** — Header-enforced per-endpoint idempotency key validation and response caching with
+  configurable TTL policies and `Idempotency-Key-Status` response header
 
 ---
 
@@ -43,12 +44,12 @@ in `Extensions/`.
 | `Extensions/` | One `*SetupExtensions.cs` file per cross-cutting concern for DI registration |
 | `Infrastructure/` | Framework-dependent service implementations (e.g., `HttpUserContext`) |
 | `Mapping/` | Request → Command and Result → Response mappers, versioned per API version |
-| `Metrics/` | Custom OpenTelemetry meter and counter definitions (`ErrorMetrics`) |
+| `Metrics/` | Custom OpenTelemetry meter and counter definitions (`ErrorMetrics`, `IdempotencyMetrics`) |
 | `Middleware/` | Pipeline middleware (`ExceptionHandlingMiddleware`, `SecurityHeadersMiddleware`, `UsernameHeaderMiddleware`) |
 | `Models/Dtos/` | Data-transfer objects returned inside response envelopes |
 | `Models/Requests/` | Input models bound from `[FromBody]` or `[FromQuery]` |
 | `Models/Responses/` | Response envelopes (`ApiResponse<T>`, `PagedResponse<T>`) |
-| `Filters/` | Action filters and marker attributes (`IdempotencyKeyValidationFilter`, `RequireIdempotencyKeyAttribute`) |
+| `Filters/` | Action filters and marker attributes (`IdempotencyKeyValidationFilter`, `IdempotencyResponseCachingFilter`, `RequireIdempotencyKeyAttribute`) |
 | `SwaggerExamples/` | `IExamplesProvider<T>` classes per API version |
 | `Program.cs` | Composition root — ordered adapter registration and middleware pipeline |
 
@@ -189,6 +190,24 @@ The API layer exports:
 - `error_code` — Machine-readable error code (e.g., `jwt_token_expired`, `rate_limit_exceeded`)
 - `http_status` — HTTP status code (401, 429, 500, etc.)
 - `path` — Endpoint path that produced the error
+
+#### `idempotency_cache_hit_total`
+
+**Type:** Counter
+**Unit:** requests
+**Description:** Total number of idempotency cache hits (responses replayed from cache)
+
+#### `idempotency_body_conflict_total`
+
+**Type:** Counter
+**Unit:** requests
+**Description:** Total number of idempotency body conflict rejections (same key, different body)
+
+#### `idempotency_cache_error_total`
+
+**Type:** Counter
+**Unit:** errors
+**Description:** Total number of idempotency cache infrastructure errors (fail-open)
 
 ---
 

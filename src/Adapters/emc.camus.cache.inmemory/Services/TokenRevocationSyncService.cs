@@ -21,6 +21,7 @@ internal sealed partial class TokenRevocationSyncService : BackgroundService
     private readonly ITokenRevocationCache _cache;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly InMemoryCacheSettings _settings;
+    private readonly TimeProvider _timeProvider;
     private readonly ILogger<TokenRevocationSyncService> _logger;
 
     [LoggerMessage(Level = LogLevel.Information,
@@ -35,11 +36,11 @@ internal sealed partial class TokenRevocationSyncService : BackgroundService
         Message = "No IGeneratedTokenRepository registered — token revocation sync requires a persistence adapter.")]
     private partial void LogNoRepositoryRegistered();
 
-    [LoggerMessage(Level = LogLevel.Debug,
+    [LoggerMessage(Level = LogLevel.Information,
         Message = "Synchronized {Count} active revoked tokens into cache.")]
     private partial void LogSyncCompleted(int count);
 
-    [LoggerMessage(Level = LogLevel.Error,
+    [LoggerMessage(Level = LogLevel.Warning,
         Message = "Token revocation sync cycle failed.")]
     private partial void LogSyncCycleFailed(Exception exception);
 
@@ -49,30 +50,32 @@ internal sealed partial class TokenRevocationSyncService : BackgroundService
     /// <param name="cache">The token revocation cache to synchronize.</param>
     /// <param name="scopeFactory">Factory for creating DI scopes to resolve scoped dependencies.</param>
     /// <param name="settings">Configuration settings controlling sync interval.</param>
+    /// <param name="timeProvider">Time provider for delay operations.</param>
     /// <param name="logger">Logger for diagnostic output.</param>
     public TokenRevocationSyncService(
         ITokenRevocationCache cache,
         IServiceScopeFactory scopeFactory,
         InMemoryCacheSettings settings,
+        TimeProvider timeProvider,
         ILogger<TokenRevocationSyncService> logger)
     {
         ArgumentNullException.ThrowIfNull(cache);
         ArgumentNullException.ThrowIfNull(scopeFactory);
         ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(logger);
 
         _cache = cache;
         _scopeFactory = scopeFactory;
         _settings = settings;
+        _timeProvider = timeProvider;
         _logger = logger;
     }
 
     /// <summary>
     /// Executes the synchronization loop: yields to unblock host startup, loads revoked tokens
-    /// immediately, then periodically refreshes the cache from the repository using a
-    /// <see cref="PeriodicTimer"/> to avoid interval drift. Cancellation disposes the timer,
-    /// causing <see cref="PeriodicTimer.WaitForNextTickAsync"/> to return <c>false</c> and
-    /// exit the loop naturally.
+    /// immediately, then periodically refreshes the cache from the repository at a configurable
+    /// interval using <see cref="Task.Delay(TimeSpan, TimeProvider, CancellationToken)"/>.
     /// </summary>
     /// <param name="stoppingToken">Token signaled when the host is shutting down.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -81,15 +84,21 @@ internal sealed partial class TokenRevocationSyncService : BackgroundService
 
         LogServiceStarted(_settings.TokenRevocationCache.SyncIntervalSeconds);
 
-        var baseInterval = TimeSpan.FromSeconds(_settings.TokenRevocationCache.SyncIntervalSeconds);
-        using var timer = new PeriodicTimer(baseInterval);
-        using var _ = stoppingToken.Register(timer.Dispose);
+        var interval = TimeSpan.FromSeconds(_settings.TokenRevocationCache.SyncIntervalSeconds);
 
-        await RunSyncCycleAsync(stoppingToken);
-
-        while (await timer.WaitForNextTickAsync(CancellationToken.None))
+        try
         {
             await RunSyncCycleAsync(stoppingToken);
+
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                await Task.Delay(interval, _timeProvider, stoppingToken);
+                await RunSyncCycleAsync(stoppingToken);
+            }
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            // Expected during shutdown — fall through to log stop.
         }
 
         LogServiceStopped();
@@ -99,33 +108,27 @@ internal sealed partial class TokenRevocationSyncService : BackgroundService
     {
         try
         {
-            await SyncFromRepositoryAsync(ct);
+            using var scope = _scopeFactory.CreateScope();
+            var repository = scope.ServiceProvider.GetService<IGeneratedTokenRepository>();
+
+            if (repository == null)
+            {
+                LogNoRepositoryRegistered();
+                return;
+            }
+
+            var revokedTokens = await repository.GetActiveRevokedJtisAsync(ct);
+            _cache.Refresh(revokedTokens);
+
+            LogSyncCompleted(revokedTokens.Count);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             // Cancellation during a sync cycle is expected during shutdown.
-            // The caller's timer-dispose pattern will exit the loop naturally.
         }
         catch (Exception ex)
         {
             LogSyncCycleFailed(ex);
         }
-    }
-
-    private async Task SyncFromRepositoryAsync(CancellationToken ct)
-    {
-        using var scope = _scopeFactory.CreateScope();
-        var repository = scope.ServiceProvider.GetService<IGeneratedTokenRepository>();
-
-        if (repository == null)
-        {
-            LogNoRepositoryRegistered();
-            return;
-        }
-
-        var revokedTokens = await repository.GetActiveRevokedJtisAsync(ct);
-        _cache.Refresh(revokedTokens);
-
-        LogSyncCompleted(revokedTokens.Count);
     }
 }

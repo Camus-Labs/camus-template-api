@@ -1,6 +1,7 @@
 # emc.camus.cache.inmemory
 
-In-memory cache adapter for Camus applications providing token revocation caching with `ConcurrentDictionary`.
+In-memory cache adapter for Camus applications providing token revocation and idempotency response caching
+with `ConcurrentDictionary`.
 
 > **📖 Parent Documentation:** [Main README](../../../README.md) | [Architecture Guide](../../../docs/architecture.md)
 
@@ -8,18 +9,20 @@ In-memory cache adapter for Camus applications providing token revocation cachin
 
 ## Overview
 
-This adapter implements the `ITokenRevocationCache` interface from the Application layer using a thread-safe
-`ConcurrentDictionary`. It supports JWT token revocation by tracking revoked token identifiers (JTI). Expired
-entries are cleaned up by a background sync service that periodically replaces the full cache from persistence.
+This adapter implements the `ITokenRevocationCache` and `IIdempotencyResponseCache` interfaces from the Application
+layer using thread-safe `ConcurrentDictionary` instances. It supports JWT token revocation by tracking revoked token
+identifiers (JTI) and idempotency response caching with TTL-based expiration. Expired entries are cleaned up by a
+background sync service (token revocation) or on retrieval (idempotency responses).
 
 ---
 
 ## Features
 
 - **Thread-Safe** - Uses `ConcurrentDictionary` for safe concurrent access across requests
-- **Background Sync** - `TokenRevocationSyncService` periodically reloads the cache from persistence
+- **Background Sync** - `TokenRevocationSyncService` periodically reloads the token revocation cache from persistence
+- **Idempotency Response Caching** - `IdempotencyResponseCache` stores and retrieves cached responses with TTL-based expiration
 - **Singleton Lifetime** - Registered as a singleton, shared across all requests
-- **Interface-Based** - Implements `ITokenRevocationCache` from Application layer
+- **Interface-Based** - Implements `ITokenRevocationCache` and `IIdempotencyResponseCache` from Application layer
 - **Sensible Defaults** - Works out of the box with configurable sync interval
 
 ---
@@ -38,25 +41,28 @@ adapter for the full registration API.
 ### Dependency Inversion
 
 ```text
-┌──────────────────────────────────────┐
-│      Application Layer               │
-│      ITokenRevocationCache           │
-└───────────────▲──────────────────────┘
+┌──────────────────────────────────────────┐
+│        Application Layer                 │
+│  ITokenRevocationCache                   │
+│  IIdempotencyResponseCache               │
+└───────────────▲──────────────────────────┘
                 │ implements
-┌───────────────┴──────────────────────┐
-│       Adapter Layer                  │
-│    TokenRevocationCache              │
-│  (implements ITokenRevocationCache)  │
-│    TokenRevocationSyncService        │
-│  (background sync from persistence)  │
-└──────────────────────────────────────┘
+┌───────────────┴──────────────────────────┐
+│         Adapter Layer                    │
+│  TokenRevocationCache                    │
+│  (implements ITokenRevocationCache)      │
+│  IdempotencyResponseCache                │
+│  (implements IIdempotencyResponseCache)  │
+│  TokenRevocationSyncService              │
+│  (background sync from persistence)      │
+└──────────────────────────────────────────┘
 ```
 
 **Benefits:**
 
 - Application layer doesn't depend on any caching technology
 - Easy to swap implementations (in-memory → Redis → distributed cache)
-- Testable with mocked `ITokenRevocationCache`
+- Testable with mocked `ITokenRevocationCache` and `IIdempotencyResponseCache`
 
 ---
 
@@ -90,7 +96,8 @@ revoked during the current application lifetime.
 The adapter registers via the extension method in `InMemoryCacheSetupExtensions.cs`:
 
 - **`builder.AddInMemoryCache()`** — Loads and validates `InMemoryCacheSettings`, registers `TokenRevocationCache`
-  as the `ITokenRevocationCache` singleton, and conditionally registers `TokenRevocationSyncService` as a hosted
+  as the `ITokenRevocationCache` singleton, registers `IdempotencyResponseCache` as the
+  `IIdempotencyResponseCache` singleton, and conditionally registers `TokenRevocationSyncService` as a hosted
   background service when `SyncEnabled` is `true`.
 
 ---

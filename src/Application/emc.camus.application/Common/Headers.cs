@@ -48,4 +48,11 @@ public static class Headers
     /// Header name for idempotency key identification.
     /// </summary>
     public const string IdempotencyKey = "Idempotency-Key";
+
+    /// <summary>
+    /// Header name indicating whether the response was served from the idempotency cache.
+    /// Values: <see cref="Idempotency.IdempotencyKeyStatuses.Hit"/> (cached) or
+    /// <see cref="Idempotency.IdempotencyKeyStatuses.Miss"/> (first request).
+    /// </summary>
+    public const string IdempotencyKeyStatus = "Idempotency-Key-Status";
 }

@@ -9,7 +9,6 @@ applyTo: ".github/skills/**/SKILL.md"
     - [ ] Skill lives in `.github/skills/<name>/` with a `SKILL.md` at the root
     - [ ] Folder name matches the `name` field in SKILL.md frontmatter exactly
     - [ ] Folder name contains only lowercase alphanumeric characters and hyphens
-    - [ ] No files outside `SKILL.md`, `scripts/`, `references/`, or `assets/` subdirectories
     - [ ] `SKILL.md` body is under 500 lines — large content belongs in `references/`
     - [ ] File references use relative paths with `./` prefix (e.g., `[script](./scripts/run.sh)`)
 
@@ -59,7 +58,9 @@ applyTo: ".github/skills/**/SKILL.md"
 
     - [ ] Every external CLI tool or file referenced in the Procedure section appears by exact name
           in a `## Dependencies` section
-    - [ ] No references to files outside the skill folder (workspace root config files excepted)
+    - [ ] No references to files outside the skill folder — exception: workspace root config files and
+          workspace files the skill must read at runtime to fulfil its purpose (e.g., source code,
+          documentation, test projects)
 
 7. Writing Quality
 

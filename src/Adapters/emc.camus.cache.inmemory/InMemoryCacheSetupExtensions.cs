@@ -1,10 +1,12 @@
 using System.Diagnostics.CodeAnalysis;
 using emc.camus.application.Auth;
+using emc.camus.application.Idempotency;
 using emc.camus.cache.inmemory.Configurations;
 using emc.camus.cache.inmemory.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace emc.camus.cache.inmemory;
 
@@ -28,6 +30,8 @@ public static class InMemoryCacheSetupExtensions
 
         builder.Services.AddSingleton(settings);
         builder.Services.AddSingleton<ITokenRevocationCache, TokenRevocationCache>();
+        builder.Services.TryAddSingleton(TimeProvider.System);
+        builder.Services.AddSingleton<IIdempotencyResponseCache, IdempotencyResponseCache>();
 
         if (settings.TokenRevocationCache.SyncEnabled)
         {

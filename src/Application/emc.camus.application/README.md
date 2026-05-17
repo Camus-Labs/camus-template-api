@@ -50,6 +50,7 @@ Authentication-related contracts and services:
 - **`GeneratedTokenSortField`** - Enum for sortable fields (TokenUsername, ExpiresOn, CreatedAt, RevokedAt)
 - **`GeneratedTokenSortParams`** - Encapsulates optional sort field and direction for token queries
 - **`AuthenticationSchemes`** - Authentication scheme name constants (`Bearer`, `ApiKey`)
+- **`ITokenRevocationCache`** - Interface for token revocation cache (implemented by `emc.camus.cache.inmemory`)
 
 ### `Observability/`
 
@@ -71,6 +72,14 @@ Rate limiting contracts:
 Secret management contracts:
 
 - **`ISecretProvider`** - Interface for secret retrieval (implemented by `emc.camus.secrets.dapr`)
+
+### `Idempotency/`
+
+Idempotency response caching contracts:
+
+- **`IIdempotencyResponseCache`** - Interface for storing and retrieving cached idempotent responses
+- **`CachedResponse`** - Sealed class holding cached status code, body, and body hash
+- **`IdempotencyKeyStatuses`** - Constants for `Idempotency-Key-Status` header values (`hit`, `miss`)
 
 ### `Common/`
 
@@ -130,6 +139,8 @@ Application interfaces are implemented in the following adapters:
 | `IActionAuditRepository` | `ActionAuditRepository`, `ActionAuditRepository` | `emc.camus.persistence.postgresql`, `emc.camus.persistence.inmemory` |
 | `IGeneratedTokenRepository` | `GeneratedTokenRepository` | `emc.camus.persistence.postgresql` |
 | `IUnitOfWork` | `UnitOfWork`, `UnitOfWork` | `emc.camus.persistence.postgresql`, `emc.camus.persistence.inmemory` |
+| `IIdempotencyResponseCache` | `IdempotencyResponseCache` | `emc.camus.cache.inmemory` |
+| `ITokenRevocationCache` | `TokenRevocationCache` | `emc.camus.cache.inmemory` |
 
 See individual adapter READMEs for implementation details:
 
@@ -168,6 +179,7 @@ usage. See `AuthenticationSchemes` in the `Auth` namespace for available authent
 - `internal_server_error` - 500 Server error
 - `idempotency_key_missing` - 400 Idempotency-Key header missing on a decorated endpoint
 - `idempotency_key_invalid` - 400 Idempotency-Key header value empty or exceeds max length
+- `idempotency_body_conflict` - 409 Idempotency key reused with different request body
 - JWT-specific: `jwt_authentication_required`, `jwt_invalid_credentials`, `jwt_token_expired`,
   `jwt_invalid_token`, `jwt_invalid_signature`, `jwt_invalid_issuer`, `jwt_invalid_audience`,
   `jwt_token_revoked`
@@ -186,6 +198,7 @@ See [RateLimitPolicies.cs](RateLimiting/RateLimitPolicies.cs) for complete polic
 - `.business` - Business domain metrics
 - `.security` - Security metrics (auth, rate limiting)
 - `.infrastructure` - Infrastructure metrics (DB, cache, external APIs)
+- `.errorhandling` - Error handling and exception tracking metrics
 
 ### Custom Headers
 
@@ -196,6 +209,7 @@ See [RateLimitPolicies.cs](RateLimiting/RateLimitPolicies.cs) for complete polic
 - `RateLimit-Policy` - Applied policy name
 - `RateLimit-Window` - Window duration
 - `Idempotency-Key` - Idempotency key identification
+- `Idempotency-Key-Status` - Response header indicating cache status (`hit` or `miss`)
 
 ---
 

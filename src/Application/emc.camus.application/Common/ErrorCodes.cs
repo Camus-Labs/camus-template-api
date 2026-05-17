@@ -148,4 +148,9 @@ public static class ErrorCodes
         /// Error code for 400 Bad Request when the Idempotency-Key header value is empty or exceeds max length.
         /// </summary>
         public const string IdempotencyKeyInvalid = "idempotency_key_invalid";
+
+        /// <summary>
+        /// Error code for 409 Conflict when a repeated request uses the same Idempotency-Key but a different request body.
+        /// </summary>
+        public const string IdempotencyBodyConflict = "idempotency_body_conflict";
     }

@@ -21,6 +21,8 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
     - [ ] `CancellationToken` is forwarded to every awaited call that accepts one — never silently dropped
     - [ ] Compensating actions (rollback, cleanup, dispose) omit `CancellationToken` from their signature or
           pass `CancellationToken.None` internally — they must run to completion even after cancellation
+    - [ ] No `out` parameters on method signatures
+    - [ ] No tuples as return types or parameters on method signatures
 
 2. Validation & Error Handling
 
