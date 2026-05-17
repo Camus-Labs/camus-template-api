@@ -133,64 +133,35 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
 
     // --- Constructor validation ---
 
-    [Fact]
-    public void Constructor_NullCache_ThrowsArgumentNullException()
+    public static TheoryData<Func<IdempotencyResponseCachingFilter>, string> NullConstructorArgCases()
     {
-        // Act
-        var act = () => new IdempotencyResponseCachingFilter(
-            null!, _mockUserContext.Object, _settings, _metrics, _mockLogger.Object);
+        var cache = new Mock<IIdempotencyResponseCache>().Object;
+        var userCtx = new Mock<IUserContext>().Object;
+        var settings = new IdempotencySettings();
+        using var metrics = new IdempotencyMetrics("test-service");
+        var logger = new Mock<ILogger<IdempotencyResponseCachingFilter>>().Object;
 
-        // Assert
-        act.Should().Throw<ArgumentNullException>()
-            .Which.ParamName.Should().Be("cache");
+        return new TheoryData<Func<IdempotencyResponseCachingFilter>, string>
+        {
+            { () => new IdempotencyResponseCachingFilter(null!, userCtx, settings, metrics, logger), "cache" },
+            { () => new IdempotencyResponseCachingFilter(cache, null!, settings, metrics, logger), "userContext" },
+            { () => new IdempotencyResponseCachingFilter(cache, userCtx, null!, metrics, logger), "settings" },
+            { () => new IdempotencyResponseCachingFilter(cache, userCtx, settings, null!, logger), "metrics" },
+            { () => new IdempotencyResponseCachingFilter(cache, userCtx, settings, metrics, null!), "logger" },
+        };
     }
 
-    [Fact]
-    public void Constructor_NullUserContext_ThrowsArgumentNullException()
+    [Theory]
+    [MemberData(nameof(NullConstructorArgCases))]
+    public void Constructor_NullArg_ThrowsArgumentNullException(
+        Func<IdempotencyResponseCachingFilter> create, string expectedParamName)
     {
         // Act
-        var act = () => new IdempotencyResponseCachingFilter(
-            _mockCache.Object, null!, _settings, _metrics, _mockLogger.Object);
+        var act = () => create();
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
-            .Which.ParamName.Should().Be("userContext");
-    }
-
-    [Fact]
-    public void Constructor_NullSettings_ThrowsArgumentNullException()
-    {
-        // Act
-        var act = () => new IdempotencyResponseCachingFilter(
-            _mockCache.Object, _mockUserContext.Object, null!, _metrics, _mockLogger.Object);
-
-        // Assert
-        act.Should().Throw<ArgumentNullException>()
-            .Which.ParamName.Should().Be("settings");
-    }
-
-    [Fact]
-    public void Constructor_NullMetrics_ThrowsArgumentNullException()
-    {
-        // Act
-        var act = () => new IdempotencyResponseCachingFilter(
-            _mockCache.Object, _mockUserContext.Object, _settings, null!, _mockLogger.Object);
-
-        // Assert
-        act.Should().Throw<ArgumentNullException>()
-            .Which.ParamName.Should().Be("metrics");
-    }
-
-    [Fact]
-    public void Constructor_NullLogger_ThrowsArgumentNullException()
-    {
-        // Act
-        var act = () => new IdempotencyResponseCachingFilter(
-            _mockCache.Object, _mockUserContext.Object, _settings, _metrics, null!);
-
-        // Assert
-        act.Should().Throw<ArgumentNullException>()
-            .Which.ParamName.Should().Be("logger");
+            .Which.ParamName.Should().Be(expectedParamName);
     }
 
     // --- AC-01: First request executes action, caches response, returns miss ---

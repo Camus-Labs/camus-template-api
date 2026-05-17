@@ -15,31 +15,25 @@ user-invocable: false
 
 ## Procedure
 
-1. Validate that `story_file` is present and references an existing file with all Developer Handoff Gate items
-   reading `Yes` — if missing, unreadable, or any gate item is `No`, return `FAIL` with reason describing the
-   blocker; otherwise proceed to Step 2.
+1. Validate that `story_file` references an existing file with all Developer Handoff Gate items reading `Yes` —
+   ELSE return `FAIL` with reason describing the blocker.
 
-2. Derive integration test scope from the validated `story_file` (using its Layer Impact Matrix in Section B),
-   `./docs/architecture.md`, and the factory variants in `./src/Test/emc.camus.api.integration.test/` — determine
-   which factory variants the story requires based on the configuration variants the changes affect; proceed to
-   Step 3.
+2. Read the Layer Impact Matrix in Section B of `story_file` and `./docs/architecture.md` — identify which
+   cross-layer boundaries the story touches (e.g., controller → service → repository → database); retain only
+   boundaries whose value comes from verifying multi-layer collaboration end-to-end; discard boundaries that
+   unit tests already prove in isolation.
 
-3. List the cross-layer boundaries the story touches (e.g., controller → service → repository → database, HTTP
-   pipeline → middleware → response) and filter to retain only boundaries whose value comes from verifying that
-   multiple layers collaborate correctly end-to-end; discard boundaries that unit tests already prove in isolation;
-   proceed to Step 4.
+3. Read `./src/Test/emc.camus.api.integration.test/README.md` to identify available factory variants — determine
+   which factory variants the story requires based on the boundaries from Step 2.
 
-4. Scan `./src/Test/emc.camus.api.integration.test/` for existing tests that cover the retained boundaries —
+4. Scan `./src/Test/emc.camus.api.integration.test/` for existing tests covering the retained boundaries —
    consult `./src/Test/README.md` and `./src/Test/emc.camus.api.integration.test/README.md` for project structure,
-   consult `./.github/instructions/testing.instructions.md` and
-   `./.github/instructions/testing.integration.instructions.md` for test conventions, and consult
-   `./docs/README.md` for layer and adapter contracts; read test files and match against the factory variants from
-   Step 2; classify each boundary as Existing (test exercises the boundary), Modified (test exists but does not
-   cover the new behavior), or New (no test for this boundary); proceed to Step 5.
+   and `./.github/instructions/testing.integration.instructions.md` for naming and structure conventions;
+   classify each boundary as Existing (fully covered), Modified (test exists but misses new behavior), or
+   New (no test).
 
-5. Return `SUCCESS` with an empty `gaps` list and `all_covered` set to `true` when all boundaries are Existing;
-   otherwise return `SUCCESS` with the factory variants, classified boundaries, and a proposed test plan listing
-   each Modified or New boundary with its target test class and test methods.
+5. Return `SUCCESS` — set `all_covered` to true when all boundaries are Existing; ELSE include gaps with
+   factory variants, target test class, and proposed test methods for each Modified or New boundary.
 
 ## Output Contract
 
@@ -77,6 +71,4 @@ FAIL:
 - `./src/Test/emc.camus.api.integration.test/` — integration test project scanned for existing coverage.
 - `./src/Test/README.md` — test project structure conventions.
 - `./src/Test/emc.camus.api.integration.test/README.md` — integration test project conventions.
-- `./.github/instructions/testing.instructions.md` — general testing conventions.
 - `./.github/instructions/testing.integration.instructions.md` — integration testing conventions.
-- `./docs/README.md` — layer and adapter contract references.

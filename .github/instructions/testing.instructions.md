@@ -7,7 +7,8 @@ applyTo: "src/Test/**"
 1. Test Patterns
 
     - [ ] xUnit + FluentAssertions — no other test or assertion frameworks
-    - [ ] Arrange-Act-Assert (AAA) pattern with `// Arrange`, `// Act`, `// Assert` comments
+    - [ ] Arrange-Act-Assert (AAA) pattern with `// Arrange`, `// Act`, `// Assert` comments —
+          `// Arrange` may be omitted when the test has no arrange statements beyond constructor setup
     - [ ] Test names: `MethodName_Scenario_ExpectedResult` or `Given_When_Then`
     - [ ] Each test method contains one `// Act` step — multiple assertions on the same act result belong in one
           test, not split into separate methods

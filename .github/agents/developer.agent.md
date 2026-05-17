@@ -60,29 +60,35 @@ Handoff Gate contains any `No` item, or any iteration loop (build-fix, review-fi
 4. Run `dotnet build src/CamusApp.sln` — if the build fails, fix compilation errors and re-run up to 5 times; if the
   build still fails after 5 attempts, stop and report the errors; otherwise proceed to Step 5.
 
-5. Trigger a code review by invoking `review.code.prompt.md` with the list of implemented file paths as
-  `modified_files` and consume only its verdict — if the verdict is `PASS`, proceed to Step 7; if the verdict is
-  `FAIL`, fix the flagged violations, rebuild, and re-trigger the review up to 5 iterations; if the re-triggered
-  review returns `PASS`, proceed to Step 7; if violations remain after 5 iterations, proceed to Step 6.
+5. Iterate a review-fix cycle up to 5 times — invoke `review.code.prompt.md` with the list of implemented file
+  paths as `modified_files` and consume only its verdict; if `PASS`, proceed to Step 7; if `FAIL`, fix the flagged
+  violations, run `dotnet build src/CamusApp.sln`, and repeat from the review invocation; if the verdict remains
+  `FAIL` after 5 iterations, proceed to Step 6.
 
 6. Resolve remaining review violations with user guidance — present flagged issues, apply user-directed fixes,
   rebuild, and re-review up to 5 iterations; if violations persist, stop and report the unresolved violations as blockers;
   otherwise proceed to Step 7.
 
-7. Run `dotnet test src/CamusApp.sln --no-build` — if any test from the Test Traceability still fails, analyze the
-  failure, fix the production code, rebuild, and re-test up to 5 iterations; if tests still fail after 5 iterations,
-  stop and report the failing tests; otherwise proceed to Step 8.
+7. Run `dotnet test src/UnitTests.slnf --no-build` — if any unit test in the solution fails (including existing
+  tests not listed in the Test Traceability), analyze the failure, fix the production code, rebuild, and re-test up
+  to 5 iterations; if tests still fail after 5 iterations, stop and report the failing tests; otherwise proceed to
+  Step 8.
 
-8. Finalize the developer handoff — populate and evaluate each Developer Handoff Gate item in the story file, derive
-  the developer name from `git config user.name` and the current date for sign-off, produce the output report using
-  the output template, and stop.
+8. Run `dotnet test src/IntegrationTests.slnf --no-build` — if any existing integration test fails due to changes
+  introduced in this story, fix the production code or update the affected integration tests to reflect the new
+  contracts; record each adjusted test in the Regression Fixes Log (story file); rebuild and re-test up to 5
+  iterations; if tests still fail after 5 iterations, stop and report the failing tests; otherwise proceed to Step 9.
+
+9. Produce the Developer Handoff Report by filling in the output template with the Developer Handoff Gate evaluation
+  results from the story file, the developer name from `git config user.name`, and the current date; stop.
 
 ## Rules
 
 - MUST follow dependency direction Domain → Application → Database Schema → API → Adapters.
 - MUST implement the minimum code to pass failing tests — no gold-plating or speculative features.
 - MUST preserve all type signatures, method signatures, and constructor parameters from the Skeleton Inventory.
-- MUST NOT modify test files.
+- MUST NOT modify unit test files.
+- MUST NOT update integration tests for reasons other than fixing regressions caused directly by this story.
 - MUST fix production code to satisfy existing tests.
 - MUST NOT modify Section A, Section B, Section D, or the Tester Handoff Gate of the story file.
 - MUST NOT create files outside the paths listed in the Skeleton Inventory.
@@ -96,13 +102,17 @@ Handoff Gate contains any `No` item, or any iteration loop (build-fix, review-fi
 
 Status: [IMPLEMENTED | BLOCKED]
 
-### Updated User Story File
+### Regression Fixes Log
 
-[story file path] — Developer Handoff Gate evaluated
+| # | Test File | Test Method | Change Made | Reason |
+| --- | --- | --- | --- | --- |
+| [n] | [test file path] | [method name] | [description of fix] | [contract change that caused the break] |
 
 ### Developer Handoff Gate
 
-- All tests pass (TDD green): [Yes | No]
+- All unit tests pass (TDD green): [Yes | No]
+- All existing integration tests pass: [Yes | No]
+- Regression fixes documented (if any): [Yes | N/A]
 - Build succeeds with zero warnings: [Yes | No]
 - Code review approved: [Yes | No]
 - Developer sign-off: [Name], [date]

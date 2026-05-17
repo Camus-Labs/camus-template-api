@@ -36,9 +36,10 @@ public class IdempotencyInMemoryTests
     {
         // Arrange
         var client = _factory.CreateJwtClient();
+        var content = JsonContent.Create(new { Value = "test" });
 
         // Act
-        var response = await client.PostAsync(DecoratedWithBodyEndpoint, null, TestContext.Current.CancellationToken);
+        var response = await client.PostAsync(DecoratedWithBodyEndpoint, content, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveErrorCode(ErrorCodes.IdempotencyKeyMissing);

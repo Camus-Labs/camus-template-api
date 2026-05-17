@@ -52,7 +52,11 @@ applyTo: "src/Test/**integration.test/**"
 
 4. Organization
 
-    - [ ] Test classes organized by feature area — not mirroring production class structure one-to-one
+    - [ ] Test classes organized by service endpoint (e.g., `Auth/`, `ApiInfo/`) — not mirroring production
+          class structure one-to-one
+    - [ ] Cross-cutting concerns (e.g., idempotency, rate limiting, error handling) in `Common/` folder
+    - [ ] Infrastructure tests (e.g., `TokenRevocationCachePostgreSqlTests`) placed in the endpoint folder
+          where the feature is consumed (e.g., `Auth/`) — not in a standalone infrastructure folder
     - [ ] Fixture classes (factories, collection definitions) in `Fixtures/` folder
     - [ ] Test settings files in `Settings/` folder
 

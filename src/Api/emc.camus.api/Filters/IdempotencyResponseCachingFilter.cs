@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text.Json;
 using emc.camus.api.Configurations;
 using emc.camus.api.Metrics;
 using emc.camus.application.Common;
@@ -153,7 +154,11 @@ public partial class IdempotencyResponseCachingFilter : IAsyncResourceFilter
             throw new DataConflictException("Idempotency body conflict — request body hash does not match the cached request body.");
         }
 
-        context.Result = new ObjectResult(cached.Body)
+        object? body = cached.Body is not null
+            ? JsonSerializer.Deserialize<JsonElement>(cached.Body)
+            : null;
+
+        context.Result = new ObjectResult(body)
         {
             StatusCode = cached.StatusCode,
             ContentTypes = { "application/json" }
@@ -207,7 +212,10 @@ public partial class IdempotencyResponseCachingFilter : IAsyncResourceFilter
             }
 
             var statusCode = objResult.StatusCode ?? StatusCodes.Status200OK;
-            var entry = new CachedResponse(statusCode, objResult.Value?.ToString(), bodyHash);
+            var serializedBody = objResult.Value is not null
+                ? JsonSerializer.Serialize(objResult.Value)
+                : null;
+            var entry = new CachedResponse(statusCode, serializedBody, bodyHash);
             _cache.Store(cacheKey, entry, ttl);
         }
         catch (Exception ex)

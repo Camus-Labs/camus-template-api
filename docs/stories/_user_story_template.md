@@ -150,9 +150,17 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Ready for implementation: `[Yes | No]`
 - Tester sign-off: `[Name, Date]`
 
+### Regression Fixes Log
+
+| # | Test File | Test Method | Change Made | Reason |
+| --- | --- | --- | --- | --- |
+| [n] | [test file path] | [method name] | [description of fix] | [contract change that caused the break] |
+
 ### Developer Handoff Gate
 
-- All tests pass (TDD green): `[Yes | No]`
+- All unit tests pass (TDD green): `[Yes | No]`
+- All existing integration tests pass: `[Yes | No]`
+- Regression fixes documented (if any): `[Yes | N/A]`
 - Build succeeds with zero warnings: `[Yes | No]`
 - Ready for code review: `[Yes | No]`
 - Developer sign-off: `[Name, Date]`

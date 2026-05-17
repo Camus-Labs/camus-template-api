@@ -40,9 +40,9 @@ gate item `Yes`.
 1. Validate `story_file` exists and all `Product Owner Handoff Gate` items; stop with the exact list of blockers if the
   file is missing or any gate item is `No`; otherwise proceed to Step 2.
 2. Read the validated `story_file` from Step 1, all Context files, and their referenced files.
-3. Ask targeted clarification questions for any architectural ambiguity found when mapping Section A to layers, batching
-  all gaps per round for up to 5 rounds; report `BLOCKED` with unresolved items if ambiguities remain after round 5;
-  otherwise proceed to Step 4 with all ambiguities resolved.
+3. Ask targeted clarification questions for any ambiguity when mapping Section A to layers, batching all gaps per
+  round for up to 5 rounds; proceed to Step 4 with all ambiguities resolved if none remain after any round, otherwise
+  report `BLOCKED` with the unresolved list and stop.
 4. Populate Section B prose fields (Layer Impact Matrix, Cross-Cutting Concern Decisions, Delivery and Rollout Notes) in
   the story file.
 5. Update the story file: (a) mark each Architect Handoff Readiness gate item `Yes` when the corresponding Section B
@@ -61,7 +61,8 @@ gate item `Yes`.
 - MUST NOT modify Section A, Section C or Section D of the story file.
 - MUST NOT include code snippets, pseudo-code, or implementation-level detail in any Section B field.
 - MUST NOT modify the story template file itself.
-- MUST NOT assume requirements Section A does not state — ask the user instead.
+- MUST NOT assume requirements Section A does not state.
+- MUST ask the user when a requirement is absent from Section A.
 
 ## Output Format
 
@@ -69,10 +70,6 @@ gate item `Yes`.
 ## Architect Handoff Report
 
 Status: [READY_FOR_IMPLEMENTATION | BLOCKED]
-
-### Updated User Story File
-
-docs/stories/todo/[request-slug]/[story-id]-[story-slug].md — [Complete | Incomplete: field-1, field-2]
 
 ### Handoff Readiness
 

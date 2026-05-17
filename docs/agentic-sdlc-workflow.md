@@ -32,7 +32,7 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 │  Phase 3: DEVELOPER ──────── @developer                                  │
 │  │  Input:  Story file with Section C tests in RED                       │
 │  │  Output: Implementation (TDD green) + code review approved            │
-│  │  Sub:    @reviewer.code (multi-model, invoked automatically)          │
+│  │  Sub:    @concurrent.reviewer.code (multi-model, invoked automatically)│
 │  │  Gate:   Human reviews implementation                                 │
 │  ▼                                                                       │
 │  Phase 4: INTEGRATION ────── @integration.tester                         │
@@ -158,8 +158,8 @@ Example: `@developer #file:docs/stories/user-profiles/US-01-create-profile.md`
 2. Reads the Skeleton Inventory and Test Traceability from Section C, plus all stub and test files
 3. Implements production code following dependency order (Domain → Application → Database Schema → API → Adapters)
 4. Builds, fixing compilation errors up to 5 times
-5. Invokes `@reviewer.code` on implemented files — fixes violations up to 5 iterations; if violations remain, reports
-   to user for up to 5 user-guided iterations
+5. Invokes `@concurrent.reviewer.code` on implemented files — fixes violations up to 5 iterations; if violations
+   remain, reports to user for up to 5 user-guided iterations
 6. Runs tests up to 5 iterations, fixing production code until all tests pass (TDD green phase)
 7. Populates the Developer Handoff Gate in the story file
 8. Evaluates the Developer Handoff Gate
@@ -307,13 +307,14 @@ story details as the PR request details.
   documentation FAIL findings from Phase 5.
 - **Use `@code.fix`** for ad-hoc code fixes outside the story workflow (bugs, tech debt).
 - **Use `@documentation.fix`** standalone to fix any documentation scope — file, directory, layer, or `uncommitted`.
-- **Use `@reviewer.code`** standalone to review any `.cs` scope — file, directory, layer, or `uncommitted`.
-- **Use `@reviewer.documentation`** standalone to validate docs without fixing (read-only review).
+- **Use `@concurrent.reviewer.code`** standalone to review any `.cs` scope — file, directory, layer, or `uncommitted`.
+- **Use `@concurrent.reviewer.documentation`** standalone to validate docs without fixing (read-only review).
+- **Use `@concurrent.reviewer.copilot.customization`** to review agent/prompt/instruction/skill files.
 - **Create the `feat_` branch first** — all agent work happens on a feature branch, never directly on `main`.
 - **Stories live in `todo/` during development** — agents create and update stories under `docs/stories/todo/`.
 - **Move stories to `done/` after technical writing** — once Phase 6 passes, move the story folder from `todo/` to
   `done/` and commit.
 - **The story file is the single source of truth** — all agents reference and update it.
 - **Any agent can run standalone** — useful for reviewing existing code outside the full workflow.
-- **Meta-reviewers** (`@reviewer.agents`, `@reviewer.prompts`) maintain SDLC quality — run them when modifying agents
-  or prompts, not during feature development.
+- **`@concurrent.reviewer.copilot.customization`** maintains SDLC quality — run it when modifying agents,
+  prompts, instructions, or skills, not during feature development.
