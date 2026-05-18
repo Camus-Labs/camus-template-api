@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using FluentAssertions;
+using Microsoft.Extensions.Time.Testing;
 using Microsoft.IdentityModel.Tokens;
 using emc.camus.security.jwt.Configurations;
 using emc.camus.security.jwt.Services;
@@ -13,6 +14,7 @@ public class JwtTokenGeneratorTests : IDisposable
     private static readonly Guid ValidUserId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly Guid ValidJti = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     private static readonly DateTime ValidExpiresOn = new(2099, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTimeOffset FixedUtcNow = new(2099, 1, 1, 0, 0, 0, TimeSpan.Zero);
     private const string ValidUsername = "testuser";
     private const string TestRoleValue = "Admin";
     private const string CustomClaimType = "custom-claim";
@@ -21,6 +23,7 @@ public class JwtTokenGeneratorTests : IDisposable
     private readonly RSA _rsa;
     private readonly JwtSettings _jwtSettings;
     private readonly SigningCredentials _signingCredentials;
+    private readonly FakeTimeProvider _timeProvider;
 
     public JwtTokenGeneratorTests()
     {
@@ -34,6 +37,7 @@ public class JwtTokenGeneratorTests : IDisposable
         _rsa = RSA.Create(2048);
         var rsaKey = new RsaSecurityKey(_rsa);
         _signingCredentials = new SigningCredentials(rsaKey, SecurityAlgorithms.RsaSha256);
+        _timeProvider = new FakeTimeProvider(FixedUtcNow);
     }
 
     public void Dispose()
@@ -43,7 +47,7 @@ public class JwtTokenGeneratorTests : IDisposable
     }
 
     private JwtTokenGenerator CreateGenerator() =>
-        new JwtTokenGenerator(_jwtSettings, _signingCredentials);
+        new JwtTokenGenerator(_jwtSettings, _signingCredentials, _timeProvider);
 
     // --- Constructor ---
 
@@ -54,7 +58,7 @@ public class JwtTokenGeneratorTests : IDisposable
         JwtSettings nullSettings = null!;
 
         // Act
-        var act = () => new JwtTokenGenerator(nullSettings, _signingCredentials);
+        var act = () => new JwtTokenGenerator(nullSettings, _signingCredentials, _timeProvider);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -68,11 +72,25 @@ public class JwtTokenGeneratorTests : IDisposable
         SigningCredentials nullCredentials = null!;
 
         // Act
-        var act = () => new JwtTokenGenerator(_jwtSettings, nullCredentials);
+        var act = () => new JwtTokenGenerator(_jwtSettings, nullCredentials, _timeProvider);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
             .And.ParamName.Should().Be("signingCredentials");
+    }
+
+    [Fact]
+    public void Constructor_NullTimeProvider_ThrowsArgumentNullException()
+    {
+        // Arrange
+        TimeProvider nullTimeProvider = null!;
+
+        // Act
+        var act = () => new JwtTokenGenerator(_jwtSettings, _signingCredentials, nullTimeProvider);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .And.ParamName.Should().Be("timeProvider");
     }
 
     // --- GenerateToken (default JTI overload) ---
@@ -115,7 +133,7 @@ public class JwtTokenGeneratorTests : IDisposable
         // Arrange
         var generator = CreateGenerator();
         var handler = new JwtSecurityTokenHandler();
-        var beforeGeneration = DateTime.UtcNow;
+        var expectedExpiresOn = FixedUtcNow.DateTime.AddMinutes(_jwtSettings.ExpirationMinutes);
 
         // Act
         var result = generator.GenerateToken(ValidUserId, ValidUsername);
@@ -123,7 +141,7 @@ public class JwtTokenGeneratorTests : IDisposable
 
         // Assert
         result.Token.Should().NotBeNullOrWhiteSpace();
-        result.ExpiresOn.Should().BeAfter(beforeGeneration);
+        result.ExpiresOn.Should().Be(expectedExpiresOn);
         token.Issuer.Should().Be(_jwtSettings.Issuer);
         token.Audiences.Should().ContainSingle().Which.Should().Be(_jwtSettings.Audience);
         token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == ValidUserId.ToString());

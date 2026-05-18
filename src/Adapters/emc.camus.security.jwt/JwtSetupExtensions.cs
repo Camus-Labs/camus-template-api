@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using emc.camus.application.Auth;
 using emc.camus.application.Secrets;
 using emc.camus.security.jwt.Configurations;
@@ -62,6 +63,9 @@ namespace emc.camus.security.jwt
                 var rsaKey = provider.GetRequiredService<RsaSecurityKey>();
                 return new SigningCredentials(rsaKey, SecurityAlgorithms.RsaSha256);
             });
+
+            // Register TimeProvider (TryAdd avoids duplicate if another adapter already registered it)
+            builder.Services.TryAddSingleton(TimeProvider.System);
 
             // Register JWT Token Generator (implements ITokenGenerator for Application layer)
             builder.Services.AddSingleton<ITokenGenerator, JwtTokenGenerator>();
