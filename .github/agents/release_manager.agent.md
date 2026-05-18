@@ -1,5 +1,5 @@
 ---
-description: 'Moves stories to done, creates pull requests, and manages releases across environments to promote validated features through the deployment pipeline.'
+description: 'Move stories to done, create pull requests, and manage releases across environments to promote validated features through the deployment pipeline.'
 argument-hint: 'Provide the path to a user story file with completed QA Tester Handoff Gate'
 model: 'Claude Opus 4.6'
 tools:
@@ -43,9 +43,9 @@ reads `No`, or any process step's stopping criterion triggers.
   related to the feature; if untracked files not matching the feature slug exist, present them to the user
   for confirmation; if the user declines, set status to BLOCKED and skip to Step 9; proceed to Step 3.
 
-3. Push the branch — capture the current branch name via `git rev-parse --abbrev-ref HEAD`; run:
-  `git add -A && git commit -m "feat: [feature_slug]/[story_id] — story completed" && git push -u origin HEAD`;
-  proceed to Step 4.
+3. Publish the feature branch — run `git add -A && git commit -m "feat: [feature_slug]/[story_id] — story completed"`;
+  confirm with the user the staged changes; if the user declines, set status to BLOCKED and skip to Step 9;
+  run `git push -u origin HEAD`; proceed to Step 4.
 
 4. Create main PR — extract the story title and acceptance criteria from the story file to compose the PR body;
   run `gh pr create --title "[story-title]" --body "[pr-body]" --base main`; capture the PR URL; proceed to Step 5.
@@ -58,10 +58,12 @@ reads `No`, or any process step's stopping criterion triggers.
   BLOCKED and skip to Step 9; run `gh release create v[version] --title "v[version]" --notes-file -` piping the
   relevant CHANGELOG section as release notes; capture the release URL; proceed to Step 7.
 
-7. Create deployment PRs — for each target environment (dev, prod), run
-  `gh pr create --title "Deploy v[version] to [env]" --base deploy/[env] --head main` and capture the PR URL;
-  set each deployment PR status to Pending; on any failure, set status to BLOCKED and skip to Step 9; proceed
-  to Step 8.
+7. Create deployment PRs — extract the current version's CHANGELOG section as the PR body; for each target
+  environment (development, production), confirm with the user; if the user declines, set that deployment PR
+  status to Skipped and continue to the next environment; otherwise run
+  `gh pr create --title "Deploy v[version] to [env]" --body "[changelog-body]" --base [env] --head main`
+  and capture the PR URL and set that deployment PR status to Pending; on any command failure, set status to
+  BLOCKED and skip to Step 9; proceed to Step 8.
 
 8. Set status to DONE; proceed to Step 9.
 
@@ -69,9 +71,9 @@ reads `No`, or any process step's stopping criterion triggers.
 
 ## Rules
 
-- MUST NOT push to `main`, `deploy/dev`, or `deploy/prod` directly — create PRs only.
+- MUST NOT push to `main`, `deploy/dev`, or `deploy/prod` directly.
+- MUST create a pull request for every merge into a protected branch.
 - MUST NOT modify the story file.
-- MUST confirm with the user before executing `git push`, `gh pr create`, and `gh release create`.
 - MUST NOT modify production logic, test files, or documentation.
 
 ## Output Format
@@ -83,7 +85,6 @@ Status: [DONE | BLOCKED]
 
 ### Main Pull Request
 
-- Branch: [branch-name]
 - PR URL: [url]
 - PR title: [title]
 
@@ -96,9 +97,9 @@ Status: [DONE | BLOCKED]
 ### Deployment PRs
 
 - Dev PR URL: [url | N/A]
-- Dev PR status: [Confirmed | Pending | N/A]
+- Dev PR status: [Confirmed | Pending | Skipped | N/A]
 - Prod PR URL: [url | N/A]
-- Prod PR status: [Confirmed | Pending | N/A]
+- Prod PR status: [Confirmed | Pending | Skipped | N/A]
 
 ### Release Manager Handoff Gate
 
