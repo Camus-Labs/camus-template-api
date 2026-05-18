@@ -1,8 +1,7 @@
 ---
 description: 'Create failing unit tests from a user story to produce a TDD red-phase test scaffold.'
 argument-hint: 'Provide the path to a user story file with completed Sections A and B'
-mode: 'agent'
-model: 'claude-opus-4.6'
+model: 'Claude Opus 4.6'
 tools:
   - 'read'
   - 'search'
@@ -29,13 +28,13 @@ any Architect Handoff Readiness gate item is `No`, or stubs/tests fail to compil
 
 ## Context
 
-- #file:docs/stories/_user_story_template.md (Section C structure)
-- #file:docs/architecture.md
-- #file:.github/instructions/testing.instructions.md
-- #file:.github/instructions/testing.unit.instructions.md
-- #file:.github/instructions/csharp.instructions.md
-- #file:docs/README.md (layer and adapter README links for understanding existing contracts and types)
-- #file:src/Test/README.md
+- #file:../../docs/stories/_user_story_template.md (Section C structure)
+- #file:../../docs/architecture.md
+- #file:../instructions/testing.instructions.md
+- #file:../instructions/testing.unit.instructions.md
+- #file:../instructions/csharp.instructions.md
+- #file:../../docs/README.md (layer and adapter README links for understanding existing contracts and types)
+- #file:../../src/Test/README.md
 
 ## Inputs
 
@@ -43,18 +42,18 @@ any Architect Handoff Readiness gate item is `No`, or stubs/tests fail to compil
 
 ## Process
 
-1. Validate `story_file` — verify the file exists and all `Architect Handoff Readiness` gate items are `Yes`, then
-  parse Acceptance Criteria from Section A, Layer Impact Matrix from Section B, and the Traceability table; stop with
-  the exact list of blockers if the file is missing or any gate item is `No`; otherwise proceed to Step 2.
+1. Validate `story_file` — verify the file exists and all `Architect Handoff Readiness` gate items are `Yes`,
+  extracting Acceptance Criteria from Section A, Layer Impact Matrix from Section B, and the Traceability table; stop
+  with the exact list of blockers if the file is missing or any gate item is `No`; otherwise proceed to Step 2.
 
 2. Scaffold the production skeleton from the Layer Impact Matrix — read architecture, C# conventions, and layer README Context
   files; for every file each layer (Domain, Application, API, Adapters) lists in Section B, create production types:
-    - Interfaces with method signatures matching the change summary.
-    - Model objects with property declarations only.
+    - Create interfaces with method signatures matching the change summary.
+    - Create model objects with property declarations only.
     - Place each stub in the exact production project and path the Layer Impact Matrix specifies.
   Proceed to Step 3.
 
-3. Run `dotnet build src/CamusApp.sln` to verify the production skeleton compiles — if the build fails, fix compilation
+3. Run the `build` task to verify the production skeleton compiles — if the build fails, fix compilation
   errors in stub files and re-run up to 5 times; if the build still fails after 5 attempts, stop and report the
   compilation errors; otherwise proceed to Step 4.
 
@@ -69,11 +68,11 @@ any Architect Handoff Readiness gate item is `No`, or stubs/tests fail to compil
   each test following the naming-conventions rule and reference the production types from Step 2 to assert the behavior
   each AC describes; proceed to Step 6.
 
-6. Verify tests compile — run `dotnet build src/CamusApp.sln`; if the build fails, fix compilation errors in test files
+6. Verify tests compile — run the `build` task; if the build fails, fix compilation errors in test files
   and re-run up to 5 times; if the build still fails after 5 attempts, stop and report the compilation errors; otherwise
   proceed to Step 7.
 
-7. Confirm tests fail for the right reason — run `dotnet test src/CamusApp.sln --no-build`; if all new tests fail
+7. Confirm tests fail for the right reason — run the `test-all` task; if all new tests fail
   as expected, proceed to Step 8; if any new test passes (stub accidentally satisfies it), redesign that test to
   assert a meaningful behavior the stub cannot satisfy, rebuild, re-run, and repeat up to 5 times; if the test still
   passes after 5 redesign attempts, stop and report the test as unresolvable; otherwise proceed to Step 8.
@@ -87,7 +86,7 @@ any Architect Handoff Readiness gate item is `No`, or stubs/tests fail to compil
 
 - MUST follow all conventions from `testing.instructions.md` and `testing.unit.instructions.md` — xUnit,
   FluentAssertions, Moq, AAA pattern, naming.
-- MUST NOT implement production logic — stubs return `default`, throw `NotImplementedException`, or have empty bodies.
+- MUST NOT implement production logic — have stubs return `default`, throw `NotImplementedException`, or use empty bodies.
 - MUST NOT modify Section A, Section B or Section D of the story file.
 - MUST NOT modify existing production code — only create new stub files or new test files.
 - MUST place tests in the correct `src/Test/` project matching the production layer (Domain → `emc.camus.domain.test`,

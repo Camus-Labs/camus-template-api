@@ -1,11 +1,5 @@
 {
     "editor.detectIndentation": false,
-    "files.associations": {
-        "**/copilot-instructions.md": "markdown",
-        "**/*.agent.md": "markdown",
-        "**/*.instructions.md": "markdown",
-        "**/*.prompt.md": "markdown"
-    },
     "workbench.colorTheme": "Dark Modern",
     "editor.semanticHighlighting.enabled": false,
     "csharp.semanticHighlighting.enabled": true,

@@ -1,5 +1,5 @@
 ---
-applyTo: ".github/skills/**/SKILL.md"
+applyTo: ".github/skills/*/SKILL.md"
 ---
 
 # Skills Development Conventions
@@ -10,7 +10,6 @@ applyTo: ".github/skills/**/SKILL.md"
     - [ ] Folder name matches the `name` field in SKILL.md frontmatter exactly
     - [ ] Folder name contains only lowercase alphanumeric characters and hyphens
     - [ ] `SKILL.md` body is under 500 lines — large content belongs in `references/`
-    - [ ] File references use relative paths with `./` prefix (e.g., `[script](./scripts/run.sh)`)
 
 2. Frontmatter
 
@@ -19,7 +18,9 @@ applyTo: ".github/skills/**/SKILL.md"
     - [ ] `name` value matches the skill folder name exactly
     - [ ] `name` value contains only lowercase alphanumeric characters and hyphens
     - [ ] `description` field contains exactly one sentence
-    - [ ] `description` sentence follows verb + object + outcome structure
+    - [ ] `description` sentence starts with a present-tense verb
+    - [ ] `description` sentence contains a direct object
+    - [ ] `description` sentence ends with a purpose clause
     - [ ] `description` field value is at most 1024 characters
     - [ ] `argument-hint` field present
     - [ ] `argument-hint` value describes how to invoke the skill
@@ -44,8 +45,11 @@ applyTo: ".github/skills/**/SKILL.md"
     - [ ] 2–8 total steps
     - [ ] No vague qualifiers ("as needed", "consider", "optionally", "may")
     - [ ] Commands appear inside inline code spans or fenced code blocks — no bare shell commands in prose
-    - [ ] Conditionals have explicit ELSE or default
+    - [ ] Conditionals have explicit ELSE or default — guard-and-stop branches where the only alternative is
+          continuation to the next numbered step satisfy this rule implicitly
     - [ ] Terminal commands quote variable paths to handle spaces
+    - [ ] Procedure steps that build, test, or run the application use workspace task labels (e.g., `build`, `test-all`,
+          `test-unit`, `test-integration`, `run-api`) — not raw `dotnet` commands
 
 5. Output Contract
 
@@ -58,9 +62,8 @@ applyTo: ".github/skills/**/SKILL.md"
 
     - [ ] Every external CLI tool or file referenced in the Procedure section appears by exact name
           in a `## Dependencies` section
-    - [ ] No references to files outside the skill folder — exception: workspace root config files and
-          workspace files the skill must read at runtime to fulfil its purpose (e.g., source code,
-          documentation, test projects)
+    - [ ] No references to files outside the skill folder — exception: workspace root config files,
+          source files under `src/`, documentation under `docs/`
 
 7. Writing Quality
 

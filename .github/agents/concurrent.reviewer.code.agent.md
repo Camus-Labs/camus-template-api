@@ -1,21 +1,17 @@
 ---
 description: 'Review C# code via three-model evaluation to produce a consolidated compliance report'
 argument-hint: 'Provide a scope: file path, directory, layer name, or "uncommitted" for changed files'
-mode: 'agent'
-model: 'claude-opus-4.6'
+model: 'Claude Opus 4.6'
 tools:
   - 'agent'
   - 'read'
   - 'search'
   - 'edit'
   - 'execute'
-skills:
-  - '.github/skills/resolve-scope'
-  - '.github/skills/concurrent-review'
 agents:
-  - 'CodexReviewer'
-  - 'OpusReviewer'
-  - 'SonnetReviewer'
+  - 'ReviewerSonnet'
+  - 'ReviewerOpus'
+  - 'ReviewerGPT'
 ---
 
 # Role: Code Reviewer
@@ -29,13 +25,13 @@ Produce a consolidated review report for a user-specified code scope by resolvin
 **Success:** Deliver a single deduplicated review report in the output format below, combining all sub-agent
 evaluations.
 
-**Failure:** Abort and deliver an explanation when no reviewable files or sub-agent results exist.
+**Failure:** Stop and produce the report with Verdict as FAIL when scope resolves to zero files or all sub-agents fail.
 
 ## Context
 
 Read and internalize this file before starting:
 
-- #file:.github/prompts/review.code.prompt.md
+- #file:../prompts/review.code.prompt.md
 
 ## Inputs
 
@@ -47,21 +43,19 @@ Read and internalize this file before starting:
 1. Validate that `scope` is present and non-empty — if missing, stop and report the reason; otherwise proceed to Step 2.
 
 2. Invoke the `resolve-scope` skill with the provided `scope` — on `FAIL` result, stop and produce the output
-  report with Verdict set to FAIL and Reason set to the skill failure reason; on `SUCCESS` result, use the resolved
-  file list and count and proceed to Step 3.
+  report with Verdict as FAIL; on `SUCCESS` result, use the resolved file list and count and proceed to Step 3.
 
-3. Invoke the `concurrent-review` skill with `prompt_path` set to `.github/prompts/review.code.prompt.md` and
-  `modified_files` set to the resolved file list — on `FAIL` result, stop and produce the output report with Verdict
-  set to FAIL using the reason from the skill; on `SUCCESS` result, use the merged results and proceed to Step 4.
+3. Invoke the `concurrent-review` skill, passing `.github/prompts/review.code.prompt.md` as `prompt_path` and
+  the resolved file list as `modified_files` — on `FAIL` result, stop and produce the output report with Verdict
+  as FAIL; on `SUCCESS` result, use the merged results and proceed to Step 4.
 
 4. Identify all resolved files that matched no instruction pattern and record them in the Skipped Files section of
   the report.
 
-5. Compute the overall Verdict — set to FAIL if any merged section is FAIL, otherwise set to PASS; set Ready for
-  Use to Yes when Verdict is PASS, set to No otherwise.
+5. Compute the overall Verdict — assign FAIL if any merged section is FAIL, otherwise assign PASS.
 
-6. Produce the consolidated Code Review Report in the output format below using the skill results and all computed
-  values — deliver the report; stop.
+6. Produce the consolidated Code Review Report in the output format below using the skill results, Verdict, and
+  Ready for Use (Yes when Verdict is PASS, No otherwise) — deliver the report; stop.
 
 ## Rules
 
@@ -80,14 +74,14 @@ Read and internalize this file before starting:
 
 | Agent | Declared | Self-Reported |
 |-------|----------|---------------|
-| CodexReviewer | codex | [model from Codex report] |
-| SonnetReviewer | claude-sonnet | [model from Sonnet report] |
-| OpusReviewer | claude-opus | [model from Opus report] |
+| ReviewerGPT | gpt | [model from GPT report] |
+| ReviewerSonnet | claude-sonnet | [model from Sonnet report] |
+| ReviewerOpus | claude-opus | [model from Opus report] |
 
 ### Checklist Results
 
-| # | Section | Codex | Sonnet | Opus | Merged |
-|---|---------|-------|--------|------|--------|
+| # | Section | GPT | Sonnet | Opus | Merged |
+|---|---------|-----|--------|------|--------|
 | [n] | [section name from review prompt] | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL] |
 
 ### Merged Findings

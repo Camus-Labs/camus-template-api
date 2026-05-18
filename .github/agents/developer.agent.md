@@ -1,8 +1,7 @@
 ---
-description: 'Implement production code to pass failing tests from a user story TDD green phase.'
+description: 'Implement production code for a user story TDD green phase to pass failing tests.'
 argument-hint: 'Provide the path to a user story file with completed Section C'
-mode: 'agent'
-model: 'claude-opus-4.6'
+model: 'Claude Opus 4.6'
 tools:
   - 'read'
   - 'search'
@@ -28,16 +27,16 @@ Handoff Gate contains any `No` item, or any iteration loop (build-fix, review-fi
 
 ## Context
 
-- #file:docs/stories/_user_story_template.md (Section C structure)
-- #file:docs/architecture.md
-- #file:.github/prompts/review.code.prompt.md
-- #file:.github/instructions/csharp.instructions.md
-- #file:.github/instructions/domain.instructions.md
-- #file:.github/instructions/application.instructions.md
-- #file:.github/instructions/api.instructions.md
-- #file:.github/instructions/adapters.instructions.md
-- #file:.github/instructions/adapters.persistence.instructions.md
-- #file:docs/README.md (layer and adapter README links for understanding existing contracts and types)
+- #file:../../docs/stories/_user_story_template.md (Section C structure)
+- #file:../../docs/architecture.md
+- #file:../prompts/review.code.prompt.md
+- #file:../instructions/csharp.instructions.md
+- #file:../instructions/domain.instructions.md
+- #file:../instructions/application.instructions.md
+- #file:../instructions/api.instructions.md
+- #file:../instructions/adapters.instructions.md
+- #file:../instructions/adapters.persistence.instructions.md
+- #file:../../docs/README.md (layer and adapter README links for understanding existing contracts and types)
 
 ## Inputs
 
@@ -53,31 +52,30 @@ Handoff Gate contains any `No` item, or any iteration loop (build-fix, review-fi
   note type signatures, method signatures, constructor parameters, modification status, and expected test behaviors
   for each entry; proceed to Step 3.
 
-3. Implement production code — for each Skeleton Inventory entry, fill in stub bodies for `New` files, extend
-  existing types for `Modified` files, and skip entries with any other status; follow `csharp.instructions.md` and
-  the applicable layer instruction files; proceed to Step 4.
+3. Implement production code — for each Skeleton Inventory entry, implement `New` files, extend existing types for
+  `Modified` files, and skip entries with any other status; follow `csharp.instructions.md` and the applicable layer
+  instruction files; proceed to Step 4.
 
-4. Run `dotnet build src/CamusApp.sln` — if the build fails, fix compilation errors and re-run up to 5 times; if the
-  build still fails after 5 attempts, stop and report the errors; otherwise proceed to Step 5.
+4. Run the `build` task — if the build fails, fix compilation errors and re-run up to 5 times; if the build still
+  fails after 5 attempts, stop and report the errors; otherwise proceed to Step 5.
 
 5. Iterate a review-fix cycle up to 5 times — invoke `review.code.prompt.md` with the list of implemented file
   paths as `modified_files` and consume only its verdict; if `PASS`, proceed to Step 7; if `FAIL`, fix the flagged
-  violations, run `dotnet build src/CamusApp.sln`, and repeat from the review invocation; if the verdict remains
+  violations, run the `build` task, and repeat from the review invocation; if the verdict remains
   `FAIL` after 5 iterations, proceed to Step 6.
 
 6. Resolve remaining review violations with user guidance — present flagged issues, apply user-directed fixes,
-  rebuild, and re-review up to 5 iterations; if violations persist, stop and report the unresolved violations as blockers;
-  otherwise proceed to Step 7.
+  run the `build` task, and re-review up to 5 iterations; if violations persist, stop and report the unresolved
+  violations as blockers; otherwise proceed to Step 7.
 
-7. Run `dotnet test src/UnitTests.slnf --no-build` — if any unit test in the solution fails (including existing
-  tests not listed in the Test Traceability), analyze the failure, fix the production code, rebuild, and re-test up
-  to 5 iterations; if tests still fail after 5 iterations, stop and report the failing tests; otherwise proceed to
-  Step 8.
+7. Run the `test-unit` task — if any unit test in the solution fails (including existing tests not listed in the Test
+  Traceability), analyze the failure, fix the production code, run the `build` task, and re-test up to 5 iterations;
+  if tests still fail after 5 iterations, stop and report the failing tests; otherwise proceed to Step 8.
 
-8. Run `dotnet test src/IntegrationTests.slnf --no-build` — if any existing integration test fails due to changes
-  introduced in this story, fix the production code or update the affected integration tests to reflect the new
-  contracts; record each adjusted test in the Regression Fixes Log (story file); rebuild and re-test up to 5
-  iterations; if tests still fail after 5 iterations, stop and report the failing tests; otherwise proceed to Step 9.
+8. Run the `test-integration` task — if any existing integration test fails due to changes introduced in this story, fix
+  the production code or update the affected integration tests to reflect the new contracts, record each adjusted test in
+  the Regression Fixes Log, run the `build` task, and re-test up to 5 iterations; if tests still fail after 5 iterations,
+  stop and report the failing tests; otherwise proceed to Step 9.
 
 9. Produce the Developer Handoff Report by filling in the output template with the Developer Handoff Gate evaluation
   results from the story file, the developer name from `git config user.name`, and the current date; stop.

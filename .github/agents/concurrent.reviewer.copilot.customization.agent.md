@@ -1,21 +1,17 @@
 ---
 description: 'Review agent customization files (*.agent.md, *.prompt.md, *.instructions.md, SKILL.md) via three-model evaluation to produce a consolidated report'
 argument-hint: 'Provide the path to any customization file to review'
-mode: 'agent'
-model: 'claude-opus-4.6'
+model: 'Claude Opus 4.6'
 tools:
   - 'agent'
   - 'read'
   - 'search'
   - 'edit'
   - 'execute'
-skills:
-  - '.github/skills/concurrent-review'
-  - '.github/skills/markdown-lint'
 agents:
-  - 'CodexReviewer'
-  - 'OpusReviewer'
-  - 'SonnetReviewer'
+  - 'ReviewerSonnet'
+  - 'ReviewerOpus'
+  - 'ReviewerGPT'
 ---
 
 # Role: Customization Reviewer
@@ -28,17 +24,16 @@ expert Customization File Reviewer.
 Produce a consolidated review report for a target customization file by detecting its type, selecting the matching
 review prompt, and merging three sub-agent evaluations.
 
-**Success:** Deliver a single deduplicated review report in the output format below, combining all sub-agent
-evaluations.
+**Success:** Deliver a single deduplicated review report that merges all sub-agent evaluations in the output format
+below.
 
-**Failure:** Stop when the target file is missing, unreadable, unsupported, or all sub-agent evaluations fail to
-return a complete report.
+**Failure:** Stop and report the reason when any validation step rejects the target file.
 
 ## Context
 
 Read and internalize this file before starting:
 
-- #file:.github/prompts/review.copilot.customization.prompt.md
+- #file:../prompts/review.copilot.customization.prompt.md
 
 ## Inputs
 
@@ -54,10 +49,10 @@ Read and internalize this file before starting:
     - If `target_path` ends with `.prompt.md`, assign type `prompt`.
     - If `target_path` ends with `.instructions.md`, assign type `instructions`.
     - If the filename equals `SKILL.md`, assign type `skill`.
-    - Otherwise, stop and report that the file does not match any supported customization type.
+    - Otherwise, stop and report an unsupported customization file type.
 
-3. Read `target_path` to confirm it contains content consistent with the detected type — if empty or missing a YAML
-  frontmatter block, stop and report the problem; otherwise proceed to Step 4.
+3. Read `target_path` — confirm the file is non-empty and contains a YAML frontmatter block; if either check fails,
+  stop and report the problem; otherwise proceed to Step 4.
 
 4. Invoke the `concurrent-review` skill, setting `prompt_path` to
   `.github/prompts/review.copilot.customization.prompt.md` and `modified_files` to a single-item list containing
@@ -74,7 +69,8 @@ Read and internalize this file before starting:
 ## Rules
 
 - MUST NOT modify the target file beyond automated markdownlint fixes.
-- MUST NOT invent conventions — validate only against the matching review checklist.
+- MUST NOT invent conventions.
+- MUST validate only against the matching review checklist.
 - MUST NOT evaluate correctness of the file's domain logic.
 
 ## Output Format
@@ -91,14 +87,14 @@ Read and internalize this file before starting:
 
 | Agent | Declared | Self-Reported |
 |-------|----------|---------------|
-| CodexReviewer | codex | [model from Codex report] |
-| SonnetReviewer | claude-sonnet | [model from Sonnet report] |
-| OpusReviewer | claude-opus | [model from Opus report] |
+| ReviewerGPT | gpt | [model from GPT report] |
+| ReviewerSonnet | claude-sonnet | [model from Sonnet report] |
+| ReviewerOpus | claude-opus | [model from Opus report] |
 
 ### Checklist Results
 
-| # | Section | Codex | Sonnet | Opus | Merged |
-|---|---------|-------|--------|------|--------|
+| # | Section | GPT | Sonnet | Opus | Merged |
+|---|---------|-----|--------|------|--------|
 | [n] | [section name from review prompt] | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL] |
 
 ### Merged Findings

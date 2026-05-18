@@ -1,7 +1,7 @@
 ---
 description: 'Produce a coherence and convention compliance review report for modified files to identify stale or non-compliant documentation against the conventions checklist'
 argument-hint: 'Provide the list of modified files whose documentation impact to review'
-mode: 'agent'
+agent: 'agent'
 tools:
   - 'read'
   - 'search'
@@ -11,24 +11,24 @@ tools:
 
 ## Goal
 
-Discover all documentation files related to the provided modified files and produce a structured review report by
-verifying content coherence and evaluating compliance with the documentation conventions checklist.
+Produce a structured review report verifying content coherence and documentation conventions compliance for all
+documentation files related to the provided modified files.
 
-**Success:** Cover the content coherence check and every conventions checklist section, and follow the exact
+**Success:** Deliver one report covering Content Coherence and every conventions checklist section in the exact
 Output Format template.
 
-**Failure:** Abort execution when any input is missing, any discovery fails, or any file is unreadable.
+**Failure:** Stop and report the blocking reason at the earliest failing step.
 
 ## Context
 
 Read and internalize the conventions checklist before starting:
 
-- #file:.github/instructions/documentation.instructions.md
+- #file:../instructions/documentation.instructions.md
 
 ## Inputs
 
-- `modified_files` (required, string[]): workspace-relative paths to files that changed (`.cs`, `.json`,
-  `.csproj`, `.yml`, or any other type) — use these as ground truth for verifying documentation accuracy.
+- `modified_files` (required, string[], format: list of workspace-relative path strings):
+  workspace-relative paths to files that changed.
 
 ## Process
 
@@ -39,12 +39,11 @@ Read and internalize the conventions checklist before starting:
   structures, endpoints, and behavioral contracts; if any modified file is unreadable, stop and report the problem;
   otherwise proceed to Step 3.
 
-3. Discover documentation files — for each modified file (up to 50), locate its containing project directory (the folder
-  with the `.csproj` file) and collect the `README.md` in that directory if it exists; otherwise skip that project
-  directory; then collect `README.md` and `docs/README.md` in the workspace root if they exist as baseline files,
-  plus up to 25 other `docs/*.md` files that reference types, configuration keys, settings, or features found in
-  Step 2; deduplicate the resulting list; if you find zero documentation files, stop and report the problem; otherwise
-  proceed to Step 4.
+3. Discover documentation files — collect from these sources in order: (a) the `README.md` in each modified file's
+  project directory (the folder with the `.csproj` file) if it exists, (b) `README.md` and `docs/README.md` in the
+  workspace root if they exist, (c) up to 25 other `docs/*.md` files that reference types, configuration keys,
+  settings, or features found in Step 2; deduplicate the resulting list; if the list is empty, stop and report the
+  problem; otherwise proceed to Step 4.
 
 4. Read every discovered documentation file (up to 25) — if any documentation file is unreadable, stop and report
   the problem; otherwise proceed to Step 5.
@@ -68,7 +67,6 @@ Read and internalize the conventions checklist before starting:
 - MUST provide evidence in the exact structure for every finding, including the file path
 - MUST include a concrete fix per finding — not generic advice
 - MUST NOT modify any documentation file
-- MUST NOT invent conventions
 - MUST validate only against the supplied convention checklists
 - MUST NOT evaluate correctness of business or domain logic in modified files
 - MUST use these exact section names: "Content Coherence" followed by the conventions checklist section names

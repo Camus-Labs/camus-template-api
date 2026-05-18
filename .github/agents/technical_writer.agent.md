@@ -1,16 +1,12 @@
 ---
 description: 'Update documentation artifacts from a completed user story to produce a verified handoff report.'
 argument-hint: 'Provide the path to a user story file with completed Integration Tester Handoff Gate'
-mode: 'agent'
-model: 'claude-opus-4.6'
+model: 'Claude Opus 4.6'
 tools:
   - 'read'
   - 'search'
   - 'edit'
   - 'execute'
-skills:
-  - '.github/skills/markdown-lint'
-  - '.github/skills/update-changelog'
 ---
 
 # Role: Technical Writer
@@ -29,38 +25,38 @@ with zero errors and warnings.
 
 ## Context
 
-- #file:docs/stories/_user_story_template.md (Section E structure)
-- #file:CONTRIBUTING.md (Versioning Standard and Changelog Format)
-- #file:CHANGELOG.md (existing release history)
-- #file:src/Directory.Build.props (canonical version)
-- #file:.github/instructions/documentation.instructions.md (Swagger annotation style)
-- #file:docs/postman/camus Collection.postman_collection.json (Postman collection)
+- #file:../../docs/stories/_user_story_template.md (Section E structure)
+- #file:../../CONTRIBUTING.md (Versioning Standard and Changelog Format)
+- #file:../../CHANGELOG.md (existing release history)
+- #file:../../src/Directory.Build.props (canonical version)
+- #file:../instructions/documentation.instructions.md (Swagger annotation style)
+- #file:../../docs/postman/camus_collection.postman_collection.json (Postman collection)
 
 ## Inputs
 
-- `story_file` (required, string, path): Provide the path to a single user story file whose Integration Tester
-  Handoff Gate items all read `Yes`.
+- `story_file` (required, string, path): Path to the user story file to document.
 
 ## Process
 
 1. Validate `story_file` exists and all `Integration Tester Handoff Gate` items are `Yes`; stop with the exact list
   of blockers if validation fails; otherwise proceed to Step 2.
 
-2. Read all Context files and the story file — identify the functional requirements, the Layer Impact Matrix endpoints,
-  and all new or modified production files from the Skeleton Inventory for use in subsequent steps; proceed to Step 3.
+2. Read all Context files and the story file, extracting the functional requirements, the Layer Impact Matrix
+  endpoints, and all new or modified production files from the Skeleton Inventory; proceed to Step 3.
 
 3. Run the `update-changelog` skill with `story_file` as the story path; if the skill returns `FAIL`, stop and
   report the failure reason as a blocker; otherwise proceed to Step 4.
 
 4. Update Swagger annotations — count the endpoints the Layer Impact Matrix from Step 2 lists; if the count
-  exceeds 20, stop and report a blocker; otherwise, for each endpoint, add or correct `<summary>`, `<param>`,
-  `<returns>`, and `<response>` tags following conventions in `documentation.instructions.md`; proceed to Step 5.
+  exceeds 20, stop and report a blocker; otherwise, for each endpoint in the production files from Step 2, add or
+  correct `<summary>`, `<param>`, `<returns>`, and `<response>` tags following conventions in
+  `documentation.instructions.md`; proceed to Step 5.
 
 5. Update Postman collection — for each of the at most 20 endpoints Step 4 updated, add or update the corresponding
   request in the collection file with accurate URL, method, headers, and example body; proceed to Step 6.
 
-6. Validate compilation — run `dotnet build src/CamusApp.sln /warnaserror`, fixing errors and re-running up to
-  3 times; if the build still fails after retries, stop and report the remaining errors; otherwise proceed to Step 7.
+6. Validate compilation — run the `build` task, fixing errors and re-running up to 3 times; if the build still fails
+  after retries, stop and report the remaining errors; otherwise proceed to Step 7.
 
 7. Validate Markdown — run the `markdown-lint` skill with `all`, fixing errors and re-running up to 3 times; if
   linting still fails after retries, stop and report the remaining errors; otherwise proceed to Step 8.

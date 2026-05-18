@@ -1,7 +1,7 @@
 ---
 description: 'Review copilot customization files against matching convention checklists to produce a compliance verdict'
 argument-hint: 'Provide the list of modified customization files to review'
-mode: 'agent'
+agent: 'agent'
 tools:
   - 'read'
   - 'search'
@@ -22,14 +22,15 @@ convention checklist and evaluating compliance.
 
 Read and internalize the convention checklists before starting:
 
-- #file:.github/instructions/agents.instructions.md
-- #file:.github/instructions/prompts.instructions.md
-- #file:.github/instructions/instructions.instructions.md
-- #file:.github/instructions/skills.instructions.md
+- #file:../instructions/agents.instructions.md
+- #file:../instructions/prompts.instructions.md
+- #file:../instructions/instructions.instructions.md
+- #file:../instructions/skills.instructions.md
 
 ## Inputs
 
-- `modified_files` (required, string[]): workspace-relative paths to the customization files to evaluate.
+- `modified_files` (required, string[], format: list of workspace-relative path strings):
+  workspace-relative paths to files that changed.
 
 ## Process
 
@@ -46,13 +47,14 @@ Read and internalize the convention checklists before starting:
       `Goal`, `Context`, `Inputs`, `Process`, `Output Format`, `Rules`
     - Ends with `.instructions.md` → `instructions.instructions` with sections: `Structure`, `Check Quality`,
       `Scope & Overlap`, `Section Naming`, `Boundary Violations`
-    - Filename is `SKILL.md` → `skills.instructions` with sections: `Structure`, `Frontmatter`, `Body Sections`,
+    - Equals `SKILL.md` → `skills.instructions` with sections: `Structure`, `Frontmatter`, `Body Sections`,
       `Procedure Quality`, `Output Contract`, `Self-Containment`, `Writing Quality`
-    - If no file matches any pattern, stop and report; otherwise build a combined ordered section list from the matched
-      convention checklists and proceed to Step 4.
+    - If any file does not match a recognized pattern, stop and report the unmatched file; otherwise build a combined
+      ordered section list from the matched convention checklists and proceed to Step 4.
 
-4. Evaluate each section in the combined section list (max 30 sections) against ALL applicable files — score `PASS`
-   when every checklist item passes for every file, otherwise score `FAIL` and record each failing item as a finding.
+4. Evaluate each section in the combined section list (max 30 sections) against all applicable files (max 20 per
+   Step 2) — score `PASS` when every checklist item passes for every file, otherwise score `FAIL` and record each
+   failing item as a finding.
 
 5. Compute the overall verdict — PASS when every section is PASS, otherwise FAIL.
 

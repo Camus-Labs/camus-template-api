@@ -1,16 +1,12 @@
 ---
 description: 'Fix documentation files to pass convention review'
 argument-hint: 'Provide a scope: file path, directory, layer name, or "uncommitted" for changed documentation files'
-mode: 'agent'
-model: 'claude-opus-4.6'
+model: 'Claude Opus 4.6'
 tools:
   - 'read'
   - 'search'
   - 'edit'
   - 'execute'
-skills:
-  - '.github/skills/resolve-scope'
-  - '.github/skills/markdown-lint'
 ---
 
 # Role: Technical Writer
@@ -31,7 +27,7 @@ PASS verdict within the iteration limit.
 
 Read and internalize this file before starting:
 
-- #file:.github/prompts/review.documentation.prompt.md
+- #file:../prompts/review.documentation.prompt.md
 
 ## Inputs
 

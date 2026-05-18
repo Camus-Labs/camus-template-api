@@ -1,8 +1,7 @@
 ---
 description: 'Fix production code violations to pass code review, build, and test verification'
 argument-hint: 'Provide a scope: file path, directory, layer name, or "uncommitted" for changed files'
-mode: 'agent'
-model: 'claude-opus-4.6'
+model: 'Claude Opus 4.6'
 tools:
   - 'agent'
   - 'read'
@@ -28,8 +27,8 @@ Produce a verified fix report by applying targeted fixes to production code with
 
 Read and internalize these files before starting:
 
-- #file:docs/architecture.md
-- #file:.github/prompts/review.code.prompt.md
+- #file:../../docs/architecture.md
+- #file:../prompts/review.code.prompt.md
 
 ## Inputs
 
@@ -53,12 +52,12 @@ Read and internalize these files before starting:
   the user and apply the chosen resolution; repeat Step 2; after 5 cycles without a PASS verdict, set status to
   BLOCKED and proceed to Step 6.
 
-4. Run `dotnet build src/CamusApp.sln` — on build failure, fix compilation errors and re-run up to 5 times;
-  on continued failure after 5 attempts, set status to ERROR and proceed to Step 6; on success, proceed to Step 5.
+4. Run the `build` task — on build failure, fix compilation errors and re-run up to 5 times; on continued failure
+  after 5 attempts, set status to ERROR and proceed to Step 6; on success, proceed to Step 5.
 
-5. Run `dotnet test src/CamusApp.sln --no-build` — on any test failure, analyze the failure, fix the production
-  code, rebuild and re-test up to 5 iterations; on continued failure after 5 iterations, set status to ERROR and
-  record the failing test names; on all tests passing, set status to FIXED; proceed to Step 6.
+5. Run the `test-all` task — on any test failure, analyze the failure, fix the production code, rebuild and re-test
+  up to 5 iterations; on continued failure after 5 iterations, set status to ERROR and record the failing test names;
+  on all tests passing, set status to FIXED; proceed to Step 6.
 
 6. Produce the output report using the output template; stop.
 

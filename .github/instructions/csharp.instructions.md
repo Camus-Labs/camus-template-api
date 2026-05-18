@@ -18,7 +18,7 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
           last parameter — exception: operations that must run to completion (fire-and-forget, observability wrappers,
           compensating actions)
     - [ ] Async methods use async overloads of library and framework APIs — never synchronous versions
-    - [ ] `CancellationToken` is forwarded to every awaited call that accepts one — never silently dropped
+    - [ ] Every awaited call that accepts `CancellationToken` receives it — never silently dropped
     - [ ] Compensating actions (rollback, cleanup, dispose) omit `CancellationToken` from their signature or
           pass `CancellationToken.None` internally — they must run to completion even after cancellation
     - [ ] No `out` parameters on method signatures
@@ -35,14 +35,14 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
     - [ ] Validation methods throw exceptions — never return null/false
     - [ ] Multi-statement validation on non-settings classes as `private void Validate{Property}()` methods
     - [ ] Exception throw statements contain the offending value or the violated constraint
-    - [ ] Exception message expressions must not contain operations that can throw
+    - [ ] Exception message expressions contain no operations that can throw
 
 3. Configuration Classes (`*Settings`)
 
     - [ ] `*Settings` suffix on all configuration/options classes (e.g., `JwtSettings`, `InMemoryRateLimitingSettings`)
     - [ ] Configuration classes live in `Configurations/` folder of the layer they configure
     - [ ] Enums for type-safe options — exception: validated strings for framework-mandated identifiers
-    - [ ] `Validate{Property}()` methods called from a central `Validate()` method
+    - [ ] A central `Validate()` method calls each `Validate{Property}()` method
     - [ ] Each property has its own validation method — exception: properties of type `bool`
     - [ ] Validation constants as `private const` fields
     - [ ] Property validation throws `InvalidOperationException` (invalid object state) — never `ArgumentException`

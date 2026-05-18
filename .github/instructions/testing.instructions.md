@@ -9,12 +9,10 @@ applyTo: "src/Test/**"
     - [ ] xUnit + FluentAssertions — no other test or assertion frameworks
     - [ ] Arrange-Act-Assert (AAA) pattern with `// Arrange`, `// Act`, `// Assert` comments —
           `// Arrange` may be omitted when the test has no arrange statements beyond constructor setup
-    - [ ] Test names: `MethodName_Scenario_ExpectedResult` or `Given_When_Then`
+    - [ ] Test names follow `MethodName_Scenario_ExpectedResult` or `Given_When_Then`
     - [ ] Each test method contains one `// Act` step — multiple assertions on the same act result belong in one
           test, not split into separate methods
-    - [ ] Tests are deterministic — no random values, no `Guid.NewGuid()` — exception:
-          `DateTime.UtcNow` / `DateTimeOffset.UtcNow` are allowed for time-relative assertions (e.g., expiration
-          windows, reset timestamps) using before/after bracketing
+    - [ ] Tests are deterministic — no random values, no `Guid.NewGuid()`, no `DateTime.UtcNow` / `DateTimeOffset.UtcNow`
     - [ ] `[Theory]` when multiple scenarios share the same logic with only different input values — do not duplicate
           `[Fact]` methods that differ only in arrange data
     - [ ] `[InlineData]` for simple compile-time constants — `[MemberData]` for complex objects or computed values

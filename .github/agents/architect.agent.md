@@ -1,8 +1,7 @@
 ---
 description: 'Populate Section B architect definition in user story files for implementation handoff.'
 argument-hint: 'Provide Path to a user story file with completed Section A ready for architecture definition'
-mode: 'agent'
-model: 'claude-opus-4.6'
+model: 'Claude Opus 4.6'
 tools:
   - 'read'
   - 'search'
@@ -25,11 +24,11 @@ gate item `Yes`.
 
 ## Context
 
-- #file:README.md
-- #file:docs/architecture.md
-- #file:docs/authentication.md
-- #file:docs/stories/_user_story_template.md (Section B structure)
-- #file:docs/README.md (layer and adapter README links for understanding existing contracts and types)
+- #file:../../README.md
+- #file:../../docs/architecture.md
+- #file:../../docs/authentication.md
+- #file:../../docs/stories/_user_story_template.md (Section B structure)
+- #file:../../docs/README.md (layer and adapter README links for understanding existing contracts and types)
 
 ## Inputs
 

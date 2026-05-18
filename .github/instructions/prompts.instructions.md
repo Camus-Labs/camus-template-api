@@ -20,10 +20,12 @@ applyTo: ".github/prompts/**/*.prompt.md"
 
     - [ ] Valid YAML `---` frontmatter present
     - [ ] `description` field contains exactly one sentence
-    - [ ] `description` sentence follows verb + object + outcome structure
+    - [ ] `description` sentence starts with a present-tense verb
+    - [ ] `description` sentence contains a direct object
+    - [ ] `description` sentence ends with a purpose clause
     - [ ] `description` field value is at most 1024 characters
-    - [ ] `mode` field present
-    - [ ] `mode` field is one of: `agent`, `ask`, `edit`
+    - [ ] `agent` field present
+    - [ ] `agent` field is one of: `agent`, `ask`, `edit`
     - [ ] `argument-hint` field present
     - [ ] `argument-hint` value describes how to invoke the prompt
     - [ ] No under-declared tools — used in steps but not listed
@@ -59,7 +61,8 @@ applyTo: ".github/prompts/**/*.prompt.md"
     - [ ] Each step starts with ONE action verb
     - [ ] 3–8 total steps
     - [ ] No vague qualifiers ("as needed", "consider", "optionally", "may")
-    - [ ] Conditionals have explicit ELSE or default
+    - [ ] Conditionals have explicit ELSE or default — guard-and-stop branches where the only alternative is
+          continuation to the next numbered step satisfy this rule implicitly
     - [ ] Loops have max-iteration bound
     - [ ] Explicit stopping criterion
     - [ ] First step validates inputs
@@ -67,6 +70,8 @@ applyTo: ".github/prompts/**/*.prompt.md"
     - [ ] One bounded action per step — sub-item enumeration within one target is fine; no independent evaluations
     - [ ] No step contains a clause that duplicates or contradicts text in another step or rule
     - [ ] Every process-computed value has a placeholder in the template
+    - [ ] Procedure steps that build, test, or run the application use workspace task labels (e.g., `build`, `test-all`,
+          `test-unit`, `test-integration`, `run-api`) — not raw `dotnet` commands
 
 7. Rules
 

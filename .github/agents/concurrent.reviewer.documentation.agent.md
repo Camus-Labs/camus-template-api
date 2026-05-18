@@ -1,22 +1,17 @@
 ---
 description: 'Review documentation coherence against changed files to produce a consolidated review report'
 argument-hint: 'Provide a scope: file path, directory, layer name, or "uncommitted" for changed files'
-mode: 'agent'
-model: 'claude-opus-4.6'
+model: 'Claude Opus 4.6'
 tools:
   - 'agent'
   - 'read'
   - 'search'
   - 'edit'
   - 'execute'
-skills:
-  - '.github/skills/resolve-scope'
-  - '.github/skills/concurrent-review'
-  - '.github/skills/markdown-lint'
 agents:
-  - 'CodexReviewer'
-  - 'OpusReviewer'
-  - 'SonnetReviewer'
+  - 'ReviewerSonnet'
+  - 'ReviewerOpus'
+  - 'ReviewerGPT'
 ---
 
 # Role: Documentation Reviewer
@@ -38,7 +33,7 @@ to return a complete report.
 
 Read and internalize this file before starting:
 
-- #file:.github/prompts/review.documentation.prompt.md
+- #file:../prompts/review.documentation.prompt.md
 
 ## Inputs
 
@@ -83,14 +78,14 @@ Read and internalize this file before starting:
 
 | Agent | Declared | Self-Reported |
 |-------|----------|---------------|
-| CodexReviewer | codex | [model from Codex report] |
-| SonnetReviewer | claude-sonnet | [model from Sonnet report] |
-| OpusReviewer | claude-opus | [model from Opus report] |
+| ReviewerGPT | gpt | [model from GPT report] |
+| ReviewerSonnet | claude-sonnet | [model from Sonnet report] |
+| ReviewerOpus | claude-opus | [model from Opus report] |
 
 ### Checklist Results
 
-| # | Section | Codex | Sonnet | Opus | Merged |
-|---|---------|-------|--------|------|--------|
+| # | Section | GPT | Sonnet | Opus | Merged |
+|---|---------|-----|--------|------|--------|
 | [n] | [section name from review prompt] | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL | N/A] | [PASS | FAIL] |
 
 ### Merged Findings

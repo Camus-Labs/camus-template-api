@@ -1,6 +1,6 @@
 ---
 name: concurrent-review
-description: 'Dispatch three parallel sub-agent reviews and merge results into a deduplicated report when orchestrating multi-model code or documentation reviews against a resolved file list.'
+description: 'Dispatch three parallel sub-agent reviews and merge results into a deduplicated report to deliver a single validated findings summary for multi-model code or documentation reviews.'
 argument-hint: 'Provide a review prompt path and a list of files to review'
 user-invocable: false
 ---
@@ -19,7 +19,7 @@ user-invocable: false
    with reason `"prompt_path argument is missing"`; validate that `files` is a non-empty list — if empty, return
    `FAIL` with reason `"files list is empty"`; otherwise proceed to Step 2.
 
-2. Dispatch three parallel sub-agents (`CodexReviewer`, `SonnetReviewer`, `OpusReviewer`) via the `agent` tool,
+2. Dispatch three parallel sub-agents (`ReviewerGPT`, `ReviewerSonnet`, `ReviewerOpus`) via the `agent` tool,
    each passing the file at `prompt_path` and the `files` list as parameter for the prompt file — collect the
    full review report from each sub-agent.
 
@@ -50,19 +50,19 @@ SUCCESS:
   prompt_path: [prompt_path: string]
   files_count: [files_count: integer]
   models:
-    - agent: CodexReviewer
-      declared: codex
+    - agent: ReviewerGPT
+      declared: gpt
       self_reported: [self_reported_model: string]
-    - agent: SonnetReviewer
+    - agent: ReviewerSonnet
       declared: claude-sonnet
       self_reported: [self_reported_model: string]
-    - agent: OpusReviewer
+    - agent: ReviewerOpus
       declared: claude-opus
       self_reported: [self_reported_model: string]
   checklist_results:
     - section: [section_name: string]
       source_instruction: [instruction_file: string]
-      codex: [codex_verdict: PASS | FAIL | N/A]
+      gpt: [gpt_verdict: PASS | FAIL | N/A]
       sonnet: [sonnet_verdict: PASS | FAIL | N/A]
       opus: [opus_verdict: PASS | FAIL | N/A]
       merged: [merged_verdict: PASS | FAIL]

@@ -43,8 +43,8 @@ applyTo: "src/Test/**integration.test/**"
 
 3. Scope & Coverage
 
-    - [ ] Input permutations and single-field validation (e.g., missing parameter → 400, invalid enum → 400)
-          live in unit tests — integration tests prove that layers collaborate correctly end-to-end
+    - [ ] No input permutation or single-field validation tests (e.g., missing parameter → 400, invalid enum → 400)
+          — integration tests validate cross-layer collaboration, not exhaustive input coverage
     - [ ] No `Assert.Equal` or FluentAssertions `.Should().Be()` on values obtained without `HttpClient`,
           database query, or external service call in the same test method
     - [ ] All test methods invoke the system via `HttpClient` — no direct service-class resolution from DI
