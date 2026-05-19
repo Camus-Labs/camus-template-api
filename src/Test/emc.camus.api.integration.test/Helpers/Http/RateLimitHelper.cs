@@ -48,6 +48,27 @@ public static class RateLimitHelper
     }
 
     /// <summary>
+    /// Exhausts the rate limit and verifies the next request is rejected with 429.
+    /// Throws <see cref="InvalidOperationException"/> if the limit is not exhausted.
+    /// Use in test Arrange sections to avoid FluentAssertions calls before Act.
+    /// </summary>
+    public static async Task ExhaustAndVerifyRateLimitAsync(
+        HttpClient client,
+        string endpoint,
+        int permitLimit,
+        CancellationToken ct)
+    {
+        await ExhaustRateLimitAsync(client, endpoint, permitLimit, ct);
+
+        var rejectedResponse = await client.GetAsync(endpoint, ct);
+        if (rejectedResponse.StatusCode != System.Net.HttpStatusCode.TooManyRequests)
+        {
+            throw new InvalidOperationException(
+                $"Rate limit not exhausted after {permitLimit} requests: expected 429 but got {(int)rejectedResponse.StatusCode}");
+        }
+    }
+
+    /// <summary>
     /// Sends <paramref name="permitLimit"/> requests using two clients to the same endpoint,
     /// exhausting both clients' rate limits simultaneously.
     /// </summary>

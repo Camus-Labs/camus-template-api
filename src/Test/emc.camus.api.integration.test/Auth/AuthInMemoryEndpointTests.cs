@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using emc.camus.api.integration.test.Fixtures;
 using emc.camus.api.integration.test.Helpers;
-using emc.camus.application.Common;
 using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V2;
 using FluentAssertions;
@@ -72,18 +71,4 @@ public class AuthInMemoryEndpointTests
         await response.Should().HaveErrorCode("apikey_authentication_required");
     }
 
-    [Fact]
-    public async Task Authenticate_MissingIdempotencyKey_Returns400()
-    {
-        // Arrange
-        var client = _factory.CreateApiKeyClient();
-        var request = new { Username = "admin", Password = "admin-password" };
-
-        // Act
-        var response = await client.PostAsJsonAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
-
-        // Assert
-        await response.Should().HaveStatusCode(HttpStatusCode.BadRequest);
-        await response.Should().HaveErrorCode(ErrorCodes.IdempotencyKeyMissing);
-    }
 }

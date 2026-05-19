@@ -46,7 +46,7 @@ public class TokenRevocationCachePostgreSqlTests : IAsyncLifetime
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", generatedToken);
 
         var preRevokeResponse = await tokenClient.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
-        await preRevokeResponse.Should().HaveStatusCode(HttpStatusCode.OK, "token must be accepted before revocation");
+        await preRevokeResponse.EnsureSetupSuccessAsync("token must be accepted before revocation");
 
         // Revoke directly in the database — the cache does NOT know about this yet
         await using var connection = new NpgsqlConnection(_factory.ConnectionString);
@@ -87,7 +87,7 @@ public class TokenRevocationCachePostgreSqlTests : IAsyncLifetime
         var request = new
         {
             UsernameSuffix = usernameSuffix,
-            ExpiresOn = DateTime.UtcNow.AddHours(2),
+            ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
             Permissions = new[] { "api.read" },
         };
 

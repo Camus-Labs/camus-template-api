@@ -33,8 +33,10 @@ applyTo: "src/Test/**integration.test/**"
     - [ ] No container creation inside individual test methods — always use fixture-managed factories
     - [ ] Authenticated requests use shared helper methods in `Helpers/` — no hardcoded tokens,
           API keys, or credentials in test methods
-    - [ ] Database tests implement `IAsyncLifetime` and call `ResetDatabaseAsync()` in `InitializeAsync` —
-          Respawn deletes all data in the schema, then `DatabaseSeeder` re-inserts reference data
+    - [ ] Database tests that write data implement `IAsyncLifetime` and call `ResetDatabaseAsync()` in
+          `InitializeAsync` — Respawn deletes all data in the schema, then `DatabaseSeeder` re-inserts reference
+          data — read-only test classes that share a PostgreSQL collection but do not modify data may use
+          `IDisposable` for cleanup without resetting
     - [ ] Factories that require external infrastructure manage the lifecycle via `IAsyncLifetime` and force
           host creation in `InitializeAsync` (e.g., `_ = Server`) so migrations run before tests execute
     - [ ] Factories backed by in-memory or stub implementations require no external dependencies
@@ -49,14 +51,17 @@ applyTo: "src/Test/**integration.test/**"
           database query, or external service call in the same test method
     - [ ] All test methods invoke the system via `HttpClient` — no direct service-class resolution from DI
           unless the class has a `// Justification:` comment explaining why HTTP observation is insufficient
+    - [ ] Use relative dates for all test data timestamps — no hardcoded static dates
+          (e.g., `DateTime.UtcNow`, `DateTime.UtcNow.AddYears(1).AddDays(-1)`)
 
 4. Organization
 
     - [ ] Test classes organized by service endpoint (e.g., `Auth/`, `ApiInfo/`) — not mirroring production
           class structure one-to-one
     - [ ] Cross-cutting concerns (e.g., idempotency, rate limiting, error handling) in `Common/` folder
-    - [ ] Infrastructure tests (e.g., `TokenRevocationCachePostgreSqlTests`) placed in the endpoint folder
-          where the feature is consumed (e.g., `Auth/`) — not in a standalone infrastructure folder
+    - [ ] Infrastructure tests for components exclusively consumed by a single endpoint placed in that
+          endpoint folder (e.g., `TokenRevocationCachePostgreSqlTests` in `Auth/`) — generic infrastructure
+          tests (e.g., transaction isolation, connection pooling) in `Common/`
     - [ ] Fixture classes (factories, collection definitions) in `Fixtures/` folder
     - [ ] Test settings files in `Settings/` folder
 

@@ -60,19 +60,6 @@ public class ApiInfoInMemoryEndpointTests
     }
 
     [Fact]
-    public async Task GetInfoApiKey_NoApiKey_ReturnsUnauthorized()
-    {
-        // Arrange
-
-        // Act
-        var response = await _client.GetAsync("/api/v2/apiinfo/info-apikey", TestContext.Current.CancellationToken);
-
-        // Assert
-        await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
-        await response.Should().HaveErrorCode("apikey_authentication_required");
-    }
-
-    [Fact]
     public async Task GetInfoJwt_ValidJwtToken_ReturnsOk()
     {
         // Arrange

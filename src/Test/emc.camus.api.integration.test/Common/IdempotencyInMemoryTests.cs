@@ -42,6 +42,7 @@ public class IdempotencyInMemoryTests
         var response = await client.PostAsync(DecoratedWithBodyEndpoint, content, TestContext.Current.CancellationToken);
 
         // Assert
+        await response.Should().HaveStatusCode(HttpStatusCode.BadRequest);
         await response.Should().HaveErrorCode(ErrorCodes.IdempotencyKeyMissing);
     }
 
@@ -153,6 +154,7 @@ public class IdempotencyInMemoryTests
         var response = await client.SendAsync(secondRequest, TestContext.Current.CancellationToken);
 
         // Assert
+        await response.Should().HaveStatusCode(HttpStatusCode.Conflict);
         await response.Should().HaveErrorCode(ErrorCodes.IdempotencyBodyConflict);
     }
 
@@ -170,6 +172,7 @@ public class IdempotencyInMemoryTests
         var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
+        await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
         await response.Should().HaveErrorCode(ErrorCodes.JwtAuthenticationRequired);
     }
 }

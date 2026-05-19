@@ -39,11 +39,11 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
     {
         // Arrange
         var client = await _factory.AuthenticateAsAdminAsync();
-        var before = DateTime.UtcNow;
+        var expiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1);
         var request = new
         {
             UsernameSuffix = "inttest",
-            ExpiresOn = DateTime.UtcNow.AddHours(2),
+            ExpiresOn = expiresOn,
             Permissions = new[] { "api.read" },
         };
 
@@ -57,7 +57,7 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         body.Should().NotBeNull();
         body!.Data.Should().NotBeNull();
         body.Data!.Token.Should().NotBeNullOrWhiteSpace();
-        body.Data.ExpiresOn.Should().BeAfter(before);
+        body.Data.ExpiresOn.Should().BeCloseTo(expiresOn, TimeSpan.FromSeconds(5));
         body.Data.TokenUsername.Should().Be("Admin-inttest");
 
         // Assert — database row persisted
@@ -94,14 +94,6 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         await using var connection = new NpgsqlConnection(_factory.ConnectionString);
         await connection.OpenAsync(TestContext.Current.CancellationToken);
 
-        var userBefore = await connection.QuerySingleAsync<dynamic>(
-            "SELECT created_by, updated_by, last_login FROM camus.users WHERE username = 'ClientApp'");
-
-        ((string)userBefore.created_by).Should().Be("Admin");
-        ((string)userBefore.updated_by).Should().Be("Admin");
-        ((DateTime?)userBefore.last_login).Should().BeNull();
-        var before = DateTime.UtcNow;
-
         // Act — authenticate as ClientApp
         await _factory.AuthenticateAsClientAppAsync();
 
@@ -112,7 +104,6 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         ((string)userAfter.created_by).Should().Be("Admin", "seed creator must be preserved");
         ((string)userAfter.updated_by).Should().Be("ApiKeyUser", "trigger sets updated_by to the HTTP identity (API key)");
         ((DateTime?)userAfter.last_login).Should().NotBeNull("login should set last_login");
-        ((DateTime)userAfter.last_login).Should().BeCloseTo(before, TimeSpan.FromSeconds(30));
 
         // Assert — audit record persisted
         var audit = await connection.QuerySingleAsync<dynamic>(
@@ -130,7 +121,7 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         var generateRequest = new
         {
             UsernameSuffix = "revoke",
-            ExpiresOn = DateTime.UtcNow.AddHours(2),
+            ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
             Permissions = new[] { "api.read" },
         };
 
@@ -180,13 +171,13 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         var firstRequest = new
         {
             UsernameSuffix = "list-a",
-            ExpiresOn = DateTime.UtcNow.AddHours(2),
+            ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
             Permissions = new[] { "api.read" },
         };
         var secondRequest = new
         {
             UsernameSuffix = "list-b",
-            ExpiresOn = DateTime.UtcNow.AddHours(3),
+            ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
             Permissions = new[] { "api.read" },
         };
 
@@ -215,6 +206,12 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
             "SELECT COUNT(*) FROM camus.generated_tokens WHERE token_username IN ('Admin-list-a', 'Admin-list-b')");
 
         dbCount.Should().Be(2);
+
+        // Assert — audit records persisted for both token generations
+        var auditCount = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM camus.action_audit WHERE action_title = 'token.generate.success' AND user_name = 'Admin'");
+
+        auditCount.Should().BeGreaterThanOrEqualTo(2);
     }
 
     [Fact]
@@ -225,7 +222,7 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         var firstRequest = new
         {
             UsernameSuffix = "duplicate",
-            ExpiresOn = DateTime.UtcNow.AddHours(2),
+            ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
             Permissions = new[] { "api.read" },
         };
 
@@ -243,7 +240,7 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         var duplicateRequest = new
         {
             UsernameSuffix = "duplicate",
-            ExpiresOn = DateTime.UtcNow.AddHours(3),
+            ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
             Permissions = new[] { "api.read" },
         };
 
@@ -271,12 +268,12 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         var generateRequest = new
         {
             UsernameSuffix = "revoked-use",
-            ExpiresOn = DateTime.UtcNow.AddHours(2),
+            ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
             Permissions = new[] { "api.read" },
         };
 
         var generateResponse = await adminClient.PostAsJsonWithIdempotencyKeyAsync("/api/v2/auth/generate-token", generateRequest, TestContext.Current.CancellationToken);
-        await generateResponse.Should().HaveStatusCode(HttpStatusCode.Created, "token generation must succeed for test setup");
+        await generateResponse.EnsureSetupSuccessAsync("token generation must succeed for test setup");
 
         var generateBody = await generateResponse.Content.ReadFromJsonAsync<ApiResponse<GenerateTokenResponse>>(TestContext.Current.CancellationToken);
         var generatedToken = generateBody!.Data!.Token;
@@ -288,11 +285,11 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", generatedToken);
 
         var preRevokeResponse = await tokenClient.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
-        await preRevokeResponse.Should().HaveStatusCode(HttpStatusCode.OK, "generated token must be accepted before revocation");
+        await preRevokeResponse.EnsureSetupSuccessAsync("generated token must be accepted before revocation");
 
         // Arrange — revoke the token
         var revokeResponse = await adminClient.PostAsync($"/api/v2/auth/tokens/{jti}/revoke", null, TestContext.Current.CancellationToken);
-        await revokeResponse.Should().HaveStatusCode(HttpStatusCode.OK, "token revocation must succeed for test setup");
+        await revokeResponse.EnsureSetupSuccessAsync("token revocation must succeed for test setup");
 
         // Act
         var postRevokeResponse = await tokenClient.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);

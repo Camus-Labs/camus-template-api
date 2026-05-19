@@ -170,12 +170,8 @@ public class RateLimitingIpPartitionTests
         var client = _factory.CreateClient().WithIp("10.7.0.1");
         var ct = TestContext.Current.CancellationToken;
 
-        // Exhaust the rate limit
-        await RateLimitHelper.ExhaustRateLimitAsync(client, RelaxedEndpoint, ApiRateLimitingFactory.RelaxedPolicyPermitLimit, ct);
-
-        // Verify the limit is actually exhausted
-        var rejectedResponse = await client.GetAsync(RelaxedEndpoint, ct);
-        await rejectedResponse.Should().HaveStatusCode(HttpStatusCode.TooManyRequests);
+        // Exhaust the rate limit and verify it is exhausted
+        await RateLimitHelper.ExhaustAndVerifyRateLimitAsync(client, RelaxedEndpoint, ApiRateLimitingFactory.RelaxedPolicyPermitLimit, ct);
 
         // Act — wait for the sliding window to fully expire
         await Task.Delay(TimeSpan.FromSeconds(ApiRateLimitingFactory.PolicyWindowSeconds + 1), ct);

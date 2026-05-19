@@ -176,12 +176,10 @@ public static class AuthenticatedClientHelper
             issuer: config["JwtSettings:Issuer"],
             audience: config["JwtSettings:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddMilliseconds(50),
+            expires: DateTime.UtcNow.AddYears(-100),
             signingCredentials: signingCredentials);
 
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-
-        SpinWait.SpinUntil(() => DateTime.UtcNow > token.ValidTo);
 
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Authorization =
@@ -204,7 +202,7 @@ public static class AuthenticatedClientHelper
             var request = new
             {
                 UsernameSuffix = suffix,
-                ExpiresOn = DateTime.UtcNow.AddHours(2),
+                ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
                 Permissions = new[] { "api.read" },
             };
 

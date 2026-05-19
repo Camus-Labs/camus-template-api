@@ -39,6 +39,7 @@ public class RequestTimeoutInMemoryTests
     {
         // Arrange
         var client = _factory.CreateClient();
+        // Justification: server-side cancellation propagation cannot be inferred from the client-side HTTP response alone.
         var slowService = _factory.Services.GetRequiredService<SlowApiInfoService>();
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 

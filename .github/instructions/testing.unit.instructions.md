@@ -23,6 +23,10 @@ applyTo: "{src/Test/**,!src/Test/**integration.test/**}"
     - [ ] Per-test setup in constructor, cleanup via `IDisposable` — no static initializers or manual lifecycle
           management
     - [ ] No `Thread.Sleep()` or `Task.Delay()` — use deterministic time abstractions or controlled waits
+    - [ ] Inject `FakeTimeProvider` (from `Microsoft.Extensions.Time.Testing`) to control the clock in unit
+          tests
+    - [ ] No hardcoded static dates in test data — express all dates relative to the `FakeTimeProvider`
+          reference time (e.g., `_timeProvider.GetUtcNow().AddYears(1)`)
     - [ ] No reflection or access to private/internal members — assert on public return values, thrown exceptions,
           or mock interactions
     - [ ] Values shared between the constructor (or shared setup) and test assertions as `private const` or
