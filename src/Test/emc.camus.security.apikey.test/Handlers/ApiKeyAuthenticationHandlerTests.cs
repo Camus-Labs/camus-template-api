@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using emc.camus.application.Auth;
@@ -11,6 +12,7 @@ using emc.camus.application.Common;
 using emc.camus.application.Secrets;
 using emc.camus.security.apikey.Configurations;
 using emc.camus.security.apikey.Handlers;
+using emc.camus.security.apikey.test.Helpers;
 
 namespace emc.camus.security.apikey.test.Handlers;
 
@@ -20,8 +22,9 @@ public class ApiKeyAuthenticationHandlerTests
     private const string ValidSecretName = "XApiKey";
 
     private readonly Mock<ISecretProvider> _secretProviderMock = new();
-    private readonly Mock<IOptionsMonitor<AuthenticationSchemeOptions>> _optionsMonitorMock = new();
-    private readonly Mock<ILoggerFactory> _loggerFactoryMock = new();
+    private readonly IOptionsMonitor<AuthenticationSchemeOptions> _optionsMonitor =
+        new TestOptionsMonitor<AuthenticationSchemeOptions>(new AuthenticationSchemeOptions());
+    private readonly ILoggerFactory _loggerFactory = NullLoggerFactory.Instance;
 
     private static ApiKeySettings CreateSettings(string secretName = ValidSecretName)
     {
@@ -32,16 +35,11 @@ public class ApiKeyAuthenticationHandlerTests
         HttpContext httpContext,
         ApiKeySettings? settings = null)
     {
-        _optionsMonitorMock.Setup(o => o.Get(It.IsAny<string>()))
-            .Returns(new AuthenticationSchemeOptions());
-        _loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>()))
-            .Returns(new Mock<ILogger>().Object);
-
         var handlerSettings = settings ?? CreateSettings();
 
         var handler = new ApiKeyAuthenticationHandler(
-            _optionsMonitorMock.Object,
-            _loggerFactoryMock.Object,
+            _optionsMonitor,
+            _loggerFactory,
             UrlEncoder.Default,
             _secretProviderMock.Object,
             handlerSettings);
@@ -70,11 +68,10 @@ public class ApiKeyAuthenticationHandlerTests
     [Fact]
     public void Constructor_NullSecretProvider_ThrowsArgumentNullException()
     {
-        // Arrange
         // Act
         var act = () => new ApiKeyAuthenticationHandler(
-            _optionsMonitorMock.Object,
-            _loggerFactoryMock.Object,
+            _optionsMonitor,
+            _loggerFactory,
             UrlEncoder.Default,
             null!,
             CreateSettings());
@@ -87,11 +84,10 @@ public class ApiKeyAuthenticationHandlerTests
     [Fact]
     public void Constructor_NullSettings_ThrowsArgumentNullException()
     {
-        // Arrange
         // Act
         var act = () => new ApiKeyAuthenticationHandler(
-            _optionsMonitorMock.Object,
-            _loggerFactoryMock.Object,
+            _optionsMonitor,
+            _loggerFactory,
             UrlEncoder.Default,
             _secretProviderMock.Object,
             null!);

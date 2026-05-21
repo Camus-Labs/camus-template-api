@@ -77,8 +77,7 @@ namespace emc.camus.api.Configurations
             ValidateAllowedMethods();
             ValidateAllowedHeaders();
             ValidateExposedHeaders();
-            ValidatePreflightMaxAge();
-            ValidateAllowCredentials();
+            ValidatePreflightMaxAgeMinutes();
         }
 
         private void ValidatePolicyName()
@@ -110,10 +109,7 @@ namespace emc.camus.api.Configurations
                 if (origin != "*" && !Uri.TryCreate(origin, UriKind.Absolute, out _))
                     throw new InvalidOperationException($"Invalid origin URL: '{origin}'. Must be a valid absolute URL or '*'.");
             }
-        }
 
-        private void ValidateAllowCredentials()
-        {
             if (AllowCredentials && AllowedOrigins.Any(o => o == "*"))
                 throw new InvalidOperationException(
                     $"AllowCredentials cannot be true when AllowedOrigins contains '*'. Specify explicit origins instead.");
@@ -142,7 +138,7 @@ namespace emc.camus.api.Configurations
                 throw new InvalidOperationException($"ExposedHeaders cannot be null.");
         }
 
-        private void ValidatePreflightMaxAge()
+        private void ValidatePreflightMaxAgeMinutes()
         {
             if (PreflightMaxAgeMinutes < MinPreflightMaxAgeMinutes || PreflightMaxAgeMinutes > MaxPreflightMaxAgeMinutes)
             {

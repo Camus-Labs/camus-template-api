@@ -20,11 +20,16 @@ public sealed record AuthenticateUserCommand
     /// <param name="password">The password for authentication.</param>
     public AuthenticateUserCommand(string username, string password)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(username);
         ArgumentException.ThrowIfNullOrWhiteSpace(password);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(username.Length, User.MaxUsernameLength, nameof(username));
         Username = username;
         Password = password;
+        ValidateUsername();
+    }
+
+    private void ValidateUsername()
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(Username);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(Username.Length, User.MaxUsernameLength, nameof(Username));
     }
 }
 
@@ -40,7 +45,7 @@ public sealed record GenerateTokenCommand
     public DateTime ExpiresOn { get; }
 
     /// <summary>The list of permissions to grant to the token. Must be a subset of the current user's permissions.</summary>
-    public List<string> Permissions { get; }
+    public IReadOnlyList<string> Permissions { get; }
 
     /// <summary>
     /// Creates a new token generation command.
@@ -49,30 +54,43 @@ public sealed record GenerateTokenCommand
     /// <param name="expiresOn">The custom expiration date (UTC).</param>
     /// <param name="permissions">The list of permissions to grant to the token.</param>
     /// <exception cref="ArgumentException">Thrown when usernameSuffix is null/empty or permissions contain invalid values.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when permissions is empty.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when usernameSuffix exceeds max length, expiresOn is default, or permissions is empty.</exception>
     public GenerateTokenCommand(string usernameSuffix, DateTime expiresOn, List<string> permissions)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(usernameSuffix);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(usernameSuffix.Length, GeneratedToken.MaxSuffixLength, nameof(usernameSuffix));
         ArgumentOutOfRangeException.ThrowIfEqual(expiresOn, default);
         ArgumentNullException.ThrowIfNull(permissions);
-        ArgumentOutOfRangeException.ThrowIfLessThan(permissions.Count, 1);
-        ValidatePermissions(permissions);
         UsernameSuffix = usernameSuffix;
         ExpiresOn = expiresOn;
-        Permissions = permissions;
+        Permissions = permissions.ToList().AsReadOnly();
+        ValidateUsernameSuffix();
+        ValidatePermissions();
     }
 
-    private static void ValidatePermissions(List<string> permissions)
+    private void ValidateUsernameSuffix()
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(UsernameSuffix);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(UsernameSuffix.Length, GeneratedToken.MaxSuffixLength, nameof(UsernameSuffix));
+
+        if (!UsernameSuffix.All(c => char.IsLetterOrDigit(c) || c is '.' or '-' or '_'))
+        {
+            throw new ArgumentException(
+                $"UsernameSuffix '{UsernameSuffix}' contains invalid characters. Only alphanumeric, '.', '-', and '_' are allowed.",
+                nameof(UsernameSuffix));
+        }
+    }
+
+    private void ValidatePermissions()
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(Permissions.Count, 1, nameof(Permissions));
+
         var validPermissions = Auth.Permissions.GetAll();
-        var invalidPermissions = permissions.Where(p => !validPermissions.Contains(p)).ToList();
+        var invalidPermissions = Permissions.Where(p => !validPermissions.Contains(p)).ToList();
 
         if (invalidPermissions.Count > 0)
         {
             throw new ArgumentException(
                 $"Invalid permissions: {string.Join(", ", invalidPermissions)}. Valid permissions are: {string.Join(", ", validPermissions)}.",
-                nameof(permissions));
+                nameof(Permissions));
         }
     }
 }

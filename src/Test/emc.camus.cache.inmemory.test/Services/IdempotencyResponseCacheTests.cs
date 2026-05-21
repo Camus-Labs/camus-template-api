@@ -79,24 +79,20 @@ public class IdempotencyResponseCacheTests
         result.Should().BeNull();
     }
 
-    [Fact]
-    public void TryGet_DifferentKeysIsolated_ReturnsCorrectEntry()
+    [Theory]
+    [InlineData("user1:key-a", 200)]
+    [InlineData("user2:key-a", 201)]
+    public void TryGet_KeyAmongMultiple_ReturnsCorrectEntry(string targetKey, int expectedStatus)
     {
         // Arrange
-        var key1 = "user1:key-a";
-        var key2 = "user2:key-a";
-        var response1 = new CachedResponse(200, """{"user":"1"}""", "hash1");
-        var response2 = new CachedResponse(201, """{"user":"2"}""", "hash2");
-        _cache.Store(key1, response1, DefaultTtl);
-        _cache.Store(key2, response2, DefaultTtl);
+        _cache.Store("user1:key-a", new CachedResponse(200, """{"user":"1"}""", "hash1"), DefaultTtl);
+        _cache.Store("user2:key-a", new CachedResponse(201, """{"user":"2"}""", "hash2"), DefaultTtl);
 
         // Act
-        var result1 = _cache.TryGet(key1);
-        var result2 = _cache.TryGet(key2);
+        var result = _cache.TryGet(targetKey);
 
         // Assert
-        result1!.StatusCode.Should().Be(200);
-        result2!.StatusCode.Should().Be(201);
+        result!.StatusCode.Should().Be(expectedStatus);
     }
 
     // --- Store ---
@@ -129,28 +125,16 @@ public class IdempotencyResponseCacheTests
             .Which.ParamName.Should().Be("response");
     }
 
-    [Fact]
-    public void Store_ZeroTtl_ThrowsArgumentOutOfRangeException()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Store_InvalidTtl_ThrowsArgumentOutOfRangeException(int ttlSeconds)
     {
         // Arrange
         var response = new CachedResponse(200, "body", ValidBodyHash);
 
         // Act
-        var act = () => _cache.Store(ValidCompositeKey, response, TimeSpan.Zero);
-
-        // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>()
-            .Which.ParamName.Should().Be("ttl");
-    }
-
-    [Fact]
-    public void Store_NegativeTtl_ThrowsArgumentOutOfRangeException()
-    {
-        // Arrange
-        var response = new CachedResponse(200, "body", ValidBodyHash);
-
-        // Act
-        var act = () => _cache.Store(ValidCompositeKey, response, TimeSpan.FromSeconds(-1));
+        var act = () => _cache.Store(ValidCompositeKey, response, TimeSpan.FromSeconds(ttlSeconds));
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -167,9 +151,9 @@ public class IdempotencyResponseCacheTests
 
         // Act
         _cache.Store(ValidCompositeKey, response2, DefaultTtl);
-        var result = _cache.TryGet(ValidCompositeKey);
 
         // Assert
+        var result = _cache.TryGet(ValidCompositeKey);
         result!.StatusCode.Should().Be(201);
         result.Body.Should().Be("second");
     }

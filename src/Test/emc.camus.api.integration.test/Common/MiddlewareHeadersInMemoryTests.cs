@@ -130,6 +130,7 @@ public class MiddlewareHeadersInMemoryTests
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
+        await response.Should().HaveErrorCode("jwt_authentication_required");
 
         response.Headers.GetValues(HeaderNames.XContentTypeOptions).Should().ContainSingle().Which.Should().Be("nosniff");
         response.Headers.GetValues(HeaderNames.XFrameOptions).Should().ContainSingle().Which.Should().Be("DENY");

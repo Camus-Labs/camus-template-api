@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using emc.camus.application.Idempotency;
+using emc.camus.cache.inmemory.Models;
 
 namespace emc.camus.cache.inmemory.Services;
 
@@ -16,7 +17,7 @@ namespace emc.camus.cache.inmemory.Services;
 /// </remarks>
 internal sealed class IdempotencyResponseCache : IIdempotencyResponseCache
 {
-    private readonly ConcurrentDictionary<string, CacheEntry> _entries = new();
+    private readonly ConcurrentDictionary<string, IdempotencyCacheEntry> _entries = new();
     private readonly TimeProvider _timeProvider;
 
     /// <summary>
@@ -69,9 +70,7 @@ internal sealed class IdempotencyResponseCache : IIdempotencyResponseCache
         ArgumentNullException.ThrowIfNull(response);
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(ttl, TimeSpan.Zero);
 
-        var entry = new CacheEntry(response, _timeProvider.GetUtcNow().Add(ttl));
+        var entry = new IdempotencyCacheEntry(response, _timeProvider.GetUtcNow().Add(ttl));
         _entries[compositeKey] = entry;
     }
-
-    private sealed record CacheEntry(CachedResponse Response, DateTimeOffset ExpiresAt);
 }

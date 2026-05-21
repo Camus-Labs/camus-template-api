@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.Extensions.Hosting;
 using OpenTelemetry.Resources;
 
 namespace emc.camus.observability.otel.Telemetry

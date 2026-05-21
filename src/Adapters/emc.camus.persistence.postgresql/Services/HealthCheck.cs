@@ -31,13 +31,15 @@ internal sealed class HealthCheck : IHealthCheck
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context, CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(context);
+
         try
         {
             await _unitOfWork.CheckConnectivityAsync(ct);
 
             return HealthCheckResult.Healthy("PostgreSQL database is reachable");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HealthCheckResult.Unhealthy("PostgreSQL database is unreachable", ex);
         }

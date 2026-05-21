@@ -20,7 +20,7 @@ internal static class HostBuilderExtensions
     /// Configures Serilog for the host with OpenTelemetry integration.
     /// Applies default enrichers, console logging, and OpenTelemetry log export.
     /// </summary>
-    /// 
+    ///
     /// <param name="host">The host builder to configure.</param>
     /// <param name="settings">OpenTelemetry settings containing logs exporter configuration.</param>
     /// <param name="serviceName">Logical service name for resource attributes.</param>
@@ -36,7 +36,13 @@ internal static class HostBuilderExtensions
         string instanceId,
         string environmentName)
     {
-        host.UseSerilog((ctx, services, lc) =>
+        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(serviceVersion);
+        ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(environmentName);
+
+        host.UseSerilog((ctx, _, lc) =>
         {
             lc.ReadFrom.Configuration(ctx.Configuration)
                 .ApplyDefaultEnrichers()

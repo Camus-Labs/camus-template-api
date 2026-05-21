@@ -7,9 +7,9 @@ namespace emc.camus.persistence.postgresql.DataAccess;
 
 /// <summary>
 /// PostgreSQL implementation of generated token data access using Dapper.
-/// Contains only raw SQL execution with no branching or business logic.
+/// Contains raw SQL execution with conditional SQL generation from caller-supplied parameters.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Dapper SQL execution with conditional clause generation; tested via integration tests")]
 internal sealed class GeneratedTokenDataAccess : IGeneratedTokenDataAccess
 {
     /// <summary>

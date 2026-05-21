@@ -44,17 +44,50 @@ public class ApiInfo
     /// <exception cref="ArgumentException">Thrown when name, version, or status is null, empty, or whitespace.</exception>
     public ApiInfo(string name, string version, string status, List<string>? features = null)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        ArgumentException.ThrowIfNullOrWhiteSpace(version);
-        ArgumentException.ThrowIfNullOrWhiteSpace(status);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(name.Length, MaxNameLength, nameof(name));
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(version.Length, MaxVersionLength, nameof(version));
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(status.Length, MaxStatusLength, nameof(status));
+        ValidateName(name);
+        ValidateVersion(version);
+        ValidateStatus(status);
 
         Name = name;
         Version = version;
         Status = status;
         Features = features ?? new List<string>();
+    }
+
+    /// <summary>
+    /// Validates the API name is non-empty and within length constraints.
+    /// </summary>
+    /// <param name="name">The name to validate.</param>
+    /// <exception cref="ArgumentException">Thrown when name is null, empty, or whitespace.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when name exceeds max length.</exception>
+    private static void ValidateName(string name)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(name.Length, MaxNameLength, nameof(name));
+    }
+
+    /// <summary>
+    /// Validates the API version is non-empty and within length constraints.
+    /// </summary>
+    /// <param name="version">The version to validate.</param>
+    /// <exception cref="ArgumentException">Thrown when version is null, empty, or whitespace.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when version exceeds max length.</exception>
+    private static void ValidateVersion(string version)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(version);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(version.Length, MaxVersionLength, nameof(version));
+    }
+
+    /// <summary>
+    /// Validates the API status is non-empty and within length constraints.
+    /// </summary>
+    /// <param name="status">The status to validate.</param>
+    /// <exception cref="ArgumentException">Thrown when status is null, empty, or whitespace.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when status exceeds max length.</exception>
+    private static void ValidateStatus(string status)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(status);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(status.Length, MaxStatusLength, nameof(status));
     }
 
     /// <summary>

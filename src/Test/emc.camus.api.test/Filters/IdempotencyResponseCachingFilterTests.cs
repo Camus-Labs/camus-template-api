@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using emc.camus.api.Configurations;
 using emc.camus.api.Filters;
 using emc.camus.api.Metrics;
+using emc.camus.api.test.Helpers;
 using emc.camus.application.Common;
 using emc.camus.application.Exceptions;
 using emc.camus.application.Idempotency;
@@ -29,6 +31,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
     private readonly IdempotencySettings _settings;
     private readonly IdempotencyMetrics _metrics;
     private readonly Mock<ILogger<IdempotencyResponseCachingFilter>> _mockLogger;
+    private readonly ConcurrentBag<(LogLevel Level, string Message)> _logEntries;
     private readonly IdempotencyResponseCachingFilter _filter;
 
     public IdempotencyResponseCachingFilterTests()
@@ -38,7 +41,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         _mockUserContext.Setup(u => u.GetCurrentUserId()).Returns(TestUserId);
         _settings = new IdempotencySettings();
         _metrics = new IdempotencyMetrics("test-service");
-        _mockLogger = new Mock<ILogger<IdempotencyResponseCachingFilter>>();
+        (_mockLogger, _logEntries) = LogCaptureBuilder.Create<IdempotencyResponseCachingFilter>();
         _filter = new IdempotencyResponseCachingFilter(
             _mockCache.Object, _mockUserContext.Object, _settings, _metrics, _mockLogger.Object);
     }
@@ -358,6 +361,8 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
 
         // Assert
         nextWasCalled.Should().BeTrue();
+        _logEntries.Should().Contain(e =>
+            e.Level == LogLevel.Warning && e.Message.Contains("lookup failed") && e.Message.Contains(TestIdempotencyKey));
     }
 
     // --- Endpoint without attribute is unaffected ---
@@ -424,6 +429,8 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         // Assert — response still indicates miss; filter did not propagate the error
         httpContext.Response.Headers[Headers.IdempotencyKeyStatus].ToString()
             .Should().Be("miss");
+        _logEntries.Should().Contain(e =>
+            e.Level == LogLevel.Warning && e.Message.Contains("storage failed") && e.Message.Contains(TestIdempotencyKey));
     }
 
     // --- LongTerm TTL policy ---

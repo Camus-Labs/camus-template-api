@@ -67,7 +67,7 @@ public class RateLimitingIpPartitionTests
         // Assert — IP B is independent, still within its own budget
         await responseBFirst.Should().HaveStatusCode(HttpStatusCode.OK);
 
-        // Assert — IP A is still throttled
+        // Assert — IP A is still throttled (complementary verification)
         await responseAExtra.Should().HaveStatusCode(HttpStatusCode.TooManyRequests);
         await responseAExtra.Should().HaveErrorCode(ErrorCodes.RateLimitExceeded);
     }
@@ -87,9 +87,11 @@ public class RateLimitingIpPartitionTests
         var responseA = await clientA.GetAsync(RelaxedEndpoint, ct);
         var responseB = await clientB.GetAsync(RelaxedEndpoint, ct);
 
-        // Assert — both are throttled independently
+        // Assert — IP A is throttled
         await responseA.Should().HaveStatusCode(HttpStatusCode.TooManyRequests);
         await responseA.Should().HaveErrorCode(ErrorCodes.RateLimitExceeded);
+
+        // Assert — IP B is also throttled independently
         await responseB.Should().HaveStatusCode(HttpStatusCode.TooManyRequests);
         await responseB.Should().HaveErrorCode(ErrorCodes.RateLimitExceeded);
     }
@@ -173,11 +175,11 @@ public class RateLimitingIpPartitionTests
         // Exhaust the rate limit and verify it is exhausted
         await RateLimitHelper.ExhaustAndVerifyRateLimitAsync(client, RelaxedEndpoint, ApiRateLimitingFactory.RelaxedPolicyPermitLimit, ct);
 
-        // Act — wait for the sliding window to fully expire
+        // Act — wait for the sliding window to expire, then request again
         await Task.Delay(TimeSpan.FromSeconds(ApiRateLimitingFactory.PolicyWindowSeconds + 1), ct);
+        var response = await client.GetAsync(RelaxedEndpoint, ct);
 
         // Assert — permits are replenished after window reset
-        var response = await client.GetAsync(RelaxedEndpoint, ct);
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
     }
 

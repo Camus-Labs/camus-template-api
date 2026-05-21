@@ -340,10 +340,8 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         var suffixes = new[] { "page-1", "page-2", "page-3" };
         await AuthenticatedClientHelper.GenerateTokensAsync(client, suffixes, TestContext.Current.CancellationToken);
 
-        // Arrange — fetch page 1 for cross-page comparison
-        var page1Response = await client.GetAsync("/api/v2/auth/tokens?Page=1&PageSize=2&sortBy=createdAt&sortDirection=asc", TestContext.Current.CancellationToken);
-
         // Act
+        var page1Response = await client.GetAsync("/api/v2/auth/tokens?Page=1&PageSize=2&sortBy=createdAt&sortDirection=asc", TestContext.Current.CancellationToken);
         var page2Response = await client.GetAsync("/api/v2/auth/tokens?Page=2&PageSize=2&sortBy=createdAt&sortDirection=asc", TestContext.Current.CancellationToken);
 
         // Assert — page 1

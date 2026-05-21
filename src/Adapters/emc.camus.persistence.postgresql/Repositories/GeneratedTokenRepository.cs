@@ -5,6 +5,7 @@ using emc.camus.domain.Auth;
 using emc.camus.persistence.postgresql.DataAccess;
 using emc.camus.persistence.postgresql.Mapping;
 using emc.camus.persistence.postgresql.Services;
+using static emc.camus.persistence.postgresql.Services.QueryExecutionGuard;
 
 namespace emc.camus.persistence.postgresql.Repositories;
 
@@ -51,42 +52,49 @@ internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     /// <exception cref="ArgumentNullException">Thrown when generatedToken is null.</exception>
-    /// <exception cref="DataConflictException">Thrown when a token with the same JTI or token username already exists.</exception>
-    /// <exception cref="KeyNotFoundException">Thrown when the creator user does not exist.</exception>
+    /// <exception cref="DataConflictException">Thrown when a token with the same JTI or token username already exists, or when the creator user does not exist.</exception>
     public async Task CreateAsync(GeneratedToken generatedToken, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(generatedToken);
 
         var connection = await _unitOfWork.GetConnectionAsync(ct);
 
-        var jtiExists = await _dataAccess.JtiExistsAsync(connection, generatedToken.Jti, ct);
+        var jtiExists = await ExecuteAsync(
+            () => _dataAccess.JtiExistsAsync(connection, generatedToken.Jti, ct),
+            nameof(_dataAccess.JtiExistsAsync));
         if (jtiExists)
         {
             throw new DataConflictException($"A generated token with JTI '{generatedToken.Jti}' already exists.");
         }
 
-        var usernameExists = await _dataAccess.TokenUsernameExistsAsync(connection, generatedToken.TokenUsername, ct);
+        var usernameExists = await ExecuteAsync(
+            () => _dataAccess.TokenUsernameExistsAsync(connection, generatedToken.TokenUsername, ct),
+            nameof(_dataAccess.TokenUsernameExistsAsync));
         if (usernameExists)
         {
             throw new DataConflictException($"A generated token with username '{generatedToken.TokenUsername}' already exists.");
         }
 
-        var creatorExists = await _dataAccess.CreatorUserExistsAsync(connection, generatedToken.CreatorUserId, ct);
+        var creatorExists = await ExecuteAsync(
+            () => _dataAccess.CreatorUserExistsAsync(connection, generatedToken.CreatorUserId, ct),
+            nameof(_dataAccess.CreatorUserExistsAsync));
         if (!creatorExists)
         {
-            throw new KeyNotFoundException($"Creator user with ID '{generatedToken.CreatorUserId}' not found.");
+            throw new DataConflictException($"Cannot create generated token because creator user '{generatedToken.CreatorUserId}' does not exist.");
         }
 
-        await _dataAccess.InsertAsync(
-            connection,
-            generatedToken.Jti,
-            generatedToken.CreatorUserId,
-            generatedToken.CreatorUsername,
-            generatedToken.TokenUsername,
-            generatedToken.Permissions.ToArray(),
-            generatedToken.ExpiresOn,
-            generatedToken.IsRevoked,
-            ct);
+        await ExecuteAsync(
+            () => _dataAccess.InsertAsync(
+                connection,
+                generatedToken.Jti,
+                generatedToken.CreatorUserId,
+                generatedToken.CreatorUsername,
+                generatedToken.TokenUsername,
+                generatedToken.Permissions.ToArray(),
+                generatedToken.ExpiresOn,
+                generatedToken.IsRevoked,
+                ct),
+            nameof(_dataAccess.InsertAsync));
     }
 
     /// <summary>
@@ -100,7 +108,9 @@ internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
         ArgumentOutOfRangeException.ThrowIfEqual(jti, Guid.Empty);
 
         var connection = await _unitOfWork.GetConnectionAsync(ct);
-        var result = await _dataAccess.FindByJtiAsync(connection, jti, ct);
+        var result = await ExecuteAsync(
+            () => _dataAccess.FindByJtiAsync(connection, jti, ct),
+            nameof(_dataAccess.FindByJtiAsync));
 
         return result?.ToEntity();
     }
@@ -120,7 +130,7 @@ internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
         Guid creatorUserId,
         PaginationParams pagination,
         GeneratedTokenFilter filter,
-        GeneratedTokenSortParams sort,
+        SortParams<GeneratedTokenSortField> sort,
         CancellationToken ct = default)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(creatorUserId, Guid.Empty);
@@ -133,8 +143,10 @@ internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
         var excludeRevoked = filter.ExcludeRevoked;
         var excludeExpired = filter.ExcludeExpired;
 
-        var totalCount = await _dataAccess.CountByCreatorUserIdAsync(
-            connection, creatorUserId, excludeRevoked, excludeExpired, ct);
+        var totalCount = await ExecuteAsync(
+            () => _dataAccess.CountByCreatorUserIdAsync(
+                connection, creatorUserId, excludeRevoked, excludeExpired, ct),
+            nameof(_dataAccess.CountByCreatorUserIdAsync));
 
         if (totalCount == 0)
         {
@@ -144,8 +156,10 @@ internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
         string? sortColumn = sort.Field is not null ? SortFieldColumnMap[sort.Field.Value] : null;
         string? sortDirection = sort.Direction?.ToSql();
 
-        var results = await _dataAccess.GetPageByCreatorUserIdAsync(
-            connection, creatorUserId, excludeRevoked, excludeExpired, pagination.PageSize, pagination.Offset, sortColumn, sortDirection, ct);
+        var results = await ExecuteAsync(
+            () => _dataAccess.GetPageByCreatorUserIdAsync(
+                connection, creatorUserId, excludeRevoked, excludeExpired, pagination.PageSize, pagination.Offset, sortColumn, sortDirection, ct),
+            nameof(_dataAccess.GetPageByCreatorUserIdAsync));
 
         var items = results.Select(r => r.ToEntity()).ToList();
 
@@ -167,8 +181,10 @@ internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
 
         var connection = await _unitOfWork.GetConnectionAsync(ct);
 
-        var rowsAffected = await _dataAccess.UpdateRevocationAsync(
-            connection, generatedToken.Jti, generatedToken.IsRevoked, generatedToken.RevokedAt, ct);
+        var rowsAffected = await ExecuteAsync(
+            () => _dataAccess.UpdateRevocationAsync(
+                connection, generatedToken.Jti, generatedToken.IsRevoked, generatedToken.RevokedAt, ct),
+            nameof(_dataAccess.UpdateRevocationAsync));
 
         if (rowsAffected == 0)
         {
@@ -185,7 +201,9 @@ internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
     public async Task<HashSet<Guid>> GetActiveRevokedJtisAsync(CancellationToken ct = default)
     {
         var connection = await _unitOfWork.GetConnectionAsync(ct);
-        var results = await _dataAccess.GetActiveRevokedJtisAsync(connection, ct);
+        var results = await ExecuteAsync(
+            () => _dataAccess.GetActiveRevokedJtisAsync(connection, ct),
+            nameof(_dataAccess.GetActiveRevokedJtisAsync));
 
         return results.ToHashSet();
     }

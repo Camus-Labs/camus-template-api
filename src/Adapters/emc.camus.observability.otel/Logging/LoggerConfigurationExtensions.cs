@@ -30,7 +30,7 @@ namespace emc.camus.observability.otel.Logging
                 .Enrich.FromLogContext()
                 .Enrich.With(new ActivityCurrentEnricher());
         }
-        
+
         /// <summary>
         /// Configures Serilog to write logs to the console. Intended for development and debugging.
         /// </summary>
@@ -41,6 +41,8 @@ namespace emc.camus.observability.otel.Logging
             this LoggerConfiguration loggerConfiguration,
             OpenTelemetrySettings settings)
         {
+            ArgumentNullException.ThrowIfNull(settings);
+
             var enabled = settings.Logs.Console.Enabled;
             var template = settings.Logs.Console.OutputTemplate;
 
@@ -72,6 +74,12 @@ namespace emc.camus.observability.otel.Logging
             string instanceId,
             string environmentName)
         {
+            ArgumentNullException.ThrowIfNull(settings);
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceVersion);
+            ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(environmentName);
+
             var exporter = settings.Logs.Exporter;
 
             var configured = loggerConfiguration;
@@ -83,11 +91,11 @@ namespace emc.camus.observability.otel.Logging
 
                 case LogsExporter.Console:
                     break; // Console logging is handled separately in WriteConsoleLogging to enable independent configuration of console and OTLP logging.
-                
+
                 case LogsExporter.None:
                     // No exporter configured
                     break;
-                
+
                 default:
                     throw new InvalidOperationException($"Unsupported logs exporter: {exporter}");
             }

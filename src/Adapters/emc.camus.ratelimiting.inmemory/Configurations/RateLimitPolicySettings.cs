@@ -10,7 +10,12 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
         private const int MaxPermitLimit = 100000;
         private const int MinWindowSeconds = 1;
         private const int MaxWindowSeconds = 3600;
-        
+
+        /// <summary>
+        /// The name of this policy, used for identification in error messages and logging.
+        /// </summary>
+        public string PolicyName { get; set; } = string.Empty;
+
         /// <summary>
         /// Number of requests allowed per window.
         /// </summary>
@@ -24,33 +29,39 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
         /// <summary>
         /// Validates the policy configuration.
         /// </summary>
-        /// <param name="policyName">The name of the policy being validated (for error messages).</param>
         /// <exception cref="InvalidOperationException">
         /// Thrown when any setting is invalid.
         /// </exception>
-        public void Validate(string policyName)
+        public void Validate()
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(policyName);
-
-            ValidatePermitLimit(policyName);
-            ValidateWindowSeconds(policyName);
+            ValidatePolicyName();
+            ValidatePermitLimit();
+            ValidateWindowSeconds();
         }
 
-        private void ValidatePermitLimit(string policyName)
+        private void ValidatePolicyName()
+        {
+            if (string.IsNullOrWhiteSpace(PolicyName))
+            {
+                throw new InvalidOperationException("PolicyName must be set before validation.");
+            }
+        }
+
+        private void ValidatePermitLimit()
         {
             if (PermitLimit < MinPermitLimit || PermitLimit > MaxPermitLimit)
             {
                 throw new InvalidOperationException(
-                    $"Policy '{policyName}': PermitLimit must be between {MinPermitLimit:N0} and {MaxPermitLimit:N0}. Current value: {PermitLimit}");
+                    $"Policy '{PolicyName}': PermitLimit must be between {MinPermitLimit:N0} and {MaxPermitLimit:N0}. Current value: {PermitLimit}");
             }
         }
 
-        private void ValidateWindowSeconds(string policyName)
+        private void ValidateWindowSeconds()
         {
             if (WindowSeconds < MinWindowSeconds || WindowSeconds > MaxWindowSeconds)
             {
                 throw new InvalidOperationException(
-                    $"Policy '{policyName}': WindowSeconds must be between {MinWindowSeconds} and {MaxWindowSeconds:N0} (1 hour). Current value: {WindowSeconds}");
+                    $"Policy '{PolicyName}': WindowSeconds must be between {MinWindowSeconds} and {MaxWindowSeconds:N0} (1 hour). Current value: {WindowSeconds}");
             }
         }
     }

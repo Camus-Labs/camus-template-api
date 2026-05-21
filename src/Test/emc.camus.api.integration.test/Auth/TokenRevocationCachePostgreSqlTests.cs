@@ -60,9 +60,9 @@ public class TokenRevocationCachePostgreSqlTests : IAsyncLifetime
         // propagated a DB-only revocation within the sync interval.
         var cache = _factory.Services.GetRequiredService<ITokenRevocationCache>();
         var synced = await PollUntilAsync(() => cache.IsRevoked(jti), timeout: TimeSpan.FromSeconds(15));
-        synced.Should().BeTrue("background sync service should load revoked JTIs from the database within the sync interval");
 
         // Assert — the token is now rejected by the JWT validation pipeline
+        synced.Should().BeTrue("background sync service should load revoked JTIs from the database within the sync interval");
         var response = await tokenClient.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
         await response.Should().HaveErrorCode("jwt_token_revoked");

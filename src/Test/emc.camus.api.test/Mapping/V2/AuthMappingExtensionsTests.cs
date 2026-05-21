@@ -7,6 +7,10 @@ namespace emc.camus.api.test.Mapping.V2;
 
 public class AuthMappingExtensionsTests
 {
+    private static readonly DateTimeOffset FixedNow = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime ValidExpiresOn = FixedNow.UtcDateTime.AddYears(1).AddDays(-1);
+    private static readonly DateTime ValidCreatedAt = FixedNow.UtcDateTime;
+
     // --- ToCommand (AuthenticateUserRequest) ---
 
     [Fact]
@@ -33,7 +37,7 @@ public class AuthMappingExtensionsTests
     public void ToResponse_AuthenticateUserResult_MapsTokenAndExpiration()
     {
         // Arrange
-        var result = new AuthenticateUserResult("jwt-token-value", new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc));
+        var result = new AuthenticateUserResult("jwt-token-value", ValidExpiresOn);
 
         // Act
         var response = result.ToResponse();
@@ -52,7 +56,7 @@ public class AuthMappingExtensionsTests
         var request = new GenerateTokenRequest
         {
             UsernameSuffix = "ci-deploy",
-            ExpiresOn = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
+            ExpiresOn = ValidExpiresOn,
             Permissions = new List<string> { "api.read", "api.write" }
         };
 
@@ -73,7 +77,7 @@ public class AuthMappingExtensionsTests
         // Arrange
         var result = new GenerateTokenResult(
             "generated-token",
-            new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
+            ValidExpiresOn,
             "adminuser-ci-deploy");
 
         // Act
@@ -91,13 +95,13 @@ public class AuthMappingExtensionsTests
     public void ToDto_GeneratedTokenSummaryView_MapsAllProperties()
     {
         // Arrange
-        var revokedAt = new DateTime(2026, 6, 15, 12, 0, 0, DateTimeKind.Utc);
+        var revokedAt = FixedNow.UtcDateTime.AddMonths(6);
         var view = new GeneratedTokenSummaryView(
             jti: new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
             tokenUsername: "admin-token1",
             permissions: new List<string> { "api.read" },
-            expiresOn: new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
-            createdAt: new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            expiresOn: ValidExpiresOn,
+            createdAt: ValidCreatedAt,
             isRevoked: true,
             revokedAt: revokedAt,
             isValid: false);
@@ -124,8 +128,8 @@ public class AuthMappingExtensionsTests
             jti: new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
             tokenUsername: "admin-token1",
             permissions: new List<string> { "api.read" },
-            expiresOn: new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
-            createdAt: new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            expiresOn: ValidExpiresOn,
+            createdAt: ValidCreatedAt,
             isRevoked: false,
             revokedAt: null,
             isValid: true);

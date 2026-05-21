@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.api.Models.Responses.V2;
 
 /// <summary>
 /// Response model containing generated token information and permissions.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class GenerateTokenResponse
 {
     /// <summary>

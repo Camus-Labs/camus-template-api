@@ -37,7 +37,7 @@ public class AuthenticateUserCommandTests
 
         // Assert
         act.Should().Throw<ArgumentException>()
-            .And.ParamName.Should().Be("username");
+            .And.ParamName.Should().Be("Username");
     }
 
     [Theory]
@@ -66,6 +66,6 @@ public class AuthenticateUserCommandTests
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
-            .And.ParamName.Should().Be("username");
+            .And.ParamName.Should().Be("Username");
     }
 }

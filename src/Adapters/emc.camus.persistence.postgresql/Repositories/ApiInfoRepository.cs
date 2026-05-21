@@ -3,6 +3,7 @@ using emc.camus.domain.Auth;
 using emc.camus.persistence.postgresql.DataAccess;
 using emc.camus.persistence.postgresql.Mapping;
 using emc.camus.persistence.postgresql.Services;
+using static emc.camus.persistence.postgresql.Services.QueryExecutionGuard;
 
 namespace emc.camus.persistence.postgresql.Repositories;
 
@@ -51,7 +52,9 @@ internal sealed class ApiInfoRepository : IApiInfoRepository
         }
 
         var connection = await _unitOfWork.GetConnectionAsync(ct);
-        var tableExists = await _dataAccess.CheckTableExistsAsync(connection, ct);
+        var tableExists = await ExecuteAsync(
+            () => _dataAccess.CheckTableExistsAsync(connection, ct),
+            nameof(_dataAccess.CheckTableExistsAsync));
 
         if (!tableExists)
         {
@@ -86,7 +89,9 @@ internal sealed class ApiInfoRepository : IApiInfoRepository
 
         var connection = await _unitOfWork.GetConnectionAsync(ct);
 
-        var result = await _dataAccess.FindByVersionAsync(connection, version, ct)
+        var result = await ExecuteAsync(
+            () => _dataAccess.FindByVersionAsync(connection, version, ct),
+            nameof(_dataAccess.FindByVersionAsync))
             ?? throw new KeyNotFoundException($"API info not found for version '{version}'.");
 
         return result.ToEntity();

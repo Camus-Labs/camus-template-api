@@ -24,9 +24,9 @@ public sealed class StubSecretProvider : ISecretProvider
 
     /// <summary>
     /// When <c>true</c>, <see cref="CheckConnectivityAsync"/> throws to simulate an unreachable secret store.
-    /// Static so test classes can toggle the flag without resolving the singleton instance from DI.
+    /// Instance-scoped so each factory host is independently configurable without cross-collection interference.
     /// </summary>
-    public static bool SimulateConnectivityFailure { get; set; }
+    public bool SimulateConnectivityFailure { get; set; }
 
     public Task LoadSecretsAsync(IEnumerable<string> secretNames, CancellationToken ct = default)
     {

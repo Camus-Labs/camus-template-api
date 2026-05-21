@@ -16,27 +16,13 @@ public class TokenRevocationSyncServiceTests
 
     private readonly TokenRevocationCache _cache = new();
     private readonly InMemoryCacheSettings _settings = new() { TokenRevocationCache = new() { SyncIntervalSeconds = 10 } };
-    private readonly Mock<ILogger<TokenRevocationSyncService>> _loggerMock = new();
+    private readonly Mock<ILogger<TokenRevocationSyncService>> _loggerMock;
     private readonly FakeTimeProvider _timeProvider = new();
-    private readonly ConcurrentBag<(LogLevel Level, string Message)> _logEntries = [];
+    private readonly ConcurrentBag<(LogLevel Level, string Message)> _logEntries;
 
     public TokenRevocationSyncServiceTests()
     {
-        _loggerMock.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
-        _loggerMock
-            .Setup(x => x.Log(
-                It.IsAny<LogLevel>(),
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
-                It.IsAny<Exception?>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
-            .Callback(new InvocationAction(invocation =>
-            {
-                var level = (LogLevel)invocation.Arguments[0];
-                var state = invocation.Arguments[2];
-                var message = state?.ToString() ?? "";
-                _logEntries.Add((level, message));
-            }));
+        (_loggerMock, _logEntries) = LogCaptureBuilder.Create<TokenRevocationSyncService>();
     }
 
     [Fact]
@@ -69,12 +55,12 @@ public class TokenRevocationSyncServiceTests
 
         // Act
         await service.StartAsync(CancellationToken.None);
-        await AsyncWaitHelper.WaitUntilAsync(() => _logEntries.Any(e => e.Level == LogLevel.Warning));
+        await AsyncWaitHelper.WaitUntilAsync(() => _logEntries.Any(e => e.Level == LogLevel.Warning && e.Message.Contains("IGeneratedTokenRepository")));
         await service.StopAsync(CancellationToken.None);
 
         // Assert — cache remains empty, warning logged
         _cache.IsRevoked(RevokedJti).Should().BeFalse();
-        VerifyLoggedAtLevel(LogLevel.Warning);
+        _logEntries.Should().Contain(e => e.Level == LogLevel.Warning && e.Message.Contains("IGeneratedTokenRepository"));
     }
 
     [Fact]
@@ -92,12 +78,12 @@ public class TokenRevocationSyncServiceTests
 
         // Act
         await service.StartAsync(CancellationToken.None);
-        await AsyncWaitHelper.WaitUntilAsync(() => _logEntries.Any(e => e.Level == LogLevel.Warning && e.Message.Contains("failed")));
+        await AsyncWaitHelper.WaitUntilAsync(() => _logEntries.Any(e => e.Level == LogLevel.Warning && e.Message.Contains("revocation") && e.Message.Contains("failed")));
         await service.StopAsync(CancellationToken.None);
 
         // Assert — warning logged, service did not crash
         _logEntries.Should().Contain(e =>
-            e.Level == LogLevel.Warning && e.Message.Contains("sync") && e.Message.Contains("failed"));
+            e.Level == LogLevel.Warning && e.Message.Contains("revocation") && e.Message.Contains("sync") && e.Message.Contains("failed"));
     }
 
     [Fact]
@@ -145,12 +131,12 @@ public class TokenRevocationSyncServiceTests
 
         // Act
         await service.StartAsync(cts.Token);
-        await AsyncWaitHelper.WaitUntilAsync(() => _logEntries.Any(e => e.Level == LogLevel.Information && e.Message.Contains("stopped")));
+        await AsyncWaitHelper.WaitUntilAsync(() => _logEntries.Any(e => e.Level == LogLevel.Information && e.Message.Contains("revocation") && e.Message.Contains("stopped")));
         await service.StopAsync(CancellationToken.None);
 
         // Assert — no error logged, service stopped gracefully with shutdown info log
-        VerifyNeverLoggedAtLevel(LogLevel.Error);
-        _logEntries.Should().Contain(e => e.Level == LogLevel.Information && e.Message.Contains("stopped"));
+        _logEntries.Should().NotContain(e => e.Level == LogLevel.Error);
+        _logEntries.Should().Contain(e => e.Level == LogLevel.Information && e.Message.Contains("revocation") && e.Message.Contains("stopped"));
     }
 
     [Fact]
@@ -185,30 +171,6 @@ public class TokenRevocationSyncServiceTests
         // Assert — repository called at least twice (initial + one periodic tick)
         callCount.Should().BeGreaterThanOrEqualTo(2);
         _cache.IsRevoked(RevokedJti).Should().BeTrue();
-    }
-
-    private void VerifyLoggedAtLevel(LogLevel level)
-    {
-        _loggerMock.Verify(
-            x => x.Log(
-                level,
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
-                It.IsAny<Exception?>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.AtLeastOnce);
-    }
-
-    private void VerifyNeverLoggedAtLevel(LogLevel level)
-    {
-        _loggerMock.Verify(
-            x => x.Log(
-                level,
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
-                It.IsAny<Exception?>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Never);
     }
 
 }

@@ -13,8 +13,8 @@ public class JwtTokenGeneratorTests : IDisposable
 {
     private static readonly Guid ValidUserId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly Guid ValidJti = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-    private static readonly DateTime ValidExpiresOn = new(2099, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     private static readonly DateTimeOffset FixedUtcNow = new(2099, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime ValidExpiresOn = FixedUtcNow.AddYears(1).UtcDateTime;
     private const string ValidUsername = "testuser";
     private const string TestRoleValue = "Admin";
     private const string CustomClaimType = "custom-claim";

@@ -19,6 +19,10 @@ public class AuthControllerTests
     private readonly Mock<IAuthService> _mockAuthService;
     private readonly AuthController _controller;
 
+    private static readonly DateTimeOffset FixedNow = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime ValidExpiresOn = FixedNow.UtcDateTime.AddYears(1).AddDays(-1);
+    private static readonly DateTime ValidCreatedAt = FixedNow.UtcDateTime;
+
     public AuthControllerTests()
     {
         _mockActivitySource = new Mock<IActivitySourceWrapper>();
@@ -74,7 +78,7 @@ public class AuthControllerTests
             Username = "testuser",
             Password = "securepass"
         };
-        var authResult = new AuthenticateUserResult("jwt-token-value", new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc));
+        var authResult = new AuthenticateUserResult("jwt-token-value", ValidExpiresOn);
 
         _mockAuthService
             .Setup(s => s.AuthenticateAsync(It.IsAny<AuthenticateUserCommand>(), It.IsAny<CancellationToken>()))
@@ -107,7 +111,7 @@ public class AuthControllerTests
         var request = new GenerateTokenRequest
         {
             UsernameSuffix = "ci-deploy",
-            ExpiresOn = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc),
+            ExpiresOn = ValidExpiresOn,
             Permissions = new List<string> { "api.read" }
         };
         var generateResult = new GenerateTokenResult(
@@ -150,7 +154,7 @@ public class AuthControllerTests
         var view = new GeneratedTokenSummaryView(
             jti, "admin-token1",
             new List<string> { "api.read" },
-            new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc), new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            ValidExpiresOn, ValidCreatedAt,
             false, null, true);
 
         var pagedResult = new PagedResult<GeneratedTokenSummaryView>(
@@ -160,7 +164,7 @@ public class AuthControllerTests
             .Setup(s => s.GetGeneratedTokensAsync(
                 It.IsAny<PaginationParams>(),
                 It.IsAny<GeneratedTokenFilter>(),
-                It.IsAny<GeneratedTokenSortParams>(),
+                It.IsAny<SortParams<GeneratedTokenSortField>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -188,7 +192,7 @@ public class AuthControllerTests
             .Setup(s => s.GetGeneratedTokensAsync(
                 It.IsAny<PaginationParams>(),
                 It.IsAny<GeneratedTokenFilter>(),
-                It.IsAny<GeneratedTokenSortParams>(),
+                It.IsAny<SortParams<GeneratedTokenSortField>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
@@ -208,12 +212,12 @@ public class AuthControllerTests
     public async Task RevokeToken_ValidJti_ReturnsOkWithRevokedTokenSummary()
     {
         // Arrange
-        var revokedAt = new DateTime(2026, 6, 15, 12, 0, 0, DateTimeKind.Utc);
+        var revokedAt = FixedNow.UtcDateTime.AddMonths(6);
         var jti = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var view = new GeneratedTokenSummaryView(
             jti, "admin-token1",
             new List<string> { "api.read" },
-            new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc), new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            ValidExpiresOn, ValidCreatedAt,
             true, revokedAt, false);
 
         _mockAuthService

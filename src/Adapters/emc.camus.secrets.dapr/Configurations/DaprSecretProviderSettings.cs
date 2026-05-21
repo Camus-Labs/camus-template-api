@@ -6,7 +6,7 @@ namespace emc.camus.secrets.dapr.Configurations
     internal sealed class DaprSecretProviderSettings
     {
         /// <summary>
-        /// The configuration section name for Dapr secret provider settings.
+        /// The configuration section name used to bind these settings from appsettings.
         /// </summary>
         public const string ConfigurationSectionName = "DaprSecretProviderSettings";
 

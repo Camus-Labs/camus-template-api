@@ -57,18 +57,12 @@ public class UnitOfWorkTransactionPostgreSqlTests : IAsyncLifetime
         await unitOfWork.BeginTransactionAsync(TestContext.Current.CancellationToken);
         await tokenRepository.CreateAsync(token, TestContext.Current.CancellationToken);
 
-        // Assert — row is visible within the transaction scope via direct DB query
-        await using var insideConnection = new NpgsqlConnection(_factory.ConnectionString);
-        await insideConnection.OpenAsync(TestContext.Current.CancellationToken);
-        var countInside = await insideConnection.ExecuteScalarAsync<int>(
-            "SELECT COUNT(*) FROM camus.generated_tokens WHERE jti = @Jti",
-            new { Jti = jti });
-
         await using var outsideConnection = new NpgsqlConnection(_factory.ConnectionString);
         await outsideConnection.OpenAsync(TestContext.Current.CancellationToken);
         var countOutside = await outsideConnection.ExecuteScalarAsync<int>(
             "SELECT COUNT(*) FROM camus.generated_tokens WHERE jti = @Jti",
             new { Jti = jti });
+
         await unitOfWork.RollbackAsync();
 
         var countAfterRollback = await outsideConnection.ExecuteScalarAsync<int>(

@@ -2,6 +2,7 @@ using System.Data;
 using System.Data.Common;
 using FluentAssertions;
 using emc.camus.application.Common;
+using emc.camus.application.Exceptions;
 using emc.camus.persistence.postgresql.DataAccess;
 using emc.camus.persistence.postgresql.Repositories;
 using emc.camus.persistence.postgresql.Services;
@@ -173,6 +174,20 @@ public class ActionAuditRepositoryTests : IDisposable
 
     // --- LogActionAsync ---
 
+    [Fact]
+    public async Task LogActionAsync_EmptyUserId_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var repository = CreateRepository();
+
+        // Act
+        var act = () => repository.LogActionAsync(Guid.Empty, "System", "Test Action", "Test summary", TestContext.Current.CancellationToken);
+
+        // Assert
+        (await act.Should().ThrowAsync<ArgumentOutOfRangeException>())
+            .And.ParamName.Should().Be("userId");
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -183,7 +198,7 @@ public class ActionAuditRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.LogActionAsync(Guid.Empty, username!, "Test Action", "Test summary", TestContext.Current.CancellationToken);
+        var act = () => repository.LogActionAsync(UserId, username!, "Test Action", "Test summary", TestContext.Current.CancellationToken);
 
         // Assert
         (await act.Should().ThrowAsync<ArgumentException>())
@@ -200,7 +215,7 @@ public class ActionAuditRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.LogActionAsync(Guid.Empty, "System", actionTitle!, "Test summary", TestContext.Current.CancellationToken);
+        var act = () => repository.LogActionAsync(UserId, "System", actionTitle!, "Test summary", TestContext.Current.CancellationToken);
 
         // Assert
         (await act.Should().ThrowAsync<ArgumentException>())
@@ -217,7 +232,7 @@ public class ActionAuditRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.LogActionAsync(Guid.Empty, "System", "Test Action", actionSummary!, TestContext.Current.CancellationToken);
+        var act = () => repository.LogActionAsync(UserId, "System", "Test Action", actionSummary!, TestContext.Current.CancellationToken);
 
         // Assert
         (await act.Should().ThrowAsync<ArgumentException>())
@@ -237,7 +252,7 @@ public class ActionAuditRepositoryTests : IDisposable
         var act = () => repository.LogActionAsync(UserId, "testuser", "TestAction", "Test summary", TestContext.Current.CancellationToken);
 
         // Assert
-        await act.Should().ThrowAsync<KeyNotFoundException>()
+        await act.Should().ThrowAsync<DataConflictException>()
             .WithMessage($"*{UserId}*");
     }
 

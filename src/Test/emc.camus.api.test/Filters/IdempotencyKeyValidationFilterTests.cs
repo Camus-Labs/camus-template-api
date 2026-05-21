@@ -60,13 +60,12 @@ public class IdempotencyKeyValidationFilterTests
             .WithMessage("*Idempotency-Key*missing*");
     }
 
-    // --- AC-02: Empty/whitespace/over-length Idempotency-Key throws ArgumentException ---
+    // --- AC-02: Empty/whitespace Idempotency-Key throws ArgumentException ---
 
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    [MemberData(nameof(OverLengthIdempotencyKey))]
-    public void OnActionExecuting_InvalidIdempotencyKey_ThrowsArgumentExceptionWithInvalidMessage(string headerValue)
+    public void OnActionExecuting_EmptyOrWhitespaceIdempotencyKey_ThrowsArgumentException(string headerValue)
     {
         // Arrange
         var httpContext = new DefaultHttpContext();
@@ -78,12 +77,25 @@ public class IdempotencyKeyValidationFilterTests
 
         // Assert
         act.Should().Throw<ArgumentException>()
-            .WithMessage("*Idempotency-Key*invalid*");
+            .WithMessage("*empty string or composed entirely of whitespace*");
     }
 
-    public static IEnumerable<object[]> OverLengthIdempotencyKey()
+    // --- AC-02b: Over-length Idempotency-Key throws ArgumentException ---
+
+    [Fact]
+    public void OnActionExecuting_OverLengthIdempotencyKey_ThrowsArgumentExceptionWithLengthMessage()
     {
-        yield return new object[] { new string('a', 257) };
+        // Arrange
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Headers[Headers.IdempotencyKey] = new string('a', 257);
+        var context = CreateActionExecutingContext(httpContext);
+
+        // Act
+        var act = () => _filter.OnActionExecuting(context);
+
+        // Assert
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*exceeds maximum length*");
     }
 
     // --- AC-03: Valid Idempotency-Key passes validation ---

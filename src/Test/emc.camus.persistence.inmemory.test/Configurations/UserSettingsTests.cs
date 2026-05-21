@@ -19,7 +19,7 @@ public class UserSettingsTests
         };
 
         // Act
-        var act = () => settings.Validate(new List<string> { "admin", "reader" });
+        var act = () => settings.Validate();
 
         // Assert
         act.Should().NotThrow();
@@ -40,7 +40,7 @@ public class UserSettingsTests
         };
 
         // Act
-        var act = () => settings.Validate(new List<string> { "admin", "reader" });
+        var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -59,7 +59,7 @@ public class UserSettingsTests
         };
 
         // Act
-        var act = () => settings.Validate(new List<string> { "admin", "reader" });
+        var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -81,7 +81,7 @@ public class UserSettingsTests
         };
 
         // Act
-        var act = () => settings.Validate(new List<string> { "admin", "reader" });
+        var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -100,7 +100,7 @@ public class UserSettingsTests
         };
 
         // Act
-        var act = () => settings.Validate(new List<string> { "admin", "reader" });
+        var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -120,7 +120,7 @@ public class UserSettingsTests
         };
 
         // Act
-        var act = () => settings.Validate(new List<string> { "admin", "reader" });
+        var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -128,44 +128,7 @@ public class UserSettingsTests
     }
 
     [Fact]
-    public void Validate_InvalidRole_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var settings = new UserSettings
-        {
-            UsernameSecretName = "user-secret",
-            PasswordSecretName = "pass-secret",
-            Roles = new List<string> { "nonexistent" }
-        };
-
-        // Act
-        var act = () => settings.Validate(new List<string> { "admin", "reader" });
-
-        // Assert
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*invalid roles*nonexistent*");
-    }
-
-    [Fact]
-    public void Validate_NullAvailableRoles_ThrowsArgumentNullException()
-    {
-        // Arrange
-        var settings = new UserSettings
-        {
-            UsernameSecretName = "user-secret",
-            PasswordSecretName = "pass-secret",
-            Roles = new List<string> { "admin" }
-        };
-
-        // Act
-        var act = () => settings.Validate(null!);
-
-        // Assert
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
-    public void Validate_MultipleValidRoles_DoesNotThrow()
+    public void Validate_MultipleRoles_DoesNotThrow()
     {
         // Arrange
         var settings = new UserSettings
@@ -176,7 +139,7 @@ public class UserSettingsTests
         };
 
         // Act
-        var act = () => settings.Validate(new List<string> { "admin", "reader" });
+        var act = () => settings.Validate();
 
         // Assert
         act.Should().NotThrow();

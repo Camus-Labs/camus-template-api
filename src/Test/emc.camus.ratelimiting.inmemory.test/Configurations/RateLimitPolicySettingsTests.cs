@@ -6,10 +6,12 @@ namespace emc.camus.ratelimiting.inmemory.test.Configurations;
 public class RateLimitPolicySettingsTests
 {
     private static RateLimitPolicySettings CreateSettings(
+        string policyName = "default",
         int permitLimit = 100,
         int windowSeconds = 60) =>
         new()
         {
+            PolicyName = policyName,
             PermitLimit = permitLimit,
             WindowSeconds = windowSeconds
         };
@@ -26,7 +28,7 @@ public class RateLimitPolicySettingsTests
         var settings = CreateSettings(permitLimit: permitLimit);
 
         // Act
-        var act = () => settings.Validate("default");
+        var act = () => settings.Validate();
 
         // Assert
         act.Should().NotThrow();
@@ -42,7 +44,7 @@ public class RateLimitPolicySettingsTests
         var settings = CreateSettings(windowSeconds: windowSeconds);
 
         // Act
-        var act = () => settings.Validate("default");
+        var act = () => settings.Validate();
 
         // Assert
         act.Should().NotThrow();
@@ -60,7 +62,7 @@ public class RateLimitPolicySettingsTests
         var settings = CreateSettings(permitLimit: permitLimit);
 
         // Act
-        var act = () => settings.Validate("default");
+        var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -71,10 +73,10 @@ public class RateLimitPolicySettingsTests
     public void Validate_PermitLimitAboveMaximum_ThrowsInvalidOperationException()
     {
         // Arrange
-        var settings = CreateSettings(permitLimit: 100001);
+        var settings = CreateSettings(policyName: "strict", permitLimit: 100001);
 
         // Act
-        var act = () => settings.Validate("strict");
+        var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -93,7 +95,7 @@ public class RateLimitPolicySettingsTests
         var settings = CreateSettings(windowSeconds: windowSeconds);
 
         // Act
-        var act = () => settings.Validate("default");
+        var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -104,10 +106,10 @@ public class RateLimitPolicySettingsTests
     public void Validate_WindowSecondsAboveMaximum_ThrowsInvalidOperationException()
     {
         // Arrange
-        var settings = CreateSettings(windowSeconds: 3601);
+        var settings = CreateSettings(policyName: "relaxed", windowSeconds: 3601);
 
         // Act
-        var act = () => settings.Validate("relaxed");
+        var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -120,16 +122,21 @@ public class RateLimitPolicySettingsTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void Validate_InvalidPolicyName_ThrowsArgumentException(string? policyName)
+    public void Validate_InvalidPolicyName_ThrowsInvalidOperationException(string? policyName)
     {
         // Arrange
-        var settings = CreateSettings();
+        var settings = new RateLimitPolicySettings
+        {
+            PolicyName = policyName!,
+            PermitLimit = 100,
+            WindowSeconds = 60
+        };
 
         // Act
-        var act = () => settings.Validate(policyName!);
+        var act = () => settings.Validate();
 
         // Assert
-        act.Should().Throw<ArgumentException>()
-            .And.ParamName.Should().Be("policyName");
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*PolicyName*");
     }
 }

@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using FluentAssertions;
 using emc.camus.secrets.dapr.Configurations;
+using emc.camus.secrets.dapr.Exceptions;
 using emc.camus.secrets.dapr.Services;
 using emc.camus.secrets.dapr.test.Helpers;
 
@@ -143,7 +144,7 @@ public class DaprSecretProviderTests
 
         // Assert
         (await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("*null*whitespace*"))
+            .WithMessage("*empty*whitespace*"))
             .And.ParamName.Should().Be("secretNames");
     }
 
@@ -199,7 +200,7 @@ public class DaprSecretProviderTests
     }
 
     [Fact]
-    public async Task LoadSecretsAsync_ServerError_ThrowsInvalidOperationException()
+    public async Task LoadSecretsAsync_ServerError_ThrowsDaprSecretStoreException()
     {
         // Arrange
         var handler = new FakeHttpMessageHandler(HttpStatusCode.InternalServerError, "error");
@@ -209,7 +210,7 @@ public class DaprSecretProviderTests
         var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<DaprSecretStoreException>()
             .WithMessage("*Failed*load*secret*");
     }
 
@@ -282,7 +283,7 @@ public class DaprSecretProviderTests
     }
 
     [Fact]
-    public async Task LoadSecretsAsync_HttpClientThrows_ThrowsInvalidOperationExceptionWithInnerException()
+    public async Task LoadSecretsAsync_HttpClientThrows_ThrowsDaprSecretStoreExceptionWithInnerException()
     {
         // Arrange
         var handler = new FakeHttpMessageHandler(new HttpRequestException("connection refused"));
@@ -292,7 +293,7 @@ public class DaprSecretProviderTests
         var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
 
         // Assert
-        (await act.Should().ThrowAsync<InvalidOperationException>()
+        (await act.Should().ThrowAsync<DaprSecretStoreException>()
             .WithMessage("*Failed*load*secret*"))
             .And.InnerException.Should().BeOfType<HttpRequestException>();
     }
@@ -341,6 +342,38 @@ public class DaprSecretProviderTests
 
         // Assert
         result.Should().Be(ValidSecretValue);
+    }
+
+    // --- CheckConnectivityAsync ---
+
+    [Fact]
+    public async Task CheckConnectivityAsync_SecretStoreReachable_DoesNotThrow()
+    {
+        // Arrange
+        var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, "{}");
+        var provider = CreateProvider(handler: handler);
+
+        // Act
+        var act = () => provider.CheckConnectivityAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task CheckConnectivityAsync_HttpClientThrows_ThrowsDaprSecretStoreExceptionWithInnerException()
+    {
+        // Arrange
+        var handler = new FakeHttpMessageHandler(new HttpRequestException("connection refused"));
+        var provider = CreateProvider(handler: handler);
+
+        // Act
+        var act = () => provider.CheckConnectivityAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        (await act.Should().ThrowAsync<DaprSecretStoreException>()
+            .WithMessage("*Failed*check*connectivity*"))
+            .And.InnerException.Should().BeOfType<HttpRequestException>();
     }
 
 }

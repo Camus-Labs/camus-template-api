@@ -40,7 +40,7 @@ public class GenerateTokenCommandTests
 
         // Assert
         act.Should().Throw<ArgumentException>()
-            .And.ParamName.Should().Be("usernameSuffix");
+            .And.ParamName.Should().Be("UsernameSuffix");
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class GenerateTokenCommandTests
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
-            .And.ParamName.Should().Be("usernameSuffix");
+            .And.ParamName.Should().Be("UsernameSuffix");
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class GenerateTokenCommandTests
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
-            .And.ParamName.Should().Be("permissions.Count");
+            .And.ParamName.Should().Be("Permissions");
     }
 
     [Theory]
@@ -109,7 +109,7 @@ public class GenerateTokenCommandTests
         // Assert
         act.Should().Throw<ArgumentException>()
             .WithMessage($"*Invalid permissions*{expectedInvalidPermission}*")
-            .And.ParamName.Should().Be("permissions");
+            .And.ParamName.Should().Be("Permissions");
     }
 
     public static TheoryData<List<string>, string> InvalidPermissionsTestCases => new()

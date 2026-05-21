@@ -2,6 +2,7 @@ using System.Linq;
 using FluentAssertions;
 using emc.camus.application.Auth;
 using emc.camus.domain.Auth;
+using Microsoft.Extensions.Time.Testing;
 
 namespace emc.camus.application.test.Auth;
 
@@ -10,8 +11,9 @@ public class AuthMappingExtensionsTests
     private static readonly Guid ValidJti = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     private const string ValidTokenUsername = "admin-token1";
     private static readonly IReadOnlyList<string> ValidPermissions = [Permissions.ApiRead, Permissions.ApiWrite];
-    private static readonly DateTime ValidExpiration = new(2099, 12, 31, 23, 59, 59, DateTimeKind.Utc);
-    private static readonly DateTime ValidCreatedAt = new(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTimeOffset FixedNow = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime ValidExpiration = FixedNow.UtcDateTime.AddYears(1).AddDays(-1);
+    private static readonly DateTime ValidCreatedAt = FixedNow.UtcDateTime.AddYears(-1);
 
     // --- ToSummaryView ---
 
@@ -21,7 +23,8 @@ public class AuthMappingExtensionsTests
         // Arrange
         var token = GeneratedToken.Reconstitute(
             ValidJti, new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), "admin", ValidTokenUsername,
-            ValidPermissions.ToList(), ValidExpiration, ValidCreatedAt, false, null);
+            ValidPermissions.ToList(), ValidExpiration, ValidCreatedAt, false, null,
+            timeProvider: new FakeTimeProvider(FixedNow));
 
         // Act
         var view = token.ToSummaryView();
@@ -41,10 +44,11 @@ public class AuthMappingExtensionsTests
     public void ToSummaryView_RevokedToken_MapsRevokedState()
     {
         // Arrange
-        var revokedAt = new DateTime(2024, 6, 1, 12, 0, 0, DateTimeKind.Utc);
+        var revokedAt = FixedNow.UtcDateTime.AddMonths(-6);
         var token = GeneratedToken.Reconstitute(
             ValidJti, new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), "admin", ValidTokenUsername,
-            ValidPermissions.ToList(), ValidExpiration, ValidCreatedAt, true, revokedAt);
+            ValidPermissions.ToList(), ValidExpiration, ValidCreatedAt, true, revokedAt,
+            timeProvider: new FakeTimeProvider(FixedNow));
 
         // Act
         var view = token.ToSummaryView();
@@ -59,10 +63,11 @@ public class AuthMappingExtensionsTests
     public void ToSummaryView_ExpiredToken_MapsExpiredState()
     {
         // Arrange
-        var pastExpiration = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var pastExpiration = FixedNow.UtcDateTime.AddMonths(-6);
         var token = GeneratedToken.Reconstitute(
             ValidJti, new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), "admin", ValidTokenUsername,
-            ValidPermissions.ToList(), pastExpiration, ValidCreatedAt, false, null);
+            ValidPermissions.ToList(), pastExpiration, ValidCreatedAt, false, null,
+            timeProvider: new FakeTimeProvider(FixedNow));
 
         // Act
         var view = token.ToSummaryView();

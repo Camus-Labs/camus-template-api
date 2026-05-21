@@ -6,6 +6,8 @@ applyTo: "src/Adapters/**/*.cs"
 
 1. Scope Compliance
 
+    - [ ] No business rules or domain logic — those belong in Domain entities
+    - [ ] No layer orchestration (coordinating domain entities and port calls)
     - [ ] File implements an Application-layer interface (port), or is a configuration, extension, mapping,
           or `internal` helper class consumed by one that does
     - [ ] External service clients wrap a single SDK or service
@@ -22,5 +24,16 @@ applyTo: "src/Adapters/**/*.cs"
 
 3. Validation & Error Handling
 
-    - [ ] Adapter-specific exceptions preserve the inner exception when wrapping technology failures
-    - [ ] Adapter-specific exception messages include the operation name that failed
+    - [ ] Technology failures (timeouts, connection refused, 5xx) from direct SDK or infrastructure calls are
+          wrapped in a custom `internal` adapter exception living in `Exceptions/` folder, preserving the inner
+          exception — exception: calls to Application-layer ports (interfaces implemented by other adapters)
+          propagate exceptions as-is because the owning adapter is responsible for its own wrapping
+    - [ ] Logical failures from external services (HTTP 404 from a remote API, malformed response body,
+          unexpected payload shape) throw `InvalidOperationException` — exception: repository entity-not-found
+          lookups throw `KeyNotFoundException` to signal a missing entity to the caller
+
+4. Code Coverage Exclusions
+
+    - [ ] `[ExcludeFromCodeCoverage]` on classes whose public methods exclusively delegate to external
+          infrastructure SDK calls with no branching logic (e.g., Dapper queries on `DbConnection`, Dapr client
+          calls, blob storage operations)

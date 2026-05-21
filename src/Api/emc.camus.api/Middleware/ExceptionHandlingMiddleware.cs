@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Options;
 using emc.camus.api.Configurations;
 using emc.camus.api.Metrics;
 using emc.camus.application.Common;
@@ -97,7 +96,7 @@ namespace emc.camus.api.Middleware
             RequestDelegate next,
             ILogger<ExceptionHandlingMiddleware> logger,
             IHostEnvironment environment,
-            IOptions<ErrorHandlingSettings> settings,
+            ErrorHandlingSettings settings,
             ErrorMetrics errorMetrics)
         {
             ArgumentNullException.ThrowIfNull(logger);
@@ -110,8 +109,8 @@ namespace emc.camus.api.Middleware
             _environment = environment;
             _errorMetrics = errorMetrics;
 
-            // Combine rules once at startup: AdditionalRules first (allow config overrides), then PlatformRules
-            _allRules = settings.Value.AdditionalRules.Concat(PlatformRules).ToList().AsReadOnly();
+            // Combine rules once at startup: PlatformRules first (specific patterns take precedence), then AdditionalRules as fallbacks
+            _allRules = PlatformRules.Concat(settings.AdditionalRules).ToList().AsReadOnly();
         }
 
         /// <summary>
@@ -162,7 +161,8 @@ namespace emc.camus.api.Middleware
 
             var json = JsonSerializer.Serialize(problemDetails, ProblemDetailsSerializerOptions);
 
-            return context.Response.WriteAsync(json);
+            // Compensating action: always deliver the error response even after cancellation.
+            return context.Response.WriteAsync(json, CancellationToken.None);
         }
 
         /// <summary>
@@ -291,7 +291,7 @@ namespace emc.camus.api.Middleware
 
         /// <summary>
         /// Resolves an exception to a machine-readable error code using configured rules.
-        /// Evaluates AdditionalRules (from configuration) before PlatformRules (built-in).
+        /// Evaluates PlatformRules (built-in, pattern-specific) before AdditionalRules (from configuration).
         /// </summary>
         private string ResolveErrorCode(Exception exception)
         {

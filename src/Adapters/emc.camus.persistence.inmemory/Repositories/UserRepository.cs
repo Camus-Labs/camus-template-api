@@ -1,4 +1,5 @@
 using emc.camus.application.Auth;
+using emc.camus.application.Exceptions;
 using emc.camus.application.Secrets;
 using emc.camus.domain.Auth;
 using emc.camus.persistence.inmemory.Configurations;
@@ -80,6 +81,11 @@ internal sealed class UserRepository : IUserRepository
             if (string.IsNullOrWhiteSpace(password))
             {
                 throw new InvalidOperationException($"Failed to retrieve password from secret '{userConfig.PasswordSecretName}'. Ensure the secret exists in the secret store.");
+            }
+
+            if (_usersByUsername.ContainsKey(username))
+            {
+                throw new DataConflictException($"Duplicate resolved username '{username}'. Two or more user configurations resolve to the same username.");
             }
 
             var user = new User(

@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.persistence.postgresql.Services;
 
 /// <summary>
@@ -6,6 +8,7 @@ namespace emc.camus.persistence.postgresql.Services;
 /// same DI container share a single flag, while separate containers (e.g., multiple
 /// <c>WebApplicationFactory</c> instances in integration tests) each get their own independent state.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal sealed class InitializationState
 {
     /// <summary>

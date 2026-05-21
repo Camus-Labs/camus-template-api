@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using emc.camus.application.Configurations;
 using emc.camus.application.Secrets;
 using emc.camus.migrations.dbup.Configurations;
+using emc.camus.migrations.dbup.Exceptions;
 
 namespace emc.camus.migrations.dbup
 {
@@ -20,10 +21,6 @@ namespace emc.camus.migrations.dbup
         [LoggerMessage(Level = LogLevel.Information,
             Message = "Starting database migrations...")]
         private static partial void LogMigrationStarting(ILogger logger);
-
-        [LoggerMessage(Level = LogLevel.Information,
-            Message = "Database migration credentials will be fetched from secret provider")]
-        private static partial void LogCredentialsFetchFromSecrets(ILogger logger);
 
         [LoggerMessage(Level = LogLevel.Information,
             Message = "Database is up to date. No migrations needed.")]
@@ -92,43 +89,41 @@ namespace emc.camus.migrations.dbup
 
             var dbSettings = app.Services.GetRequiredService<DatabaseSettings>();
 
+            // Validate prerequisites before entering the infrastructure try block
+            var secretProvider = app.Services.GetService<ISecretProvider>();
+            if (secretProvider == null)
+            {
+                throw new InvalidOperationException(
+                    "UseDatabaseMigrations failed: ISecretProvider is not registered in DI");
+            }
+
+            // Fetch admin credentials from secret provider
+            var adminUsername = secretProvider.GetSecret(migrationsSettings.AdminSecretName!);
+            var adminPassword = secretProvider.GetSecret(migrationsSettings.PasswordSecretName!);
+
+            if (string.IsNullOrWhiteSpace(adminUsername))
+            {
+                throw new InvalidOperationException(
+                    $"UseDatabaseMigrations failed: admin username secret '{migrationsSettings.AdminSecretName}' not found or empty");
+            }
+
+            if (string.IsNullOrWhiteSpace(adminPassword))
+            {
+                throw new InvalidOperationException(
+                    $"UseDatabaseMigrations failed: admin password secret '{migrationsSettings.PasswordSecretName}' not found or empty");
+            }
+
+            // Build connection string using DatabaseSettings with admin credentials
+            var connectionString = $"Host={dbSettings.Host};Port={dbSettings.Port};Database={dbSettings.Database};Username={adminUsername};Password={adminPassword}";
+
+            if (!string.IsNullOrWhiteSpace(dbSettings.AdditionalParameters))
+            {
+                connectionString += $";{dbSettings.AdditionalParameters}";
+            }
+
             try
             {
                 LogMigrationStarting(logger);
-
-                // Get secret provider for credentials
-                var secretProvider = app.Services.GetService<ISecretProvider>();
-                if (secretProvider == null)
-                {
-                    throw new InvalidOperationException(
-                        "UseDatabaseMigrations failed: ISecretProvider is not registered in DI");
-                }
-
-                LogCredentialsFetchFromSecrets(logger);
-
-                // Fetch admin credentials from secret provider
-                var adminUsername = secretProvider.GetSecret(migrationsSettings.AdminSecretName!);
-                var adminPassword = secretProvider.GetSecret(migrationsSettings.PasswordSecretName!);
-
-                if (string.IsNullOrWhiteSpace(adminUsername))
-                {
-                    throw new InvalidOperationException(
-                        $"UseDatabaseMigrations failed: admin username secret '{migrationsSettings.AdminSecretName}' not found or empty");
-                }
-
-                if (string.IsNullOrWhiteSpace(adminPassword))
-                {
-                    throw new InvalidOperationException(
-                        $"UseDatabaseMigrations failed: admin password secret '{migrationsSettings.PasswordSecretName}' not found or empty");
-                }
-
-                // Build connection string using DatabaseSettings with admin credentials
-                var connectionString = $"Host={dbSettings.Host};Port={dbSettings.Port};Database={dbSettings.Database};Username={adminUsername};Password={adminPassword}";
-
-                if (!string.IsNullOrWhiteSpace(dbSettings.AdditionalParameters))
-                {
-                    connectionString += $";{dbSettings.AdditionalParameters}";
-                }
 
                 // Step 1: Configure DbUp to run migrations
                 // Note: 001_initial_schema.sql creates the camus schema
@@ -154,8 +149,9 @@ namespace emc.camus.migrations.dbup
 
                 if (!result.Successful)
                 {
-                    throw new InvalidOperationException(
-                        $"Database migration failed: {result.Error?.Message ?? "(no details)"}", result.Error);
+                    var innerException = result.Error ?? new InvalidOperationException("DbUp reported failure without exception details");
+                    throw new DatabaseMigrationException(
+                        $"Database migration failed: {innerException.Message}", innerException);
                 }
 
                 LogMigrationCompleted(logger);
@@ -166,9 +162,9 @@ namespace emc.camus.migrations.dbup
                     LogMigrationScriptExecuted(logger, script.Name);
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not DatabaseMigrationException)
             {
-                throw new InvalidOperationException($"Failed to run database migrations: {ex.Message}", ex);
+                throw new DatabaseMigrationException($"Failed to run database migrations: {ex.Message}", ex);
             }
 
             return app;

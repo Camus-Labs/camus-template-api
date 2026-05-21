@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using emc.camus.application.Auth;
 using emc.camus.application.Secrets;
 using emc.camus.security.jwt.Configurations;
+using emc.camus.security.jwt.Exceptions;
 using emc.camus.security.jwt.Services;
 
 namespace emc.camus.security.jwt
@@ -43,11 +44,19 @@ namespace emc.camus.security.jwt
             {
                 var secretProvider = provider.GetRequiredService<ISecretProvider>();
                 var jwtSettings = provider.GetRequiredService<JwtSettings>();
+
                 var pem = secretProvider.GetSecret(jwtSettings.RsaPrivateKeySecretName);
 
-                var rsa = RSA.Create();
-                rsa.ImportFromPem(pem.ToCharArray());
-                return rsa;
+                try
+                {
+                    var rsa = RSA.Create();
+                    rsa.ImportFromPem(pem.ToCharArray());
+                    return rsa;
+                }
+                catch (Exception ex)
+                {
+                    throw new JwtKeyLoadException("Failed to load RSA signing key from PEM.", ex);
+                }
             });
 
             // Register RSA Security Key (wraps the DI-managed RSA instance)

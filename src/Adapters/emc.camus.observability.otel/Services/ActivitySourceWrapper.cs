@@ -128,6 +128,18 @@ namespace emc.camus.observability.otel.Services
         }
 
         /// <summary>
+        /// Marks the activity as cancelled, sets status to ERROR with cancellation description.
+        /// </summary>
+        /// <param name="activity">The activity to mark as cancelled.</param>
+        public void ActivityCancelled(Activity? activity)
+        {
+            if (activity == null) return;
+            activity.SetTag("otel.status_code", "ERROR");
+            activity.SetTag("otel.status_description", "Operation cancelled.");
+            AddEvent(activity, "cancelled");
+        }
+
+        /// <summary>
         /// Adds a timestamped event with optional tags to the activity.
         /// </summary>
         /// <param name="activity">The activity to add the event to.</param>
@@ -171,6 +183,11 @@ namespace emc.camus.observability.otel.Services
                 var result = await func(activity).ConfigureAwait(false);
                 ActivitySucceeded(activity);
                 return result;
+            }
+            catch (OperationCanceledException)
+            {
+                ActivityCancelled(activity);
+                throw;
             }
             catch (Exception ex)
             {

@@ -1,15 +1,17 @@
 using FluentAssertions;
 using emc.camus.persistence.postgresql.Mapping;
 using emc.camus.persistence.postgresql.Models;
+using Microsoft.Extensions.Time.Testing;
 
 namespace emc.camus.persistence.postgresql.test.Mapping;
 
 public class GeneratedTokenMappingExtensionsTests
 {
+    private static readonly FakeTimeProvider TimeProvider = new(new DateTimeOffset(2025, 6, 1, 12, 0, 0, TimeSpan.Zero));
     private static readonly Guid ValidJti = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly Guid ValidUserId = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-    private static readonly DateTime FixedExpiresOn = new(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc);
-    private static readonly DateTime FixedCreatedAt = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime FixedExpiresOn = TimeProvider.GetUtcNow().AddYears(1).UtcDateTime;
+    private static readonly DateTime FixedCreatedAt = TimeProvider.GetUtcNow().UtcDateTime;
     private static readonly string[] ExpectedPermissions = ["read", "write"];
 
     // --- ToEntity ---

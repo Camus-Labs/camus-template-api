@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.api.Models.Requests;
 
 /// <summary>
 /// Query parameters for paginated list endpoints.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class PaginationQuery
 {
     private const int DefaultPageSize = 25;

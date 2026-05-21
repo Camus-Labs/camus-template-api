@@ -1,6 +1,8 @@
 using emc.camus.application.Common;
+using emc.camus.application.Exceptions;
 using emc.camus.persistence.postgresql.DataAccess;
 using emc.camus.persistence.postgresql.Services;
+using static emc.camus.persistence.postgresql.Services.QueryExecutionGuard;
 
 namespace emc.camus.persistence.postgresql.Repositories;
 
@@ -75,6 +77,7 @@ internal sealed class ActionAuditRepository : IActionAuditRepository
         string actionSummary,
         CancellationToken ct = default)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(userId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
         ArgumentException.ThrowIfNullOrWhiteSpace(actionTitle);
         ArgumentException.ThrowIfNullOrWhiteSpace(actionSummary);
@@ -82,12 +85,16 @@ internal sealed class ActionAuditRepository : IActionAuditRepository
         var connection = await _unitOfWork.GetConnectionAsync(ct);
         var traceId = _userContext.GetCurrentTraceId();
 
-        var userExists = await _dataAccess.UserExistsAsync(connection, userId, ct);
+        var userExists = await ExecuteAsync(
+            () => _dataAccess.UserExistsAsync(connection, userId, ct),
+            nameof(_dataAccess.UserExistsAsync));
         if (!userExists)
         {
-            throw new KeyNotFoundException($"User with ID '{userId}' not found.");
+            throw new DataConflictException($"Cannot create action audit entry because user '{userId}' does not exist.");
         }
 
-        return await _dataAccess.InsertAsync(connection, userId, username, traceId, actionTitle, actionSummary, ct);
+        return await ExecuteAsync(
+            () => _dataAccess.InsertAsync(connection, userId, username, traceId, actionTitle, actionSummary, ct),
+            nameof(_dataAccess.InsertAsync));
     }
 }

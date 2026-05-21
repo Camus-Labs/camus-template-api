@@ -1,5 +1,3 @@
-using emc.camus.application.Auth;
-
 namespace emc.camus.persistence.inmemory.Configurations;
 
 /// <summary>
@@ -75,7 +73,16 @@ internal sealed class InMemoryModelSettings
 
         foreach (var user in Users)
         {
-            user.Validate(availableRoles);
+            user.Validate();
+
+            var invalidRoles = user.Roles.Where(r => !availableRoles.Contains(r)).ToList();
+
+            if (invalidRoles.Count > 0)
+            {
+                var invalidList = string.Join(", ", invalidRoles);
+                var validList = string.Join(", ", availableRoles);
+                throw new InvalidOperationException($"User with UsernameSecretName '{user.UsernameSecretName}' has invalid roles: {invalidList}. Valid roles are: {validList}");
+            }
 
             if (usernameSecretNames.Contains(user.UsernameSecretName))
             {

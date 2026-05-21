@@ -1,8 +1,10 @@
+using System.Collections.Concurrent;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using emc.camus.ratelimiting.inmemory.Services;
+using emc.camus.ratelimiting.inmemory.test.Helpers;
 using System.Net;
 
 namespace emc.camus.ratelimiting.inmemory.test.Services;
@@ -10,6 +12,16 @@ namespace emc.camus.ratelimiting.inmemory.test.Services;
 public class ClientIpResolverTests
 {
     private const string ValidIpV4 = "192.168.1.1";
+
+    private readonly Mock<ILogger<ClientIpResolver>> _loggerMock;
+    private readonly ConcurrentBag<(LogLevel Level, string Message)> _logEntries;
+    private readonly ClientIpResolver _resolver;
+
+    public ClientIpResolverTests()
+    {
+        (_loggerMock, _logEntries) = LogCaptureBuilder.Create<ClientIpResolver>();
+        _resolver = new ClientIpResolver(_loggerMock.Object);
+    }
 
     private static ClientIpResolver CreateResolver() =>
         new(NullLogger<ClientIpResolver>.Instance);
@@ -95,14 +107,27 @@ public class ClientIpResolverTests
     public void GetClientIpAddress_InvalidOrEmptyForwardedFor_FallsBackToRealIp(string forwardedFor)
     {
         // Arrange
-        var resolver = CreateResolver();
         var context = CreateHttpContext(forwardedFor: forwardedFor, realIp: ValidIpV4);
 
         // Act
-        var result = resolver.GetClientIpAddress(context);
+        var result = _resolver.GetClientIpAddress(context);
 
         // Assert
         result.Should().Be(ValidIpV4);
+    }
+
+    [Fact]
+    public void GetClientIpAddress_InvalidForwardedForIp_LogsWarning()
+    {
+        // Arrange
+        var context = CreateHttpContext(forwardedFor: "not-an-ip", realIp: ValidIpV4);
+
+        // Act
+        _resolver.GetClientIpAddress(context);
+
+        // Assert
+        _logEntries.Should().Contain(e =>
+            e.Level == LogLevel.Warning && e.Message.Contains("not-an-ip"));
     }
 
     // --- GetClientIpAddress: X-Real-IP ---

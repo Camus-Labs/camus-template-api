@@ -35,9 +35,4 @@ public sealed class SlowApiInfoService : IApiInfoService
         // Unreachable — Task.Delay throws OperationCanceledException when ct fires
         return new ApiInfoDetailView("0.0", "timeout", Array.Empty<string>());
     }
-
-    /// <summary>
-    /// No-op initialization.
-    /// </summary>
-    public Task InitializeAsync(CancellationToken ct = default) => Task.CompletedTask;
 }

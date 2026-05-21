@@ -107,7 +107,8 @@ public class ApiInfoRepositoryTests : IDisposable
     public async Task InitializeAsync_TableExists_SetsInitializedState()
     {
         // Arrange
-        var repository = CreateRepository();
+        var initState = new InitializationState();
+        var repository = new ApiInfoRepository(_unitOfWork, initState, _mockDataAccess.Object);
         _mockDataAccess
             .Setup(d => d.CheckTableExistsAsync(It.IsAny<IDbConnection>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -116,9 +117,7 @@ public class ApiInfoRepositoryTests : IDisposable
         await repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*already initialized*");
+        initState.ApiInfoRepositoryInitialized.Should().BeTrue();
     }
 
     [Fact]

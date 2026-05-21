@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using emc.camus.application.Observability;
 
@@ -8,7 +7,6 @@ namespace emc.camus.ratelimiting.inmemory.Metrics
     /// Provides metrics instrumentation for rate limiting operations.
     /// Exports counters to Prometheus/Application Insights via OpenTelemetry.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     internal sealed class RateLimitMetrics : IDisposable
     {
         private const string MetricNameRateLimitRejections = "rate_limit_rejections_total";

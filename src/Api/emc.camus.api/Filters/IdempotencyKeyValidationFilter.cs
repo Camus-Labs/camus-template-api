@@ -29,17 +29,26 @@ public class IdempotencyKeyValidationFilter : IActionFilter
         var hasHeader = context.HttpContext.Request.Headers.TryGetValue(
             Headers.IdempotencyKey, out var headerValues);
 
+        ValidateHeaderPresence(hasHeader, headerValues);
+        ValidateHeaderValue(headerValues.ToString());
+    }
+
+    private static void ValidateHeaderPresence(bool hasHeader, Microsoft.Extensions.Primitives.StringValues headerValues)
+    {
         if (!hasHeader || headerValues.Count == 0)
         {
             throw new ArgumentException("Idempotency-Key header is missing");
         }
+    }
 
-        var keyValue = headerValues.ToString();
+    private static void ValidateHeaderValue(string keyValue)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(keyValue, Headers.IdempotencyKey);
 
-        if (string.IsNullOrWhiteSpace(keyValue) || keyValue.Length > MaxKeyLength)
+        if (keyValue.Length > MaxKeyLength)
         {
             throw new ArgumentException(
-                $"Idempotency-Key header value is invalid (must be 1-{MaxKeyLength} non-whitespace characters)");
+                $"Idempotency-Key header value exceeds maximum length (must be at most {MaxKeyLength} characters)");
         }
     }
 

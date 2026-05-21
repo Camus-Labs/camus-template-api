@@ -30,6 +30,12 @@ namespace emc.camus.observability.otel.Telemetry
             string instanceId,
             string environmentName)
         {
+            ArgumentNullException.ThrowIfNull(settings);
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceVersion);
+            ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(environmentName);
+
             services
                 .AddOpenTelemetry()
                 .WithTracingConfiguration(settings, serviceName, serviceVersion, instanceId, environmentName)

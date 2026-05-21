@@ -12,6 +12,7 @@ public class GeneratedToken
     /// <summary>Maximum allowed length for the token username suffix (matches DB constraint).</summary>
     public const int MaxSuffixLength = 20;
     private static readonly Regex SuffixPattern = new(@"^[a-zA-Z0-9._-]+$", RegexOptions.Compiled);
+    private readonly TimeProvider _timeProvider;
 
     /// <summary>
     /// Gets the JTI (JWT ID) — the primary identifier for this generated token.
@@ -68,6 +69,7 @@ public class GeneratedToken
     /// <param name="permissions">The permissions granted to this token.</param>
     /// <param name="expiresOn">The expiration date and time (UTC). Must be between 1 hour and 1 year from now.</param>
     /// <param name="jti">Optional JTI (JWT ID). If not provided, a new GUID will be generated.</param>
+    /// <param name="timeProvider">Optional time provider for testability. Defaults to system clock.</param>
     /// <exception cref="ArgumentNullException">Thrown when creator is null.</exception>
     /// <exception cref="ArgumentException">Thrown when suffix is null/empty or contains invalid characters.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when suffix exceeds max length, jti is empty, permissions is empty, or expiresOn is outside the valid range.</exception>
@@ -77,8 +79,11 @@ public class GeneratedToken
         string suffix,
         List<string> permissions,
         DateTime expiresOn,
-        Guid? jti = null)
+        Guid? jti = null,
+        TimeProvider? timeProvider = null)
     {
+        _timeProvider = timeProvider ?? TimeProvider.System;
+
         ArgumentNullException.ThrowIfNull(creator);
         ValidateSuffix(suffix);
         ValidatePermissions(permissions);
@@ -100,7 +105,10 @@ public class GeneratedToken
     /// <summary>
     /// Private constructor for reconstitution from persistence.
     /// </summary>
-    private GeneratedToken() { }
+    private GeneratedToken(TimeProvider? timeProvider = null)
+    {
+        _timeProvider = timeProvider ?? TimeProvider.System;
+    }
 
     /// <summary>
     /// Rebuilds a generated token from persistence data. Skips business validation
@@ -115,6 +123,7 @@ public class GeneratedToken
     /// <param name="createdAt">The creation date and time (UTC).</param>
     /// <param name="isRevoked">Whether the token has been revoked.</param>
     /// <param name="revokedAt">The revocation date and time (UTC), if revoked.</param>
+    /// <param name="timeProvider">Optional time provider for testability. Defaults to system clock.</param>
     public static GeneratedToken Reconstitute(
         Guid jti,
         Guid creatorUserId,
@@ -124,9 +133,10 @@ public class GeneratedToken
         DateTime expiresOn,
         DateTime createdAt,
         bool isRevoked,
-        DateTime? revokedAt)
+        DateTime? revokedAt,
+        TimeProvider? timeProvider = null)
     {
-        return new GeneratedToken
+        return new GeneratedToken(timeProvider)
         {
             Jti = jti,
             CreatorUserId = creatorUserId,
@@ -161,7 +171,7 @@ public class GeneratedToken
         }
 
         IsRevoked = true;
-        RevokedAt = DateTime.UtcNow;
+        RevokedAt = _timeProvider.GetUtcNow().UtcDateTime;
     }
 
     /// <summary>
@@ -170,7 +180,7 @@ public class GeneratedToken
     /// <returns>True if the token is active, false otherwise.</returns>
     public bool IsActive()
     {
-        return !IsRevoked && ExpiresOn > DateTime.UtcNow;
+        return !IsRevoked && ExpiresOn > _timeProvider.GetUtcNow().UtcDateTime;
     }
 
     /// <summary>
@@ -178,9 +188,9 @@ public class GeneratedToken
     /// </summary>
     /// <param name="expiresOn">The expiration date to validate.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when expiresOn is outside the valid range.</exception>
-    private static void ValidateExpiresOn(DateTime expiresOn)
+    private void ValidateExpiresOn(DateTime expiresOn)
     {
-        var now = DateTime.UtcNow;
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         var minExpiration = now.AddHours(1);
         var maxExpiration = now.AddYears(1);
 
@@ -232,8 +242,9 @@ public class GeneratedToken
 
         if (unauthorizedPermissions.Count > 0)
         {
+            var denied = string.Join(", ", unauthorizedPermissions);
             throw new DomainException(
-                $"User '{creator.Username}' cannot grant permissions they don't have: {string.Join(", ", unauthorizedPermissions)}.");
+                $"User '{creator.Username}' cannot grant permissions they don't have: {denied}.");
         }
     }
 }

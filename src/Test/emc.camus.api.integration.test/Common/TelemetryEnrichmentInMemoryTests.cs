@@ -114,6 +114,7 @@ public class TelemetryEnrichmentInMemoryTests
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
+        await response.Should().HaveErrorCode("auth_invalid_credentials");
 
         var activity = capture.GetSingleByRoute("Auth/authenticate");
         activity.GetTagItem("enduser.authenticated").Should().NotBeNull("enrichment should always set enduser.authenticated");
@@ -170,6 +171,7 @@ public class TelemetryEnrichmentInMemoryTests
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Forbidden);
+        await response.Should().HaveErrorCode("forbidden");
 
         var activity = capture.GetSingleByRoute("Auth/generate-token");
         activity.GetTagItem("enduser.authenticated").Should().NotBeNull("enrichment should always set enduser.authenticated");

@@ -8,15 +8,22 @@ using emc.camus.observability.otel.test.Helpers;
 
 namespace emc.camus.observability.otel.test.Logging;
 
-public class ActivityCurrentEnricherTests
+public class ActivityCurrentEnricherTests : IDisposable
 {
+    private readonly Activity? _priorActivity = Activity.Current;
     private readonly ActivityCurrentEnricher _enricher = new();
     private readonly ILogEventPropertyFactory _propertyFactory = new LogEventPropertyFactory();
+
+    public void Dispose()
+    {
+        Activity.Current = _priorActivity;
+        GC.SuppressFinalize(this);
+    }
 
     private static LogEvent CreateLogEvent()
     {
         return new LogEvent(
-            DateTimeOffset.UtcNow,
+            DateTimeOffset.UnixEpoch,
             LogEventLevel.Information,
             null,
             new MessageTemplate("Test", []),

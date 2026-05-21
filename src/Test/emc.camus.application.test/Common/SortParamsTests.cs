@@ -2,9 +2,9 @@ using FluentAssertions;
 using emc.camus.application.Auth;
 using emc.camus.application.Common;
 
-namespace emc.camus.application.test.Auth;
+namespace emc.camus.application.test.Common;
 
-public class GeneratedTokenSortParamsTests
+public class SortParamsTests
 {
     [Theory]
     [InlineData("createdAt", "desc", GeneratedTokenSortField.CreatedAt, SortDirection.Desc)]
@@ -18,7 +18,7 @@ public class GeneratedTokenSortParamsTests
         // (inputs from [InlineData])
 
         // Act
-        var sortParams = new GeneratedTokenSortParams(sortBy, sortDirection);
+        var sortParams = new SortParams<GeneratedTokenSortField>(sortBy, sortDirection);
 
         // Assert
         sortParams.Field.Should().Be(expectedField);
@@ -34,7 +34,7 @@ public class GeneratedTokenSortParamsTests
         // (inputs from [InlineData])
 
         // Act
-        var act = () => new GeneratedTokenSortParams(sortBy, sortDirection);
+        var act = () => new SortParams<GeneratedTokenSortField>(sortBy, sortDirection);
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -50,7 +50,7 @@ public class GeneratedTokenSortParamsTests
         // (inputs from [InlineData])
 
         // Act
-        var act = () => new GeneratedTokenSortParams(sortBy, sortDirection);
+        var act = () => new SortParams<GeneratedTokenSortField>(sortBy, sortDirection);
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -66,7 +66,7 @@ public class GeneratedTokenSortParamsTests
         // (no inputs — default constructor)
 
         // Act
-        var sortParams = new GeneratedTokenSortParams();
+        var sortParams = new SortParams<GeneratedTokenSortField>();
 
         // Assert
         sortParams.Field.Should().BeNull();

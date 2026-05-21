@@ -96,12 +96,10 @@ internal sealed partial class TokenRevocationSyncService : BackgroundService
                 await RunSyncCycleAsync(stoppingToken);
             }
         }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        finally
         {
-            // Expected during shutdown — fall through to log stop.
+            LogServiceStopped();
         }
-
-        LogServiceStopped();
     }
 
     private async Task RunSyncCycleAsync(CancellationToken ct)
@@ -122,11 +120,7 @@ internal sealed partial class TokenRevocationSyncService : BackgroundService
 
             LogSyncCompleted(revokedTokens.Count);
         }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            // Cancellation during a sync cycle is expected during shutdown.
-        }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             LogSyncCycleFailed(ex);
         }

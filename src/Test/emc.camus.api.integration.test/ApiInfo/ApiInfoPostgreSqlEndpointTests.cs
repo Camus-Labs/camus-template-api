@@ -10,24 +10,14 @@ namespace emc.camus.api.integration.test.ApiInfo;
 
 [Trait("Category", "Integration")]
 [Collection(PostgreSqlTestGroup.Name)]
-public class ApiInfoPostgreSqlEndpointTests : IAsyncLifetime
+public class ApiInfoPostgreSqlEndpointTests
 {
-    private readonly ApiPostgreSqlFactory _factory;
     private readonly HttpClient _client;
 
     public ApiInfoPostgreSqlEndpointTests(ApiPostgreSqlFactory factory, ITestOutputHelper outputHelper)
     {
         factory.OutputHelper = outputHelper;
-        _factory = factory;
         _client = factory.CreateClient();
-    }
-
-    public async ValueTask InitializeAsync() => await _factory.ResetDatabaseAsync();
-
-    public ValueTask DisposeAsync()
-    {
-        GC.SuppressFinalize(this);
-        return ValueTask.CompletedTask;
     }
 
     [Fact]

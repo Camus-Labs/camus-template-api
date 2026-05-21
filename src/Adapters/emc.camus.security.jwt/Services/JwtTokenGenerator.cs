@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using emc.camus.application.Auth;
 using emc.camus.domain.Auth;
 using emc.camus.security.jwt.Configurations;
+using emc.camus.security.jwt.Exceptions;
 
 namespace emc.camus.security.jwt.Services;
 
@@ -88,16 +89,23 @@ internal sealed class JwtTokenGenerator : ITokenGenerator
             claims.AddRange(additionalClaims);
         }
 
-        var jwtToken = new JwtSecurityToken(
-            issuer: _jwtSettings.Issuer,
-            audience: _jwtSettings.Audience,
-            claims: claims,
-            expires: expiresOn,
-            signingCredentials: _signingCredentials
-        );
+        try
+        {
+            var jwtToken = new JwtSecurityToken(
+                issuer: _jwtSettings.Issuer,
+                audience: _jwtSettings.Audience,
+                claims: claims,
+                expires: expiresOn,
+                signingCredentials: _signingCredentials
+            );
 
-        var token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+            var token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
 
-        return new AuthToken(token, expiresOn);
+            return new AuthToken(token, expiresOn);
+        }
+        catch (Exception ex)
+        {
+            throw new JwtTokenGenerationException("Failed to generate JWT token.", ex);
+        }
     }
 }

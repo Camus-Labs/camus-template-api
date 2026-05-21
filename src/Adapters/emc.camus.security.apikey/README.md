@@ -91,23 +91,11 @@ Controller Action
 
 ### Secret Provider Setup
 
-The adapter retrieves the expected API key from `ISecretProvider`:
-
-**Development** (`src/Infrastructure/dapr/secrets.json`):
-
-```json
-{
-  "XApiKey": "dev-api-key-12345"
-}
-```
-
-**Production** (Azure Key Vault, AWS Secrets Manager, etc.):
-
-In production, set the secret named `XApiKey` using your cloud provider's secrets UI or CLI.
-See your platform documentation (e.g., Azure Key Vault, AWS Secrets Manager) for details.
+The adapter retrieves the expected API key from `ISecretProvider` using the secret name
+configured in `ApiKeySecretName` (defaults to `"XApiKey"`).
 
 > **📖 Secrets Management:** See [Dapr Secrets Adapter](../emc.camus.secrets.dapr/README.md) for
-secret provider configuration.
+secret provider configuration, development secrets file format, and production setup.
 
 ---
 
@@ -186,8 +174,9 @@ status code. See test projects in `src/Test/` for integration test patterns.
 ## Integration
 
 The adapter registers via the extension method in `ApiKeySetupExtensions.cs`, which reads
-`ApiKeySettings` from configuration, resolves the expected API key from the secret provider,
-and registers the API-key authentication handler in the DI container.
+`ApiKeySettings` from configuration, validates the settings, and registers the API-key
+authentication handler in the DI container. The actual API key is resolved from the secret
+provider at request time by the handler.
 
 Protect endpoints by applying an API Key authorization requirement. See controller source files
 in `src/Api/emc.camus.api/Controllers/` for the usage pattern.

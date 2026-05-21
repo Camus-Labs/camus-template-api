@@ -9,14 +9,18 @@ using emc.camus.persistence.postgresql.DataAccess;
 using emc.camus.persistence.postgresql.Models;
 using emc.camus.persistence.postgresql.Repositories;
 using emc.camus.persistence.postgresql.Services;
+using Microsoft.Extensions.Time.Testing;
 
 namespace emc.camus.persistence.postgresql.test.Repositories;
 
 public class GeneratedTokenRepositoryTests : IDisposable
 {
+    private static readonly FakeTimeProvider TimeProvider = new(new DateTimeOffset(2025, 6, 1, 12, 0, 0, TimeSpan.Zero));
     private static readonly Guid Jti = Guid.Parse("a1b2c3d4-0001-0002-0003-000000000001");
     private static readonly Guid CreatorUserId = Guid.Parse("b2c3d4e5-0001-0002-0003-000000000002");
     private static readonly string[] TokenPermissions = new[] { "read", "write" };
+    private static readonly DateTime FixedExpiresOn = TimeProvider.GetUtcNow().AddYears(1).UtcDateTime;
+    private static readonly DateTime FixedCreatedAt = TimeProvider.GetUtcNow().UtcDateTime;
 
     private readonly Mock<IConnectionFactory> _mockConnectionFactory = new();
     private readonly Mock<IGeneratedTokenDataAccess> _mockDataAccess = new();
@@ -48,7 +52,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
         return GeneratedToken.Reconstitute(
             Jti, CreatorUserId, "creator", "creator-suffix",
             new List<string> { "read", "write" },
-            DateTime.UtcNow.AddDays(30), DateTime.UtcNow.AddDays(-1),
+            FixedExpiresOn, FixedCreatedAt,
             false, null);
     }
 
@@ -154,7 +158,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
         var act = () => repository.CreateAsync(CreateToken(), TestContext.Current.CancellationToken);
 
         // Assert
-        await act.Should().ThrowAsync<KeyNotFoundException>()
+        await act.Should().ThrowAsync<DataConflictException>()
             .WithMessage($"*{CreatorUserId}*");
     }
 
@@ -222,7 +226,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             {
                 Jti = Jti, CreatorUserId = CreatorUserId, CreatorUsername = "creator",
                 TokenUsername = "creator-suffix", Permissions = TokenPermissions,
-                ExpiresOn = DateTime.UtcNow.AddDays(30), CreatedAt = DateTime.UtcNow,
+                ExpiresOn = FixedExpiresOn, CreatedAt = FixedCreatedAt,
                 IsRevoked = false
             });
 
@@ -244,7 +248,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.GetPagedByCreatorUserIdAsync(Guid.Empty, new PaginationParams(), new GeneratedTokenFilter(), new GeneratedTokenSortParams(), ct: TestContext.Current.CancellationToken);
+        var act = () => repository.GetPagedByCreatorUserIdAsync(Guid.Empty, new PaginationParams(), new GeneratedTokenFilter(), new SortParams<GeneratedTokenSortField>(), ct: TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
@@ -257,7 +261,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.GetPagedByCreatorUserIdAsync(CreatorUserId, null!, new GeneratedTokenFilter(), new GeneratedTokenSortParams(), ct: TestContext.Current.CancellationToken);
+        var act = () => repository.GetPagedByCreatorUserIdAsync(CreatorUserId, null!, new GeneratedTokenFilter(), new SortParams<GeneratedTokenSortField>(), ct: TestContext.Current.CancellationToken);
 
         // Assert
         (await act.Should().ThrowAsync<ArgumentNullException>())
@@ -274,7 +278,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .ReturnsAsync(0);
 
         // Act
-        var result = await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), new GeneratedTokenFilter(), new GeneratedTokenSortParams(), ct: TestContext.Current.CancellationToken);
+        var result = await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), new GeneratedTokenFilter(), new SortParams<GeneratedTokenSortField>(), ct: TestContext.Current.CancellationToken);
 
         // Assert
         result.Items.Should().BeEmpty();
@@ -298,13 +302,13 @@ public class GeneratedTokenRepositoryTests : IDisposable
                 {
                     Jti = Jti, CreatorUserId = CreatorUserId, CreatorUsername = "creator",
                     TokenUsername = "creator-suffix", Permissions = TokenPermissions,
-                    ExpiresOn = DateTime.UtcNow.AddDays(30), CreatedAt = DateTime.UtcNow,
+                    ExpiresOn = FixedExpiresOn, CreatedAt = FixedCreatedAt,
                     IsRevoked = false
                 }
             });
 
         // Act
-        var result = await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, pagination, new GeneratedTokenFilter(), new GeneratedTokenSortParams(), ct: TestContext.Current.CancellationToken);
+        var result = await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, pagination, new GeneratedTokenFilter(), new SortParams<GeneratedTokenSortField>(), ct: TestContext.Current.CancellationToken);
 
         // Assert
         result.TotalCount.Should().Be(1);
@@ -323,7 +327,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .ReturnsAsync(0);
 
         // Act
-        await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), filter, new GeneratedTokenSortParams(), ct: TestContext.Current.CancellationToken);
+        await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), filter, new SortParams<GeneratedTokenSortField>(), ct: TestContext.Current.CancellationToken);
 
         // Assert
         _mockDataAccess.Verify(d => d.CountByCreatorUserIdAsync(
@@ -340,7 +344,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
     {
         // Arrange
         var repository = CreateRepository();
-        var sort = new GeneratedTokenSortParams(sortBy, sortDirection);
+        var sort = new SortParams<GeneratedTokenSortField>(sortBy, sortDirection);
         _mockDataAccess
             .Setup(d => d.CountByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
@@ -352,7 +356,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
                 {
                     Jti = Jti, CreatorUserId = CreatorUserId, CreatorUsername = "creator",
                     TokenUsername = "creator-suffix", Permissions = TokenPermissions,
-                    ExpiresOn = DateTime.UtcNow.AddDays(30), CreatedAt = DateTime.UtcNow,
+                    ExpiresOn = FixedExpiresOn, CreatedAt = FixedCreatedAt,
                     IsRevoked = false
                 }
             });
@@ -381,13 +385,13 @@ public class GeneratedTokenRepositoryTests : IDisposable
                 {
                     Jti = Jti, CreatorUserId = CreatorUserId, CreatorUsername = "creator",
                     TokenUsername = "creator-suffix", Permissions = TokenPermissions,
-                    ExpiresOn = DateTime.UtcNow.AddDays(30), CreatedAt = DateTime.UtcNow,
+                    ExpiresOn = FixedExpiresOn, CreatedAt = FixedCreatedAt,
                     IsRevoked = false
                 }
             });
 
         // Act
-        await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), new GeneratedTokenFilter(), new GeneratedTokenSortParams(), ct: TestContext.Current.CancellationToken);
+        await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), new GeneratedTokenFilter(), new SortParams<GeneratedTokenSortField>(), ct: TestContext.Current.CancellationToken);
 
         // Assert
         _mockDataAccess.Verify(d => d.GetPageByCreatorUserIdAsync(

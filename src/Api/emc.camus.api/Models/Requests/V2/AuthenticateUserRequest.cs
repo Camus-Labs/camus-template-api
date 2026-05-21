@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.api.Models.Requests.V2;
 
 /// <summary>
 /// Request model for user authentication.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class AuthenticateUserRequest
 {
     /// <summary>

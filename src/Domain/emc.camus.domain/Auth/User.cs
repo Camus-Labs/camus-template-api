@@ -33,15 +33,35 @@ public class User
     /// <exception cref="ArgumentOutOfRangeException">Thrown when id is empty.</exception>
     public User(string username, List<Role>? roles = null, Guid? id = null)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(username);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(username.Length, MaxUsernameLength, nameof(username));
-
-        if (id.HasValue)
-            ArgumentOutOfRangeException.ThrowIfEqual(id.Value, Guid.Empty);
+        ValidateUsername(username);
+        ValidateId(id);
 
         Id = id ?? Guid.NewGuid();
         Username = username;
         Roles = roles ?? new List<Role>();
+    }
+
+    /// <summary>
+    /// Validates the username is non-empty and within length constraints.
+    /// </summary>
+    /// <param name="username">The username to validate.</param>
+    /// <exception cref="ArgumentException">Thrown when username is null, empty, or whitespace.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when username exceeds max length.</exception>
+    private static void ValidateUsername(string username)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(username);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(username.Length, MaxUsernameLength, nameof(username));
+    }
+
+    /// <summary>
+    /// Validates the optional ID is not empty when provided.
+    /// </summary>
+    /// <param name="id">The optional ID to validate.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when id is empty.</exception>
+    private static void ValidateId(Guid? id)
+    {
+        if (id.HasValue)
+            ArgumentOutOfRangeException.ThrowIfEqual(id.Value, Guid.Empty);
     }
 
     /// <summary>

@@ -8,9 +8,16 @@ using emc.camus.observability.otel.test.Helpers;
 
 namespace emc.camus.observability.otel.test.Middleware;
 
-public class TraceIdHeaderMiddlewareTests
+public class TraceIdHeaderMiddlewareTests : IDisposable
 {
+    private readonly Activity? _priorActivity = Activity.Current;
     private static readonly RequestDelegate NoOpNext = _ => Task.CompletedTask;
+
+    public void Dispose()
+    {
+        Activity.Current = _priorActivity;
+        GC.SuppressFinalize(this);
+    }
 
     private static (DefaultHttpContext Context, TestResponseFeature Feature) CreateTestContext()
     {

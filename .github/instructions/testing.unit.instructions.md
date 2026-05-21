@@ -9,9 +9,9 @@ applyTo: "{src/Test/**,!src/Test/**integration.test/**}"
     - [ ] Moq as the only mocking framework — no other mocking libraries
     - [ ] Mocks only for interfaces that cross process or I/O boundaries (e.g., database, HTTP, file system, clock)
     - [ ] No mocks for domain logic — test real implementations
-    - [ ] Mock application services when testing controllers
-    - [ ] Mock adapters when testing application layer
-    - [ ] Mock DataAccess interfaces when testing repository implementations
+    - [ ] Controller tests mock application services — not real implementations
+    - [ ] Application-layer tests mock adapters — not real infrastructure
+    - [ ] Repository tests mock DataAccess interfaces — not real data stores
     - [ ] No `Mock.Verify*()` on methods whose return value is already captured and asserted
     - [ ] Configure mocks with only the methods the class exercises — no `Setup` for members that no test
           in the class uses
@@ -45,15 +45,20 @@ applyTo: "{src/Test/**,!src/Test/**integration.test/**}"
 
 4. Organization
 
-    - [ ] Tests in correct project matching production structure (e.g., `emc.camus.security.jwt.test`)
     - [ ] Test classes mirror production code structure (e.g., `Configurations/JwtSettingsTests.cs`)
-    - [ ] Each adapter test project name matches its production counterpart (e.g.,
-          `emc.camus.security.jwt.test` → `emc.camus.security.jwt`)
     - [ ] One test class per production class — file name matches with `Tests` suffix
           (e.g., `AuthService` → `AuthServiceTests`) — exception: classes annotated with
           `[ExcludeFromCodeCoverage]` do not require a corresponding test class
 
-5. Assertions
+5. Log Assertions (fail-open / silent-continue paths)
 
-    - [ ] Exception messages: wildcard patterns (e.g., `"*authentication*required*"`) — not exact strings
-    - [ ] Never assert on `exception.Data` — assert on message patterns instead
+    - [ ] When a code path swallows an exception and continues silently (fail-open, graceful degradation),
+          assert on the emitted log entry — this is the only observable side-effect proving the path executed
+    - [ ] Use `LogCaptureBuilder.Create<T>()` (from the test project's `Helpers/` folder) to obtain a
+          `(Mock<ILogger<T>> Mock, ConcurrentBag<(LogLevel Level, string Message)> Entries)` tuple
+    - [ ] Assert both `LogLevel` and a meaningful message substring — not just the presence of any log entry;
+          include context identifiers (e.g., idempotency key, username) that prove the correct branch ran
+    - [ ] Do NOT use `Mock.Verify(...)` on `ILogger` — use the captured entries bag instead
+    - [ ] Reserve log assertions for paths with no other observable outcome (no return value change, no
+          exception, no state mutation) — if a return value or exception already covers the path, a log
+          assertion is redundant

@@ -28,32 +28,32 @@ public class UnitOfWorkTests
             .And.ParamName.Should().Be("connectionFactory");
     }
 
-    // --- GetConnectionAsync ---
+    // --- CheckConnectivityAsync ---
 
     [Fact]
-    public async Task GetConnectionAsync_FirstCall_ReturnsConnection()
+    public async Task CheckConnectivityAsync_FirstCall_CreatesConnection()
     {
         // Arrange
         _mockConnectionFactory.Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_mockConnection.Object);
         var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
 
         // Act
-        var connection = await unitOfWork.GetConnectionAsync(TestContext.Current.CancellationToken);
+        await unitOfWork.CheckConnectivityAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        connection.Should().BeSameAs(_mockConnection.Object);
+        _mockConnectionFactory.Verify(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task GetConnectionAsync_MultipleCalls_CreatesConnectionOnlyOnce()
+    public async Task CheckConnectivityAsync_MultipleCalls_CreatesConnectionOnlyOnce()
     {
         // Arrange
         _mockConnectionFactory.Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_mockConnection.Object);
         var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
 
         // Act
-        await unitOfWork.GetConnectionAsync(TestContext.Current.CancellationToken);
-        await unitOfWork.GetConnectionAsync(TestContext.Current.CancellationToken);
+        await unitOfWork.CheckConnectivityAsync(TestContext.Current.CancellationToken);
+        await unitOfWork.CheckConnectivityAsync(TestContext.Current.CancellationToken);
 
         // Assert
         _mockConnectionFactory.Verify(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -210,21 +210,5 @@ public class UnitOfWorkTests
         // Assert
         _mockTransaction.Verify(t => t.DisposeAsync(), Times.Once);
         _mockConnection.Verify(c => c.DisposeAsync(), Times.Once);
-    }
-
-    // --- CheckConnectivityAsync ---
-
-    [Fact]
-    public async Task CheckConnectivityAsync_OpensConnection()
-    {
-        // Arrange
-        _mockConnectionFactory.Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_mockConnection.Object);
-        var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
-
-        // Act
-        await unitOfWork.CheckConnectivityAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        _mockConnectionFactory.Verify(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

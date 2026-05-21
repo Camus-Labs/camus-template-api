@@ -30,6 +30,10 @@ namespace emc.camus.api.Extensions
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IApiInfoService, ApiInfoService>();
 
+            // Register service initializers for startup bootstrap
+            builder.Services.AddScoped<IServiceInitializer, AuthService>();
+            builder.Services.AddScoped<IServiceInitializer, ApiInfoService>();
+
             // Add controllers
             builder.Services.AddControllers();
 

@@ -38,6 +38,12 @@ namespace emc.camus.observability.otel.Telemetry
             string instanceId,
             string environmentName)
         {
+            ArgumentNullException.ThrowIfNull(settings);
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceVersion);
+            ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(environmentName);
+
             builder.WithMetrics(meterProviderBuilder =>
             {
                 var metricsBuilder = meterProviderBuilder
@@ -56,7 +62,7 @@ namespace emc.camus.observability.otel.Telemetry
 
                 // Register application meters, excluding any specified in DisabledMeters configuration
                 var disabledMeters = settings.Metrics.DisabledMeters ?? Array.Empty<string>();
-                
+
                 foreach (var meterSuffix in MeterNames.GetAll().Where(m => !disabledMeters.Contains(m)))
                 {
                     metricsBuilder.AddMeter($"{serviceName}{meterSuffix}");
@@ -87,6 +93,12 @@ namespace emc.camus.observability.otel.Telemetry
             string instanceId,
             string environmentName)
         {
+            ArgumentNullException.ThrowIfNull(settings);
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceVersion);
+            ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(environmentName);
+
             builder.WithTracing(tracerProviderBuilder =>
             {
                 tracerProviderBuilder

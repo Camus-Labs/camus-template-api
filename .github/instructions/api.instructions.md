@@ -6,6 +6,9 @@ applyTo: "src/Api/**/*.cs"
 
 1. Scope Compliance
 
+    - [ ] No business rules or domain logic — those belong in Domain entities
+    - [ ] No direct infrastructure access — those belong in Adapters
+    - [ ] No layer orchestration (coordinating domain entities and port calls)
     - [ ] `[FromBody]` / `[FromQuery]` parameters converted via extension methods on the request type (`ToCommand()`,
           `ToFilter()`, `ToPaginationParams()`)
     - [ ] Primitive route parameters converted via static mapper methods (e.g.,
@@ -17,8 +20,8 @@ applyTo: "src/Api/**/*.cs"
           (e.g., `AuthSetupExtensions`, `SwaggerSetupExtensions`, `ObservabilitySetupExtensions`)
     - [ ] `Infrastructure/` folder for framework-dependent service implementations (e.g., `HttpUserContext`
           implementing `IUserContext`) — distinct from `Models/` (data shapes) and `Mapping/` (converters)
-    - [ ] Controller actions accept `CancellationToken ct` (ASP.NET Core binds it to `HttpContext.RequestAborted`
-          automatically)
+    - [ ] Controller actions accept `CancellationToken ct` — ASP.NET Core binds it to `HttpContext.RequestAborted`
+          automatically
 
 2. Type Conventions & Lifecycle
 
@@ -27,16 +30,19 @@ applyTo: "src/Api/**/*.cs"
     - [ ] Input models in folder: `Models/Requests/`
     - [ ] Versioned types in version folders where they originate (e.g., `Models/Dtos/V1/`, `Models/Requests/V2/`)
     - [ ] Version folders exist only when a type adds, removes, or renames properties relative to the prior version —
-          identical shapes use the original version's type
+          identical shapes use the original version's type without duplication
     - [ ] Shared infrastructure types unversioned in parent folder (e.g., `PaginationQuery`, `ApiResponse<T>`,
           `PagedResponse<T>`)
-    - [ ] Version independence — V2 types never inherit from or reference V1 types
+    - [ ] Version independence — types introduced in a newer version never inherit from or reference types that
+          originated in an older version; however, newer endpoints MAY directly reuse an unchanged older-version
+          type (per the identical-shapes rule) without creating a copy
     - [ ] Feature-specific mappers in version folders (e.g., `Mapping/V1/ApiInfoMappingExtensions`,
           `Mapping/V2/AuthMappingExtensions`)
     - [ ] Reusable mappers unversioned (`Mapping/CommonMappingExtensions` — `ToPaginationParams()`,
           `ToPagedResponse()`)
     - [ ] Every `[FromBody]` request type and every `[ProducesResponseType]` response type has a corresponding
-          `IExamplesProvider<T>` class in `SwaggerExamples/V{n}/`
+          `IExamplesProvider<T>` class in `SwaggerExamples/V{n}/` where `n` is the version in which the type
+          originated — reused types do not require duplicate examples in each consuming version's folder
     - [ ] `IExamplesProvider<T>.GetExamples()` sets every public property of `T` — added or renamed properties in the
           model require a matching update in the example class
     - [ ] `[ProducesResponseType]` for success responses only (200, 201, 204) with typed payloads — never for error

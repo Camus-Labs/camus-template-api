@@ -4,10 +4,11 @@ internal static class AsyncWaitHelper
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(5);
 
-    public static async Task WaitUntilAsync(Func<bool> condition, TimeSpan? timeout = null)
+    public static async Task WaitUntilAsync(Func<bool> condition, TimeProvider? timeProvider = null)
     {
-        var deadline = DateTime.UtcNow + (timeout ?? DefaultTimeout);
-        while (!condition() && DateTime.UtcNow < deadline)
+        var provider = timeProvider ?? TimeProvider.System;
+        var deadline = provider.GetUtcNow() + DefaultTimeout;
+        while (!condition() && provider.GetUtcNow() < deadline)
         {
             await Task.Yield();
         }

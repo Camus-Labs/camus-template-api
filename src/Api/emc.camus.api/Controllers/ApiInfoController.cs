@@ -59,6 +59,7 @@ namespace emc.camus.api.Controllers
         /// <summary>
         /// Returns public API information for version 1.0 and 2.0. No authentication required.
         /// </summary>
+        /// <param name="ct">Cancellation token bound to the client request lifecycle.</param>
         /// <returns>API info for the requested version.</returns>
         [HttpGet("info")]
         [AllowAnonymous]
@@ -98,6 +99,7 @@ namespace emc.camus.api.Controllers
         /// <summary>
         /// Returns API information for version 2.0. Requires API Key authentication.
         /// </summary>
+        /// <param name="ct">Cancellation token bound to the client request lifecycle.</param>
         /// <returns>API info for v2.0 (API Key required).</returns>
         [HttpGet("info-apikey")]
         [Authorize(AuthenticationSchemes = AuthenticationSchemes.ApiKey)]
@@ -136,6 +138,7 @@ namespace emc.camus.api.Controllers
         /// <summary>
         /// Returns API information for version 2.0. Requires JWT authentication.
         /// </summary>
+        /// <param name="ct">Cancellation token bound to the client request lifecycle.</param>
         /// <returns>API info for v2.0 (JWT required).</returns>
         [HttpGet("info-jwt")]
         [Authorize(AuthenticationSchemes = AuthenticationSchemes.JwtBearer)]

@@ -6,7 +6,7 @@ applyTo: "src/Test/**integration.test/**"
 
 1. Frameworks & Infrastructure
 
-    - [ ] Testcontainers for database and infrastructure dependencies (e.g., `PostgreSqlContainer` for PostgreSQL)
+    - [ ] Database and infrastructure dependencies use Testcontainers (e.g., `PostgreSqlContainer` for PostgreSQL)
     - [ ] `WebApplicationFactory<Program>` for API integration tests — tests the full HTTP pipeline in-process
     - [ ] `[Trait("Category", "Integration")]` on every test class — enables CI filtering via
           `dotnet test --filter "Category=Integration"`
@@ -35,8 +35,10 @@ applyTo: "src/Test/**integration.test/**"
           API keys, or credentials in test methods
     - [ ] Database tests that write data implement `IAsyncLifetime` and call `ResetDatabaseAsync()` in
           `InitializeAsync` — Respawn deletes all data in the schema, then `DatabaseSeeder` re-inserts reference
-          data — read-only test classes that share a PostgreSQL collection but do not modify data may use
-          `IDisposable` for cleanup without resetting
+          data
+    - [ ] Read-only test classes that share a PostgreSQL collection use `IDisposable` for cleanup — no database
+          reset required — exception: omit `IDisposable` when the class owns no disposable or unmanaged
+          resources (e.g., `HttpClient` lifecycle is managed by the factory)
     - [ ] Factories that require external infrastructure manage the lifecycle via `IAsyncLifetime` and force
           host creation in `InitializeAsync` (e.g., `_ = Server`) so migrations run before tests execute
     - [ ] Factories backed by in-memory or stub implementations require no external dependencies
@@ -51,8 +53,9 @@ applyTo: "src/Test/**integration.test/**"
           database query, or external service call in the same test method
     - [ ] All test methods invoke the system via `HttpClient` — no direct service-class resolution from DI
           unless the class has a `// Justification:` comment explaining why HTTP observation is insufficient
-    - [ ] Use relative dates for all test data timestamps — no hardcoded static dates
-          (e.g., `DateTime.UtcNow`, `DateTime.UtcNow.AddYears(1).AddDays(-1)`)
+    - [ ] Relative dates for all test data timestamps (e.g., `DateTime.UtcNow`,
+          `DateTime.UtcNow.AddYears(1).AddDays(-1)`)
+    - [ ] No hardcoded static dates (e.g., `new DateTime(2025, 6, 15)`, `DateTimeOffset.Parse("2025-06-15")`)
 
 4. Organization
 

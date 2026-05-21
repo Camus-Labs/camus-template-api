@@ -12,7 +12,7 @@ public class UserRepositoryTests : IDisposable
 {
     private static readonly Guid UserId = Guid.Parse("a1b2c3d4-0001-0002-0003-000000000001");
     private static readonly string Username = "testuser";
-    private static readonly string PasswordHash = BCrypt.Net.BCrypt.HashPassword("correctpassword");
+    private const string PasswordHash = "$2a$11$abcdefghijklmnopqrstuOVxsQf1QFlQ8j3oEjFaXIgGff.td6/we";
     private static readonly string[] RolePermissions = new[] { "read", "write" };
 
     private readonly Mock<IConnectionFactory> _mockConnectionFactory = new();
@@ -110,24 +110,23 @@ public class UserRepositoryTests : IDisposable
     public async Task InitializeAsync_AllTablesExist_SetsInitializedState()
     {
         // Arrange
-        var repository = CreateRepository();
+        var initState = new InitializationState();
+        var repository = new UserRepository(_unitOfWork, initState, _mockDataAccess.Object);
         _mockDataAccess
             .Setup(d => d.CheckRequiredTablesAsync(It.IsAny<IDbConnection>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<string, bool>
+            .ReturnsAsync(new TableExistenceModel
             {
-                ["users"] = true,
-                ["roles"] = true,
-                ["user_roles"] = true,
-                ["role_permissions"] = true,
+                UsersExists = true,
+                RolesExists = true,
+                UserRolesExists = true,
+                RolePermissionsExists = true,
             });
 
         // Act
         await repository.InitializeAsync(TestContext.Current.CancellationToken);
 
-        // Assert — calling again should throw "already initialized"
-        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*already initialized*");
+        // Assert
+        initState.UserRepositoryInitialized.Should().BeTrue();
     }
 
     [Fact]
@@ -137,12 +136,12 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateRepository();
         _mockDataAccess
             .Setup(d => d.CheckRequiredTablesAsync(It.IsAny<IDbConnection>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<string, bool>
+            .ReturnsAsync(new TableExistenceModel
             {
-                ["users"] = true,
-                ["roles"] = false,
-                ["user_roles"] = true,
-                ["role_permissions"] = false,
+                UsersExists = true,
+                RolesExists = false,
+                UserRolesExists = true,
+                RolePermissionsExists = false,
             });
 
         // Act
@@ -160,11 +159,12 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateRepository();
         _mockDataAccess
             .Setup(d => d.CheckRequiredTablesAsync(It.IsAny<IDbConnection>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<string, bool>
+            .ReturnsAsync(new TableExistenceModel
             {
-                ["users"] = true,
-                ["user_roles"] = true,
-                ["role_permissions"] = true,
+                UsersExists = true,
+                RolesExists = false,
+                UserRolesExists = true,
+                RolePermissionsExists = true,
             });
 
         // Act
@@ -311,11 +311,25 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.GetByIdAsync(Guid.Empty, TestContext.Current.CancellationToken);
+        var act = () => repository.GetByIdAsync(UserId, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*not initialized*");
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_EmptyUserId_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var repository = CreateRepository();
+
+        // Act
+        var act = () => repository.GetByIdAsync(Guid.Empty, TestContext.Current.CancellationToken);
+
+        // Assert
+        (await act.Should().ThrowAsync<ArgumentOutOfRangeException>())
+            .And.ParamName.Should().Be("userId");
     }
 
     [Fact]
@@ -365,11 +379,25 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.UpdateLastLoginAsync(Guid.Empty, TestContext.Current.CancellationToken);
+        var act = () => repository.UpdateLastLoginAsync(UserId, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*not initialized*");
+    }
+
+    [Fact]
+    public async Task UpdateLastLoginAsync_EmptyUserId_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var repository = CreateRepository();
+
+        // Act
+        var act = () => repository.UpdateLastLoginAsync(Guid.Empty, TestContext.Current.CancellationToken);
+
+        // Assert
+        (await act.Should().ThrowAsync<ArgumentOutOfRangeException>())
+            .And.ParamName.Should().Be("userId");
     }
 
     [Fact]

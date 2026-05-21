@@ -4,6 +4,7 @@ using emc.camus.application.Observability;
 
 namespace emc.camus.application.ApiInfo;
 
+
 /// <summary>
 /// Application service for retrieving API information.
 /// Orchestrates repository calls and converts domain objects to application views.
@@ -15,7 +16,7 @@ namespace emc.camus.application.ApiInfo;
 /// - Returns application view records (not domain entities)
 /// - Exceptions are handled by ExceptionHandlingMiddleware
 /// </remarks>
-public class ApiInfoService : IApiInfoService
+public class ApiInfoService : IApiInfoService, IServiceInitializer
 {
     private readonly IApiInfoRepository _repository;
     private readonly IActivitySourceWrapper _activitySource;
@@ -45,34 +46,24 @@ public class ApiInfoService : IApiInfoService
     public virtual async Task<ApiInfoDetailView> GetByVersionAsync(ApiInfoFilter filter, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(filter);
+
         try
         {
-            // Normalize version: "2" → "2.0" (URL segment may omit minor version)
-            var version = filter.Version.Contains('.') ? filter.Version : $"{filter.Version}.0";
+            var apiInfo = await _repository.GetByVersionAsync(filter.Version, ct);
 
             _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
             {
-                { "normalized_version", version }
+                { "feature_count", apiInfo.Features.Count }
             });
 
-            // Call repository to get domain entity (KeyNotFoundException bubbles up)
-            var apiInfo = await _repository.GetByVersionAsync(version, ct);
-
-            // Convert domain entity to application result
             return new ApiInfoDetailView(
                 apiInfo.Version,
                 apiInfo.Status,
                 apiInfo.Features
             );
         }
-        catch (Exception ex) when (ex is KeyNotFoundException or ArgumentException)
+        catch (Exception ex) when (ex is not KeyNotFoundException and not ArgumentException and not OperationCanceledException)
         {
-            // Let domain exceptions bubble up with their original context
-            throw;
-        }
-        catch (Exception ex)
-        {
-            // Wrap infrastructure failures with business context
             throw new InvalidOperationException(
                 $"Failed to retrieve API information for version '{filter.Version}' due to a system error.", ex);
         }
@@ -93,7 +84,7 @@ public class ApiInfoService : IApiInfoService
         {
             await _repository.InitializeAsync(ct);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             throw new InvalidOperationException(
                 "Failed to initialize API info service. Ensure the database is accessible.", ex);

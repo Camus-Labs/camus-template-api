@@ -13,8 +13,8 @@ internal interface IUserDataAccess
     /// </summary>
     /// <param name="connection">The database connection to use.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
-    /// <returns>A dictionary mapping table names to their existence status.</returns>
-    Task<IDictionary<string, bool>> CheckRequiredTablesAsync(IDbConnection connection, CancellationToken ct = default);
+    /// <returns>The table existence model with status for each required table.</returns>
+    Task<TableExistenceModel> CheckRequiredTablesAsync(IDbConnection connection, CancellationToken ct = default);
 
     /// <summary>
     /// Finds a user by username including the password hash for credential verification.

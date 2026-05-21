@@ -211,7 +211,8 @@ Call these in `Program.cs` after other service registrations and before `app.Run
 | Swagger UI not loading | `SwaggerSettings:Enabled` is `false` or environment is not Development |
 | No endpoints visible | Controllers missing `[ApiVersion]` attribute or route template mismatch |
 | XML comments not appearing | XML doc file not generated (check `Directory.Build.props`) |
-| Security "Authorize" button missing | `SecuritySchemes` array is empty or contains invalid values |
+| Security "Authorize" button missing | `SecuritySchemes` array is empty |
+| Application fails to start with `InvalidOperationException` | `SecuritySchemes` contains an invalid value (valid: `Bearer`, `ApiKey`) |
 | 404 on `/swagger` | `UseSwaggerDocumentation()` not called or called after `app.Run()` |
 
 ---

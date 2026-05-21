@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
 using System.Net;
 using System.Text.Json;
@@ -8,10 +9,10 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using emc.camus.api.Configurations;
 using emc.camus.api.Metrics;
 using emc.camus.api.Middleware;
+using emc.camus.api.test.Helpers;
 using emc.camus.application.Common;
 using emc.camus.application.Exceptions;
 using emc.camus.domain.Exceptions;
@@ -25,12 +26,15 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         PropertyNameCaseInsensitive = true
     };
 
+    private readonly Mock<ILogger<ExceptionHandlingMiddleware>> _loggerMock;
+    private readonly ConcurrentBag<(LogLevel Level, string Message)> _logEntries;
     private readonly ErrorMetrics _errorMetrics;
 
     public ExceptionHandlingMiddlewareTests()
     {
-        var logger = new Mock<ILogger<ErrorMetrics>>();
-        _errorMetrics = new ErrorMetrics("test-service", logger.Object);
+        (_loggerMock, _logEntries) = LogCaptureBuilder.Create<ExceptionHandlingMiddleware>();
+        var metricsLogger = new Mock<ILogger<ErrorMetrics>>();
+        _errorMetrics = new ErrorMetrics("test-service", metricsLogger.Object);
     }
 
     public void Dispose()
@@ -45,7 +49,6 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         List<ErrorCodeMappingRule>? additionalRules = null,
         ErrorMetrics? errorMetrics = null)
     {
-        var logger = new Mock<ILogger<ExceptionHandlingMiddleware>>();
         var environment = new Mock<IHostEnvironment>();
         environment.Setup(e => e.EnvironmentName)
             .Returns(isDevelopment ? "Development" : "Production");
@@ -54,9 +57,8 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         {
             AdditionalRules = additionalRules ?? new List<ErrorCodeMappingRule>()
         };
-        var options = Options.Create(settings);
 
-        return new ExceptionHandlingMiddleware(next, logger.Object, environment.Object, options, errorMetrics ?? _errorMetrics);
+        return new ExceptionHandlingMiddleware(next, _loggerMock.Object, environment.Object, settings, errorMetrics ?? _errorMetrics);
     }
 
     private static async Task<ProblemDetails> GetProblemDetailsFromResponse(HttpContext context)
@@ -164,6 +166,8 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         var problemDetails = await GetProblemDetailsFromResponse(context);
         problemDetails.Status.Should().Be((int)HttpStatusCode.InternalServerError);
         problemDetails.Detail.Should().Be("An unexpected error occurred.");
+        _logEntries.Should().Contain(e =>
+            e.Level == LogLevel.Error && e.Message.Contains("Something went wrong"));
     }
 
     // --- No Exception ---
@@ -262,16 +266,16 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
     // --- Additional (Configuration) Rules ---
 
     [Fact]
-    public async Task InvokeAsync_AdditionalRuleMatchesFirst_OverridesPlatformRule()
+    public async Task InvokeAsync_AdditionalRuleFallback_MatchesWhenNoPlatformRuleApplies()
     {
-        // Arrange
+        // Arrange — InvalidProgramException has no platform rule, so additional rule matches
         var context = CreateHttpContext();
         var additionalRules = new List<ErrorCodeMappingRule>
         {
-            new() { Type = "ArgumentException", ErrorCode = "custom_bad_request" }
+            new() { Type = "InvalidProgramException", ErrorCode = "custom_program_error" }
         };
         var middleware = CreateMiddleware(
-            _ => throw new ArgumentException("test"),
+            _ => throw new InvalidProgramException("test"),
             additionalRules: additionalRules);
 
         // Act
@@ -279,7 +283,7 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
 
         // Assert
         var problemDetails = await GetProblemDetailsFromResponse(context);
-        problemDetails.Extensions["error"]!.ToString().Should().Be("custom_bad_request");
+        problemDetails.Extensions["error"]!.ToString().Should().Be("custom_program_error");
     }
 
     // --- Inner Exception in Development ---
@@ -343,6 +347,8 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         // Assert
         var problemDetails = await GetProblemDetailsFromResponse(context);
         problemDetails.Extensions["error"]!.ToString().Should().Be(ErrorCodes.DefaultErrorCode);
+        _logEntries.Should().Contain(e =>
+            e.Level == LogLevel.Warning && e.Message.Contains("timed out"));
     }
 
     // --- Route Pattern Resolution ---
@@ -428,14 +434,14 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
     {
         var logger = new Mock<ILogger<ExceptionHandlingMiddleware>>().Object;
         var environment = new Mock<IHostEnvironment>().Object;
-        var options = Options.Create(new ErrorHandlingSettings());
+        var settings = new ErrorHandlingSettings();
         var metricsLogger = new Mock<ILogger<ErrorMetrics>>();
         var errorMetrics = new ErrorMetrics("test-service", metricsLogger.Object);
 
-        yield return new object?[] { null, environment, options, errorMetrics };
-        yield return new object?[] { logger, null, options, errorMetrics };
+        yield return new object?[] { null, environment, settings, errorMetrics };
+        yield return new object?[] { logger, null, settings, errorMetrics };
         yield return new object?[] { logger, environment, null, errorMetrics };
-        yield return new object?[] { logger, environment, options, null };
+        yield return new object?[] { logger, environment, settings, null };
     }
 
     [Theory]
@@ -443,14 +449,14 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
     public void Constructor_NullDependency_ThrowsArgumentNullException(
         ILogger<ExceptionHandlingMiddleware>? logger,
         IHostEnvironment? environment,
-        IOptions<ErrorHandlingSettings>? options,
+        ErrorHandlingSettings? settings,
         ErrorMetrics? errorMetrics)
     {
         // Arrange
         RequestDelegate next = _ => Task.CompletedTask;
 
         // Act
-        var act = () => new ExceptionHandlingMiddleware(next, logger!, environment!, options!, errorMetrics!);
+        var act = () => new ExceptionHandlingMiddleware(next, logger!, environment!, settings!, errorMetrics!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();

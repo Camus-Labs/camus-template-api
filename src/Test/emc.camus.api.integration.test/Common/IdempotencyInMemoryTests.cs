@@ -70,6 +70,9 @@ public class IdempotencyInMemoryTests
         firstRequest.Headers.TryAddWithoutValidation(Headers.IdempotencyKey, "cache-hit-key");
         firstRequest.Content = JsonContent.Create(payload);
         var firstResponse = await client.SendAsync(firstRequest, TestContext.Current.CancellationToken);
+        await firstResponse.EnsureSetupSuccessAsync("first request must seed the idempotency cache");
+        firstResponse.Headers.GetValues(Headers.IdempotencyKeyStatus).Should().ContainSingle()
+            .Which.Should().Be(IdempotencyKeyStatuses.Miss, "precondition: first request must be a cache miss");
 
         using var secondRequest = new HttpRequestMessage(HttpMethod.Post, DecoratedWithBodyEndpoint);
         secondRequest.Headers.TryAddWithoutValidation(Headers.IdempotencyKey, "cache-hit-key");
@@ -79,10 +82,6 @@ public class IdempotencyInMemoryTests
         var response = await client.SendAsync(secondRequest, TestContext.Current.CancellationToken);
 
         // Assert
-        await firstResponse.Should().HaveStatusCode(HttpStatusCode.OK);
-        firstResponse.Headers.GetValues(Headers.IdempotencyKeyStatus).Should().ContainSingle()
-            .Which.Should().Be(IdempotencyKeyStatuses.Miss);
-
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
         response.Headers.GetValues(Headers.IdempotencyKeyStatus).Should().ContainSingle()
             .Which.Should().Be(IdempotencyKeyStatuses.Hit);
@@ -121,13 +120,14 @@ public class IdempotencyInMemoryTests
         var responseA = await clientA.SendAsync(secondRequestA, TestContext.Current.CancellationToken);
         var responseB = await clientB.SendAsync(secondRequestB, TestContext.Current.CancellationToken);
 
-        // Assert
+        // Assert — User A retrieves their own cached response
         await responseA.Should().HaveStatusCode(HttpStatusCode.OK);
         responseA.Headers.GetValues(Headers.IdempotencyKeyStatus).Should().ContainSingle()
             .Which.Should().Be(IdempotencyKeyStatuses.Hit);
         var bodyA = await responseA.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
         bodyA.GetProperty("value").GetString().Should().Be("response-a");
 
+        // Assert — User B also retrieves their own cached response (independent verification)
         await responseB.Should().HaveStatusCode(HttpStatusCode.OK);
         responseB.Headers.GetValues(Headers.IdempotencyKeyStatus).Should().ContainSingle()
             .Which.Should().Be(IdempotencyKeyStatuses.Hit);

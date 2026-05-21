@@ -36,14 +36,18 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
         private const int MinSegmentsPerWindow = 1;
         private const int MaxSegmentsPerWindow = 20;
         private const int DefaultSegmentsPerWindow = 5;
+        private const int DefaultPermitLimitDefault = 250;
+        private const int DefaultPermitLimitStrict = 50;
+        private const int DefaultPermitLimitRelaxed = 500;
+        private const int DefaultWindowSeconds = 60;
 
         private static readonly string[] DefaultExemptPaths = new[] { "/health", "/ready", "/alive", "/swagger" };
 
         private static readonly Dictionary<string, RateLimitPolicySettings> DefaultPolicies = new()
         {
-            { RateLimitPolicies.Default, new RateLimitPolicySettings { PermitLimit = 250, WindowSeconds = 60 } },
-            { RateLimitPolicies.Strict, new RateLimitPolicySettings { PermitLimit = 50, WindowSeconds = 60 } },
-            { RateLimitPolicies.Relaxed, new RateLimitPolicySettings { PermitLimit = 500, WindowSeconds = 60 } }
+            { RateLimitPolicies.Default, new RateLimitPolicySettings { PermitLimit = DefaultPermitLimitDefault, WindowSeconds = DefaultWindowSeconds } },
+            { RateLimitPolicies.Strict, new RateLimitPolicySettings { PermitLimit = DefaultPermitLimitStrict, WindowSeconds = DefaultWindowSeconds } },
+            { RateLimitPolicies.Relaxed, new RateLimitPolicySettings { PermitLimit = DefaultPermitLimitRelaxed, WindowSeconds = DefaultWindowSeconds } }
         };
 
         /// <summary>
@@ -83,7 +87,7 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
         private void ValidateSegmentsPerWindow()
         {
             if (SegmentsPerWindow < MinSegmentsPerWindow || SegmentsPerWindow > MaxSegmentsPerWindow)
-                throw new InvalidOperationException($"SegmentsPerWindow must be between {MinSegmentsPerWindow} and {MaxSegmentsPerWindow}");
+                throw new InvalidOperationException($"SegmentsPerWindow must be between {MinSegmentsPerWindow} and {MaxSegmentsPerWindow}. Current value: {SegmentsPerWindow}");
         }
 
         private void ValidatePolicies()
@@ -107,13 +111,17 @@ namespace emc.camus.ratelimiting.inmemory.Configurations
 
             var validPolicyNames = RateLimitPolicies.GetAll();
             if (!validPolicyNames.Contains(policyName))
+            {
+                var allowedNames = string.Join(", ", validPolicyNames);
                 throw new InvalidOperationException(
-                    $"Invalid policy name '{policyName}'. Valid policy names are: {string.Join(", ", validPolicyNames)} (case-sensitive)");
+                    $"Invalid policy name '{policyName}'. Valid policy names are: {allowedNames} (case-sensitive)");
+            }
 
             if (policy == null)
                 throw new InvalidOperationException($"Policy '{policyName}' cannot be null");
 
-            policy.Validate(policyName);
+            policy.PolicyName = policyName;
+            policy.Validate();
         }
 
         private void ValidateExemptPaths()

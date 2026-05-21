@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 
 namespace emc.camus.api.Models.Responses
 {
@@ -6,6 +7,7 @@ namespace emc.camus.api.Models.Responses
     /// Use HTTP status codes (200 OK, 201 Created, etc.) to indicate success; use ProblemDetails for errors.
     /// </summary>
     /// <typeparam name="T">The type of the data payload (e.g., ApiInfo, AuthenticateUserResponse, etc.)</typeparam>
+    [ExcludeFromCodeCoverage]
     public class ApiResponse<T>
     {
         /// <summary>

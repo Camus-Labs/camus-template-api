@@ -34,7 +34,7 @@ add JWT Bearer authentication. Enable the standard authentication/authorization 
 
 See `JwtSetupExtensions` in this adapter for the full registration API.
 
-See [Configuration](#%EF%B8%8F-configuration) below for settings and secret requirements.
+See [Configuration](#️-configuration) below for settings and secret requirements.
 
 ---
 
@@ -49,7 +49,8 @@ In `appsettings.json`:
   "JwtSettings": {
     "Issuer": "https://auth.camus.com/",
     "Audience": "https://app.camus.com/",
-    "ExpirationMinutes": 60
+    "ExpirationMinutes": 60,
+    "RsaPrivateKeySecretName": "RsaPrivateKeyPem"
   }
 }
 ```
@@ -75,15 +76,15 @@ secret provider configuration.
 
 ### Using ITokenGenerator
 
-The adapter provides `ITokenGenerator` for token generation. Inject it into your authentication controller
-along with `ISecretProvider`. Validate credentials against secrets, build a `GenerateTokenCommand` with desired
-claims, and call `GenerateToken(command)` to produce an `AuthToken` containing the token string and
-expiration.
+The adapter registers `ITokenGenerator` in DI for use by the Application layer's `IAuthService`.
+Controllers inject `IAuthService` (not `ITokenGenerator` directly). The token generator accepts a user ID,
+username, and optional additional claims, returning an `AuthToken` with the token string and expiration.
 
 **Key Points:**
 
-- ✅ Inject `ITokenGenerator` via constructor
-- ✅ Token generation is handled by the adapter
+- ✅ Controllers inject `IAuthService`, which internally uses `ITokenGenerator`
+- ✅ Token generation is handled by the adapter via the `GenerateToken` method, which accepts a user ID,
+  username, and optional additional claims
 - ✅ Add custom claims as needed (roles, permissions, etc.)
 - ✅ Returns `AuthToken` with token and expiration
 
@@ -96,14 +97,14 @@ See `JwtSetupExtensions` and `ITokenGenerator` in this adapter for API details, 
 
 ### Require JWT Authentication
 
-Apply `[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]` to controllers or actions
-that require JWT authentication. Use `[Authorize(Roles = "Admin")]` for role-based access or define custom
+Apply an Authorize attribute specifying the JWT bearer authentication scheme to controllers or actions
+that require JWT authentication. Use role-based authorization attributes for access control or define custom
 policies for fine-grained authorization.
 
 ### Support Multiple Authentication Schemes
 
-To accept either JWT or API Key on an endpoint, list both scheme names in the `[Authorize]` attribute's
-`AuthenticationSchemes` parameter.
+To accept either JWT or API Key on an endpoint, list both scheme names in the Authorize attribute's
+authentication schemes parameter.
 
 See controller source files in `src/Api/emc.camus.api/Controllers/` for examples.
 
@@ -111,7 +112,7 @@ See controller source files in `src/Api/emc.camus.api/Controllers/` for examples
 
 ## 🔑 JWT Claims
 
-Standard claims included in tokens:
+Standard claims included in every token:
 
 | Claim | Type | Description |
 | ----- | ---- | ----------- |
@@ -119,15 +120,17 @@ Standard claims included in tokens:
 | `unique_name` | Username | User's display name |
 | `jti` | JWT ID | Unique token identifier (GUID) |
 | `iat` | Issued At | Token creation timestamp |
-| `role` | Role | User roles (e.g., "User", "Admin") |
 | `exp` | Expiration | Token expiration timestamp |
 | `iss` | Issuer | Token issuer (from config) |
 | `aud` | Audience | Intended audience (from config) |
 
-**Access Claims in Code:**
+Optional claims (included only when supplied via `additionalClaims`):
 
-Use `User.FindFirst(ClaimTypes.NameIdentifier)` for user ID, `User.FindAll(ClaimTypes.Role)` for roles, and
-`User.FindFirst("unique_name")` for username.
+| Claim | Type | Description |
+| ----- | ---- | ----------- |
+| `role` | Role | User roles (e.g., "User", "Admin") |
+
+See controller source files in `src/Api/emc.camus.api/Controllers/` for claims access patterns.
 
 ---
 
@@ -140,49 +143,12 @@ header on subsequent requests. See the Swagger documentation for the complete AP
 
 ## 📊 Observability
 
-### Metrics
-
-The adapter exports OpenTelemetry metrics for monitoring authentication failures:
-
-#### `jwt_authentication_failures_total`
-
-**Type:** Counter  
-**Unit:** requests  
-**Description:** Total number of JWT authentication failures
-
-**Dimensions:**
-
-- `failure_reason` - The specific error code:
-  - `token_expired` - JWT token has expired
-  - `invalid_signature` - Token signature validation failed (potential tampering)
-  - `invalid_issuer` - Token issuer doesn't match configuration
-  - `invalid_audience` - Token audience doesn't match configuration
-  - `invalid_token` - Token is malformed or cannot be parsed
-  - `authentication_required` - No authentication provided
-  - `forbidden` - Valid token but insufficient permissions
-- `endpoint` - The API endpoint path that was accessed
-
-**Use Cases:**
-
-- **Attack Detection**: Spike in `invalid_signature` indicates potential token tampering attempts
-- **Misconfiguration**: Sustained `invalid_issuer` or `invalid_audience` errors indicate
-  configuration mismatch
-- **User Experience**: High rate of `token_expired` may indicate expiration window is too short
-- **Security Monitoring**: Track which endpoints are being targeted by unauthorized access
-  attempts
-
-**Example Queries:**
-
-| Query Purpose | Description |
-| ------------- | ----------- |
-| Total failures (1h) | Sum of `jwt_authentication_failures_total` increase over the last hour |
-| Failure rate by reason | Rate of `jwt_authentication_failures_total` grouped by `failure_reason` |
-| Endpoints under attack | Top 5 endpoints by `invalid_signature` failure rate |
-
 ### Error Handling
 
-Authentication failures are handled via exceptions. The global exception handler logs errors and returns RFC 7807
-Problem Details responses.
+Authentication failures are handled via exceptions. The global exception handler in the API layer logs errors,
+increments `error_responses_total` (via `ErrorMetrics`), and returns RFC 7807 Problem Details responses with
+error codes defined in `ErrorCodes.cs` (e.g., `jwt_token_expired`, `jwt_invalid_signature`,
+`jwt_invalid_issuer`, `jwt_invalid_audience`, `jwt_authentication_required`).
 
 ---
 
@@ -193,6 +159,10 @@ The adapter registers via the extension methods in `JwtSetupExtensions.cs`:
 - **`builder.AddJwtAuthentication()`** — Reads `JwtSettings` from configuration, resolves RSA keys
   from the secret provider, and registers JWT bearer authentication and token-generation services.
 
+**Required Dependencies:** An `ITokenRevocationCache` implementation must be registered in the DI container
+before the host starts accepting requests. Token validation checks the revocation cache on every
+authenticated request.
+
 Apply the `[Authorize]` attribute (with the appropriate authentication scheme) to controllers or actions that
 require JWT authentication.
 
@@ -202,9 +172,9 @@ require JWT authentication.
 
 | Symptom | Likely Cause |
 | ------- | ------------ |
-| `invalid_signature` on all tokens | RSA private key mismatch or key not loaded from secret store |
-| `token_expired` immediately | Server clock skew or `ExpirationMinutes` too low |
-| `invalid_issuer` / `invalid_audience` | `JwtSettings:Issuer` or `Audience` doesn't match the token’s claims |
+| `jwt_invalid_signature` on all tokens | RSA private key mismatch or key not loaded from secret store |
+| `jwt_token_expired` immediately | Server clock skew or `ExpirationMinutes` too low |
+| `jwt_invalid_issuer` / `jwt_invalid_audience` | `JwtSettings:Issuer` or `Audience` doesn't match the token's claims |
 | 401 with no error code | `[Authorize]` attribute missing `AuthenticationSchemes` parameter |
 | Secret provider failure at startup | `AddDaprSecrets()` not called before `AddJwtAuthentication()` |
 
@@ -212,8 +182,8 @@ require JWT authentication.
 
 **Client Implementation:**
 
-Handle JWT error codes on the client side: refresh the token on `token_expired`, and clear credentials and
-re-authenticate on `invalid_signature`. See `ErrorCodes.cs` for the complete list of error codes.
+Handle JWT error codes on the client side: refresh the token on `jwt_token_expired`, and clear credentials and
+re-authenticate on `jwt_invalid_signature`. See `ErrorCodes.cs` for the complete list of error codes.
 
 > **📖 Error Codes Reference:** See [ErrorCodes.cs](../../Application/emc.camus.application/Common/ErrorCodes.cs)
 for complete error code definitions.
@@ -228,9 +198,9 @@ for complete error code definitions.
 ┌──────────────────────────────────────┐
 │      Application Layer               │
 │        ISecretProvider               │
-└───────────────┬──────────────────────┘
+└───────────────▲──────────────────────┘
                 │ depends on
-┌───────────────▼──────────────────────┐
+┌───────────────┴──────────────────────┐
 │       Adapter Layer                  │
 │  JwtSetupExtensions                  │
 │  (uses ISecretProvider for keys)    │
@@ -254,8 +224,10 @@ for complete error code definitions.
 
 ### RSA Key Generation
 
-Generate a 2048-bit RSA private key using `openssl genrsa`, extract the public key with `openssl rsa -pubout`,
-and store the private key PEM in the secret provider. Never commit private keys to source control.
+Generate a 2048-bit RSA private key, extract the corresponding public key, and store the private key PEM
+in the secret provider. Use a standard cryptographic tool such as OpenSSL for key generation — refer to the
+[OpenSSL documentation](https://www.openssl.org/docs/) for exact commands. Never commit private keys to
+source control.
 
 ### Production Recommendations
 
@@ -315,7 +287,7 @@ key validation. Set `ClockSkew` to `TimeSpan.Zero` for strict expiration checkin
 
 ### Custom Authorization Policies
 
-After calling `builder.AddCamusAuthorization()`, add custom policies via `builder.Services.AddAuthorization()`
+After calling `builder.AddAuthorizationPolicies()`, add custom policies via `builder.Services.AddAuthorization()`
 using `RequireRole()`, `RequireClaim()`, or custom requirements. See `AuthorizationSetupExtensions` in the API
 layer for the base configuration.
 

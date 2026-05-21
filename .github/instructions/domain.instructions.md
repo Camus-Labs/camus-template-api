@@ -8,6 +8,9 @@ applyTo: "{src/Domain/**/*.cs,src/Domain/**/*.csproj}"
 
     - [ ] All entity properties use private setters
     - [ ] Collection properties expose `IReadOnlyList<T>` — prevents external mutation
+    - [ ] No direct infrastructure access (database, HTTP clients, file system, SDK calls)
+    - [ ] No layer orchestration (coordinating domain entities and port calls)
+    - [ ] No middleware or DI registration
     - [ ] No `<ProjectReference>` elements targeting projects outside `src/Domain/`
     - [ ] No `<PackageReference>` elements — zero NuGet dependencies
 
