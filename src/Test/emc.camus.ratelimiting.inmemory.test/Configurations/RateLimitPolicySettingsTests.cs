@@ -5,10 +5,13 @@ namespace emc.camus.ratelimiting.inmemory.test.Configurations;
 
 public class RateLimitPolicySettingsTests
 {
+    private const int DefaultPermitLimit = 100;
+    private const int DefaultWindowSeconds = 60;
+
     private static RateLimitPolicySettings CreateSettings(
         string policyName = "default",
-        int permitLimit = 100,
-        int windowSeconds = 60) =>
+        int permitLimit = DefaultPermitLimit,
+        int windowSeconds = DefaultWindowSeconds) =>
         new()
         {
             PolicyName = policyName,
@@ -128,8 +131,8 @@ public class RateLimitPolicySettingsTests
         var settings = new RateLimitPolicySettings
         {
             PolicyName = policyName!,
-            PermitLimit = 100,
-            WindowSeconds = 60
+            PermitLimit = DefaultPermitLimit,
+            WindowSeconds = DefaultWindowSeconds
         };
 
         // Act

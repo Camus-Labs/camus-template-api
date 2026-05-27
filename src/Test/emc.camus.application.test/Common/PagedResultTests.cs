@@ -7,7 +7,10 @@ public class PagedResultTests
 {
     private const int DefaultTotalCount = 50;
     private const int DefaultPage = 1;
+    private const int SecondPage = 2;
     private const int DefaultPageSize = 25;
+    private static readonly IReadOnlyList<string> EmptyItems = [];
+    private static readonly IReadOnlyList<string> ValidItems = ["item1", "item2"];
 
     // --- Constructor ---
 
@@ -15,7 +18,7 @@ public class PagedResultTests
     public void Constructor_ValidParameters_SetsProperties()
     {
         // Arrange
-        var items = new List<string> { "item1", "item2" };
+        var items = ValidItems.ToList();
         var totalCount = DefaultTotalCount;
         var page = DefaultPage;
         var pageSize = DefaultPageSize;
@@ -24,7 +27,7 @@ public class PagedResultTests
         var result = new PagedResult<string>(items, totalCount, page, pageSize);
 
         // Assert
-        result.Items.Should().BeEquivalentTo(items);
+        result.Items.Should().BeEquivalentTo(ValidItems);
         result.TotalCount.Should().Be(totalCount);
         result.Page.Should().Be(page);
         result.PageSize.Should().Be(pageSize);
@@ -47,7 +50,7 @@ public class PagedResultTests
     {
         // Arrange
         // Act
-        var act = () => new PagedResult<string>([], -1, DefaultPage, DefaultPageSize);
+        var act = () => new PagedResult<string>(EmptyItems.ToList(), -1, DefaultPage, DefaultPageSize);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -59,7 +62,7 @@ public class PagedResultTests
     {
         // Arrange
         // Act
-        var act = () => new PagedResult<string>([], DefaultTotalCount, 0, DefaultPageSize);
+        var act = () => new PagedResult<string>(EmptyItems.ToList(), DefaultTotalCount, 0, DefaultPageSize);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -71,7 +74,7 @@ public class PagedResultTests
     {
         // Arrange
         // Act
-        var act = () => new PagedResult<string>([], DefaultTotalCount, DefaultPage, 0);
+        var act = () => new PagedResult<string>(EmptyItems.ToList(), DefaultTotalCount, DefaultPage, 0);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -81,15 +84,15 @@ public class PagedResultTests
     // --- TotalPages ---
 
     [Theory]
-    [InlineData(50, 25, 2)]
-    [InlineData(51, 25, 3)]
-    [InlineData(0, 25, 0)]
-    [InlineData(1, 25, 1)]
+    [InlineData(DefaultTotalCount, DefaultPageSize, 2)]
+    [InlineData(51, DefaultPageSize, 3)]
+    [InlineData(0, DefaultPageSize, 0)]
+    [InlineData(1, DefaultPageSize, 1)]
     [InlineData(100, 10, 10)]
     public void TotalPages_VariousCounts_ReturnsCorrectValue(int totalCount, int pageSize, int expectedTotalPages)
     {
         // Arrange
-        var result = new PagedResult<string>([], totalCount, 1, pageSize);
+        var result = new PagedResult<string>(EmptyItems.ToList(), totalCount, DefaultPage, pageSize);
 
         // Act
         var totalPages = result.TotalPages;
@@ -101,12 +104,12 @@ public class PagedResultTests
     // --- HasNextPage ---
 
     [Theory]
-    [InlineData(DefaultTotalCount, 1, DefaultPageSize, true)]
-    [InlineData(DefaultTotalCount, 2, DefaultPageSize, false)]
+    [InlineData(DefaultTotalCount, DefaultPage, DefaultPageSize, true)]
+    [InlineData(DefaultTotalCount, SecondPage, DefaultPageSize, false)]
     public void HasNextPage_VariousPages_ReturnsExpectedResult(int totalCount, int page, int pageSize, bool expected)
     {
         // Arrange
-        var result = new PagedResult<string>([], totalCount, page, pageSize);
+        var result = new PagedResult<string>(EmptyItems.ToList(), totalCount, page, pageSize);
 
         // Act
         var hasNext = result.HasNextPage;
@@ -118,12 +121,12 @@ public class PagedResultTests
     // --- HasPreviousPage ---
 
     [Theory]
-    [InlineData(DefaultTotalCount, 1, DefaultPageSize, false)]
-    [InlineData(DefaultTotalCount, 2, DefaultPageSize, true)]
+    [InlineData(DefaultTotalCount, DefaultPage, DefaultPageSize, false)]
+    [InlineData(DefaultTotalCount, SecondPage, DefaultPageSize, true)]
     public void HasPreviousPage_VariousPages_ReturnsExpectedResult(int totalCount, int page, int pageSize, bool expected)
     {
         // Arrange
-        var result = new PagedResult<string>([], totalCount, page, pageSize);
+        var result = new PagedResult<string>(EmptyItems.ToList(), totalCount, page, pageSize);
 
         // Act
         var hasPrevious = result.HasPreviousPage;

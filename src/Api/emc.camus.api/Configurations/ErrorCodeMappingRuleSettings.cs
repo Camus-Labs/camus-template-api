@@ -4,7 +4,7 @@ namespace emc.camus.api.Configurations;
 /// Represents a single error code mapping rule for exception-to-error-code resolution.
 /// Rules are evaluated in order until a match is found.
 /// </summary>
-public class ErrorCodeMappingRule
+public class ErrorCodeMappingRuleSettings
 {
     private const int MaxErrorCodeLength = 50;
     private const int MaxTypeLength = 100;
@@ -28,61 +28,64 @@ public class ErrorCodeMappingRule
     public string ErrorCode { get; set; } = string.Empty;
 
     /// <summary>
+    /// The positional index of this rule within its parent collection, used for error messages.
+    /// Set by the parent <see cref="ErrorHandlingSettings"/> before calling <see cref="Validate"/>.
+    /// </summary>
+    internal int RuleIndex { get; set; }
+
+    /// <summary>
     /// Validates the error code mapping rule.
     /// </summary>
-    /// <param name="index">The index of this rule in the Rules collection, used for error messages.</param>
     /// <exception cref="InvalidOperationException">
     /// Thrown when any property is invalid.
     /// </exception>
-    public void Validate(int index)
+    public void Validate()
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-
-        ValidateErrorCode(index);
-        ValidateTypeOrPattern(index);
-        ValidateType(index);
-        ValidatePattern(index);
+        ValidateErrorCode();
+        ValidateTypeOrPattern();
+        ValidateType();
+        ValidatePattern();
     }
 
-    private void ValidateErrorCode(int index)
+    private void ValidateErrorCode()
     {
         if (string.IsNullOrWhiteSpace(ErrorCode))
         {
             throw new InvalidOperationException(
-                $"Rules[{index}].ErrorCode cannot be null or empty.");
+                $"Rules[{RuleIndex}].ErrorCode cannot be null or empty.");
         }
 
         if (ErrorCode.Length > MaxErrorCodeLength)
         {
             throw new InvalidOperationException(
-                $"Rules[{index}].ErrorCode must not exceed {MaxErrorCodeLength} characters. Current length: {ErrorCode.Length}");
+                $"Rules[{RuleIndex}].ErrorCode must not exceed {MaxErrorCodeLength} characters. Current length: {ErrorCode.Length}");
         }
     }
 
-    private void ValidateTypeOrPattern(int index)
+    private void ValidateTypeOrPattern()
     {
         if (string.IsNullOrWhiteSpace(Type) && string.IsNullOrWhiteSpace(Pattern))
         {
             throw new InvalidOperationException(
-                $"Rules[{index}] must have either Type or Pattern specified. Got Type: '{Type}', Pattern: '{Pattern}'.");
+                $"Rules[{RuleIndex}] must have either Type or Pattern specified. Got Type: '{Type}', Pattern: '{Pattern}'.");
         }
     }
 
-    private void ValidateType(int index)
+    private void ValidateType()
     {
         if (!string.IsNullOrWhiteSpace(Type) && Type.Length > MaxTypeLength)
         {
             throw new InvalidOperationException(
-                $"Rules[{index}].Type must not exceed {MaxTypeLength} characters. Current length: {Type.Length}");
+                $"Rules[{RuleIndex}].Type must not exceed {MaxTypeLength} characters. Current length: {Type.Length}");
         }
     }
 
-    private void ValidatePattern(int index)
+    private void ValidatePattern()
     {
         if (!string.IsNullOrWhiteSpace(Pattern) && Pattern.Length > MaxPatternLength)
         {
             throw new InvalidOperationException(
-                $"Rules[{index}].Pattern must not exceed {MaxPatternLength} characters. Current length: {Pattern.Length}");
+                $"Rules[{RuleIndex}].Pattern must not exceed {MaxPatternLength} characters. Current length: {Pattern.Length}");
         }
     }
 }

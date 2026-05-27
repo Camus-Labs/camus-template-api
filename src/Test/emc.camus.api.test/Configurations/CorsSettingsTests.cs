@@ -5,15 +5,24 @@ namespace emc.camus.api.test.Configurations;
 
 public class CorsSettingsTests
 {
+    private static readonly string[] ExpectedDefaultMethods = ["GET", "POST"];
+    private static readonly string[] ValidOrigins = ["https://example.com"];
+    private static readonly string[] WildcardOrigin = ["*"];
+    private static readonly string[] OriginsWithEmpty = ["https://valid.com", ""];
+    private static readonly string[] InvalidUrlOrigin = ["not-a-url"];
+    private static readonly string[] ValidMethods = ["GET", "POST"];
+    private static readonly string[] ValidHeaders = ["Content-Type"];
+    private static readonly string[] ValidExposedHeaders = ["X-Custom"];
+
     private static CorsSettings CreateValidSettings()
     {
         return new CorsSettings
         {
             PolicyName = "TestPolicy",
-            AllowedOrigins = new[] { "https://example.com" },
-            AllowedMethods = new[] { "GET", "POST" },
-            AllowedHeaders = new[] { "Content-Type" },
-            ExposedHeaders = new[] { "X-Custom" },
+            AllowedOrigins = ValidOrigins,
+            AllowedMethods = ValidMethods,
+            AllowedHeaders = ValidHeaders,
+            ExposedHeaders = ValidExposedHeaders,
             PreflightMaxAgeMinutes = 60,
             AllowCredentials = false
         };
@@ -24,16 +33,13 @@ public class CorsSettingsTests
     [Fact]
     public void Constructor_Default_SetsExpectedDefaults()
     {
-        // Arrange
-        string[] expectedMethods = ["GET", "POST"];
-
         // Act
         var settings = new CorsSettings();
 
         // Assert
         settings.PolicyName.Should().Be("DefaultCorsPolicy");
         settings.AllowedOrigins.Should().BeEmpty();
-        settings.AllowedMethods.Should().BeEquivalentTo(expectedMethods);
+        settings.AllowedMethods.Should().BeEquivalentTo(ExpectedDefaultMethods);
         settings.AllowedHeaders.Should().HaveCount(3);
         settings.ExposedHeaders.Should().HaveCount(7);
         settings.AllowCredentials.Should().BeFalse();
@@ -60,7 +66,7 @@ public class CorsSettingsTests
     {
         // Arrange
         var settings = CreateValidSettings();
-        settings.AllowedOrigins = new[] { "*" };
+        settings.AllowedOrigins = WildcardOrigin;
         settings.AllowCredentials = false;
 
         // Act
@@ -142,7 +148,7 @@ public class CorsSettingsTests
     {
         // Arrange
         var settings = CreateValidSettings();
-        settings.AllowedOrigins = new[] { "https://valid.com", "" };
+        settings.AllowedOrigins = OriginsWithEmpty;
 
         // Act
         var act = () => settings.Validate();
@@ -157,7 +163,7 @@ public class CorsSettingsTests
     {
         // Arrange
         var settings = CreateValidSettings();
-        settings.AllowedOrigins = new[] { "not-a-url" };
+        settings.AllowedOrigins = InvalidUrlOrigin;
 
         // Act
         var act = () => settings.Validate();
@@ -174,7 +180,7 @@ public class CorsSettingsTests
     {
         // Arrange
         var settings = CreateValidSettings();
-        settings.AllowedOrigins = new[] { "*" };
+        settings.AllowedOrigins = WildcardOrigin;
         settings.AllowCredentials = true;
 
         // Act
@@ -187,11 +193,11 @@ public class CorsSettingsTests
 
     // --- Validate: AllowedMethods ---
 
-    public static IEnumerable<object?[]> InvalidAllowedMethods()
+    public static readonly TheoryData<string[]?> InvalidAllowedMethods = new()
     {
-        yield return new object?[] { null };
-        yield return new object?[] { Array.Empty<string>() };
-    }
+        null,
+        Array.Empty<string>()
+    };
 
     [Theory]
     [MemberData(nameof(InvalidAllowedMethods))]
@@ -209,15 +215,20 @@ public class CorsSettingsTests
             .WithMessage("*at least one*HTTP method*");
     }
 
+    public static readonly TheoryData<string[]> AllowedMethodsContainingNullOrWhitespace = new()
+    {
+        new[] { "GET", null! },
+        new[] { "GET", "" },
+        new[] { "GET", "   " }
+    };
+
     [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Validate_AllowedMethodsContainsNullOrWhitespace_ThrowsInvalidOperationException(string? method)
+    [MemberData(nameof(AllowedMethodsContainingNullOrWhitespace))]
+    public void Validate_AllowedMethodsContainsNullOrWhitespace_ThrowsInvalidOperationException(string[] allowedMethods)
     {
         // Arrange
         var settings = CreateValidSettings();
-        settings.AllowedMethods = new[] { "GET", method! };
+        settings.AllowedMethods = allowedMethods;
 
         // Act
         var act = () => settings.Validate();

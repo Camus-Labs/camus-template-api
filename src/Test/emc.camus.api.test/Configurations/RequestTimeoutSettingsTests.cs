@@ -41,35 +41,62 @@ public class RequestTimeoutSettingsTests
     // --- Validate: Invalid Values ---
 
     [Theory]
-    [InlineData(nameof(RequestTimeoutSettings.DefaultTimeoutSeconds), 0)]
-    [InlineData(nameof(RequestTimeoutSettings.DefaultTimeoutSeconds), -1)]
-    [InlineData(nameof(RequestTimeoutSettings.DefaultTimeoutSeconds), 301)]
-    [InlineData(nameof(RequestTimeoutSettings.TightTimeoutSeconds), 0)]
-    [InlineData(nameof(RequestTimeoutSettings.TightTimeoutSeconds), -1)]
-    [InlineData(nameof(RequestTimeoutSettings.TightTimeoutSeconds), 301)]
-    [InlineData(nameof(RequestTimeoutSettings.ExtendedTimeoutSeconds), 0)]
-    [InlineData(nameof(RequestTimeoutSettings.ExtendedTimeoutSeconds), -1)]
-    [InlineData(nameof(RequestTimeoutSettings.ExtendedTimeoutSeconds), 301)]
-    public void Validate_OutOfRangeValue_ThrowsInvalidOperationException(string propertyName, int value)
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(301)]
+    public void Validate_DefaultTimeoutSecondsOutOfRange_ThrowsInvalidOperationException(int value)
     {
         // Arrange
-        var settings = new RequestTimeoutSettings();
-        typeof(RequestTimeoutSettings).GetProperty(propertyName)!.SetValue(settings, value);
+        var settings = new RequestTimeoutSettings { DefaultTimeoutSeconds = value };
 
         // Act
         var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage($"*{propertyName}*");
+            .WithMessage($"*{nameof(RequestTimeoutSettings.DefaultTimeoutSeconds)}*");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(301)]
+    public void Validate_TightTimeoutSecondsOutOfRange_ThrowsInvalidOperationException(int value)
+    {
+        // Arrange
+        var settings = new RequestTimeoutSettings { TightTimeoutSeconds = value };
+
+        // Act
+        var act = () => settings.Validate();
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage($"*{nameof(RequestTimeoutSettings.TightTimeoutSeconds)}*");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(301)]
+    public void Validate_ExtendedTimeoutSecondsOutOfRange_ThrowsInvalidOperationException(int value)
+    {
+        // Arrange
+        var settings = new RequestTimeoutSettings { ExtendedTimeoutSeconds = value };
+
+        // Act
+        var act = () => settings.Validate();
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage($"*{nameof(RequestTimeoutSettings.ExtendedTimeoutSeconds)}*");
     }
 
     // --- Default Values ---
 
     [Fact]
-    public void DefaultValues_AreExpected()
+    public void Constructor_DefaultValues_AreExpected()
     {
-        // Arrange & Act
+        // Act
         var settings = new RequestTimeoutSettings();
 
         // Assert

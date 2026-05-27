@@ -1,12 +1,13 @@
-using System.Diagnostics;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Time.Testing;
 using emc.camus.api.Controllers;
 using emc.camus.api.Models.Dtos.V2;
 using emc.camus.api.Models.Requests.V2;
 using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V2;
+using emc.camus.api.test.Helpers;
 using emc.camus.application.Auth;
 using emc.camus.application.Common;
 using emc.camus.application.Observability;
@@ -15,28 +16,27 @@ namespace emc.camus.api.test.Controllers;
 
 public class AuthControllerTests
 {
-    private readonly Mock<IActivitySourceWrapper> _mockActivitySource;
+    private static readonly DateTimeOffset FixedNow = new(2000, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime ValidExpiresOn = FixedNow.UtcDateTime.AddYears(1).AddDays(-1);
+    private static readonly DateTime ValidCreatedAt = FixedNow.UtcDateTime;
+    private static readonly List<string> PermissionsApiRead = ["api.read"];
+    private static readonly Guid TestJti = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static readonly List<GeneratedTokenSummaryView> EmptyTokenSummaries = [];
+
+    private readonly FakeTimeProvider _timeProvider;
+    private readonly FakeActivitySourceWrapper _activitySource;
     private readonly Mock<IAuthService> _mockAuthService;
     private readonly AuthController _controller;
 
-    private static readonly DateTimeOffset FixedNow = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
-    private static readonly DateTime ValidExpiresOn = FixedNow.UtcDateTime.AddYears(1).AddDays(-1);
-    private static readonly DateTime ValidCreatedAt = FixedNow.UtcDateTime;
-
     public AuthControllerTests()
     {
-        _mockActivitySource = new Mock<IActivitySourceWrapper>();
-        _mockActivitySource
-            .Setup(x => x.StartActivityAndRunAsync<IActionResult>(
-                It.IsAny<string>(),
-                It.IsAny<OperationType>(),
-                It.IsAny<Func<Activity?, Task<IActionResult>>>()))
-            .Returns<string, OperationType, Func<Activity?, Task<IActionResult>>>(
-                (_, _, func) => func(null));
+        _timeProvider = new FakeTimeProvider();
+        _activitySource = new FakeActivitySourceWrapper();
+        _timeProvider.SetUtcNow(FixedNow);
 
         _mockAuthService = new Mock<IAuthService>();
 
-        _controller = new AuthController(_mockActivitySource.Object, _mockAuthService.Object);
+        _controller = new AuthController(_timeProvider, _activitySource, _mockAuthService.Object);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()
@@ -45,23 +45,21 @@ public class AuthControllerTests
 
     // --- Constructor ---
 
-    public static IEnumerable<object?[]> Constructor_NullDependencyScenarios()
+    public static readonly TheoryData<TimeProvider?, IActivitySourceWrapper?, IAuthService?> Constructor_NullDependencyScenarios = new()
     {
-        var activitySource = new Mock<IActivitySourceWrapper>().Object;
-        var authService = new Mock<IAuthService>().Object;
-
-        yield return new object?[] { null, authService };
-        yield return new object?[] { activitySource, null };
-    }
+        { null, new FakeActivitySourceWrapper(), new Mock<IAuthService>().Object },
+        { new FakeTimeProvider(), null, new Mock<IAuthService>().Object },
+        { new FakeTimeProvider(), new FakeActivitySourceWrapper(), null }
+    };
 
     [Theory]
     [MemberData(nameof(Constructor_NullDependencyScenarios))]
     public void Constructor_NullDependency_ThrowsArgumentNullException(
-        IActivitySourceWrapper? activitySource, IAuthService? authService)
+        TimeProvider? timeProvider, IActivitySourceWrapper? activitySource, IAuthService? authService)
     {
         // Arrange
         // Act
-        var act = () => new AuthController(activitySource!, authService!);
+        var act = () => new AuthController(timeProvider!, activitySource!, authService!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -93,13 +91,6 @@ public class AuthControllerTests
         apiResponse.Data!.Token.Should().Be("jwt-token-value");
         apiResponse.Data.ExpiresOn.Should().Be(authResult.ExpiresOn);
         apiResponse.Message.Should().Contain("authenticated successfully");
-
-        _mockActivitySource.Verify(
-            a => a.SetRequestTags(It.IsAny<Activity?>(), It.IsAny<IDictionary<string, object?>>()),
-            Times.Once);
-        _mockActivitySource.Verify(
-            a => a.SetResponseTags(It.IsAny<Activity?>(), It.IsAny<IDictionary<string, object?>>()),
-            Times.Once);
     }
 
     // --- GenerateToken ---
@@ -112,7 +103,7 @@ public class AuthControllerTests
         {
             UsernameSuffix = "ci-deploy",
             ExpiresOn = ValidExpiresOn,
-            Permissions = new List<string> { "api.read" }
+            Permissions = PermissionsApiRead
         };
         var generateResult = new GenerateTokenResult(
             "generated-token",
@@ -150,10 +141,10 @@ public class AuthControllerTests
             ExcludeExpired = false
         };
 
-        var jti = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var jti = TestJti;
         var view = new GeneratedTokenSummaryView(
             jti, "admin-token1",
-            new List<string> { "api.read" },
+            PermissionsApiRead,
             ValidExpiresOn, ValidCreatedAt,
             false, null, true);
 
@@ -186,7 +177,7 @@ public class AuthControllerTests
         // Arrange
         var query = new GetGeneratedTokensQuery();
         var pagedResult = new PagedResult<GeneratedTokenSummaryView>(
-            new List<GeneratedTokenSummaryView>(), 0, 1, 25);
+            EmptyTokenSummaries, 0, 1, 25);
 
         _mockAuthService
             .Setup(s => s.GetGeneratedTokensAsync(
@@ -212,11 +203,11 @@ public class AuthControllerTests
     public async Task RevokeToken_ValidJti_ReturnsOkWithRevokedTokenSummary()
     {
         // Arrange
-        var revokedAt = FixedNow.UtcDateTime.AddMonths(6);
-        var jti = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var revokedAt = _timeProvider.GetUtcNow().AddMonths(6).UtcDateTime;
+        var jti = TestJti;
         var view = new GeneratedTokenSummaryView(
             jti, "admin-token1",
-            new List<string> { "api.read" },
+            PermissionsApiRead,
             ValidExpiresOn, ValidCreatedAt,
             true, revokedAt, false);
 

@@ -21,10 +21,16 @@ public class ApiKeyAuthenticationHandlerTests
     private const string ValidApiKey = "test-api-key-12345";
     private const string ValidSecretName = "XApiKey";
 
-    private readonly Mock<ISecretProvider> _secretProviderMock = new();
-    private readonly IOptionsMonitor<AuthenticationSchemeOptions> _optionsMonitor =
-        new TestOptionsMonitor<AuthenticationSchemeOptions>(new AuthenticationSchemeOptions());
-    private readonly ILoggerFactory _loggerFactory = NullLoggerFactory.Instance;
+    private readonly Mock<ISecretProvider> _secretProviderMock;
+    private readonly IOptionsMonitor<AuthenticationSchemeOptions> _optionsMonitor;
+    private readonly ILoggerFactory _loggerFactory;
+
+    public ApiKeyAuthenticationHandlerTests()
+    {
+        _secretProviderMock = new Mock<ISecretProvider>();
+        _optionsMonitor = new TestOptionsMonitor<AuthenticationSchemeOptions>(new AuthenticationSchemeOptions());
+        _loggerFactory = NullLoggerFactory.Instance;
+    }
 
     private static ApiKeySettings CreateSettings(string secretName = ValidSecretName)
     {

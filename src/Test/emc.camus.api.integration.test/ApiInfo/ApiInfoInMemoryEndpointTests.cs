@@ -12,6 +12,8 @@ namespace emc.camus.api.integration.test.ApiInfo;
 [Collection(InMemoryTestGroup.Name)]
 public class ApiInfoInMemoryEndpointTests
 {
+    private const string InfoJwtEndpoint = "/api/v2/apiinfo/info-jwt";
+
     private readonly ApiInMemoryFactory _factory;
     private readonly HttpClient _client;
 
@@ -66,7 +68,7 @@ public class ApiInfoInMemoryEndpointTests
         var client = _factory.CreateJwtClient();
 
         // Act
-        var response = await client.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync(InfoJwtEndpoint, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -83,7 +85,7 @@ public class ApiInfoInMemoryEndpointTests
         // Arrange
 
         // Act
-        var response = await _client.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
+        var response = await _client.GetAsync(InfoJwtEndpoint, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);

@@ -12,7 +12,17 @@ namespace emc.camus.api.test.Filters;
 
 public class IdempotencyKeyValidationFilterTests
 {
-    private readonly IdempotencyKeyValidationFilter _filter = new();
+    private static readonly List<FilterDescriptor> EmptyFilterDescriptors = [];
+    private static readonly List<object> EmptyMetadata = [];
+    private static readonly List<IFilterMetadata> EmptyFilters = [];
+    private static readonly Dictionary<string, object?> EmptyArguments = [];
+
+    private readonly IdempotencyKeyValidationFilter _filter;
+
+    public IdempotencyKeyValidationFilterTests()
+    {
+        _filter = new IdempotencyKeyValidationFilter();
+    }
 
     private static ActionExecutingContext CreateActionExecutingContext(
         HttpContext httpContext,
@@ -23,7 +33,7 @@ public class IdempotencyKeyValidationFilterTests
 
         if (hasAttribute)
         {
-            actionDescriptor.FilterDescriptors = new List<FilterDescriptor>();
+            actionDescriptor.FilterDescriptors = EmptyFilterDescriptors;
             actionDescriptor.EndpointMetadata = new List<object>
             {
                 new RequireIdempotencyKeyAttribute(policyName)
@@ -31,15 +41,15 @@ public class IdempotencyKeyValidationFilterTests
         }
         else
         {
-            actionDescriptor.EndpointMetadata = new List<object>();
+            actionDescriptor.EndpointMetadata = EmptyMetadata;
         }
 
         var actionContext = new ActionContext(httpContext, new RouteData(), actionDescriptor, new ModelStateDictionary());
 
         return new ActionExecutingContext(
             actionContext,
-            new List<IFilterMetadata>(),
-            new Dictionary<string, object?>(),
+            EmptyFilters,
+            EmptyArguments,
             new object());
     }
 
@@ -119,10 +129,10 @@ public class IdempotencyKeyValidationFilterTests
         context.Result.Should().BeNull();
     }
 
-    public static IEnumerable<object[]> MaxLengthIdempotencyKey()
+    public static readonly TheoryData<string> MaxLengthIdempotencyKey = new()
     {
-        yield return new object[] { new string('a', 256) };
-    }
+        new string('a', 256)
+    };
 
     // --- AC-04: Endpoints without attribute are unaffected ---
 
@@ -151,7 +161,7 @@ public class IdempotencyKeyValidationFilterTests
         var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor(), new ModelStateDictionary());
         var context = new ActionExecutedContext(
             actionContext,
-            new List<IFilterMetadata>(),
+            EmptyFilters,
             new object());
 
         // Act

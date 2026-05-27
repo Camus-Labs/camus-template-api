@@ -8,19 +8,24 @@ namespace emc.camus.api.integration.test.Helpers;
 /// </summary>
 public sealed class StubSecretProvider : ISecretProvider
 {
-    private readonly Dictionary<string, string> _secrets = new()
+    private readonly Dictionary<string, string> _secrets;
+
+    public StubSecretProvider()
     {
-        ["AdminUser"] = "admin",
-        ["AdminSecret"] = "admin-password",
-        ["ClientAppUser"] = "client",
-        ["ClientAppSecret"] = "client-password",
-        ["XApiKey"] = "test-api-key-value",
-        ["RsaPrivateKeyPem"] = GenerateTestRsaKey(),
-        ["DBUser"] = "postgres",
-        ["DBSecret"] = "postgres",
-        ["DBMigrationsUser"] = "postgres",
-        ["DBMigrationsSecret"] = "postgres",
-    };
+        _secrets = new()
+        {
+            ["AdminUser"] = "admin",
+            ["AdminSecret"] = "admin-password",
+            ["ClientAppUser"] = "client",
+            ["ClientAppSecret"] = "client-password",
+            ["XApiKey"] = "test-api-key-value",
+            ["RsaPrivateKeyPem"] = GenerateTestRsaKey(),
+            ["DBUser"] = "postgres",
+            ["DBSecret"] = "postgres",
+            ["DBMigrationsUser"] = "postgres",
+            ["DBMigrationsSecret"] = "postgres",
+        };
+    }
 
     /// <summary>
     /// When <c>true</c>, <see cref="CheckConnectivityAsync"/> throws to simulate an unreachable secret store.

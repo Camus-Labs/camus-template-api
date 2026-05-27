@@ -1,18 +1,25 @@
 using FluentAssertions;
 using emc.camus.secrets.dapr.Configurations;
+using static emc.camus.secrets.dapr.test.Helpers.DaprSecretProviderSettingsBuilder;
 
 namespace emc.camus.secrets.dapr.test.Configurations;
 
 public class DaprSecretProviderSettingsTests
 {
-    private static DaprSecretProviderSettings CreateValidSettings() => new()
+    private const string EmptyString = "";
+    private const string WhitespaceOnly = "   ";
+    private static readonly List<string> MultipleSecretNames = new() { "secret-one", "secret-two", "secret-three" };
+    private static readonly List<string> EmptySecretNamesList = new();
+    private static readonly List<string> DefaultSecretNames = new() { "secret-one" };
+    public static readonly TheoryData<List<string>> InvalidSecretNameEntries = new()
     {
-        BaseHost = "localhost",
-        HttpPort = "3500",
-        SecretStoreName = "my-secret-store",
-        TimeoutSeconds = 30,
-        SecretNames = new List<string> { "secret-one" }
+        { new List<string> { "valid-secret", null! } },
+        { new List<string> { "valid-secret", EmptyString } },
+        { new List<string> { "valid-secret", WhitespaceOnly } }
     };
+
+    private static DaprSecretProviderSettings CreateValidSettings() => CreateValid(
+        secretNames: DefaultSecretNames);
 
     // --- Defaults ---
 
@@ -50,7 +57,7 @@ public class DaprSecretProviderSettingsTests
     {
         // Arrange
         var settings = CreateValidSettings();
-        settings.SecretNames = new List<string> { "secret-one", "secret-two", "secret-three" };
+        settings.SecretNames = MultipleSecretNames;
 
         // Act
         var act = () => settings.Validate();
@@ -95,8 +102,8 @@ public class DaprSecretProviderSettingsTests
 
     [Theory]
     [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
+    [InlineData(EmptyString)]
+    [InlineData(WhitespaceOnly)]
     public void Validate_InvalidBaseHost_ThrowsInvalidOperationException(string? baseHost)
     {
         // Arrange
@@ -115,8 +122,8 @@ public class DaprSecretProviderSettingsTests
 
     [Theory]
     [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
+    [InlineData(EmptyString)]
+    [InlineData(WhitespaceOnly)]
     public void Validate_EmptyHttpPort_ThrowsInvalidOperationException(string? httpPort)
     {
         // Arrange
@@ -155,8 +162,8 @@ public class DaprSecretProviderSettingsTests
 
     [Theory]
     [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
+    [InlineData(EmptyString)]
+    [InlineData(WhitespaceOnly)]
     public void Validate_InvalidSecretStoreName_ThrowsInvalidOperationException(string? secretStoreName)
     {
         // Arrange
@@ -214,7 +221,7 @@ public class DaprSecretProviderSettingsTests
     {
         // Arrange
         var settings = CreateValidSettings();
-        settings.SecretNames = new List<string>();
+        settings.SecretNames = EmptySecretNamesList;
 
         // Act
         var act = () => settings.Validate();
@@ -225,14 +232,12 @@ public class DaprSecretProviderSettingsTests
     }
 
     [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Validate_SecretNamesContainsInvalidEntry_ThrowsInvalidOperationException(string? invalidEntry)
+    [MemberData(nameof(InvalidSecretNameEntries))]
+    public void Validate_SecretNamesContainsInvalidEntry_ThrowsInvalidOperationException(List<string> secretNames)
     {
         // Arrange
         var settings = CreateValidSettings();
-        settings.SecretNames = new List<string> { "valid-secret", invalidEntry! };
+        settings.SecretNames = secretNames;
 
         // Act
         var act = () => settings.Validate();

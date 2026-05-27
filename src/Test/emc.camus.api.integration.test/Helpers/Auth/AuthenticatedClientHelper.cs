@@ -20,6 +20,7 @@ namespace emc.camus.api.integration.test.Helpers;
 /// </summary>
 public static class AuthenticatedClientHelper
 {
+    private static readonly string[] ReadPermissions = ["api.read"];
 
     /// <summary>
     /// Creates an <see cref="HttpClient"/> with a valid JWT Bearer token in the Authorization header.
@@ -117,18 +118,13 @@ public static class AuthenticatedClientHelper
         return client;
     }
 
-    private const string AdminUsername = "Admin";
-    private const string AdminPassword = "adminsecret";
-    private const string ClientAppUsername = "ClientApp";
-    private const string ClientAppPassword = "clientsecret";
-
     /// <summary>
     /// Authenticates as the Admin seed user and returns an <see cref="HttpClient"/> with the resulting JWT.
     /// </summary>
     /// <param name="factory">The factory to create clients from.</param>
     /// <returns>An authenticated <see cref="HttpClient"/>.</returns>
     public static Task<HttpClient> AuthenticateAsAdminAsync(this Fixtures.ApiFactoryBase factory)
-        => factory.AuthenticateAsync(AdminUsername, AdminPassword);
+        => factory.AuthenticateAsync("Admin", "adminsecret");
 
     /// <summary>
     /// Authenticates as the ClientApp seed user and returns an <see cref="HttpClient"/> with the resulting JWT.
@@ -136,7 +132,7 @@ public static class AuthenticatedClientHelper
     /// <param name="factory">The factory to create clients from.</param>
     /// <returns>An authenticated <see cref="HttpClient"/>.</returns>
     public static Task<HttpClient> AuthenticateAsClientAppAsync(this Fixtures.ApiFactoryBase factory)
-        => factory.AuthenticateAsync(ClientAppUsername, ClientAppPassword);
+        => factory.AuthenticateAsync("ClientApp", "clientsecret");
 
     /// <summary>
     /// Extracts the JTI (JWT ID) claim from a raw JWT token string.
@@ -203,7 +199,7 @@ public static class AuthenticatedClientHelper
             {
                 UsernameSuffix = suffix,
                 ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
-                Permissions = new[] { "api.read" },
+                Permissions = ReadPermissions,
             };
 
             var response = await client.PostAsJsonWithIdempotencyKeyAsync("/api/v2/auth/generate-token", request, ct);

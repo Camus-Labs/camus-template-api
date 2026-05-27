@@ -1,4 +1,5 @@
 using emc.camus.application.Common;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Net.Http.Headers;
 
 namespace emc.camus.api.Configurations
@@ -18,7 +19,7 @@ namespace emc.camus.api.Configurations
         private const int MaxPolicyNameLength = 100;
         private const int MinPreflightMaxAgeMinutes = 1;
         private const int MaxPreflightMaxAgeMinutes = 86400; // 24 hours
-        private static readonly string[] DefaultAllowedMethods = new[] { "GET", "POST" };
+        private static readonly string[] DefaultAllowedMethods = new[] { HttpMethods.Get, HttpMethods.Post };
 
         /// <summary>
         /// Gets or sets the name of the CORS policy.

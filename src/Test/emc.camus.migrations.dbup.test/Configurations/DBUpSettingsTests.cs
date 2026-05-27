@@ -5,6 +5,10 @@ namespace emc.camus.migrations.dbup.test.Configurations;
 
 public class DBUpSettingsTests
 {
+    private const string AdminSecretValue = "db-admin-username";
+    private const string PasswordSecretValue = "db-admin-password";
+    private const int MaxSecretNameLength = 200;
+
     // --- Validate when Disabled ---
 
     [Fact]
@@ -22,10 +26,10 @@ public class DBUpSettingsTests
 
     // --- Validate when Enabled - Valid ---
 
-    public static TheoryData<string, string> ValidSecretNameData => new()
+    public static readonly TheoryData<string, string> ValidSecretNameData = new()
     {
-        { "db-admin-username", "db-admin-password" },
-        { new string('a', 200), new string('b', 200) }
+        { AdminSecretValue, PasswordSecretValue },
+        { new string('a', MaxSecretNameLength), new string('b', MaxSecretNameLength) }
     };
 
     [Theory]
@@ -60,7 +64,7 @@ public class DBUpSettingsTests
         {
             Enabled = true,
             AdminSecretName = adminSecretName!,
-            PasswordSecretName = "db-admin-password"
+            PasswordSecretName = PasswordSecretValue
         };
 
         // Act
@@ -69,25 +73,6 @@ public class DBUpSettingsTests
         // Assert
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*AdminSecretName*null*empty*");
-    }
-
-    [Fact]
-    public void Validate_EnabledWithAdminSecretNameExceedingMaxLength_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var settings = new DBUpSettings
-        {
-            Enabled = true,
-            AdminSecretName = new string('a', 201),
-            PasswordSecretName = "db-admin-password"
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*AdminSecretName*exceed*200*");
     }
 
     // --- Validate PasswordSecretName ---
@@ -102,7 +87,7 @@ public class DBUpSettingsTests
         var settings = new DBUpSettings
         {
             Enabled = true,
-            AdminSecretName = "db-admin-username",
+            AdminSecretName = AdminSecretValue,
             PasswordSecretName = passwordSecretName!
         };
 
@@ -114,15 +99,25 @@ public class DBUpSettingsTests
             .WithMessage("*PasswordSecretName*null*empty*");
     }
 
-    [Fact]
-    public void Validate_EnabledWithPasswordSecretNameExceedingMaxLength_ThrowsInvalidOperationException()
+    // --- Validate SecretName MaxLength ---
+
+    public static readonly TheoryData<string, string, string> SecretNameExceedingMaxLengthData = new()
+    {
+        { new string('a', MaxSecretNameLength + 1), PasswordSecretValue, $"*AdminSecretName*exceed*{MaxSecretNameLength}*" },
+        { AdminSecretValue, new string('p', MaxSecretNameLength + 1), $"*PasswordSecretName*exceed*{MaxSecretNameLength}*" }
+    };
+
+    [Theory]
+    [MemberData(nameof(SecretNameExceedingMaxLengthData))]
+    public void Validate_EnabledWithSecretNameExceedingMaxLength_ThrowsInvalidOperationException(
+        string adminSecretName, string passwordSecretName, string expectedMessage)
     {
         // Arrange
         var settings = new DBUpSettings
         {
             Enabled = true,
-            AdminSecretName = "db-admin-username",
-            PasswordSecretName = new string('p', 201)
+            AdminSecretName = adminSecretName,
+            PasswordSecretName = passwordSecretName
         };
 
         // Act
@@ -130,6 +125,6 @@ public class DBUpSettingsTests
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*PasswordSecretName*exceed*200*");
+            .WithMessage(expectedMessage);
     }
 }

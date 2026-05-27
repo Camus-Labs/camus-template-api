@@ -1,11 +1,12 @@
-using System.Diagnostics;
 using Asp.Versioning;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Time.Testing;
 using emc.camus.api.Controllers;
 using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V1;
+using emc.camus.api.test.Helpers;
 using emc.camus.application.ApiInfo;
 using emc.camus.application.Observability;
 
@@ -13,24 +14,21 @@ namespace emc.camus.api.test.Controllers;
 
 public class ApiInfoControllerTests
 {
-    private readonly Mock<IActivitySourceWrapper> _mockActivitySource;
+    private static readonly List<string> FeaturesAuthVersioning = ["auth", "versioning"];
+    private static readonly List<string> FeaturesAuth = ["auth"];
+
+    private readonly FakeTimeProvider _timeProvider;
+    private readonly FakeActivitySourceWrapper _activitySource;
     private readonly Mock<IApiInfoService> _mockApiInfoService;
     private readonly ApiInfoController _controller;
 
     public ApiInfoControllerTests()
     {
-        _mockActivitySource = new Mock<IActivitySourceWrapper>();
-        _mockActivitySource
-            .Setup(x => x.StartActivityAndRunAsync<IActionResult>(
-                It.IsAny<string>(),
-                It.IsAny<OperationType>(),
-                It.IsAny<Func<Activity?, Task<IActionResult>>>()))
-            .Returns<string, OperationType, Func<Activity?, Task<IActionResult>>>(
-                (_, _, func) => func(null));
-
+        _timeProvider = new FakeTimeProvider();
+        _activitySource = new FakeActivitySourceWrapper();
         _mockApiInfoService = new Mock<IApiInfoService>();
 
-        _controller = new ApiInfoController(_mockActivitySource.Object, _mockApiInfoService.Object);
+        _controller = new ApiInfoController(_timeProvider, _activitySource, _mockApiInfoService.Object);
 
         var httpContext = new DefaultHttpContext();
         var mockVersionFeature = new Mock<IApiVersioningFeature>();
@@ -44,23 +42,21 @@ public class ApiInfoControllerTests
 
     // --- Constructor ---
 
-    public static IEnumerable<object?[]> Constructor_NullDependencyScenarios()
+    public static readonly TheoryData<TimeProvider?, IActivitySourceWrapper?, IApiInfoService?> Constructor_NullDependencyScenarios = new()
     {
-        var activitySource = new Mock<IActivitySourceWrapper>().Object;
-        var service = new Mock<IApiInfoService>().Object;
-
-        yield return new object?[] { null, service };
-        yield return new object?[] { activitySource, null };
-    }
+        { null, new FakeActivitySourceWrapper(), new Mock<IApiInfoService>().Object },
+        { new FakeTimeProvider(), null, new Mock<IApiInfoService>().Object },
+        { new FakeTimeProvider(), new FakeActivitySourceWrapper(), null }
+    };
 
     [Theory]
     [MemberData(nameof(Constructor_NullDependencyScenarios))]
     public void Constructor_NullDependency_ThrowsArgumentNullException(
-        IActivitySourceWrapper? activitySource, IApiInfoService? apiInfoService)
+        TimeProvider? timeProvider, IActivitySourceWrapper? activitySource, IApiInfoService? apiInfoService)
     {
         // Arrange
         // Act
-        var act = () => new ApiInfoController(activitySource!, apiInfoService!);
+        var act = () => new ApiInfoController(timeProvider!, activitySource!, apiInfoService!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -72,7 +68,7 @@ public class ApiInfoControllerTests
     public async Task GetInfo_ValidRequest_ReturnsOkWithApiInfoResponseAndSetsActivityTags()
     {
         // Arrange
-        var detailView = new ApiInfoDetailView("2.0", "Active", new List<string> { "auth", "versioning" });
+        var detailView = new ApiInfoDetailView("2.0", "Active", FeaturesAuthVersioning);
         _mockApiInfoService
             .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(detailView);
@@ -88,19 +84,15 @@ public class ApiInfoControllerTests
         apiResponse.Data.Features.Should().BeEquivalentTo(detailView.Features);
         apiResponse.Message.Should().Contain("API information retrieved successfully");
 
-        _mockActivitySource.Verify(
-            a => a.SetRequestTags(It.IsAny<Activity?>(), It.IsAny<IDictionary<string, object?>>()),
-            Times.Once);
-        _mockActivitySource.Verify(
-            a => a.SetResponseTags(It.IsAny<Activity?>(), It.IsAny<IDictionary<string, object?>>()),
-            Times.Once);
+        _activitySource.RequestTagsCalls.Should().ContainSingle();
+        _activitySource.ResponseTagsCalls.Should().ContainSingle();
     }
 
     [Fact]
     public async Task GetInfo_NullApiVersion_UsesUnknownFallbackInRequestTags()
     {
         // Arrange
-        var detailView = new ApiInfoDetailView("1.0", "Active", new List<string> { "auth" });
+        var detailView = new ApiInfoDetailView("1.0", "Active", FeaturesAuth);
         _mockApiInfoService
             .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(detailView);
@@ -116,10 +108,9 @@ public class ApiInfoControllerTests
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
-        _mockActivitySource.Verify(
-            a => a.SetRequestTags(It.IsAny<Activity?>(), It.Is<IDictionary<string, object?>>(
-                d => (string)d["api_version"]! == "unknown")),
-            Times.Once);
+        _activitySource.RequestTagsCalls.Should().ContainSingle()
+            .Which.Should().ContainKey("api_version")
+            .WhoseValue.Should().Be("unknown");
     }
 
     // --- GetInfoApiKey ---
@@ -128,7 +119,7 @@ public class ApiInfoControllerTests
     public async Task GetInfoApiKey_ValidRequest_ReturnsOkWithApiInfoResponse()
     {
         // Arrange
-        var detailView = new ApiInfoDetailView("2.0", "Active", new List<string> { "auth", "versioning" });
+        var detailView = new ApiInfoDetailView("2.0", "Active", FeaturesAuthVersioning);
         _mockApiInfoService
             .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(detailView);
@@ -146,7 +137,7 @@ public class ApiInfoControllerTests
     public async Task GetInfoApiKey_NullApiVersion_UsesUnknownFallbackInRequestTags()
     {
         // Arrange
-        var detailView = new ApiInfoDetailView("2.0", "Active", new List<string> { "auth" });
+        var detailView = new ApiInfoDetailView("2.0", "Active", FeaturesAuth);
         _mockApiInfoService
             .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(detailView);
@@ -162,10 +153,9 @@ public class ApiInfoControllerTests
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
-        _mockActivitySource.Verify(
-            a => a.SetRequestTags(It.IsAny<Activity?>(), It.Is<IDictionary<string, object?>>(
-                d => (string)d["api_version"]! == "unknown")),
-            Times.Once);
+        _activitySource.RequestTagsCalls.Should().ContainSingle()
+            .Which.Should().ContainKey("api_version")
+            .WhoseValue.Should().Be("unknown");
     }
 
     // --- GetInfoJwt ---
@@ -174,7 +164,7 @@ public class ApiInfoControllerTests
     public async Task GetInfoJwt_ValidRequest_ReturnsOkWithApiInfoResponse()
     {
         // Arrange
-        var detailView = new ApiInfoDetailView("2.0", "Active", new List<string> { "auth", "versioning" });
+        var detailView = new ApiInfoDetailView("2.0", "Active", FeaturesAuthVersioning);
         _mockApiInfoService
             .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(detailView);
@@ -192,7 +182,7 @@ public class ApiInfoControllerTests
     public async Task GetInfoJwt_NullApiVersion_UsesUnknownFallbackInRequestTags()
     {
         // Arrange
-        var detailView = new ApiInfoDetailView("2.0", "Active", new List<string> { "auth" });
+        var detailView = new ApiInfoDetailView("2.0", "Active", FeaturesAuth);
         _mockApiInfoService
             .Setup(s => s.GetByVersionAsync(It.IsAny<ApiInfoFilter>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(detailView);
@@ -208,9 +198,8 @@ public class ApiInfoControllerTests
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
-        _mockActivitySource.Verify(
-            a => a.SetRequestTags(It.IsAny<Activity?>(), It.Is<IDictionary<string, object?>>(
-                d => (string)d["api_version"]! == "unknown")),
-            Times.Once);
+        _activitySource.RequestTagsCalls.Should().ContainSingle()
+            .Which.Should().ContainKey("api_version")
+            .WhoseValue.Should().Be("unknown");
     }
 }

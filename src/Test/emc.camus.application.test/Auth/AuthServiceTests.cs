@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using FluentAssertions;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 using emc.camus.application.Auth;
 using emc.camus.application.Common;
@@ -21,15 +22,37 @@ public class AuthServiceTests
     private static readonly DateTime ValidCreatedAt = FixedNow.UtcDateTime.AddYears(-1);
     private static readonly Guid ValidJti = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     private const string ValidTokenSuffix = "token1";
+    private const string ValidPassword = "password123";
+    private const string ValidTokenFullUsername = "admin-token1";
+    private const string DbConnectionFailedMessage = "DB connection failed";
+    private const string DbWriteFailedMessage = "DB write failed";
+    private const string UserNotFoundMessage = "User not found";
+    private const long AuditRecordId = 1L;
+    private static readonly IReadOnlyList<string> ValidTokenPermissions = [Permissions.ApiRead];
+    private static readonly IReadOnlyList<string> AdminPermissions = [Permissions.ApiRead, Permissions.ApiWrite, Permissions.TokenCreate];
 
-    private readonly Mock<IUserRepository> _userRepositoryMock = new();
-    private readonly Mock<ITokenGenerator> _tokenGeneratorMock = new();
-    private readonly Mock<IActionAuditRepository> _auditRepositoryMock = new();
-    private readonly Mock<ITokenRevocationCache> _tokenRevocationCacheMock = new();
-    private readonly Mock<IUserContext> _userContextMock = new();
-    private readonly Mock<IActivitySourceWrapper> _activitySourceMock = new();
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-    private readonly Mock<IGeneratedTokenRepository> _generatedTokenRepositoryMock = new();
+    private readonly Mock<IUserRepository> _userRepositoryMock;
+    private readonly Mock<ITokenGenerator> _tokenGeneratorMock;
+    private readonly Mock<IActionAuditRepository> _auditRepositoryMock;
+    private readonly Mock<ITokenRevocationCache> _tokenRevocationCacheMock;
+    private readonly Mock<IUserContext> _userContextMock;
+    private readonly Mock<IActivitySourceWrapper> _activitySourceMock;
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<IGeneratedTokenRepository> _generatedTokenRepositoryMock;
+    private readonly FakeTimeProvider _fakeTimeProvider;
+
+    public AuthServiceTests()
+    {
+        _userRepositoryMock = new Mock<IUserRepository>();
+        _tokenGeneratorMock = new Mock<ITokenGenerator>();
+        _auditRepositoryMock = new Mock<IActionAuditRepository>();
+        _tokenRevocationCacheMock = new Mock<ITokenRevocationCache>();
+        _userContextMock = new Mock<IUserContext>();
+        _activitySourceMock = new Mock<IActivitySourceWrapper>();
+        _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _generatedTokenRepositoryMock = new Mock<IGeneratedTokenRepository>();
+        _fakeTimeProvider = new FakeTimeProvider(FixedNow);
+    }
 
     private AuthService CreateService(IGeneratedTokenRepository? generatedTokenRepository = null)
     {
@@ -46,7 +69,7 @@ public class AuthServiceTests
 
     private static User CreateUser(Guid? id = null, string username = ValidUsername)
     {
-        var role = new Role("admin", permissions: [Permissions.ApiRead, Permissions.ApiWrite, Permissions.TokenCreate]);
+        var role = new Role("admin", permissions: AdminPermissions.ToList());
         return new User(username, [role], id ?? ValidUserId);
     }
 
@@ -68,42 +91,102 @@ public class AuthServiceTests
         service.Should().NotBeNull();
     }
 
-    [Theory]
-    [InlineData(0, "userRepository")]
-    [InlineData(1, "tokenGenerator")]
-    [InlineData(2, "auditRepository")]
-    [InlineData(3, "tokenRevocationCache")]
-    [InlineData(4, "userContext")]
-    [InlineData(5, "activitySource")]
-    [InlineData(6, "unitOfWork")]
-    public void Constructor_NullDependency_ThrowsArgumentNullException(int nullIndex, string expectedParamName)
+    [Fact]
+    public void Constructor_NullUserRepository_ThrowsArgumentNullException()
     {
-        // Arrange
-        var deps = new object?[]
-        {
-            _userRepositoryMock.Object,
-            _tokenGeneratorMock.Object,
-            _auditRepositoryMock.Object,
-            _tokenRevocationCacheMock.Object,
-            _userContextMock.Object,
-            _activitySourceMock.Object,
-            _unitOfWorkMock.Object
-        };
-        deps[nullIndex] = null;
-
         // Act
         var act = () => new AuthService(
-            (IUserRepository)deps[0]!,
-            (ITokenGenerator)deps[1]!,
-            (IActionAuditRepository)deps[2]!,
-            (ITokenRevocationCache)deps[3]!,
-            (IUserContext)deps[4]!,
-            (IActivitySourceWrapper)deps[5]!,
-            (IUnitOfWork)deps[6]!);
+            null!, _tokenGeneratorMock.Object, _auditRepositoryMock.Object,
+            _tokenRevocationCacheMock.Object, _userContextMock.Object,
+            _activitySourceMock.Object, _unitOfWorkMock.Object);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
-            .And.ParamName.Should().Be(expectedParamName);
+            .And.ParamName.Should().Be("userRepository");
+    }
+
+    [Fact]
+    public void Constructor_NullTokenGenerator_ThrowsArgumentNullException()
+    {
+        // Act
+        var act = () => new AuthService(
+            _userRepositoryMock.Object, null!, _auditRepositoryMock.Object,
+            _tokenRevocationCacheMock.Object, _userContextMock.Object,
+            _activitySourceMock.Object, _unitOfWorkMock.Object);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .And.ParamName.Should().Be("tokenGenerator");
+    }
+
+    [Fact]
+    public void Constructor_NullAuditRepository_ThrowsArgumentNullException()
+    {
+        // Act
+        var act = () => new AuthService(
+            _userRepositoryMock.Object, _tokenGeneratorMock.Object, null!,
+            _tokenRevocationCacheMock.Object, _userContextMock.Object,
+            _activitySourceMock.Object, _unitOfWorkMock.Object);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .And.ParamName.Should().Be("auditRepository");
+    }
+
+    [Fact]
+    public void Constructor_NullTokenRevocationCache_ThrowsArgumentNullException()
+    {
+        // Act
+        var act = () => new AuthService(
+            _userRepositoryMock.Object, _tokenGeneratorMock.Object, _auditRepositoryMock.Object,
+            null!, _userContextMock.Object,
+            _activitySourceMock.Object, _unitOfWorkMock.Object);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .And.ParamName.Should().Be("tokenRevocationCache");
+    }
+
+    [Fact]
+    public void Constructor_NullUserContext_ThrowsArgumentNullException()
+    {
+        // Act
+        var act = () => new AuthService(
+            _userRepositoryMock.Object, _tokenGeneratorMock.Object, _auditRepositoryMock.Object,
+            _tokenRevocationCacheMock.Object, null!,
+            _activitySourceMock.Object, _unitOfWorkMock.Object);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .And.ParamName.Should().Be("userContext");
+    }
+
+    [Fact]
+    public void Constructor_NullActivitySource_ThrowsArgumentNullException()
+    {
+        // Act
+        var act = () => new AuthService(
+            _userRepositoryMock.Object, _tokenGeneratorMock.Object, _auditRepositoryMock.Object,
+            _tokenRevocationCacheMock.Object, _userContextMock.Object,
+            null!, _unitOfWorkMock.Object);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .And.ParamName.Should().Be("activitySource");
+    }
+
+    [Fact]
+    public void Constructor_NullUnitOfWork_ThrowsArgumentNullException()
+    {
+        // Act
+        var act = () => new AuthService(
+            _userRepositoryMock.Object, _tokenGeneratorMock.Object, _auditRepositoryMock.Object,
+            _tokenRevocationCacheMock.Object, _userContextMock.Object,
+            _activitySourceMock.Object, null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .And.ParamName.Should().Be("unitOfWork");
     }
 
     // --- AuthenticateAsync ---
@@ -112,16 +195,16 @@ public class AuthServiceTests
     public async Task AuthenticateAsync_ValidCredentials_ReturnsResult()
     {
         // Arrange
-        var command = new AuthenticateUserCommand(ValidUsername, "password123");
+        var command = new AuthenticateUserCommand(ValidUsername, ValidPassword);
         var user = CreateUser();
         var authToken = CreateAuthToken();
 
-        _userRepositoryMock.Setup(r => r.ValidateCredentialsAsync(ValidUsername, "password123", It.IsAny<CancellationToken>()))
+        _userRepositoryMock.Setup(r => r.ValidateCredentialsAsync(ValidUsername, ValidPassword, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
         _tokenGeneratorMock.Setup(g => g.GenerateToken(user.Id, user.Username, It.IsAny<IEnumerable<Claim>>()))
             .Returns(authToken);
         _auditRepositoryMock.Setup(a => a.LogActionAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1L);
+            .ReturnsAsync(AuditRecordId);
 
         var service = CreateService();
 
@@ -151,8 +234,8 @@ public class AuthServiceTests
     public async Task AuthenticateAsync_InvalidCredentials_ThrowsUnauthorizedAccessException()
     {
         // Arrange
-        var command = new AuthenticateUserCommand(ValidUsername, "password123");
-        _userRepositoryMock.Setup(r => r.ValidateCredentialsAsync(ValidUsername, "password123", It.IsAny<CancellationToken>()))
+        var command = new AuthenticateUserCommand(ValidUsername, ValidPassword);
+        _userRepositoryMock.Setup(r => r.ValidateCredentialsAsync(ValidUsername, ValidPassword, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new UnauthorizedAccessException("Invalid credentials"));
 
         var service = CreateService();
@@ -168,9 +251,9 @@ public class AuthServiceTests
     public async Task AuthenticateAsync_UserNotFound_ThrowsKeyNotFoundException()
     {
         // Arrange
-        var command = new AuthenticateUserCommand(ValidUsername, "password123");
-        _userRepositoryMock.Setup(r => r.ValidateCredentialsAsync(ValidUsername, "password123", It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new KeyNotFoundException("User not found"));
+        var command = new AuthenticateUserCommand(ValidUsername, ValidPassword);
+        _userRepositoryMock.Setup(r => r.ValidateCredentialsAsync(ValidUsername, ValidPassword, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new KeyNotFoundException(UserNotFoundMessage));
 
         var service = CreateService();
 
@@ -185,9 +268,9 @@ public class AuthServiceTests
     public async Task AuthenticateAsync_InfrastructureFailure_ThrowsInvalidOperationException()
     {
         // Arrange
-        var command = new AuthenticateUserCommand(ValidUsername, "password123");
-        _userRepositoryMock.Setup(r => r.ValidateCredentialsAsync(ValidUsername, "password123", It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("DB connection failed"));
+        var command = new AuthenticateUserCommand(ValidUsername, ValidPassword);
+        _userRepositoryMock.Setup(r => r.ValidateCredentialsAsync(ValidUsername, ValidPassword, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException(DbConnectionFailedMessage));
 
         var service = CreateService();
 
@@ -203,13 +286,13 @@ public class AuthServiceTests
     public async Task AuthenticateAsync_InfrastructureFailure_RollsBackTransaction()
     {
         // Arrange
-        var command = new AuthenticateUserCommand(ValidUsername, "password123");
+        var command = new AuthenticateUserCommand(ValidUsername, ValidPassword);
         var user = CreateUser();
 
-        _userRepositoryMock.Setup(r => r.ValidateCredentialsAsync(ValidUsername, "password123", It.IsAny<CancellationToken>()))
+        _userRepositoryMock.Setup(r => r.ValidateCredentialsAsync(ValidUsername, ValidPassword, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
         _userRepositoryMock.Setup(r => r.UpdateLastLoginAsync(user.Id, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("DB write failed"));
+            .ThrowsAsync(new InvalidOperationException(DbWriteFailedMessage));
 
         var service = CreateService();
 
@@ -227,12 +310,11 @@ public class AuthServiceTests
     public async Task GenerateTokenAsync_ValidCommand_ReturnsResult()
     {
         // Arrange
-        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, [Permissions.ApiRead]);
+        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, ValidTokenPermissions.ToList());
         var user = CreateUser();
         var authToken = CreateAuthToken();
 
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
         _userRepositoryMock.Setup(r => r.GetByIdAsync(ValidUserId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _tokenGeneratorMock.Setup(g => g.GenerateToken(
                 ValidUserId, It.IsAny<string>(), It.IsAny<Guid>(), ValidTokenExpiration, It.IsAny<IEnumerable<Claim>>()))
@@ -253,18 +335,17 @@ public class AuthServiceTests
     public async Task GenerateTokenAsync_WithRepository_PersistsToken()
     {
         // Arrange
-        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, [Permissions.ApiRead]);
+        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, ValidTokenPermissions.ToList());
         var user = CreateUser();
         var authToken = CreateAuthToken();
 
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
         _userRepositoryMock.Setup(r => r.GetByIdAsync(ValidUserId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _tokenGeneratorMock.Setup(g => g.GenerateToken(
                 ValidUserId, It.IsAny<string>(), It.IsAny<Guid>(), ValidTokenExpiration, It.IsAny<IEnumerable<Claim>>()))
             .Returns(authToken);
         _auditRepositoryMock.Setup(a => a.LogCurrentUserActionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1L);
+            .ReturnsAsync(AuditRecordId);
 
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
@@ -294,7 +375,7 @@ public class AuthServiceTests
     public async Task GenerateTokenAsync_NoUserContext_ThrowsUnauthorizedAccessException()
     {
         // Arrange
-        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, [Permissions.ApiRead]);
+        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, ValidTokenPermissions.ToList());
         Guid? noUserId = null;
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(noUserId);
 
@@ -312,11 +393,10 @@ public class AuthServiceTests
     public async Task GenerateTokenAsync_InfrastructureFailure_ThrowsInvalidOperationException()
     {
         // Arrange
-        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, [Permissions.ApiRead]);
+        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, ValidTokenPermissions.ToList());
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
         _userRepositoryMock.Setup(r => r.GetByIdAsync(ValidUserId, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("DB connection failed"));
+            .ThrowsAsync(new InvalidOperationException(DbConnectionFailedMessage));
 
         var service = CreateService();
 
@@ -332,18 +412,17 @@ public class AuthServiceTests
     public async Task GenerateTokenAsync_RepositoryCreateFails_RollsBackTransaction()
     {
         // Arrange
-        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, [Permissions.ApiRead]);
+        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, ValidTokenPermissions.ToList());
         var user = CreateUser();
         var authToken = CreateAuthToken();
 
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
         _userRepositoryMock.Setup(r => r.GetByIdAsync(ValidUserId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _tokenGeneratorMock.Setup(g => g.GenerateToken(
                 ValidUserId, It.IsAny<string>(), It.IsAny<Guid>(), ValidTokenExpiration, It.IsAny<IEnumerable<Claim>>()))
             .Returns(authToken);
         _generatedTokenRepositoryMock.Setup(r => r.CreateAsync(It.IsAny<GeneratedToken>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("DB write failed"));
+            .ThrowsAsync(new InvalidOperationException(DbWriteFailedMessage));
 
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
@@ -359,10 +438,10 @@ public class AuthServiceTests
     public async Task GenerateTokenAsync_UserNotFound_ThrowsKeyNotFoundException()
     {
         // Arrange
-        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, [Permissions.ApiRead]);
+        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, ValidTokenPermissions.ToList());
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
         _userRepositoryMock.Setup(r => r.GetByIdAsync(ValidUserId, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new KeyNotFoundException("User not found"));
+            .ThrowsAsync(new KeyNotFoundException(UserNotFoundMessage));
 
         var service = CreateService();
 
@@ -374,7 +453,7 @@ public class AuthServiceTests
             .WithMessage("*User not found*");
     }
 
-    public static TheoryData<Exception> GenerateTokenAsync_BusinessExceptionCases => new()
+    public static readonly TheoryData<Exception> GenerateTokenAsync_BusinessExceptionCases = new()
     {
         new ArgumentException("Invalid token parameters"),
         new DomainException("Domain rule violated")
@@ -385,11 +464,10 @@ public class AuthServiceTests
     public async Task GenerateTokenAsync_BusinessException_RethrowsWithOriginalMessage(Exception expectedException)
     {
         // Arrange
-        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, [Permissions.ApiRead]);
+        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, ValidTokenPermissions.ToList());
         var user = CreateUser();
 
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
         _userRepositoryMock.Setup(r => r.GetByIdAsync(ValidUserId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _tokenGeneratorMock.Setup(g => g.GenerateToken(
                 ValidUserId, It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<IEnumerable<Claim>>()))
@@ -409,12 +487,11 @@ public class AuthServiceTests
     public async Task GenerateTokenAsync_DuplicateToken_ThrowsDataConflictException()
     {
         // Arrange
-        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, [Permissions.ApiRead]);
+        var command = new GenerateTokenCommand(ValidTokenSuffix, ValidTokenExpiration, ValidTokenPermissions.ToList());
         var user = CreateUser();
         var authToken = CreateAuthToken();
 
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
         _userRepositoryMock.Setup(r => r.GetByIdAsync(ValidUserId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _tokenGeneratorMock.Setup(g => g.GenerateToken(
                 ValidUserId, It.IsAny<string>(), It.IsAny<Guid>(), ValidTokenExpiration, It.IsAny<IEnumerable<Claim>>()))
@@ -442,9 +519,9 @@ public class AuthServiceTests
         var pagination = new PaginationParams(1, 25);
         var filter = new GeneratedTokenFilter();
         var token = GeneratedToken.Reconstitute(
-            ValidJti, ValidUserId, ValidUsername, "admin-token1",
-            [Permissions.ApiRead], ValidExpiration,
-            ValidCreatedAt, false, null);
+            ValidJti, ValidUserId, ValidUsername, ValidTokenFullUsername,
+            ValidTokenPermissions.ToList(), ValidExpiration,
+            ValidCreatedAt, false, null, _fakeTimeProvider);
         var pagedTokens = new PagedResult<GeneratedToken>([token], 1, 1, 25);
 
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
@@ -520,7 +597,7 @@ public class AuthServiceTests
         var sort = new SortParams<GeneratedTokenSortField>();
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
         _generatedTokenRepositoryMock.Setup(r => r.GetPagedByCreatorUserIdAsync(ValidUserId, pagination, It.IsAny<GeneratedTokenFilter>(), It.IsAny<SortParams<GeneratedTokenSortField>>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("DB connection failed"));
+            .ThrowsAsync(new InvalidOperationException(DbConnectionFailedMessage));
 
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
@@ -561,15 +638,14 @@ public class AuthServiceTests
         // Arrange
         var command = new RevokeTokenCommand(ValidJti);
         var token = GeneratedToken.Reconstitute(
-            ValidJti, ValidUserId, ValidUsername, "admin-token1",
-            [Permissions.ApiRead], ValidExpiration,
-            ValidCreatedAt, false, null);
+            ValidJti, ValidUserId, ValidUsername, ValidTokenFullUsername,
+            ValidTokenPermissions.ToList(), ValidExpiration,
+            ValidCreatedAt, false, null, _fakeTimeProvider);
 
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
         _generatedTokenRepositoryMock.Setup(r => r.GetByJtiAsync(ValidJti, It.IsAny<CancellationToken>())).ReturnsAsync(token);
         _auditRepositoryMock.Setup(a => a.LogCurrentUserActionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1L);
+            .ReturnsAsync(AuditRecordId);
 
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
@@ -579,7 +655,7 @@ public class AuthServiceTests
         // Assert
         result.Jti.Should().Be(ValidJti);
         result.IsRevoked.Should().BeTrue();
-        result.RevokedAt.Should().NotBeNull();
+        result.RevokedAt.Should().Be(_fakeTimeProvider.GetUtcNow().UtcDateTime);
     }
 
     [Fact]
@@ -620,7 +696,6 @@ public class AuthServiceTests
         // Arrange
         var command = new RevokeTokenCommand(ValidJti);
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
 
         var service = CreateService(generatedTokenRepository: null);
 
@@ -638,7 +713,6 @@ public class AuthServiceTests
         // Arrange
         var command = new RevokeTokenCommand(ValidJti);
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
         GeneratedToken? noToken = null;
         _generatedTokenRepositoryMock.Setup(r => r.GetByJtiAsync(ValidJti, It.IsAny<CancellationToken>())).ReturnsAsync(noToken);
 
@@ -660,11 +734,10 @@ public class AuthServiceTests
         var differentUserId = new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc");
         var token = GeneratedToken.Reconstitute(
             ValidJti, differentUserId, "otheruser", "otheruser-token1",
-            [Permissions.ApiRead], ValidExpiration,
-            ValidCreatedAt, false, null);
+            ValidTokenPermissions.ToList(), ValidExpiration,
+            ValidCreatedAt, false, null, _fakeTimeProvider);
 
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
         _generatedTokenRepositoryMock.Setup(r => r.GetByJtiAsync(ValidJti, It.IsAny<CancellationToken>())).ReturnsAsync(token);
 
         var service = CreateService(_generatedTokenRepositoryMock.Object);
@@ -683,15 +756,14 @@ public class AuthServiceTests
         // Arrange
         var command = new RevokeTokenCommand(ValidJti);
         var token = GeneratedToken.Reconstitute(
-            ValidJti, ValidUserId, ValidUsername, "admin-token1",
-            [Permissions.ApiRead], ValidExpiration,
-            ValidCreatedAt, false, null);
+            ValidJti, ValidUserId, ValidUsername, ValidTokenFullUsername,
+            ValidTokenPermissions.ToList(), ValidExpiration,
+            ValidCreatedAt, false, null, _fakeTimeProvider);
 
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
         _generatedTokenRepositoryMock.Setup(r => r.GetByJtiAsync(ValidJti, It.IsAny<CancellationToken>())).ReturnsAsync(token);
         _auditRepositoryMock.Setup(a => a.LogCurrentUserActionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1L);
+            .ReturnsAsync(AuditRecordId);
 
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 
@@ -708,9 +780,8 @@ public class AuthServiceTests
         // Arrange
         var command = new RevokeTokenCommand(ValidJti);
         _userContextMock.Setup(c => c.GetCurrentUserId()).Returns(ValidUserId);
-        _userContextMock.Setup(c => c.GetCurrentUsername()).Returns(ValidUsername);
         _generatedTokenRepositoryMock.Setup(r => r.GetByJtiAsync(ValidJti, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("DB connection failed"));
+            .ThrowsAsync(new InvalidOperationException(DbConnectionFailedMessage));
 
         var service = CreateService(_generatedTokenRepositoryMock.Object);
 

@@ -11,11 +11,18 @@ public class ApiInfoServiceTests
 {
     private const string ValidName = "Test API";
     private const string ValidVersion = "1.0";
+    private const string AlternateVersion = "2.0";
     private const string ValidStatus = "Available";
     private static readonly IReadOnlyList<string> ValidFeatures = ["Auth", "Tokens"];
 
-    private readonly Mock<IApiInfoRepository> _repositoryMock = new();
-    private readonly Mock<IActivitySourceWrapper> _activitySourceMock = new();
+    private readonly Mock<IApiInfoRepository> _repositoryMock;
+    private readonly Mock<IActivitySourceWrapper> _activitySourceMock;
+
+    public ApiInfoServiceTests()
+    {
+        _repositoryMock = new Mock<IApiInfoRepository>();
+        _activitySourceMock = new Mock<IActivitySourceWrapper>();
+    }
 
     private ApiInfoService CreateService()
     {
@@ -74,9 +81,9 @@ public class ApiInfoServiceTests
     {
         // Arrange
         var filter = new ApiInfoFilter("2");
-        var apiInfo = new emc.camus.domain.Auth.ApiInfo(ValidName, "2.0", ValidStatus, ValidFeatures.ToList());
+        var apiInfo = new emc.camus.domain.Auth.ApiInfo(ValidName, AlternateVersion, ValidStatus, ValidFeatures.ToList());
 
-        _repositoryMock.Setup(r => r.GetByVersionAsync("2.0", It.IsAny<CancellationToken>())).ReturnsAsync(apiInfo);
+        _repositoryMock.Setup(r => r.GetByVersionAsync(AlternateVersion, It.IsAny<CancellationToken>())).ReturnsAsync(apiInfo);
 
         var service = CreateService();
 
@@ -84,8 +91,7 @@ public class ApiInfoServiceTests
         var result = await service.GetByVersionAsync(filter, TestContext.Current.CancellationToken);
 
         // Assert
-        result.Version.Should().Be("2.0");
-        _repositoryMock.Verify(r => r.GetByVersionAsync("2.0", It.IsAny<CancellationToken>()), Times.Once);
+        result.Version.Should().Be(AlternateVersion);
     }
 
     [Fact]

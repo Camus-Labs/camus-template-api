@@ -1,3 +1,5 @@
+using emc.camus.api.Configurations;
+
 namespace emc.camus.api.Filters;
 
 /// <summary>
@@ -22,11 +24,24 @@ public class RequireIdempotencyKeyAttribute : Attribute
     /// Creates a new idempotency key requirement attribute with the specified policy name.
     /// </summary>
     /// <param name="policyName">The name of the idempotency TTL policy to apply.</param>
-    /// <exception cref="ArgumentException">Thrown if policy name is null or whitespace.</exception>
+    /// <exception cref="ArgumentException">Thrown if policy name is null, whitespace, or not a recognized policy.</exception>
     public RequireIdempotencyKeyAttribute(string policyName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(policyName);
+        ValidatePolicyName(policyName);
 
         PolicyName = policyName;
+    }
+
+    private static void ValidatePolicyName(string policyName)
+    {
+        if (policyName != IdempotencyPolicies.Default && policyName != IdempotencyPolicies.LongTerm)
+        {
+            throw new ArgumentException(
+                $"PolicyName '{policyName}' is not a recognized idempotency policy. " +
+                $"Use {nameof(IdempotencyPolicies)}.{nameof(IdempotencyPolicies.Default)} or " +
+                $"{nameof(IdempotencyPolicies)}.{nameof(IdempotencyPolicies.LongTerm)}.",
+                nameof(policyName));
+        }
     }
 }

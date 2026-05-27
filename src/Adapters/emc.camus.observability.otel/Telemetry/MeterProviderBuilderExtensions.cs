@@ -11,7 +11,7 @@ namespace emc.camus.observability.otel.Telemetry
     /// <summary>
     /// Extension methods for configuring OpenTelemetry metrics provider.
     /// </summary>
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "MeterProviderBuilder is abstract with no public construction API; branch coverage impractical.")]
     internal static class MeterProviderBuilderExtensions
     {
         /// <summary>

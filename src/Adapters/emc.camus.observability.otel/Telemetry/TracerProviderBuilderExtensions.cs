@@ -14,7 +14,7 @@ namespace emc.camus.observability.otel.Telemetry
     /// <summary>
     /// Extension methods for configuring OpenTelemetry tracing provider.
     /// </summary>
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "TracerProviderBuilder is abstract with no public construction API; enrichment relies on pipeline-internal state.")]
     internal static class TracerProviderBuilderExtensions
     {
         /// <summary>

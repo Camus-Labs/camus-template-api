@@ -44,11 +44,14 @@ namespace emc.camus.api.Controllers
         /// <summary>
         /// Initializes a new instance of the <see cref="AuthController"/> class.
         /// </summary>
+        /// <param name="timeProvider">Time provider for UTC clock access.</param>
         /// <param name="activitySource">Activity source for OpenTelemetry tracing.</param>
         /// <param name="authService">Authentication service for credential validation and token generation.</param>
         public AuthController(
+            TimeProvider timeProvider,
             IActivitySourceWrapper activitySource,
             IAuthService authService)
+            : base(timeProvider)
         {
             ArgumentNullException.ThrowIfNull(activitySource);
             ArgumentNullException.ThrowIfNull(authService);

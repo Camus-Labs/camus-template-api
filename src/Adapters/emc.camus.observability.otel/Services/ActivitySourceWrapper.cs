@@ -11,17 +11,21 @@ namespace emc.camus.observability.otel.Services
     internal sealed class ActivitySourceWrapper : IActivitySourceWrapper
     {
         private readonly ActivitySource _activitySource;
+        private readonly TimeProvider _timeProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ActivitySourceWrapper"/> class.
         /// </summary>
         /// <param name="activitySource">The underlying ActivitySource for creating activities.</param>
-        /// <exception cref="ArgumentNullException">Thrown when activitySource is null.</exception>
-        public ActivitySourceWrapper(ActivitySource activitySource)
+        /// <param name="timeProvider">The time provider for clock access.</param>
+        /// <exception cref="ArgumentNullException">Thrown when activitySource or timeProvider is null.</exception>
+        public ActivitySourceWrapper(ActivitySource activitySource, TimeProvider timeProvider)
         {
             ArgumentNullException.ThrowIfNull(activitySource);
+            ArgumentNullException.ThrowIfNull(timeProvider);
 
             _activitySource = activitySource;
+            _timeProvider = timeProvider;
         }
 
         /// <summary>
@@ -158,7 +162,7 @@ namespace emc.camus.observability.otel.Services
                     eventTags.Add(tag.Key, tag.Value);
                 }
             }
-            activity.AddEvent(new ActivityEvent(name, DateTimeOffset.UtcNow, eventTags));
+            activity.AddEvent(new ActivityEvent(name, _timeProvider.GetUtcNow(), eventTags));
         }
 
 

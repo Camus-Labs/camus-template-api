@@ -23,6 +23,8 @@ applyTo: "{src/**/*.cs,!src/Test/**}"
           pass `CancellationToken.None` internally — they must run to completion even after cancellation
     - [ ] No `out` parameters on method signatures
     - [ ] No tuples as return types or parameters on method signatures
+    - [ ] Use `TimeProvider` (injected via constructor) for all clock access — never `DateTime.UtcNow`,
+          `DateTime.Now`, `DateTimeOffset.UtcNow`, or `DateTimeOffset.Now` directly
 
 2. Validation & Error Handling
 

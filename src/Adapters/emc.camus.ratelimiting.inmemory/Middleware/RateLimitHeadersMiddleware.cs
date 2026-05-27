@@ -19,13 +19,15 @@ namespace emc.camus.ratelimiting.inmemory.Middleware
     internal sealed class RateLimitHeadersMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly TimeProvider _timeProvider;
 
         /// <summary>
         /// Initializes a new instance of the RateLimitHeadersMiddleware.
         /// </summary>
-        public RateLimitHeadersMiddleware(RequestDelegate next)
+        public RateLimitHeadersMiddleware(RequestDelegate next, TimeProvider timeProvider)
         {
             _next = next;
+            _timeProvider = timeProvider;
         }
 
         /// <summary>
@@ -35,9 +37,9 @@ namespace emc.camus.ratelimiting.inmemory.Middleware
         public async Task InvokeAsync(HttpContext context)
         {
             // Retrieve partition info stored during rate limiter execution
-            var policy = context.Items["RateLimit:Policy"]?.ToString() ?? "unknown";
-            var limit = context.Items["RateLimit:Limit"]?.ToString() ?? "unknown";
-            var window = context.Items["RateLimit:Window"]?.ToString() ?? "unknown";
+            var policy = context.Items[RateLimitContextKeys.Policy]?.ToString() ?? "unknown";
+            var limit = context.Items[RateLimitContextKeys.Limit]?.ToString() ?? "unknown";
+            var window = context.Items[RateLimitContextKeys.Window]?.ToString() ?? "unknown";
 
             var headers = context.Response.Headers;
 
@@ -48,7 +50,7 @@ namespace emc.camus.ratelimiting.inmemory.Middleware
             // Calculate reset timestamp (current time + window)
             if (int.TryParse(window, out var windowSeconds))
             {
-                var resetTimestamp = DateTimeOffset.UtcNow.AddSeconds(windowSeconds).ToUnixTimeSeconds();
+                var resetTimestamp = _timeProvider.GetUtcNow().AddSeconds(windowSeconds).ToUnixTimeSeconds();
                 headers[Headers.RateLimitReset] = resetTimestamp.ToString(CultureInfo.InvariantCulture);
             }
 

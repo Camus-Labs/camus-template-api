@@ -6,11 +6,15 @@ namespace emc.camus.application.test.Common;
 
 public class SortParamsTests
 {
+    private const string SortByCreatedAt = "createdAt";
+    private const string DirectionAsc = "asc";
+    private const string DirectionDesc = "desc";
+
     [Theory]
-    [InlineData("createdAt", "desc", GeneratedTokenSortField.CreatedAt, SortDirection.Desc)]
-    [InlineData("expiresOn", "asc", GeneratedTokenSortField.ExpiresOn, SortDirection.Asc)]
-    [InlineData("tokenUsername", "asc", GeneratedTokenSortField.TokenUsername, SortDirection.Asc)]
-    [InlineData("revokedAt", "desc", GeneratedTokenSortField.RevokedAt, SortDirection.Desc)]
+    [InlineData(SortByCreatedAt, DirectionDesc, GeneratedTokenSortField.CreatedAt, SortDirection.Desc)]
+    [InlineData("expiresOn", DirectionAsc, GeneratedTokenSortField.ExpiresOn, SortDirection.Asc)]
+    [InlineData("tokenUsername", DirectionAsc, GeneratedTokenSortField.TokenUsername, SortDirection.Asc)]
+    [InlineData("revokedAt", DirectionDesc, GeneratedTokenSortField.RevokedAt, SortDirection.Desc)]
     public void Constructor_ValidStrings_ParsesFieldAndDirection(
         string sortBy, string sortDirection, GeneratedTokenSortField expectedField, SortDirection expectedDirection)
     {
@@ -26,8 +30,8 @@ public class SortParamsTests
     }
 
     [Theory]
-    [InlineData("invalidField", "asc", "*sortBy*")]
-    [InlineData("createdAt", "invalid", "*sortDirection*")]
+    [InlineData("invalidField", DirectionAsc, "*sortBy*")]
+    [InlineData(SortByCreatedAt, "invalid", "*sortDirection*")]
     public void Constructor_InvalidValue_ThrowsArgumentException(string sortBy, string sortDirection, string expectedMessagePattern)
     {
         // Arrange
@@ -42,8 +46,8 @@ public class SortParamsTests
     }
 
     [Theory]
-    [InlineData("createdAt", null)]
-    [InlineData(null, "asc")]
+    [InlineData(SortByCreatedAt, null)]
+    [InlineData(null, DirectionAsc)]
     public void Constructor_OnlyOneProvided_ThrowsArgumentException(string? sortBy, string? sortDirection)
     {
         // Arrange

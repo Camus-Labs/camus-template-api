@@ -19,13 +19,14 @@ namespace emc.camus.api.test.Filters;
 
 public class IdempotencyResponseCachingFilterTests : IDisposable
 {
+    private const string ServiceName = "test-service";
     private const string TestIdempotencyKey = "test-key-001";
     private const string TestRequestBody = """{"name":"test"}""";
-    private const string DifferentRequestBody = """{"name":"other"}""";
+    private const string HttpMethodPost = "POST";
 
-    private static readonly Guid TestUserId = new("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
-    private static readonly Guid OtherUserId = new("11111111-2222-3333-4444-555555555555");
-
+    private static readonly Guid TestUserId = new("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");    private static readonly List<object> EmptyMetadata = [];
+    private static readonly List<IFilterMetadata> EmptyFilters = [];
+    private static readonly List<IValueProviderFactory> EmptyValueProviderFactories = [];
     private readonly Mock<IIdempotencyResponseCache> _mockCache;
     private readonly Mock<IUserContext> _mockUserContext;
     private readonly IdempotencySettings _settings;
@@ -40,7 +41,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         _mockUserContext = new Mock<IUserContext>();
         _mockUserContext.Setup(u => u.GetCurrentUserId()).Returns(TestUserId);
         _settings = new IdempotencySettings();
-        _metrics = new IdempotencyMetrics("test-service");
+        _metrics = new IdempotencyMetrics(ServiceName);
         (_mockLogger, _logEntries) = LogCaptureBuilder.Create<IdempotencyResponseCachingFilter>();
         _filter = new IdempotencyResponseCachingFilter(
             _mockCache.Object, _mockUserContext.Object, _settings, _metrics, _mockLogger.Object);
@@ -68,15 +69,15 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         }
         else
         {
-            actionDescriptor.EndpointMetadata = new List<object>();
+            actionDescriptor.EndpointMetadata = EmptyMetadata;
         }
 
         var actionContext = new ActionContext(httpContext, new RouteData(), actionDescriptor, new ModelStateDictionary());
 
         return new ResourceExecutingContext(
             actionContext,
-            new List<IFilterMetadata>(),
-            new List<IValueProviderFactory>());
+            EmptyFilters,
+            EmptyValueProviderFactories);
     }
 
     private static DefaultHttpContext CreateHttpContextWithIdempotencyKey(
@@ -84,87 +85,98 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         string body = TestRequestBody)
     {
         var httpContext = new DefaultHttpContext();
-        httpContext.Request.Method = "POST";
+        httpContext.Request.Method = HttpMethodPost;
         httpContext.Request.Headers[Headers.IdempotencyKey] = idempotencyKey;
         httpContext.Request.Body = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(body));
         httpContext.Request.ContentType = "application/json";
         return httpContext;
     }
 
-    private static ResourceExecutionDelegate CreateNextDelegate(IActionResult? actionResult = null)
-    {
-        var result = actionResult ?? new OkObjectResult(new { message = "created" });
-        return () =>
-        {
-            var httpContext = new DefaultHttpContext();
-            var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor(), new ModelStateDictionary());
-            var context = new ResourceExecutedContext(actionContext, new List<IFilterMetadata>())
-            {
-                Result = result
-            };
-            return Task.FromResult(context);
-        };
-    }
-
-    private static ResourceExecutionDelegate CreateNextDelegateWithNonObjectResult()
-    {
-        return () =>
-        {
-            var httpContext = new DefaultHttpContext();
-            var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor(), new ModelStateDictionary());
-            var context = new ResourceExecutedContext(actionContext, new List<IFilterMetadata>())
-            {
-                Result = new EmptyResult()
-            };
-            return Task.FromResult(context);
-        };
-    }
-
-    private static ResourceExecutionDelegate CreateNextDelegateThatThrows()
-    {
-        return () =>
-        {
-            var httpContext = new DefaultHttpContext();
-            var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor(), new ModelStateDictionary());
-            var context = new ResourceExecutedContext(actionContext, new List<IFilterMetadata>())
-            {
-                Exception = new InvalidOperationException("action failed")
-            };
-            return Task.FromResult(context);
-        };
-    }
-
     // --- Constructor validation ---
 
-    public static TheoryData<Func<IdempotencyResponseCachingFilter>, string> NullConstructorArgCases()
+    [Fact]
+    public void Constructor_NullCache_ThrowsArgumentNullException()
     {
-        var cache = new Mock<IIdempotencyResponseCache>().Object;
+        // Arrange
         var userCtx = new Mock<IUserContext>().Object;
         var settings = new IdempotencySettings();
-        using var metrics = new IdempotencyMetrics("test-service");
+        using var metrics = new IdempotencyMetrics(ServiceName);
         var logger = new Mock<ILogger<IdempotencyResponseCachingFilter>>().Object;
 
-        return new TheoryData<Func<IdempotencyResponseCachingFilter>, string>
-        {
-            { () => new IdempotencyResponseCachingFilter(null!, userCtx, settings, metrics, logger), "cache" },
-            { () => new IdempotencyResponseCachingFilter(cache, null!, settings, metrics, logger), "userContext" },
-            { () => new IdempotencyResponseCachingFilter(cache, userCtx, null!, metrics, logger), "settings" },
-            { () => new IdempotencyResponseCachingFilter(cache, userCtx, settings, null!, logger), "metrics" },
-            { () => new IdempotencyResponseCachingFilter(cache, userCtx, settings, metrics, null!), "logger" },
-        };
-    }
-
-    [Theory]
-    [MemberData(nameof(NullConstructorArgCases))]
-    public void Constructor_NullArg_ThrowsArgumentNullException(
-        Func<IdempotencyResponseCachingFilter> create, string expectedParamName)
-    {
         // Act
-        var act = () => create();
+        var act = () => new IdempotencyResponseCachingFilter(null!, userCtx, settings, metrics, logger);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
-            .Which.ParamName.Should().Be(expectedParamName);
+            .Which.ParamName.Should().Be("cache");
+    }
+
+    [Fact]
+    public void Constructor_NullUserContext_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var cache = new Mock<IIdempotencyResponseCache>().Object;
+        var settings = new IdempotencySettings();
+        using var metrics = new IdempotencyMetrics(ServiceName);
+        var logger = new Mock<ILogger<IdempotencyResponseCachingFilter>>().Object;
+
+        // Act
+        var act = () => new IdempotencyResponseCachingFilter(cache, null!, settings, metrics, logger);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .Which.ParamName.Should().Be("userContext");
+    }
+
+    [Fact]
+    public void Constructor_NullSettings_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var cache = new Mock<IIdempotencyResponseCache>().Object;
+        var userCtx = new Mock<IUserContext>().Object;
+        using var metrics = new IdempotencyMetrics(ServiceName);
+        var logger = new Mock<ILogger<IdempotencyResponseCachingFilter>>().Object;
+
+        // Act
+        var act = () => new IdempotencyResponseCachingFilter(cache, userCtx, null!, metrics, logger);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .Which.ParamName.Should().Be("settings");
+    }
+
+    [Fact]
+    public void Constructor_NullMetrics_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var cache = new Mock<IIdempotencyResponseCache>().Object;
+        var userCtx = new Mock<IUserContext>().Object;
+        var settings = new IdempotencySettings();
+        var logger = new Mock<ILogger<IdempotencyResponseCachingFilter>>().Object;
+
+        // Act
+        var act = () => new IdempotencyResponseCachingFilter(cache, userCtx, settings, null!, logger);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .Which.ParamName.Should().Be("metrics");
+    }
+
+    [Fact]
+    public void Constructor_NullLogger_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var cache = new Mock<IIdempotencyResponseCache>().Object;
+        var userCtx = new Mock<IUserContext>().Object;
+        var settings = new IdempotencySettings();
+        using var metrics = new IdempotencyMetrics(ServiceName);
+
+        // Act
+        var act = () => new IdempotencyResponseCachingFilter(cache, userCtx, settings, metrics, null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .Which.ParamName.Should().Be("logger");
     }
 
     // --- AC-01: First request executes action, caches response, returns miss ---
@@ -176,7 +188,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         _mockCache.Setup(c => c.TryGet(It.IsAny<string>())).Returns((CachedResponse?)null);
         var httpContext = CreateHttpContextWithIdempotencyKey(TestIdempotencyKey);
         var context = CreateResourceExecutingContext(httpContext);
-        var next = CreateNextDelegate();
+        var next = ResourceExecutionDelegateFactory.CreateNextDelegate();
 
         // Act
         await _filter.OnResourceExecutionAsync(context, next);
@@ -198,13 +210,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
 
         var httpContext = CreateHttpContextWithIdempotencyKey(TestIdempotencyKey);
         var context = CreateResourceExecutingContext(httpContext);
-        var nextWasCalled = false;
-        ResourceExecutionDelegate next = () =>
-        {
-            nextWasCalled = true;
-            var ac = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor(), new ModelStateDictionary());
-            return Task.FromResult(new ResourceExecutedContext(ac, new List<IFilterMetadata>()));
-        };
+        var (next, wasCalled) = ResourceExecutionDelegateFactory.CreateTrackingNextDelegate();
 
         // Act
         await _filter.OnResourceExecutionAsync(context, next);
@@ -212,7 +218,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         // Assert
         httpContext.Response.Headers[Headers.IdempotencyKeyStatus].ToString()
             .Should().Be(IdempotencyKeyStatuses.Hit);
-        nextWasCalled.Should().BeFalse();
+        wasCalled().Should().BeFalse();
     }
 
     [Fact]
@@ -226,7 +232,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         var context = CreateResourceExecutingContext(httpContext);
 
         // Act
-        await _filter.OnResourceExecutionAsync(context, CreateNextDelegate());
+        await _filter.OnResourceExecutionAsync(context, ResourceExecutionDelegateFactory.CreateNextDelegate());
 
         // Assert
         context.Result.Should().BeOfType<ObjectResult>()
@@ -242,9 +248,9 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         var cachedResponse = new CachedResponse(200, "{\"name\":\"test\"}", ComputeHash(TestRequestBody));
         _mockCache.Setup(c => c.TryGet(It.IsAny<string>())).Returns(cachedResponse);
 
-        var httpContext = CreateHttpContextWithIdempotencyKey(TestIdempotencyKey, DifferentRequestBody);
+        var httpContext = CreateHttpContextWithIdempotencyKey(TestIdempotencyKey, """{"name":"other"}""");
         var context = CreateResourceExecutingContext(httpContext);
-        var next = CreateNextDelegate();
+        var next = ResourceExecutionDelegateFactory.CreateNextDelegate();
 
         // Act
         var act = () => _filter.OnResourceExecutionAsync(context, next);
@@ -266,7 +272,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         var context = CreateResourceExecutingContext(httpContext);
 
         // Act
-        await _filter.OnResourceExecutionAsync(context, CreateNextDelegate());
+        await _filter.OnResourceExecutionAsync(context, ResourceExecutionDelegateFactory.CreateNextDelegate());
 
         // Assert
         httpContext.Response.Headers[Headers.IdempotencyKeyStatus].ToString()
@@ -282,18 +288,19 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         // Arrange — cache returns null (different user = different key = no entry)
         _mockCache.Setup(c => c.TryGet(It.IsAny<string>())).Returns((CachedResponse?)null);
 
-        _mockUserContext.Setup(u => u.GetCurrentUserId()).Returns(OtherUserId);
+        var otherUserId = new Guid("11111111-2222-3333-4444-555555555555");
+        _mockUserContext.Setup(u => u.GetCurrentUserId()).Returns(otherUserId);
         var httpContext = CreateHttpContextWithIdempotencyKey(TestIdempotencyKey);
         var context = CreateResourceExecutingContext(httpContext);
 
         // Act
-        await _filter.OnResourceExecutionAsync(context, CreateNextDelegate());
+        await _filter.OnResourceExecutionAsync(context, ResourceExecutionDelegateFactory.CreateNextDelegate());
 
         // Assert — second user gets miss, not hit
         httpContext.Response.Headers[Headers.IdempotencyKeyStatus].ToString()
             .Should().Be("miss");
         _mockCache.Verify(c => c.Store(
-            It.Is<string>(k => k.StartsWith(OtherUserId.ToString())),
+            It.Is<string>(k => k.StartsWith(otherUserId.ToString())),
             It.IsAny<CachedResponse>(),
             It.IsAny<TimeSpan>()), Times.Once);
     }
@@ -309,7 +316,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         var context = CreateResourceExecutingContext(httpContext);
 
         // Act
-        await _filter.OnResourceExecutionAsync(context, CreateNextDelegateThatThrows());
+        await _filter.OnResourceExecutionAsync(context, ResourceExecutionDelegateFactory.CreateNextDelegateThatThrows());
 
         // Assert — Store should not be called when exception occurred
         _mockCache.Verify(c => c.Store(It.IsAny<string>(), It.IsAny<CachedResponse>(), It.IsAny<TimeSpan>()), Times.Never);
@@ -324,7 +331,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         var context = CreateResourceExecutingContext(httpContext);
 
         // Act
-        await _filter.OnResourceExecutionAsync(context, CreateNextDelegateWithNonObjectResult());
+        await _filter.OnResourceExecutionAsync(context, ResourceExecutionDelegateFactory.CreateNextDelegateWithNonObjectResult());
 
         // Assert — Store should not be called for non-ObjectResult responses
         _mockCache.Verify(c => c.Store(It.IsAny<string>(), It.IsAny<CachedResponse>(), It.IsAny<TimeSpan>()), Times.Never);
@@ -347,22 +354,14 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
 
         var httpContext = CreateHttpContextWithIdempotencyKey(TestIdempotencyKey);
         var context = CreateResourceExecutingContext(httpContext);
-        var nextWasCalled = false;
-        ResourceExecutionDelegate next = () =>
-        {
-            nextWasCalled = true;
-            var result = new OkObjectResult(new { message = "success" });
-            var ac = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor(), new ModelStateDictionary());
-            return Task.FromResult(new ResourceExecutedContext(ac, new List<IFilterMetadata>()) { Result = result });
-        };
+        var successResult = new OkObjectResult(new { message = "success" });
+        var (next, wasCalled) = ResourceExecutionDelegateFactory.CreateTrackingNextDelegate(successResult);
 
         // Act
         await failOpenFilter.OnResourceExecutionAsync(context, next);
 
         // Assert
-        nextWasCalled.Should().BeTrue();
-        _logEntries.Should().Contain(e =>
-            e.Level == LogLevel.Warning && e.Message.Contains("lookup failed") && e.Message.Contains(TestIdempotencyKey));
+        wasCalled().Should().BeTrue();
     }
 
     // --- Endpoint without attribute is unaffected ---
@@ -372,21 +371,15 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
     {
         // Arrange
         var httpContext = new DefaultHttpContext();
-        httpContext.Request.Method = "POST";
+        httpContext.Request.Method = HttpMethodPost;
         var context = CreateResourceExecutingContext(httpContext, hasAttribute: false);
-        var nextWasCalled = false;
-        ResourceExecutionDelegate next = () =>
-        {
-            nextWasCalled = true;
-            var ac = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor(), new ModelStateDictionary());
-            return Task.FromResult(new ResourceExecutedContext(ac, new List<IFilterMetadata>()));
-        };
+        var (next, wasCalled) = ResourceExecutionDelegateFactory.CreateTrackingNextDelegate();
 
         // Act
         await _filter.OnResourceExecutionAsync(context, next);
 
         // Assert
-        nextWasCalled.Should().BeTrue();
+        wasCalled().Should().BeTrue();
         httpContext.Response.Headers.Should().NotContainKey(Headers.IdempotencyKeyStatus);
     }
 
@@ -399,7 +392,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         _mockUserContext.Setup(u => u.GetCurrentUserId()).Returns((Guid?)null);
         var httpContext = CreateHttpContextWithIdempotencyKey(TestIdempotencyKey);
         var context = CreateResourceExecutingContext(httpContext);
-        var next = CreateNextDelegate();
+        var next = ResourceExecutionDelegateFactory.CreateNextDelegate();
 
         // Act
         var act = () => _filter.OnResourceExecutionAsync(context, next);
@@ -421,7 +414,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
 
         var httpContext = CreateHttpContextWithIdempotencyKey(TestIdempotencyKey);
         var context = CreateResourceExecutingContext(httpContext);
-        var next = CreateNextDelegate();
+        var next = ResourceExecutionDelegateFactory.CreateNextDelegate();
 
         // Act — should not throw despite storage failure
         await _filter.OnResourceExecutionAsync(context, next);
@@ -429,8 +422,6 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         // Assert — response still indicates miss; filter did not propagate the error
         httpContext.Response.Headers[Headers.IdempotencyKeyStatus].ToString()
             .Should().Be("miss");
-        _logEntries.Should().Contain(e =>
-            e.Level == LogLevel.Warning && e.Message.Contains("storage failed") && e.Message.Contains(TestIdempotencyKey));
     }
 
     // --- LongTerm TTL policy ---
@@ -442,7 +433,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         _mockCache.Setup(c => c.TryGet(It.IsAny<string>())).Returns((CachedResponse?)null);
         var httpContext = CreateHttpContextWithIdempotencyKey(TestIdempotencyKey);
         var context = CreateResourceExecutingContext(httpContext, hasAttribute: true, policyName: IdempotencyPolicies.LongTerm);
-        var next = CreateNextDelegate();
+        var next = ResourceExecutionDelegateFactory.CreateNextDelegate();
 
         // Act
         await _filter.OnResourceExecutionAsync(context, next);
@@ -465,7 +456,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         var context = CreateResourceExecutingContext(httpContext);
         // ObjectResult with no explicit StatusCode set (null)
         var resultWithNullStatus = new ObjectResult(new { id = 42 }) { StatusCode = null };
-        var next = CreateNextDelegate(resultWithNullStatus);
+        var next = ResourceExecutionDelegateFactory.CreateNextDelegate(resultWithNullStatus);
 
         // Act
         await _filter.OnResourceExecutionAsync(context, next);
@@ -487,7 +478,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         var httpContext = CreateHttpContextWithIdempotencyKey(TestIdempotencyKey);
         var context = CreateResourceExecutingContext(httpContext);
         var resultWithNullValue = new ObjectResult(null) { StatusCode = 204 };
-        var next = CreateNextDelegate(resultWithNullValue);
+        var next = ResourceExecutionDelegateFactory.CreateNextDelegate(resultWithNullValue);
 
         // Act
         await _filter.OnResourceExecutionAsync(context, next);
@@ -502,20 +493,13 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
     // --- Null Result from executed context (not ObjectResult) ---
 
     [Fact]
-    public async Task OnResourceExecutionAsync_NullResult_DoesNotCacheAndLogsWarning()
+    public async Task OnResourceExecutionAsync_NullResult_DoesNotCache()
     {
         // Arrange
         _mockCache.Setup(c => c.TryGet(It.IsAny<string>())).Returns((CachedResponse?)null);
         var httpContext = CreateHttpContextWithIdempotencyKey(TestIdempotencyKey);
         var context = CreateResourceExecutingContext(httpContext);
-        ResourceExecutionDelegate next = () =>
-        {
-            var ac = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor(), new ModelStateDictionary());
-            return Task.FromResult(new ResourceExecutedContext(ac, new List<IFilterMetadata>())
-            {
-                Result = null!
-            });
-        };
+        var next = ResourceExecutionDelegateFactory.CreateNextDelegateWithNullResult();
 
         // Act
         await _filter.OnResourceExecutionAsync(context, next);

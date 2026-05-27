@@ -5,6 +5,13 @@ namespace emc.camus.persistence.inmemory.test.Configurations;
 
 public class UserSettingsTests
 {
+    private const string ValidUsernameSecret = "user-secret";
+    private const string ValidPasswordSecret = "pass-secret";
+    private const string ValidRoleName = "admin";
+    private static readonly string OverMaxLengthValue = new string('a', 51);
+    private static readonly List<string> DefaultRolesArray = [ValidRoleName];
+    private static readonly List<string> MultipleRolesArray = [ValidRoleName, "reader"];
+
     // --- Validate ---
 
     [Fact]
@@ -13,9 +20,9 @@ public class UserSettingsTests
         // Arrange
         var settings = new UserSettings
         {
-            UsernameSecretName = "user-secret",
-            PasswordSecretName = "pass-secret",
-            Roles = new List<string> { "admin" }
+            UsernameSecretName = ValidUsernameSecret,
+            PasswordSecretName = ValidPasswordSecret,
+            Roles = DefaultRolesArray
         };
 
         // Act
@@ -35,8 +42,8 @@ public class UserSettingsTests
         var settings = new UserSettings
         {
             UsernameSecretName = usernameSecret!,
-            PasswordSecretName = "pass-secret",
-            Roles = new List<string> { "admin" }
+            PasswordSecretName = ValidPasswordSecret,
+            Roles = DefaultRolesArray
         };
 
         // Act
@@ -53,9 +60,9 @@ public class UserSettingsTests
         // Arrange
         var settings = new UserSettings
         {
-            UsernameSecretName = new string('a', 51),
-            PasswordSecretName = "pass-secret",
-            Roles = new List<string> { "admin" }
+            UsernameSecretName = OverMaxLengthValue,
+            PasswordSecretName = ValidPasswordSecret,
+            Roles = DefaultRolesArray
         };
 
         // Act
@@ -75,9 +82,9 @@ public class UserSettingsTests
         // Arrange
         var settings = new UserSettings
         {
-            UsernameSecretName = "user-secret",
+            UsernameSecretName = ValidUsernameSecret,
             PasswordSecretName = passwordSecret!,
-            Roles = new List<string> { "admin" }
+            Roles = DefaultRolesArray
         };
 
         // Act
@@ -94,9 +101,9 @@ public class UserSettingsTests
         // Arrange
         var settings = new UserSettings
         {
-            UsernameSecretName = "user-secret",
-            PasswordSecretName = new string('a', 51),
-            Roles = new List<string> { "admin" }
+            UsernameSecretName = ValidUsernameSecret,
+            PasswordSecretName = OverMaxLengthValue,
+            Roles = DefaultRolesArray
         };
 
         // Act
@@ -114,8 +121,8 @@ public class UserSettingsTests
         // Arrange
         var settings = new UserSettings
         {
-            UsernameSecretName = "user-secret",
-            PasswordSecretName = "pass-secret",
+            UsernameSecretName = ValidUsernameSecret,
+            PasswordSecretName = ValidPasswordSecret,
             Roles = roles!
         };
 
@@ -133,9 +140,9 @@ public class UserSettingsTests
         // Arrange
         var settings = new UserSettings
         {
-            UsernameSecretName = "user-secret",
-            PasswordSecretName = "pass-secret",
-            Roles = new List<string> { "admin", "reader" }
+            UsernameSecretName = ValidUsernameSecret,
+            PasswordSecretName = ValidPasswordSecret,
+            Roles = MultipleRolesArray
         };
 
         // Act
@@ -145,9 +152,9 @@ public class UserSettingsTests
         act.Should().NotThrow();
     }
 
-    public static IEnumerable<object?[]> NullOrEmptyRolesData() => new List<object?[]>
+    public static readonly TheoryData<List<string>?> NullOrEmptyRolesData = new()
     {
-        new object?[] { null },
-        new object?[] { new List<string>() }
+        { null },
+        { new List<string>() }
     };
 }

@@ -50,7 +50,10 @@ applyTo: "src/Test/**integration.test/**"
     - [ ] No input permutation or single-field validation tests (e.g., missing parameter → 400, invalid enum → 400)
           — integration tests validate cross-layer collaboration, not exhaustive input coverage
     - [ ] No `Assert.Equal` or FluentAssertions `.Should().Be()` on values obtained without `HttpClient`,
-          database query, or external service call in the same test method
+          database query, or external service call in the same test method — exception: in-process side-effect
+          assertions (e.g., Activity tags, cancellation propagation, cache sync) are permitted when the test
+          also invokes via `HttpClient` and includes a `// Justification:` comment explaining why the value
+          cannot be observed through the HTTP response, a database query, or an external service call
     - [ ] All test methods invoke the system via `HttpClient` — no direct service-class resolution from DI
           unless the class has a `// Justification:` comment explaining why HTTP observation is insufficient
     - [ ] Relative dates for all test data timestamps (e.g., `DateTime.UtcNow`,

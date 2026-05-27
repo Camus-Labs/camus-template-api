@@ -32,7 +32,7 @@ namespace emc.camus.api.Middleware
         /// These rules map common exception types to their corresponding error codes.
         /// Additional rules can be added via configuration (ErrorHandlingSettings.AdditionalRules).
         /// </summary>
-        private static readonly IReadOnlyList<ErrorCodeMappingRule> PlatformRules = new List<ErrorCodeMappingRule>
+        private static readonly IReadOnlyList<ErrorCodeMappingRuleSettings> PlatformRules = new List<ErrorCodeMappingRuleSettings>
         {
             new() { Type = nameof(RateLimitExceededException), ErrorCode = ErrorCodes.RateLimitExceeded },
             new() { Type = nameof(DataConflictException), Pattern = "idempotency.*body", ErrorCode = ErrorCodes.IdempotencyBodyConflict },
@@ -71,7 +71,7 @@ namespace emc.camus.api.Middleware
         private readonly RequestDelegate _next;
         private readonly ILogger<ExceptionHandlingMiddleware> _logger;
         private readonly IHostEnvironment _environment;
-        private readonly IReadOnlyList<ErrorCodeMappingRule> _allRules;
+        private readonly IReadOnlyList<ErrorCodeMappingRuleSettings> _allRules;
         private readonly ErrorMetrics _errorMetrics;
 
         [LoggerMessage(Level = LogLevel.Error,
@@ -308,7 +308,7 @@ namespace emc.camus.api.Middleware
         /// Evaluates a single error code mapping rule against the exception type name and message.
         /// Returns the matched error code, or null if the rule does not match.
         /// </summary>
-        private string? MatchErrorCode(ErrorCodeMappingRule rule, string exceptionTypeName, string exceptionMessage)
+        private string? MatchErrorCode(ErrorCodeMappingRuleSettings rule, string exceptionTypeName, string exceptionMessage)
         {
             // Check type match (if specified)
             if (!string.IsNullOrWhiteSpace(rule.Type) &&

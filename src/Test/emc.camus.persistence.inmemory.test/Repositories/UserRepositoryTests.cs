@@ -11,7 +11,70 @@ public class UserRepositoryTests
 {
     private const string TestUsername = "adminuser";
     private const string TestPassword = "adminpass";
-    private readonly Mock<ISecretProvider> _mockSecretProvider = new();
+    private const string AdminUsernameSecret = "admin-username";
+    private const string AdminPasswordSecret = "admin-password";
+    private const string ReaderUsernameSecret = "reader-username";
+    private const string ReaderPasswordSecret = "reader-password";
+    private const string ReaderUsername = "readeruser";
+    private const string ReaderPassword = "readerpass";
+    private const string AdminRoleName = "admin";
+    private const string ReaderRoleName = "reader";
+    private const string TokenManagerRoleName = "token-manager";
+    private static readonly List<string> AdminPermissions = [Permissions.ApiRead, Permissions.ApiWrite];
+    private static readonly List<string> TokenManagerPermissions = [Permissions.TokenCreate];
+    private static readonly List<string> ReaderPermissions = [Permissions.ApiRead];
+    private static readonly List<string> AdminAndTokenManagerRoleNames = [AdminRoleName, TokenManagerRoleName];
+    private static readonly List<string> AdminRoleNames = [AdminRoleName];
+    private static readonly List<string> ReaderRoleNames = [ReaderRoleName];
+    private static readonly List<ApiInfoSettings> EmptyApiInfos = [];
+    private static readonly List<RoleSettings> AdminAndTokenManagerRoles =
+    [
+        new RoleSettings { Name = AdminRoleName, Permissions = AdminPermissions },
+        new RoleSettings { Name = TokenManagerRoleName, Permissions = TokenManagerPermissions }
+    ];
+    private static readonly List<UserSettings> SingleAdminWithBothRolesUsers =
+    [
+        new UserSettings
+        {
+            UsernameSecretName = AdminUsernameSecret,
+            PasswordSecretName = AdminPasswordSecret,
+            Roles = AdminAndTokenManagerRoleNames
+        }
+    ];
+    private static readonly List<RoleSettings> AdminAndReaderRoles =
+    [
+        new RoleSettings
+        {
+            Name = AdminRoleName,
+            Permissions = AdminPermissions
+        },
+        new RoleSettings
+        {
+            Name = ReaderRoleName,
+            Permissions = ReaderPermissions
+        }
+    ];
+    private static readonly List<UserSettings> AdminAndReaderUsers =
+    [
+        new UserSettings
+        {
+            UsernameSecretName = AdminUsernameSecret,
+            PasswordSecretName = AdminPasswordSecret,
+            Roles = AdminRoleNames
+        },
+        new UserSettings
+        {
+            UsernameSecretName = ReaderUsernameSecret,
+            PasswordSecretName = ReaderPasswordSecret,
+            Roles = ReaderRoleNames
+        }
+    ];
+    private readonly Mock<ISecretProvider> _mockSecretProvider;
+
+    public UserRepositoryTests()
+    {
+        _mockSecretProvider = new Mock<ISecretProvider>();
+    }
 
     // --- Constructor ---
 
@@ -76,7 +139,8 @@ public class UserRepositoryTests
     }
 
     [Theory]
-    [MemberData(nameof(MissingSecretData))]
+    [InlineData("", TestPassword, "*Failed to retrieve username*admin-username*")]
+    [InlineData(TestUsername, "", "*Failed to retrieve password*admin-password*")]
     public async Task InitializeAsync_MissingSecret_ThrowsInvalidOperationException(
         string usernameValue, string passwordValue, string expectedMessage)
     {
@@ -93,12 +157,6 @@ public class UserRepositoryTests
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage(expectedMessage);
     }
-
-    public static TheoryData<string, string, string> MissingSecretData => new()
-    {
-        { "", TestPassword, $"*Failed to retrieve username*{InMemoryModelSettingsFactory.DefaultUsernameSecret}*" },
-        { TestUsername, "", $"*Failed to retrieve password*{InMemoryModelSettingsFactory.DefaultPasswordSecret}*" }
-    };
 
     // --- ValidateCredentialsAsync ---
 
@@ -141,8 +199,8 @@ public class UserRepositoryTests
     }
 
     [Theory]
-    [InlineData("unknownuser", "adminpass", "*User not found*")]
-    [InlineData("adminuser", "wrongpassword", "*mismatch*")]
+    [InlineData("unknownuser", TestPassword, "*User not found*")]
+    [InlineData(TestUsername, "wrongpassword", "*mismatch*")]
     public async Task ValidateCredentialsAsync_InvalidCredentials_ThrowsUnauthorizedAccessException(
         string username, string password, string expectedMessage)
     {
@@ -325,45 +383,33 @@ public class UserRepositoryTests
     public async Task ValidateCredentialsAsync_MultipleUsers_ReturnsCorrectUser()
     {
         // Arrange
-        SetupSecretProvider("admin-username", TestUsername);
-        SetupSecretProvider("admin-password", TestPassword);
-        SetupSecretProvider("reader-username", "readeruser");
-        SetupSecretProvider("reader-password", "readerpass");
+        SetupSecretProvider(AdminUsernameSecret, TestUsername);
+        SetupSecretProvider(AdminPasswordSecret, TestPassword);
+        SetupSecretProvider(ReaderUsernameSecret, ReaderUsername);
+        SetupSecretProvider(ReaderPasswordSecret, ReaderPassword);
         var settings = CreateSettingsWithMultipleUsers();
         var repository = await CreateInitializedRepository(settings);
 
         // Act
-        var result = await repository.ValidateCredentialsAsync("readeruser", "readerpass", TestContext.Current.CancellationToken);
+        var result = await repository.ValidateCredentialsAsync(ReaderUsername, ReaderPassword, TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().NotBeNull();
-        result.Username.Should().Be("readeruser");
-        result.Roles.Should().ContainSingle().Which.Name.Should().Be("reader");
+        result.Username.Should().Be(ReaderUsername);
+        result.Roles.Should().ContainSingle().Which.Name.Should().Be(ReaderRoleName);
     }
 
     [Fact]
     public async Task ValidateCredentialsAsync_UserWithMultipleRoles_ReturnsAllRoles()
     {
         // Arrange
-        SetupSecretProvider("admin-username", TestUsername);
-        SetupSecretProvider("admin-password", TestPassword);
+        SetupSecretProvider(AdminUsernameSecret, TestUsername);
+        SetupSecretProvider(AdminPasswordSecret, TestPassword);
         var settings = new InMemoryModelSettings
         {
-            Roles = new List<RoleSettings>
-            {
-                new RoleSettings { Name = "admin", Permissions = new List<string> { Permissions.ApiRead, Permissions.ApiWrite } },
-                new RoleSettings { Name = "token-manager", Permissions = new List<string> { Permissions.TokenCreate } }
-            },
-            Users = new List<UserSettings>
-            {
-                new UserSettings
-                {
-                    UsernameSecretName = "admin-username",
-                    PasswordSecretName = "admin-password",
-                    Roles = new List<string> { "admin", "token-manager" }
-                }
-            },
-            ApiInfos = new List<ApiInfoSettings>()
+            Roles = AdminAndTokenManagerRoles,
+            Users = SingleAdminWithBothRolesUsers,
+            ApiInfos = EmptyApiInfos
         };
         var repository = await CreateInitializedRepository(settings);
 
@@ -372,7 +418,7 @@ public class UserRepositoryTests
 
         // Assert
         result.Roles.Should().HaveCount(2);
-        result.Roles.Select(r => r.Name).Should().BeEquivalentTo("admin", "token-manager");
+        result.Roles.Select(r => r.Name).Should().BeEquivalentTo(AdminRoleName, TokenManagerRoleName);
     }
 
     private void SetupSecretProvider(string secretName, string secretValue)
@@ -391,42 +437,16 @@ public class UserRepositoryTests
 
     private static InMemoryModelSettings CreateValidSettings()
     {
-        return InMemoryModelSettingsFactory.Create(apiInfos: new List<ApiInfoSettings>());
+        return InMemoryModelSettingsFactory.Create(apiInfos: EmptyApiInfos);
     }
 
     private static InMemoryModelSettings CreateSettingsWithMultipleUsers()
     {
         return new InMemoryModelSettings
         {
-            Roles = new List<RoleSettings>
-            {
-                new RoleSettings
-                {
-                    Name = "admin",
-                    Permissions = new List<string> { Permissions.ApiRead, Permissions.ApiWrite }
-                },
-                new RoleSettings
-                {
-                    Name = "reader",
-                    Permissions = new List<string> { Permissions.ApiRead }
-                }
-            },
-            Users = new List<UserSettings>
-            {
-                new UserSettings
-                {
-                    UsernameSecretName = "admin-username",
-                    PasswordSecretName = "admin-password",
-                    Roles = new List<string> { "admin" }
-                },
-                new UserSettings
-                {
-                    UsernameSecretName = "reader-username",
-                    PasswordSecretName = "reader-password",
-                    Roles = new List<string> { "reader" }
-                }
-            },
-            ApiInfos = new List<ApiInfoSettings>()
+            Roles = AdminAndReaderRoles,
+            Users = AdminAndReaderUsers,
+            ApiInfos = EmptyApiInfos
         };
     }
 }

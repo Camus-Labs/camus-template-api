@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using emc.camus.persistence.inmemory.Services;
@@ -7,14 +8,14 @@ namespace emc.camus.persistence.inmemory.test.Services;
 
 public class UnitOfWorkTests
 {
-    private readonly Mock<ILogger<UnitOfWork>> _mockLogger;
+    private readonly Mock<ILogger<UnitOfWork>> _loggerMock;
+    private readonly ConcurrentBag<(LogLevel Level, string Message)> _entries;
     private readonly UnitOfWork _unitOfWork;
 
     public UnitOfWorkTests()
     {
-        var (mock, _) = LogCaptureBuilder.Create<UnitOfWork>();
-        _mockLogger = mock;
-        _unitOfWork = new UnitOfWork(_mockLogger.Object);
+        (_loggerMock, _entries) = LogCaptureBuilder.Create<UnitOfWork>();
+        _unitOfWork = new UnitOfWork(_loggerMock.Object);
     }
 
     // --- Constructor ---
@@ -36,27 +37,13 @@ public class UnitOfWorkTests
     // --- BeginTransactionAsync ---
 
     [Fact]
-    public async Task BeginTransactionAsync_CompletesSuccessfully()
+    public async Task BeginTransactionAsync_InMemoryNoOp_LogsSkippedOperation()
     {
         // Act
-        var act = () => _unitOfWork.BeginTransactionAsync(TestContext.Current.CancellationToken);
+        await _unitOfWork.BeginTransactionAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        await act.Should().NotThrowAsync();
-    }
-
-    [Fact]
-    public async Task BeginTransactionAsync_LogsSkippedOperation()
-    {
-        // Arrange
-        var (mock, entries) = LogCaptureBuilder.Create<UnitOfWork>();
-        var unitOfWork = new UnitOfWork(mock.Object);
-
-        // Act
-        await unitOfWork.BeginTransactionAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        entries.Should().ContainSingle(e =>
+        _entries.Should().ContainSingle(e =>
             e.Level == LogLevel.Debug &&
             e.Message.Contains("BeginTransaction") &&
             e.Message.Contains("skipped"));
@@ -65,27 +52,13 @@ public class UnitOfWorkTests
     // --- CommitAsync ---
 
     [Fact]
-    public async Task CommitAsync_CompletesSuccessfully()
+    public async Task CommitAsync_InMemoryNoOp_LogsSkippedOperation()
     {
         // Act
-        var act = () => _unitOfWork.CommitAsync(TestContext.Current.CancellationToken);
+        await _unitOfWork.CommitAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        await act.Should().NotThrowAsync();
-    }
-
-    [Fact]
-    public async Task CommitAsync_LogsSkippedOperation()
-    {
-        // Arrange
-        var (mock, entries) = LogCaptureBuilder.Create<UnitOfWork>();
-        var unitOfWork = new UnitOfWork(mock.Object);
-
-        // Act
-        await unitOfWork.CommitAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        entries.Should().ContainSingle(e =>
+        _entries.Should().ContainSingle(e =>
             e.Level == LogLevel.Debug &&
             e.Message.Contains("Commit") &&
             e.Message.Contains("skipped"));
@@ -94,27 +67,13 @@ public class UnitOfWorkTests
     // --- RollbackAsync ---
 
     [Fact]
-    public async Task RollbackAsync_CompletesSuccessfully()
+    public async Task RollbackAsync_InMemoryNoOp_LogsSkippedOperation()
     {
         // Act
-        var act = () => _unitOfWork.RollbackAsync();
+        await _unitOfWork.RollbackAsync();
 
         // Assert
-        await act.Should().NotThrowAsync();
-    }
-
-    [Fact]
-    public async Task RollbackAsync_LogsSkippedOperation()
-    {
-        // Arrange
-        var (mock, entries) = LogCaptureBuilder.Create<UnitOfWork>();
-        var unitOfWork = new UnitOfWork(mock.Object);
-
-        // Act
-        await unitOfWork.RollbackAsync();
-
-        // Assert
-        entries.Should().ContainSingle(e =>
+        _entries.Should().ContainSingle(e =>
             e.Level == LogLevel.Debug &&
             e.Message.Contains("Rollback") &&
             e.Message.Contains("skipped"));
@@ -123,27 +82,13 @@ public class UnitOfWorkTests
     // --- CheckConnectivityAsync ---
 
     [Fact]
-    public async Task CheckConnectivityAsync_CompletesSuccessfully()
+    public async Task CheckConnectivityAsync_InMemoryNoOp_LogsSkippedOperation()
     {
         // Act
-        var act = () => _unitOfWork.CheckConnectivityAsync(TestContext.Current.CancellationToken);
+        await _unitOfWork.CheckConnectivityAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        await act.Should().NotThrowAsync();
-    }
-
-    [Fact]
-    public async Task CheckConnectivityAsync_LogsSkippedOperation()
-    {
-        // Arrange
-        var (mock, entries) = LogCaptureBuilder.Create<UnitOfWork>();
-        var unitOfWork = new UnitOfWork(mock.Object);
-
-        // Act
-        await unitOfWork.CheckConnectivityAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        entries.Should().ContainSingle(e =>
+        _entries.Should().ContainSingle(e =>
             e.Level == LogLevel.Debug &&
             e.Message.Contains("CheckConnectivity") &&
             e.Message.Contains("skipped"));

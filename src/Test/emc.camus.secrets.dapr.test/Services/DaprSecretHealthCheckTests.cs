@@ -64,10 +64,9 @@ public class DaprSecretHealthCheckTests
     public async Task CheckHealthAsync_ProviderThrowsException_ReturnsUnhealthyWithException()
     {
         // Arrange
-        var expectedException = new HttpRequestException("Connection refused");
         var mockProvider = new Mock<ISecretProvider>();
         mockProvider.Setup(p => p.CheckConnectivityAsync(It.IsAny<CancellationToken>()))
-            .ThrowsAsync(expectedException);
+            .ThrowsAsync(new HttpRequestException("Connection refused"));
         var healthCheck = new DaprSecretHealthCheck(mockProvider.Object);
 
         // Act

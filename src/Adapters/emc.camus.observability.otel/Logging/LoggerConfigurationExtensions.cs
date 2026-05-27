@@ -15,7 +15,7 @@ namespace emc.camus.observability.otel.Logging
     /// Extension methods for configuring Serilog loggers with Camus observability conventions.
     /// Includes enrichers, console logging, and OpenTelemetry log export.
     /// </summary>
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Serilog pipeline configuration depends on runtime sink availability; cannot be exercised without a real logging pipeline.")]
     internal static class LoggerConfigurationExtensions
     {
         /// <summary>

@@ -9,20 +9,27 @@ using emc.camus.security.jwt.Services;
 
 namespace emc.camus.security.jwt.test.Services;
 
-public class JwtTokenGeneratorTests : IDisposable
+public class JwtTokenGeneratorTests
 {
     private static readonly Guid ValidUserId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly Guid ValidJti = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     private static readonly DateTimeOffset FixedUtcNow = new(2099, 1, 1, 0, 0, 0, TimeSpan.Zero);
     private static readonly DateTime ValidExpiresOn = FixedUtcNow.AddYears(1).UtcDateTime;
+    private static readonly RSA SharedRsa = RSA.Create(2048);
+    private static readonly SigningCredentials SharedSigningCredentials = new(
+        new RsaSecurityKey(SharedRsa), SecurityAlgorithms.RsaSha256);
     private const string ValidUsername = "testuser";
     private const string TestRoleValue = "Admin";
     private const string CustomClaimType = "custom-claim";
     private const string CustomClaimValue = "custom-value";
+    private static readonly JwtSecurityTokenHandler TokenHandler = new();
+    private static readonly Claim[] AdditionalClaims =
+    [
+        new(ClaimTypes.Role, TestRoleValue),
+        new(CustomClaimType, CustomClaimValue)
+    ];
 
-    private readonly RSA _rsa;
     private readonly JwtSettings _jwtSettings;
-    private readonly SigningCredentials _signingCredentials;
     private readonly FakeTimeProvider _timeProvider;
 
     public JwtTokenGeneratorTests()
@@ -34,63 +41,45 @@ public class JwtTokenGeneratorTests : IDisposable
             ExpirationMinutes = 60
         };
 
-        _rsa = RSA.Create(2048);
-        var rsaKey = new RsaSecurityKey(_rsa);
-        _signingCredentials = new SigningCredentials(rsaKey, SecurityAlgorithms.RsaSha256);
         _timeProvider = new FakeTimeProvider(FixedUtcNow);
     }
 
-    public void Dispose()
-    {
-        _rsa.Dispose();
-        GC.SuppressFinalize(this);
-    }
-
     private JwtTokenGenerator CreateGenerator() =>
-        new JwtTokenGenerator(_jwtSettings, _signingCredentials, _timeProvider);
+        new JwtTokenGenerator(_jwtSettings, SharedSigningCredentials, _timeProvider);
 
     // --- Constructor ---
 
     [Fact]
     public void Constructor_NullJwtSettings_ThrowsArgumentNullException()
     {
-        // Arrange
-        JwtSettings nullSettings = null!;
-
         // Act
-        var act = () => new JwtTokenGenerator(nullSettings, _signingCredentials, _timeProvider);
+        var act = () => _ = new JwtTokenGenerator(null!, SharedSigningCredentials, _timeProvider);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
-            .And.ParamName.Should().Be("jwtSettings");
+            .Which.ParamName.Should().Be("jwtSettings");
     }
 
     [Fact]
     public void Constructor_NullSigningCredentials_ThrowsArgumentNullException()
     {
-        // Arrange
-        SigningCredentials nullCredentials = null!;
-
         // Act
-        var act = () => new JwtTokenGenerator(_jwtSettings, nullCredentials, _timeProvider);
+        var act = () => _ = new JwtTokenGenerator(_jwtSettings, null!, _timeProvider);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
-            .And.ParamName.Should().Be("signingCredentials");
+            .Which.ParamName.Should().Be("signingCredentials");
     }
 
     [Fact]
     public void Constructor_NullTimeProvider_ThrowsArgumentNullException()
     {
-        // Arrange
-        TimeProvider nullTimeProvider = null!;
-
         // Act
-        var act = () => new JwtTokenGenerator(_jwtSettings, _signingCredentials, nullTimeProvider);
+        var act = () => _ = new JwtTokenGenerator(_jwtSettings, SharedSigningCredentials, null!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
-            .And.ParamName.Should().Be("timeProvider");
+            .Which.ParamName.Should().Be("timeProvider");
     }
 
     // --- GenerateToken (default JTI overload) ---
@@ -132,12 +121,11 @@ public class JwtTokenGeneratorTests : IDisposable
     {
         // Arrange
         var generator = CreateGenerator();
-        var handler = new JwtSecurityTokenHandler();
-        var expectedExpiresOn = FixedUtcNow.DateTime.AddMinutes(_jwtSettings.ExpirationMinutes);
+        var expectedExpiresOn = _timeProvider.GetUtcNow().DateTime.AddMinutes(_jwtSettings.ExpirationMinutes);
 
         // Act
         var result = generator.GenerateToken(ValidUserId, ValidUsername);
-        var token = handler.ReadJwtToken(result.Token);
+        var token = TokenHandler.ReadJwtToken(result.Token);
 
         // Assert
         result.Token.Should().NotBeNullOrWhiteSpace();
@@ -155,16 +143,10 @@ public class JwtTokenGeneratorTests : IDisposable
     {
         // Arrange
         var generator = CreateGenerator();
-        var handler = new JwtSecurityTokenHandler();
-        var additionalClaims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Role, TestRoleValue),
-            new Claim(CustomClaimType, CustomClaimValue)
-        };
 
         // Act
-        var result = generator.GenerateToken(ValidUserId, ValidUsername, additionalClaims);
-        var token = handler.ReadJwtToken(result.Token);
+        var result = generator.GenerateToken(ValidUserId, ValidUsername, AdditionalClaims);
+        var token = TokenHandler.ReadJwtToken(result.Token);
 
         // Assert
         token.Claims.Should().Contain(c => c.Type == ClaimTypes.Role && c.Value == TestRoleValue);
@@ -253,11 +235,10 @@ public class JwtTokenGeneratorTests : IDisposable
     {
         // Arrange
         var generator = CreateGenerator();
-        var handler = new JwtSecurityTokenHandler();
 
         // Act
         var result = generator.GenerateToken(ValidUserId, ValidUsername, ValidJti, ValidExpiresOn);
-        var token = handler.ReadJwtToken(result.Token);
+        var token = TokenHandler.ReadJwtToken(result.Token);
 
         // Assert
         result.Token.Should().NotBeNullOrWhiteSpace();
@@ -275,16 +256,10 @@ public class JwtTokenGeneratorTests : IDisposable
     {
         // Arrange
         var generator = CreateGenerator();
-        var handler = new JwtSecurityTokenHandler();
-        var additionalClaims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Role, TestRoleValue),
-            new Claim(CustomClaimType, CustomClaimValue)
-        };
 
         // Act
-        var result = generator.GenerateToken(ValidUserId, ValidUsername, ValidJti, ValidExpiresOn, additionalClaims);
-        var token = handler.ReadJwtToken(result.Token);
+        var result = generator.GenerateToken(ValidUserId, ValidUsername, ValidJti, ValidExpiresOn, AdditionalClaims);
+        var token = TokenHandler.ReadJwtToken(result.Token);
 
         // Assert
         token.Claims.Should().Contain(c => c.Type == ClaimTypes.Role && c.Value == TestRoleValue);

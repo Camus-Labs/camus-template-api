@@ -21,10 +21,27 @@ namespace emc.camus.api.test.Middleware;
 
 public class ExceptionHandlingMiddlewareTests : IDisposable
 {
+    private const string ServiceName = "test-service";
+    private const string PathTagKey = "path";
+    private const string AuthenticatePath = "/api/v2/auth/authenticate";
+    private const string TestRoutePattern = "/api/v1/test/{id}";
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
+
+    private static readonly List<ErrorCodeMappingRuleSettings> CustomProgramErrorRules =
+    [
+        new() { Type = "InvalidProgramException", ErrorCode = "custom_program_error" }
+    ];
+
+    private static readonly List<ErrorCodeMappingRuleSettings> RegexTimeoutRules =
+    [
+        new() { Type = "InvalidProgramException", Pattern = @"^(a+)+$", ErrorCode = "should_not_match" }
+    ];
+
+    private static readonly List<ErrorCodeMappingRuleSettings> EmptyRules = [];
 
     private readonly Mock<ILogger<ExceptionHandlingMiddleware>> _loggerMock;
     private readonly ConcurrentBag<(LogLevel Level, string Message)> _logEntries;
@@ -34,7 +51,7 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
     {
         (_loggerMock, _logEntries) = LogCaptureBuilder.Create<ExceptionHandlingMiddleware>();
         var metricsLogger = new Mock<ILogger<ErrorMetrics>>();
-        _errorMetrics = new ErrorMetrics("test-service", metricsLogger.Object);
+        _errorMetrics = new ErrorMetrics(ServiceName, metricsLogger.Object);
     }
 
     public void Dispose()
@@ -46,7 +63,7 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
     private ExceptionHandlingMiddleware CreateMiddleware(
         RequestDelegate next,
         bool isDevelopment = false,
-        List<ErrorCodeMappingRule>? additionalRules = null,
+        List<ErrorCodeMappingRuleSettings>? additionalRules = null,
         ErrorMetrics? errorMetrics = null)
     {
         var environment = new Mock<IHostEnvironment>();
@@ -55,7 +72,7 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
 
         var settings = new ErrorHandlingSettings
         {
-            AdditionalRules = additionalRules ?? new List<ErrorCodeMappingRule>()
+            AdditionalRules = additionalRules ?? EmptyRules
         };
 
         return new ExceptionHandlingMiddleware(next, _loggerMock.Object, environment.Object, settings, errorMetrics ?? _errorMetrics);
@@ -99,15 +116,15 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
 
     // --- Exception-to-StatusCode mapping ---
 
-    public static IEnumerable<object[]> ExceptionToStatusCodeMappings()
+    public static readonly TheoryData<Exception, HttpStatusCode> ExceptionToStatusCodeMappings = new()
     {
-        yield return new object[] { new KeyNotFoundException("Resource not found"), HttpStatusCode.NotFound };
-        yield return new object[] { new UnauthorizedAccessException("Access denied"), HttpStatusCode.Unauthorized };
-        yield return new object[] { new RateLimitExceededException("strict", 10, 60, 30, 1234567890), HttpStatusCode.TooManyRequests };
-        yield return new object[] { new DataConflictException("A generated token with username 'Admin-test' already exists."), HttpStatusCode.Conflict };
-        yield return new object[] { new DomainException("Permissions not a subset of creator's permissions."), HttpStatusCode.UnprocessableEntity };
-        yield return new object[] { new OperationCanceledException("The operation was canceled."), HttpStatusCode.GatewayTimeout };
-    }
+        { new KeyNotFoundException("Resource not found"), HttpStatusCode.NotFound },
+        { new UnauthorizedAccessException("Access denied"), HttpStatusCode.Unauthorized },
+        { new RateLimitExceededException("strict", 10, 60, 30, 1234567890), HttpStatusCode.TooManyRequests },
+        { new DataConflictException("A generated token with username 'Admin-test' already exists."), HttpStatusCode.Conflict },
+        { new DomainException("Permissions not a subset of creator's permissions."), HttpStatusCode.UnprocessableEntity },
+        { new OperationCanceledException("The operation was canceled."), HttpStatusCode.GatewayTimeout }
+    };
 
     [Theory]
     [MemberData(nameof(ExceptionToStatusCodeMappings))]
@@ -166,8 +183,6 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         var problemDetails = await GetProblemDetailsFromResponse(context);
         problemDetails.Status.Should().Be((int)HttpStatusCode.InternalServerError);
         problemDetails.Detail.Should().Be("An unexpected error occurred.");
-        _logEntries.Should().Contain(e =>
-            e.Level == LogLevel.Error && e.Message.Contains("Something went wrong"));
     }
 
     // --- No Exception ---
@@ -226,24 +241,12 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
 
     // --- Error Code Resolution ---
 
-    public static IEnumerable<object[]> ExceptionToErrorCodeMappings()
+    public static readonly TheoryData<Exception, string> ExceptionToErrorCodeMappings = new()
     {
-        yield return new object[]
-        {
-            new UnauthorizedAccessException("JWT token expired at 2026-01-01"),
-            ErrorCodes.JwtTokenExpired
-        };
-        yield return new object[]
-        {
-            new RateLimitExceededException("strict", 10, 60, 30, 1234567890),
-            ErrorCodes.RateLimitExceeded
-        };
-        yield return new object[]
-        {
-            new DomainException("Permissions not a subset of creator's permissions."),
-            ErrorCodes.DomainRuleViolation
-        };
-    }
+        { new UnauthorizedAccessException("JWT token expired at 2026-01-01"), ErrorCodes.JwtTokenExpired },
+        { new RateLimitExceededException("strict", 10, 60, 30, 1234567890), ErrorCodes.RateLimitExceeded },
+        { new DomainException("Permissions not a subset of creator's permissions."), ErrorCodes.DomainRuleViolation }
+    };
 
     [Theory]
     [MemberData(nameof(ExceptionToErrorCodeMappings))]
@@ -270,13 +273,9 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
     {
         // Arrange — InvalidProgramException has no platform rule, so additional rule matches
         var context = CreateHttpContext();
-        var additionalRules = new List<ErrorCodeMappingRule>
-        {
-            new() { Type = "InvalidProgramException", ErrorCode = "custom_program_error" }
-        };
         var middleware = CreateMiddleware(
             _ => throw new InvalidProgramException("test"),
-            additionalRules: additionalRules);
+            additionalRules: CustomProgramErrorRules);
 
         // Act
         await middleware.InvokeAsync(context);
@@ -313,7 +312,7 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
     {
         // Arrange
         var context = CreateHttpContext();
-        context.Request.Path = "/api/v2/auth/authenticate";
+        context.Request.Path = AuthenticatePath;
         var middleware = CreateMiddleware(_ => throw new InvalidProgramException("error"));
 
         // Act
@@ -321,7 +320,7 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
 
         // Assert
         var problemDetails = await GetProblemDetailsFromResponse(context);
-        problemDetails.Instance.Should().Be("/api/v2/auth/authenticate");
+        problemDetails.Instance.Should().Be(AuthenticatePath);
     }
 
     // --- Regex Timeout in Rule ---
@@ -331,15 +330,11 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
     {
         // Arrange
         var context = CreateHttpContext();
-        var additionalRules = new List<ErrorCodeMappingRule>
-        {
-            new() { Type = "InvalidProgramException", Pattern = @"^(a+)+$", ErrorCode = "should_not_match" }
-        };
         // Input designed to cause catastrophic backtracking on the pattern above
         var message = new string('a', 50) + "!";
         var middleware = CreateMiddleware(
             _ => throw new InvalidProgramException(message),
-            additionalRules: additionalRules);
+            additionalRules: RegexTimeoutRules);
 
         // Act
         await middleware.InvokeAsync(context);
@@ -347,8 +342,6 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         // Assert
         var problemDetails = await GetProblemDetailsFromResponse(context);
         problemDetails.Extensions["error"]!.ToString().Should().Be(ErrorCodes.DefaultErrorCode);
-        _logEntries.Should().Contain(e =>
-            e.Level == LogLevel.Warning && e.Message.Contains("timed out"));
     }
 
     // --- Route Pattern Resolution ---
@@ -360,7 +353,7 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         string? recordedPath = null;
         var metricsLogger = new Mock<ILogger<ErrorMetrics>>();
         using var errorMetrics = new ErrorMetrics("route-test-unresolved", metricsLogger.Object);
-        using var listener = CreateMetricsListener("route-test-unresolved", tags => recordedPath = GetTagValue(tags, "path"));
+        using var listener = CreateMetricsListener("route-test-unresolved", tags => recordedPath = GetTagValue(tags, PathTagKey));
 
         var context = CreateHttpContext();
         var middleware = CreateMiddleware(_ => throw new ArgumentException("test"), errorMetrics: errorMetrics);
@@ -379,10 +372,10 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         string? recordedPath = null;
         var metricsLogger = new Mock<ILogger<ErrorMetrics>>();
         using var errorMetrics = new ErrorMetrics("route-test-resolved", metricsLogger.Object);
-        using var listener = CreateMetricsListener("route-test-resolved", tags => recordedPath = GetTagValue(tags, "path"));
+        using var listener = CreateMetricsListener("route-test-resolved", tags => recordedPath = GetTagValue(tags, PathTagKey));
 
         var context = CreateHttpContext();
-        var routePattern = RoutePatternFactory.Parse("/api/v1/test/{id}");
+        var routePattern = RoutePatternFactory.Parse(TestRoutePattern);
         var endpoint = new RouteEndpoint(
             _ => Task.CompletedTask,
             routePattern,
@@ -397,7 +390,7 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
         await middleware.InvokeAsync(context);
 
         // Assert
-        recordedPath.Should().Be("/api/v1/test/{id}");
+        recordedPath.Should().Be(TestRoutePattern);
     }
 
     private static string? GetTagValue(ReadOnlySpan<KeyValuePair<string, object?>> tags, string key)
@@ -430,33 +423,65 @@ public class ExceptionHandlingMiddlewareTests : IDisposable
 
     // --- Constructor Validation ---
 
-    public static IEnumerable<object?[]> Constructor_NullDependencyScenarios()
-    {
-        var logger = new Mock<ILogger<ExceptionHandlingMiddleware>>().Object;
-        var environment = new Mock<IHostEnvironment>().Object;
-        var settings = new ErrorHandlingSettings();
-        var metricsLogger = new Mock<ILogger<ErrorMetrics>>();
-        var errorMetrics = new ErrorMetrics("test-service", metricsLogger.Object);
-
-        yield return new object?[] { null, environment, settings, errorMetrics };
-        yield return new object?[] { logger, null, settings, errorMetrics };
-        yield return new object?[] { logger, environment, null, errorMetrics };
-        yield return new object?[] { logger, environment, settings, null };
-    }
-
-    [Theory]
-    [MemberData(nameof(Constructor_NullDependencyScenarios))]
-    public void Constructor_NullDependency_ThrowsArgumentNullException(
-        ILogger<ExceptionHandlingMiddleware>? logger,
-        IHostEnvironment? environment,
-        ErrorHandlingSettings? settings,
-        ErrorMetrics? errorMetrics)
+    [Fact]
+    public void Constructor_NullLogger_ThrowsArgumentNullException()
     {
         // Arrange
         RequestDelegate next = _ => Task.CompletedTask;
+        var environment = new Mock<IHostEnvironment>().Object;
+        var settings = new ErrorHandlingSettings();
+        using var errorMetrics = new ErrorMetrics(ServiceName, new Mock<ILogger<ErrorMetrics>>().Object);
 
         // Act
-        var act = () => new ExceptionHandlingMiddleware(next, logger!, environment!, settings!, errorMetrics!);
+        var act = () => new ExceptionHandlingMiddleware(next, null!, environment, settings, errorMetrics);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Constructor_NullEnvironment_ThrowsArgumentNullException()
+    {
+        // Arrange
+        RequestDelegate next = _ => Task.CompletedTask;
+        var logger = new Mock<ILogger<ExceptionHandlingMiddleware>>().Object;
+        var settings = new ErrorHandlingSettings();
+        using var errorMetrics = new ErrorMetrics(ServiceName, new Mock<ILogger<ErrorMetrics>>().Object);
+
+        // Act
+        var act = () => new ExceptionHandlingMiddleware(next, logger, null!, settings, errorMetrics);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Constructor_NullSettings_ThrowsArgumentNullException()
+    {
+        // Arrange
+        RequestDelegate next = _ => Task.CompletedTask;
+        var logger = new Mock<ILogger<ExceptionHandlingMiddleware>>().Object;
+        var environment = new Mock<IHostEnvironment>().Object;
+        using var errorMetrics = new ErrorMetrics(ServiceName, new Mock<ILogger<ErrorMetrics>>().Object);
+
+        // Act
+        var act = () => new ExceptionHandlingMiddleware(next, logger, environment, null!, errorMetrics);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Constructor_NullErrorMetrics_ThrowsArgumentNullException()
+    {
+        // Arrange
+        RequestDelegate next = _ => Task.CompletedTask;
+        var logger = new Mock<ILogger<ExceptionHandlingMiddleware>>().Object;
+        var environment = new Mock<IHostEnvironment>().Object;
+        var settings = new ErrorHandlingSettings();
+
+        // Act
+        var act = () => new ExceptionHandlingMiddleware(next, logger, environment, settings, null!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();

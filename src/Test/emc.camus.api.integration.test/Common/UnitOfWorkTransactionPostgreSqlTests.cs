@@ -19,6 +19,9 @@ namespace emc.camus.api.integration.test.Common;
 [Collection(PostgreSqlTestGroup.Name)]
 public class UnitOfWorkTransactionPostgreSqlTests : IAsyncLifetime
 {
+    private static readonly Guid AdminSeedUserId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static readonly List<string> ReadPermissions = ["api.read"];
+
     private readonly ApiPostgreSqlFactory _factory;
 
     public UnitOfWorkTransactionPostgreSqlTests(ApiPostgreSqlFactory factory, ITestOutputHelper outputHelper)
@@ -47,10 +50,9 @@ public class UnitOfWorkTransactionPostgreSqlTests : IAsyncLifetime
         var tokenRepository = scope.ServiceProvider.GetRequiredService<IGeneratedTokenRepository>();
 
         var jti = new Guid("dddddddd-dddd-dddd-dddd-dddddddddddd");
-        var creatorUserId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"); // Admin from seed
         var token = GeneratedToken.Reconstitute(
-            jti, creatorUserId, "Admin", "Admin-rollback-test",
-            ["api.read"], DateTime.UtcNow.AddYears(1).AddDays(-1),
+            jti, AdminSeedUserId, "Admin", "Admin-rollback-test",
+            ReadPermissions, DateTime.UtcNow.AddYears(1).AddDays(-1),
             DateTime.UtcNow, false, null);
 
         // Act
@@ -85,10 +87,9 @@ public class UnitOfWorkTransactionPostgreSqlTests : IAsyncLifetime
         var tokenRepository = scope.ServiceProvider.GetRequiredService<IGeneratedTokenRepository>();
 
         var jti = new Guid("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee");
-        var creatorUserId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"); // Admin from seed
         var token = GeneratedToken.Reconstitute(
-            jti, creatorUserId, "Admin", "Admin-commit-test",
-            ["api.read"], DateTime.UtcNow.AddYears(1).AddDays(-1),
+            jti, AdminSeedUserId, "Admin", "Admin-commit-test",
+            ReadPermissions, DateTime.UtcNow.AddYears(1).AddDays(-1),
             DateTime.UtcNow, false, null);
 
         // Act

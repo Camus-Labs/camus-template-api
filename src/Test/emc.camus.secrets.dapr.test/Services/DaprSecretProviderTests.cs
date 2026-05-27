@@ -5,40 +5,42 @@ using emc.camus.secrets.dapr.Configurations;
 using emc.camus.secrets.dapr.Exceptions;
 using emc.camus.secrets.dapr.Services;
 using emc.camus.secrets.dapr.test.Helpers;
+using static emc.camus.secrets.dapr.test.Helpers.DaprSecretProviderSettingsBuilder;
 
 namespace emc.camus.secrets.dapr.test.Services;
 
 public class DaprSecretProviderTests
 {
-    private const string ValidBaseHost = "localhost";
-    private const string ValidHttpPort = "3500";
-    private const string ValidSecretStoreName = "my-secret-store";
-    private const int ValidTimeoutSeconds = 30;
-    private const string ValidSecretName = "my-secret";
     private const string ValidSecretValue = "super-secret-value";
-    private static readonly string[] WhitespaceOnlyNames = new[] { "", "   " };
-    private static readonly string[] MixedValidAndWhitespaceNames = new[] { ValidSecretName, "  " };
-    public static TheoryData<string[]> WhitespaceContainingNames => new()
+    private const string ConnectionRefusedMessage = "connection refused";
+    private const string EmptyString = "";
+    private const string WhitespaceOnly = "   ";
+    private const string AnotherSecretName = "another-secret";
+    private const string AnotherSecretValue = "another-secret-value";
+    private static readonly string[] SingleValidSecretName = new[] { "my-secret" };
+    private static readonly string[] TwoSecretNames = new[] { SingleValidSecretName[0], AnotherSecretName };
+    private static readonly string[] WhitespaceOnlyNames = new[] { EmptyString, WhitespaceOnly };
+    private static readonly string[] MixedValidAndWhitespaceNames = new[] { SingleValidSecretName[0], "  " };
+    private static readonly Dictionary<string, (HttpStatusCode, string)> MultiSecretResponses = new()
+    {
+        { SingleValidSecretName[0], (HttpStatusCode.OK, JsonSerializer.Serialize(new Dictionary<string, string> { { SingleValidSecretName[0], ValidSecretValue } })) },
+        { AnotherSecretName, (HttpStatusCode.OK, JsonSerializer.Serialize(new Dictionary<string, string> { { AnotherSecretName, AnotherSecretValue } })) }
+    };
+    private static readonly Dictionary<string, string> WrongKeyDictionary = new() { { "wrong-key", "some-value" } };
+    public static readonly TheoryData<string[]> WhitespaceContainingNames = new()
     {
         { WhitespaceOnlyNames },
         { MixedValidAndWhitespaceNames }
     };
 
-    private static DaprSecretProviderSettings CreateValidSettings() => new()
-    {
-        BaseHost = ValidBaseHost,
-        HttpPort = ValidHttpPort,
-        SecretStoreName = ValidSecretStoreName,
-        TimeoutSeconds = ValidTimeoutSeconds,
-        SecretNames = new List<string> { ValidSecretName }
-    };
+    private static readonly string[] DefaultProviderSecretNames = [SingleValidSecretName[0]];
 
     private static DaprSecretProvider CreateProvider(
         DaprSecretProviderSettings? settings = null,
         HttpMessageHandler? handler = null)
     {
-        var effectiveSettings = settings ?? CreateValidSettings();
-        var effectiveHandler = handler ?? CreateMockHandler(ValidSecretName, ValidSecretValue);
+        var effectiveSettings = settings ?? CreateValid(secretNames: new List<string>(DefaultProviderSecretNames));
+        var effectiveHandler = handler ?? CreateMockHandler(SingleValidSecretName[0], ValidSecretValue);
         var httpClient = new HttpClient(effectiveHandler);
         return new DaprSecretProvider(httpClient, effectiveSettings);
     }
@@ -55,13 +57,16 @@ public class DaprSecretProviderTests
         return new FakeHttpMessageHandler(responses);
     }
 
+    private static string CreateSecretResponseContent(string secretName, string value) =>
+        JsonSerializer.Serialize(new Dictionary<string, string> { { secretName, value } });
+
     // --- Constructor ---
 
     [Fact]
     public void Constructor_NullHttpClient_ThrowsArgumentNullException()
     {
         // Arrange
-        var settings = CreateValidSettings();
+        var settings = CreateValid();
 
         // Act
         var act = () => new DaprSecretProvider(null!, settings);
@@ -89,7 +94,7 @@ public class DaprSecretProviderTests
     public void Constructor_ValidParameters_ConfiguresHttpClient()
     {
         // Arrange
-        var settings = CreateValidSettings();
+        var settings = CreateValid();
         var httpClient = new HttpClient(new FakeHttpMessageHandler(HttpStatusCode.OK, "{}"));
 
         // Act
@@ -97,10 +102,10 @@ public class DaprSecretProviderTests
 
         // Assert
         httpClient.BaseAddress.Should().NotBeNull();
-        httpClient.BaseAddress!.ToString().Should().Contain(ValidBaseHost);
-        httpClient.BaseAddress.ToString().Should().Contain(ValidHttpPort);
-        httpClient.BaseAddress.ToString().Should().Contain(ValidSecretStoreName);
-        httpClient.Timeout.Should().Be(TimeSpan.FromSeconds(ValidTimeoutSeconds));
+        httpClient.BaseAddress!.ToString().Should().Contain("localhost");
+        httpClient.BaseAddress.ToString().Should().Contain("3500");
+        httpClient.BaseAddress.ToString().Should().Contain("my-secret-store");
+        httpClient.Timeout.Should().Be(TimeSpan.FromSeconds(30));
     }
 
     // --- LoadSecretsAsync ---
@@ -155,10 +160,10 @@ public class DaprSecretProviderTests
         var provider = CreateProvider();
 
         // Act
-        await provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
+        await provider.LoadSecretsAsync(SingleValidSecretName, TestContext.Current.CancellationToken);
 
         // Assert
-        var result = provider.GetSecret(ValidSecretName);
+        var result = provider.GetSecret(SingleValidSecretName[0]);
         result.Should().Be(ValidSecretValue);
     }
 
@@ -166,22 +171,15 @@ public class DaprSecretProviderTests
     public async Task LoadSecretsAsync_MultipleSecrets_LoadsAllSuccessfully()
     {
         // Arrange
-        var anotherSecretName = "another-secret";
-        var anotherSecretValue = "another-secret-value";
-        var responses = new Dictionary<string, (HttpStatusCode, string)>
-        {
-            { ValidSecretName, (HttpStatusCode.OK, JsonSerializer.Serialize(new Dictionary<string, string> { { ValidSecretName, ValidSecretValue } })) },
-            { anotherSecretName, (HttpStatusCode.OK, JsonSerializer.Serialize(new Dictionary<string, string> { { anotherSecretName, anotherSecretValue } })) }
-        };
-        var handler = CreateMockHandler(responses);
+        var handler = CreateMockHandler(MultiSecretResponses);
         var provider = CreateProvider(handler: handler);
 
         // Act
-        await provider.LoadSecretsAsync(new[] { ValidSecretName, anotherSecretName }, TestContext.Current.CancellationToken);
+        await provider.LoadSecretsAsync(TwoSecretNames, TestContext.Current.CancellationToken);
 
         // Assert
-        provider.GetSecret(ValidSecretName).Should().Be(ValidSecretValue);
-        provider.GetSecret(anotherSecretName).Should().Be(anotherSecretValue);
+        provider.GetSecret(SingleValidSecretName[0]).Should().Be(ValidSecretValue);
+        provider.GetSecret(AnotherSecretName).Should().Be(AnotherSecretValue);
     }
 
     [Fact]
@@ -192,7 +190,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider(handler: handler);
 
         // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
+        var act = () => provider.LoadSecretsAsync(SingleValidSecretName, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -207,7 +205,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider(handler: handler);
 
         // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
+        var act = () => provider.LoadSecretsAsync(SingleValidSecretName, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<DaprSecretStoreException>()
@@ -215,8 +213,8 @@ public class DaprSecretProviderTests
     }
 
     [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
+    [InlineData(EmptyString)]
+    [InlineData(WhitespaceOnly)]
     public async Task LoadSecretsAsync_EmptyOrWhitespaceResponseContent_ThrowsInvalidOperationException(string responseContent)
     {
         // Arrange
@@ -224,7 +222,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider(handler: handler);
 
         // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
+        var act = () => provider.LoadSecretsAsync(SingleValidSecretName, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -239,7 +237,7 @@ public class DaprSecretProviderTests
         var provider = CreateProvider(handler: handler);
 
         // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
+        var act = () => provider.LoadSecretsAsync(SingleValidSecretName, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -250,13 +248,12 @@ public class DaprSecretProviderTests
     public async Task LoadSecretsAsync_SecretKeyMissingInResponse_ThrowsInvalidOperationException()
     {
         // Arrange
-        var responseContent = JsonSerializer.Serialize(
-            new Dictionary<string, string> { { "wrong-key", "some-value" } });
+        var responseContent = JsonSerializer.Serialize(WrongKeyDictionary);
         var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, responseContent);
         var provider = CreateProvider(handler: handler);
 
         // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
+        var act = () => provider.LoadSecretsAsync(SingleValidSecretName, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -264,18 +261,17 @@ public class DaprSecretProviderTests
     }
 
     [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
+    [InlineData(EmptyString)]
+    [InlineData(WhitespaceOnly)]
     public async Task LoadSecretsAsync_EmptyOrWhitespaceSecretValue_ThrowsInvalidOperationException(string secretValue)
     {
         // Arrange
-        var responseContent = JsonSerializer.Serialize(
-            new Dictionary<string, string> { { ValidSecretName, secretValue } });
+        var responseContent = CreateSecretResponseContent(SingleValidSecretName[0], secretValue);
         var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, responseContent);
         var provider = CreateProvider(handler: handler);
 
         // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
+        var act = () => provider.LoadSecretsAsync(SingleValidSecretName, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -286,11 +282,11 @@ public class DaprSecretProviderTests
     public async Task LoadSecretsAsync_HttpClientThrows_ThrowsDaprSecretStoreExceptionWithInnerException()
     {
         // Arrange
-        var handler = new FakeHttpMessageHandler(new HttpRequestException("connection refused"));
+        var handler = new FakeHttpMessageHandler(new HttpRequestException(ConnectionRefusedMessage));
         var provider = CreateProvider(handler: handler);
 
         // Act
-        var act = () => provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
+        var act = () => provider.LoadSecretsAsync(SingleValidSecretName, TestContext.Current.CancellationToken);
 
         // Assert
         (await act.Should().ThrowAsync<DaprSecretStoreException>()
@@ -302,8 +298,8 @@ public class DaprSecretProviderTests
 
     [Theory]
     [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
+    [InlineData(EmptyString)]
+    [InlineData(WhitespaceOnly)]
     public void GetSecret_InvalidName_ThrowsArgumentException(string? name)
     {
         // Arrange
@@ -335,10 +331,10 @@ public class DaprSecretProviderTests
     {
         // Arrange
         var provider = CreateProvider();
-        await provider.LoadSecretsAsync(new[] { ValidSecretName }, TestContext.Current.CancellationToken);
+        await provider.LoadSecretsAsync(SingleValidSecretName, TestContext.Current.CancellationToken);
 
         // Act
-        var result = provider.GetSecret(ValidSecretName);
+        var result = provider.GetSecret(SingleValidSecretName[0]);
 
         // Assert
         result.Should().Be(ValidSecretValue);
@@ -364,7 +360,7 @@ public class DaprSecretProviderTests
     public async Task CheckConnectivityAsync_HttpClientThrows_ThrowsDaprSecretStoreExceptionWithInnerException()
     {
         // Arrange
-        var handler = new FakeHttpMessageHandler(new HttpRequestException("connection refused"));
+        var handler = new FakeHttpMessageHandler(new HttpRequestException(ConnectionRefusedMessage));
         var provider = CreateProvider(handler: handler);
 
         // Act

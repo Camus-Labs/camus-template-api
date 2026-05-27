@@ -5,6 +5,8 @@ namespace emc.camus.application.test.Configurations;
 
 public class DatabaseSettingsTests
 {
+    private const int ExceedsMaxSecretNameLength = 51;
+
     private static DatabaseSettings CreateValidSettings()
     {
         return new DatabaseSettings
@@ -148,7 +150,7 @@ public class DatabaseSettingsTests
     {
         // Arrange
         var settings = CreateValidSettings();
-        settings.UserSecretName = new string('a', 51);
+        settings.UserSecretName = new string('a', ExceedsMaxSecretNameLength);
 
         // Act
         var act = () => settings.Validate();
@@ -183,7 +185,7 @@ public class DatabaseSettingsTests
     {
         // Arrange
         var settings = CreateValidSettings();
-        settings.PasswordSecretName = new string('a', 51);
+        settings.PasswordSecretName = new string('a', ExceedsMaxSecretNameLength);
 
         // Act
         var act = () => settings.Validate();

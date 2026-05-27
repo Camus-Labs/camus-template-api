@@ -29,19 +29,23 @@ internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
 
     private readonly UnitOfWork _unitOfWork;
     private readonly IGeneratedTokenDataAccess _dataAccess;
+    private readonly TimeProvider _timeProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GeneratedTokenRepository"/> class.
     /// </summary>
     /// <param name="unitOfWork">Unit of work for accessing the shared database connection.</param>
     /// <param name="dataAccess">Data access layer for raw SQL execution.</param>
-    public GeneratedTokenRepository(UnitOfWork unitOfWork, IGeneratedTokenDataAccess dataAccess)
+    /// <param name="timeProvider">Time provider for clock access.</param>
+    public GeneratedTokenRepository(UnitOfWork unitOfWork, IGeneratedTokenDataAccess dataAccess, TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(unitOfWork);
         ArgumentNullException.ThrowIfNull(dataAccess);
+        ArgumentNullException.ThrowIfNull(timeProvider);
 
         _unitOfWork = unitOfWork;
         _dataAccess = dataAccess;
+        _timeProvider = timeProvider;
     }
 
     /// <summary>
@@ -145,7 +149,7 @@ internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
 
         var totalCount = await ExecuteAsync(
             () => _dataAccess.CountByCreatorUserIdAsync(
-                connection, creatorUserId, excludeRevoked, excludeExpired, ct),
+                connection, creatorUserId, excludeRevoked, excludeExpired, _timeProvider.GetUtcNow().UtcDateTime, ct),
             nameof(_dataAccess.CountByCreatorUserIdAsync));
 
         if (totalCount == 0)
@@ -158,7 +162,7 @@ internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
 
         var results = await ExecuteAsync(
             () => _dataAccess.GetPageByCreatorUserIdAsync(
-                connection, creatorUserId, excludeRevoked, excludeExpired, pagination.PageSize, pagination.Offset, sortColumn, sortDirection, ct),
+                connection, creatorUserId, excludeRevoked, excludeExpired, pagination.PageSize, pagination.Offset, sortColumn, sortDirection, _timeProvider.GetUtcNow().UtcDateTime, ct),
             nameof(_dataAccess.GetPageByCreatorUserIdAsync));
 
         var items = results.Select(r => r.ToEntity()).ToList();
@@ -202,7 +206,7 @@ internal sealed class GeneratedTokenRepository : IGeneratedTokenRepository
     {
         var connection = await _unitOfWork.GetConnectionAsync(ct);
         var results = await ExecuteAsync(
-            () => _dataAccess.GetActiveRevokedJtisAsync(connection, ct),
+            () => _dataAccess.GetActiveRevokedJtisAsync(connection, _timeProvider.GetUtcNow().UtcDateTime, ct),
             nameof(_dataAccess.GetActiveRevokedJtisAsync));
 
         return results.ToHashSet();

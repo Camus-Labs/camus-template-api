@@ -11,10 +11,11 @@ namespace emc.camus.api.integration.test.Helpers;
 public sealed class ActivityCapture : IDisposable
 {
     private readonly ActivityListener _listener;
-    private readonly ConcurrentBag<Activity> _activities = new();
+    private readonly ConcurrentBag<Activity> _activities;
 
     public ActivityCapture()
     {
+        _activities = new();
         _listener = new ActivityListener
         {
             ShouldListenTo = _ => true,

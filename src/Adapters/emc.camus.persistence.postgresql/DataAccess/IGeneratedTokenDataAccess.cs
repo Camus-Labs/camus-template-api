@@ -65,9 +65,10 @@ internal interface IGeneratedTokenDataAccess
     /// <param name="creatorUserId">The creator user ID.</param>
     /// <param name="excludeRevoked">Whether to exclude revoked tokens.</param>
     /// <param name="excludeExpired">Whether to exclude expired tokens.</param>
+    /// <param name="now">The current UTC timestamp for expiration comparison.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The total count of matching tokens.</returns>
-    Task<int> CountByCreatorUserIdAsync(IDbConnection connection, Guid creatorUserId, bool excludeRevoked, bool excludeExpired, CancellationToken ct = default);
+    Task<int> CountByCreatorUserIdAsync(IDbConnection connection, Guid creatorUserId, bool excludeRevoked, bool excludeExpired, DateTime now, CancellationToken ct = default);
 
     /// <summary>
     /// Retrieves a page of generated tokens for a creator user with optional filtering and sorting.
@@ -80,9 +81,10 @@ internal interface IGeneratedTokenDataAccess
     /// <param name="offset">The offset for pagination.</param>
     /// <param name="sortColumn">The allow-listed column name to sort by, or null for default ordering.</param>
     /// <param name="sortDirection">The sort direction ("ASC" or "DESC"), or null for default ordering.</param>
+    /// <param name="now">The current UTC timestamp for expiration comparison.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The matching generated token models.</returns>
-    Task<IEnumerable<GeneratedTokenModel>> GetPageByCreatorUserIdAsync(IDbConnection connection, Guid creatorUserId, bool excludeRevoked, bool excludeExpired, int pageSize, int offset, string? sortColumn = null, string? sortDirection = null, CancellationToken ct = default);
+    Task<IEnumerable<GeneratedTokenModel>> GetPageByCreatorUserIdAsync(IDbConnection connection, Guid creatorUserId, bool excludeRevoked, bool excludeExpired, int pageSize, int offset, string? sortColumn, string? sortDirection, DateTime now, CancellationToken ct = default);
 
     /// <summary>
     /// Updates the revocation status of a generated token.
@@ -99,7 +101,8 @@ internal interface IGeneratedTokenDataAccess
     /// Retrieves all JTIs for revoked tokens that have not yet expired.
     /// </summary>
     /// <param name="connection">The database connection to use.</param>
+    /// <param name="now">The current UTC timestamp for expiration comparison.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The JTIs of active revoked tokens.</returns>
-    Task<IEnumerable<Guid>> GetActiveRevokedJtisAsync(IDbConnection connection, CancellationToken ct = default);
+    Task<IEnumerable<Guid>> GetActiveRevokedJtisAsync(IDbConnection connection, DateTime now, CancellationToken ct = default);
 }

@@ -118,9 +118,10 @@ internal sealed class GeneratedTokenDataAccess : IGeneratedTokenDataAccess
     /// <param name="creatorUserId">The creator user ID.</param>
     /// <param name="excludeRevoked">Whether to exclude revoked tokens.</param>
     /// <param name="excludeExpired">Whether to exclude expired tokens.</param>
+    /// <param name="now">The current UTC timestamp for expiration comparison.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The total count of matching tokens.</returns>
-    public async Task<int> CountByCreatorUserIdAsync(IDbConnection connection, Guid creatorUserId, bool excludeRevoked, bool excludeExpired, CancellationToken ct = default)
+    public async Task<int> CountByCreatorUserIdAsync(IDbConnection connection, Guid creatorUserId, bool excludeRevoked, bool excludeExpired, DateTime now, CancellationToken ct = default)
     {
         var whereClause = "WHERE creator_user_id = @CreatorUserId";
         if (excludeRevoked) whereClause += " AND is_revoked = false";
@@ -130,7 +131,7 @@ internal sealed class GeneratedTokenDataAccess : IGeneratedTokenDataAccess
 
         var parameters = new DynamicParameters();
         parameters.Add("CreatorUserId", creatorUserId);
-        parameters.Add("Now", DateTime.UtcNow);
+        parameters.Add("Now", now);
 
         return await connection.ExecuteScalarAsync<int>(
             new CommandDefinition(sql, parameters, cancellationToken: ct));
@@ -147,9 +148,10 @@ internal sealed class GeneratedTokenDataAccess : IGeneratedTokenDataAccess
     /// <param name="offset">The offset for pagination.</param>
     /// <param name="sortColumn">The allow-listed column name to sort by, or null for default ordering.</param>
     /// <param name="sortDirection">The sort direction ("ASC" or "DESC"), or null for default ordering.</param>
+    /// <param name="now">The current UTC timestamp for expiration comparison.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The matching generated token models.</returns>
-    public async Task<IEnumerable<GeneratedTokenModel>> GetPageByCreatorUserIdAsync(IDbConnection connection, Guid creatorUserId, bool excludeRevoked, bool excludeExpired, int pageSize, int offset, string? sortColumn = null, string? sortDirection = null, CancellationToken ct = default)
+    public async Task<IEnumerable<GeneratedTokenModel>> GetPageByCreatorUserIdAsync(IDbConnection connection, Guid creatorUserId, bool excludeRevoked, bool excludeExpired, int pageSize, int offset, string? sortColumn, string? sortDirection, DateTime now, CancellationToken ct = default)
     {
         var whereClause = "WHERE creator_user_id = @CreatorUserId";
         if (excludeRevoked) whereClause += " AND is_revoked = false";
@@ -172,7 +174,7 @@ internal sealed class GeneratedTokenDataAccess : IGeneratedTokenDataAccess
         parameters.Add("CreatorUserId", creatorUserId);
         parameters.Add("PageSize", pageSize);
         parameters.Add("Offset", offset);
-        parameters.Add("Now", DateTime.UtcNow);
+        parameters.Add("Now", now);
 
         return await connection.QueryAsync<GeneratedTokenModel>(
             new CommandDefinition(sql, parameters, cancellationToken: ct));
@@ -202,9 +204,10 @@ internal sealed class GeneratedTokenDataAccess : IGeneratedTokenDataAccess
     /// Retrieves all JTIs for revoked tokens that have not yet expired.
     /// </summary>
     /// <param name="connection">The database connection to use.</param>
+    /// <param name="now">The current UTC timestamp for expiration comparison.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The JTIs of active revoked tokens.</returns>
-    public async Task<IEnumerable<Guid>> GetActiveRevokedJtisAsync(IDbConnection connection, CancellationToken ct = default)
+    public async Task<IEnumerable<Guid>> GetActiveRevokedJtisAsync(IDbConnection connection, DateTime now, CancellationToken ct = default)
     {
         const string sql = @"
             SELECT jti
@@ -212,6 +215,6 @@ internal sealed class GeneratedTokenDataAccess : IGeneratedTokenDataAccess
             WHERE is_revoked = true AND expires_on > @Now";
 
         return await connection.QueryAsync<Guid>(
-            new CommandDefinition(sql, new { Now = DateTime.UtcNow }, cancellationToken: ct));
+            new CommandDefinition(sql, new { now }, cancellationToken: ct));
     }
 }

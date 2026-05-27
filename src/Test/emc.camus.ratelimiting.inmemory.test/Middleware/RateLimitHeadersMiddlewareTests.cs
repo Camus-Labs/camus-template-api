@@ -1,7 +1,9 @@
 using System.Globalization;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Time.Testing;
 using emc.camus.ratelimiting.inmemory.Middleware;
+using emc.camus.ratelimiting.inmemory.test.Helpers;
 using emc.camus.application.Common;
 
 namespace emc.camus.ratelimiting.inmemory.test.Middleware;
@@ -11,6 +13,13 @@ public class RateLimitHeadersMiddlewareTests
     private const string TestPolicy = "default";
     private const string TestLimit = "100";
     private const string TestWindow = "60";
+
+    private readonly FakeTimeProvider _timeProvider;
+
+    public RateLimitHeadersMiddlewareTests()
+    {
+        _timeProvider = new FakeTimeProvider();
+    }
 
     private static DefaultHttpContext CreateHttpContext(
         string? policy = TestPolicy,
@@ -37,10 +46,10 @@ public class RateLimitHeadersMiddlewareTests
         return context;
     }
 
-    private static RateLimitHeadersMiddleware CreateMiddleware(RequestDelegate? next = null)
+    private RateLimitHeadersMiddleware CreateMiddleware(RequestDelegate? next = null)
     {
         next ??= _ => Task.CompletedTask;
-        return new RateLimitHeadersMiddleware(next);
+        return new RateLimitHeadersMiddleware(next, _timeProvider);
     }
 
     // --- InvokeAsync: Headers Set ---
@@ -51,15 +60,17 @@ public class RateLimitHeadersMiddlewareTests
         // Arrange
         var middleware = CreateMiddleware();
         var context = CreateHttpContext();
+        var expectedReset = _timeProvider.GetUtcNow().AddSeconds(60).ToUnixTimeSeconds();
 
         // Act
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers[Headers.RateLimitLimit].ToString().Should().Be(TestLimit);
-        context.Response.Headers[Headers.RateLimitReset].ToString().Should().NotBeNullOrEmpty();
-        context.Response.Headers[Headers.RateLimitPolicy].ToString().Should().Be(TestPolicy);
-        context.Response.Headers[Headers.RateLimitWindow].ToString().Should().Be(TestWindow);
+        context.Response.Headers[Headers.RateLimitLimit].ToString().Should().Be("100");
+        var resetValue = long.Parse(context.Response.Headers[Headers.RateLimitReset].ToString(), CultureInfo.InvariantCulture);
+        resetValue.Should().Be(expectedReset);
+        context.Response.Headers[Headers.RateLimitPolicy].ToString().Should().Be("default");
+        context.Response.Headers[Headers.RateLimitWindow].ToString().Should().Be("60");
     }
 
     // --- InvokeAsync: Next Delegate ---
@@ -68,63 +79,34 @@ public class RateLimitHeadersMiddlewareTests
     public async Task InvokeAsync_ValidContext_CallsNextDelegate()
     {
         // Arrange
-        var nextCalled = false;
-        var middleware = CreateMiddleware(_ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
+        var stub = new NextDelegateStub();
+        var middleware = CreateMiddleware(stub.Invoke);
         var context = CreateHttpContext();
 
         // Act
         await middleware.InvokeAsync(context);
 
         // Assert
-        nextCalled.Should().BeTrue();
+        stub.WasCalled.Should().BeTrue();
     }
 
     // --- InvokeAsync: Missing Context Items ---
 
-    [Fact]
-    public async Task InvokeAsync_MissingPolicyItem_SetsUnknownPolicy()
+    [Theory]
+    [InlineData(null, TestLimit, TestWindow, "RateLimit-Policy")]
+    [InlineData(TestPolicy, null, TestWindow, "RateLimit-Limit")]
+    [InlineData(TestPolicy, TestLimit, null, "RateLimit-Window")]
+    public async Task InvokeAsync_MissingContextItem_SetsUnknownValue(string? policy, string? limit, string? window, string headerName)
     {
         // Arrange
         var middleware = CreateMiddleware();
-        var context = CreateHttpContext(policy: null);
+        var context = CreateHttpContext(policy: policy, limit: limit, window: window);
 
         // Act
         await middleware.InvokeAsync(context);
 
         // Assert
-        context.Response.Headers[Headers.RateLimitPolicy].ToString().Should().Be("unknown");
-    }
-
-    [Fact]
-    public async Task InvokeAsync_MissingLimitItem_SetsUnknownLimit()
-    {
-        // Arrange
-        var middleware = CreateMiddleware();
-        var context = CreateHttpContext(limit: null);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        context.Response.Headers[Headers.RateLimitLimit].ToString().Should().Be("unknown");
-    }
-
-    [Fact]
-    public async Task InvokeAsync_MissingWindowItem_SetsUnknownWindow()
-    {
-        // Arrange
-        var middleware = CreateMiddleware();
-        var context = CreateHttpContext(window: null);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        context.Response.Headers[Headers.RateLimitWindow].ToString().Should().Be("unknown");
+        context.Response.Headers[headerName].ToString().Should().Be("unknown");
     }
 
     [Fact]
@@ -141,23 +123,5 @@ public class RateLimitHeadersMiddlewareTests
         context.Response.Headers.Should().NotContainKey(Headers.RateLimitReset);
     }
 
-    // --- InvokeAsync: Reset Timestamp Calculation ---
 
-    [Fact]
-    public async Task InvokeAsync_ValidWindow_SetsResetTimestampInFuture()
-    {
-        // Arrange
-        var middleware = CreateMiddleware();
-        var context = CreateHttpContext();
-        var beforeTimestamp = DateTimeOffset.UtcNow.AddSeconds(60).ToUnixTimeSeconds();
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        var afterTimestamp = DateTimeOffset.UtcNow.AddSeconds(60).ToUnixTimeSeconds();
-        var resetValue = long.Parse(context.Response.Headers[Headers.RateLimitReset].ToString(), CultureInfo.InvariantCulture);
-        resetValue.Should().BeGreaterThanOrEqualTo(beforeTimestamp);
-        resetValue.Should().BeLessThanOrEqualTo(afterTimestamp);
-    }
 }

@@ -32,7 +32,7 @@ namespace emc.camus.api.Configurations
 
         /// <summary>
         /// Timeout in seconds for the tight policy. Intended for fast endpoints (simple reads, auth).
-        /// Default: 5 seconds.
+        /// Default: 10 seconds.
         /// </summary>
         public int TightTimeoutSeconds { get; set; } = DefaultTightTimeoutSeconds;
 

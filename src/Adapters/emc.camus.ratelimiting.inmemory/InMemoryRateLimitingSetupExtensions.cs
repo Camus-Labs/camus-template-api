@@ -60,9 +60,9 @@ namespace emc.camus.ratelimiting.inmemory
                     if (IsExemptPath(context, settings))
                     {
                         // Store partition info for response headers
-                        context.Items["RateLimit:Policy"] = "exempt";
-                        context.Items["RateLimit:Limit"] = "unlimited";
-                        context.Items["RateLimit:Window"] = "N/A";
+                        context.Items[RateLimitContextKeys.Policy] = "exempt";
+                        context.Items[RateLimitContextKeys.Limit] = "unlimited";
+                        context.Items[RateLimitContextKeys.Window] = "N/A";
                         return RateLimitPartition.GetNoLimiter("exempt");
                     }
 
@@ -74,7 +74,7 @@ namespace emc.camus.ratelimiting.inmemory
                 });
 
                 // Configure rejection handler with logging and metrics
-                options.OnRejected = (context, ct) =>
+                options.OnRejected = (context, _) =>
                 {
                     HandleRateLimitRejection(context, settings);
                     return new ValueTask();
@@ -172,9 +172,9 @@ namespace emc.camus.ratelimiting.inmemory
             var policy = settings.Policies[policyName];
 
             // Store partition info for response headers
-            context.Items["RateLimit:Policy"] = policyName;
-            context.Items["RateLimit:Limit"] = policy.PermitLimit;
-            context.Items["RateLimit:Window"] = policy.WindowSeconds;
+            context.Items[RateLimitContextKeys.Policy] = policyName;
+            context.Items[RateLimitContextKeys.Limit] = policy.PermitLimit;
+            context.Items[RateLimitContextKeys.Window] = policy.WindowSeconds;
 
             return RateLimitPartition.GetSlidingWindowLimiter(
                 partitionKey: $"{policyName}-ip-{ipAddress}",
@@ -198,11 +198,12 @@ namespace emc.camus.ratelimiting.inmemory
         {
             // Resolve services from request scope
             var metrics = context.HttpContext.RequestServices.GetRequiredService<RateLimitMetrics>();
+            var timeProvider = context.HttpContext.RequestServices.GetRequiredService<TimeProvider>();
 
             var method = context.HttpContext.Request.Method;
 
             // Get policy name from context (set during partition creation)
-            var policyName = context.HttpContext.Items["RateLimit:Policy"]?.ToString() ?? "unknown";
+            var policyName = context.HttpContext.Items[RateLimitContextKeys.Policy]?.ToString() ?? "unknown";
             if (!settings.Policies.TryGetValue(policyName, out var policy))
             {
                 policy = settings.Policies[RateLimitPolicies.Default];
@@ -210,7 +211,7 @@ namespace emc.camus.ratelimiting.inmemory
 
             // Calculate retry and reset times
             var retryAfterSeconds = policy.WindowSeconds;
-            var resetTimestamp = DateTimeOffset.UtcNow.AddSeconds(retryAfterSeconds).ToUnixTimeSeconds();
+            var resetTimestamp = timeProvider.GetUtcNow().AddSeconds(retryAfterSeconds).ToUnixTimeSeconds();
 
             // Add rate limiting headers before throwing exception
             // These will be preserved when ExceptionHandlingMiddleware catches the exception

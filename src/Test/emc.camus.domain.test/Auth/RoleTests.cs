@@ -34,7 +34,7 @@ public class RoleTests
         // Arrange
         var name = ValidName;
         var description = ValidDescription;
-        var permissions = new List<string> { "read", "write" };
+        var permissions = ValidPermissions.ToList();
         var id = ValidId;
 
         // Act

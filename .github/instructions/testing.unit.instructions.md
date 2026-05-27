@@ -1,5 +1,5 @@
 ---
-applyTo: "{src/Test/**,!src/Test/**integration.test/**}"
+applyTo: "{src/Test/**/*.cs,!src/Test/**integration.test/**/*.cs}"
 ---
 
 # Unit Testing Conventions
@@ -7,7 +7,8 @@ applyTo: "{src/Test/**,!src/Test/**integration.test/**}"
 1. Frameworks & Mocking
 
     - [ ] Moq as the only mocking framework — no other mocking libraries
-    - [ ] Mocks only for interfaces that cross process or I/O boundaries (e.g., database, HTTP, file system, clock)
+    - [ ] Mocks only for abstractions (interfaces or abstract classes) that cross process or I/O boundaries
+          (e.g., database, HTTP, file system, clock, hosting environment)
     - [ ] No mocks for domain logic — test real implementations
     - [ ] Controller tests mock application services — not real implementations
     - [ ] Application-layer tests mock adapters — not real infrastructure
@@ -18,26 +19,22 @@ applyTo: "{src/Test/**,!src/Test/**integration.test/**}"
 
 2. Isolation & Setup
 
-    - [ ] Tests are isolated — no shared mutable state, no static mutable fields, no `IClassFixture<T>` mutation
-          across tests
-    - [ ] Per-test setup in constructor, cleanup via `IDisposable` — no static initializers or manual lifecycle
-          management
+    - [ ] Tests are isolated — no shared mutable state across tests — exception: `private static readonly`
+          fields (cryptographic fixtures, collections, test data) are permitted when no test or SUT mutates them
+    - [ ] Cleanup via `IDisposable` — no static initializers or manual lifecycle management
     - [ ] No `Thread.Sleep()` or `Task.Delay()` — use deterministic time abstractions or controlled waits
-    - [ ] Inject `FakeTimeProvider` (from `Microsoft.Extensions.Time.Testing`) to control the clock in unit
-          tests
-    - [ ] No hardcoded static dates in test data — express all dates relative to the `FakeTimeProvider`
-          reference time (e.g., `_timeProvider.GetUtcNow().AddYears(1)`)
-    - [ ] No reflection or access to private/internal members — assert on public return values, thrown exceptions,
-          or mock interactions
-    - [ ] Values shared between the constructor (or shared setup) and test assertions as `private const` or
-          `private static readonly` fields
-    - [ ] Constant array data as `private static readonly` fields — C# has no `const` array; inlining allocates
-          a new array each time
-    - [ ] Non-shared values (single-method arrange/assert, constructor filler not verified by any assertion,
-          assertion-only literals) stay inline
+    - [ ] Inject `FakeTimeProvider` (from `Microsoft.Extensions.Time.Testing`) when the SUT depends on
+          `TimeProvider`
+    - [ ] Derive all time-sensitive assertions from `_timeProvider.GetUtcNow()` — no inline
+          `DateTime.UtcNow` or `DateTimeOffset.UtcNow` in assertions
+    - [ ] When the SUT does not depend on `TimeProvider`, dates used purely as test input/output data use a
+          `private static readonly` field (e.g., `private static readonly DateTimeOffset FixedNow = ...`) with
+          derived values expressed relative to it — no inline `new DateTime(...)` literals scattered across methods
 
 3. Scope & Coverage
 
+    - [ ] No mock overrides to force execution into a branch unreachable via the SUT's public API — tests exercise
+          only code paths reachable under normal or documented error conditions
     - [ ] No test classes targeting production classes that contain only auto-properties, parameterless
           constructors, or no method bodies — covered indirectly through tests that exercise real behavior
     - [ ] No integration test artifacts in this scope — no `[Trait("Category", "Integration")]` annotations,
@@ -52,12 +49,12 @@ applyTo: "{src/Test/**,!src/Test/**integration.test/**}"
 
 5. Log Assertions (fail-open / silent-continue paths)
 
-    - [ ] When a code path swallows an exception and continues silently (fail-open, graceful degradation),
-          assert on the emitted log entry — this is the only observable side-effect proving the path executed
     - [ ] Use `LogCaptureBuilder.Create<T>()` (from the test project's `Helpers/` folder) to obtain a
           `(Mock<ILogger<T>> Mock, ConcurrentBag<(LogLevel Level, string Message)> Entries)` tuple
-    - [ ] Assert both `LogLevel` and a meaningful message substring — not just the presence of any log entry;
-          include context identifiers (e.g., idempotency key, username) that prove the correct branch ran
+    - [ ] Assert both `LogLevel` and a message substring containing at least one context identifier — not just the
+          presence of any log entry
+    - [ ] Log assertions include at least one context identifier (e.g., idempotency key, username) that proves
+          the correct branch ran — no assertions on generic messages that match multiple branches
     - [ ] Do NOT use `Mock.Verify(...)` on `ILogger` — use the captured entries bag instead
     - [ ] Reserve log assertions for paths with no other observable outcome (no return value change, no
           exception, no state mutation) — if a return value or exception already covers the path, a log

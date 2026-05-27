@@ -7,12 +7,10 @@ public class ConsoleSettingsTests
 {
     // --- Validate ---
 
-    [Fact]
-    public void Validate_DefaultSettings_DoesNotThrow()
+    [Theory]
+    [MemberData(nameof(ValidSettingsData))]
+    internal void Validate_ValidSettings_DoesNotThrow(ConsoleSettings settings)
     {
-        // Arrange
-        var settings = new ConsoleSettings();
-
         // Act
         var act = () => settings.Validate();
 
@@ -20,17 +18,10 @@ public class ConsoleSettingsTests
         act.Should().NotThrow();
     }
 
-    [Fact]
-    public void Validate_CustomOutputTemplate_DoesNotThrow()
+    public static IEnumerable<object[]> ValidSettingsData()
     {
-        // Arrange
-        var settings = new ConsoleSettings { OutputTemplate = "[{Timestamp:HH:mm:ss}] {Message}" };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
+        yield return [new ConsoleSettings()];
+        yield return [new ConsoleSettings { OutputTemplate = "[{Timestamp:HH:mm:ss}] {Message}" }];
     }
 
     [Theory]

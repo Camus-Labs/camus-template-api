@@ -9,7 +9,12 @@ namespace emc.camus.api.integration.test.Helpers;
 /// </summary>
 public sealed class SlowApiInfoService : IApiInfoService
 {
-    private readonly TaskCompletionSource _cancelled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource _cancelled;
+
+    public SlowApiInfoService()
+    {
+        _cancelled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    }
 
     /// <summary>
     /// Completes when the cancellation token fires inside <see cref="GetByVersionAsync"/>.

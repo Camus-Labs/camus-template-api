@@ -22,6 +22,7 @@ public class RateLimitingIpPartitionTests
     private const string RelaxedEndpoint = "/api/v1/apiinfo/info";
     private const string DefaultEndpoint = "/api/v2/apiinfo/info-jwt";
     private const string StrictEndpoint = "/api/v2/auth/authenticate";
+    private const string RetryAfterHeader = "Retry-After";
 
     public RateLimitingIpPartitionTests(ApiRateLimitingFactory factory, ITestOutputHelper outputHelper)
     {
@@ -47,7 +48,7 @@ public class RateLimitingIpPartitionTests
             .Which.Should().Be(ApiRateLimitingFactory.RelaxedPolicyPermitLimit.ToString(CultureInfo.InvariantCulture));
         rejectedResponse.Headers.GetValues(Headers.RateLimitPolicy).Should().ContainSingle()
             .Which.Should().Be(RateLimitPolicies.Relaxed);
-        rejectedResponse.Headers.GetValues("Retry-After").Should().ContainSingle()
+        rejectedResponse.Headers.GetValues(RetryAfterHeader).Should().ContainSingle()
             .Which.Should().Be(ApiRateLimitingFactory.PolicyWindowSeconds.ToString(CultureInfo.InvariantCulture));
     }
 
@@ -62,22 +63,35 @@ public class RateLimitingIpPartitionTests
 
         // Act
         var responseBFirst = await clientB.GetAsync(RelaxedEndpoint, ct);
-        var responseAExtra = await clientA.GetAsync(RelaxedEndpoint, ct);
 
         // Assert — IP B is independent, still within its own budget
         await responseBFirst.Should().HaveStatusCode(HttpStatusCode.OK);
+    }
 
-        // Assert — IP A is still throttled (complementary verification)
+    [Fact]
+    public async Task ExhaustedIp_SameEndpoint_RemainsThrottled()
+    {
+        // Arrange
+        var clientA = _factory.CreateClient().WithIp("10.1.1.1");
+        var ct = TestContext.Current.CancellationToken;
+        await RateLimitHelper.ExhaustRateLimitAsync(clientA, RelaxedEndpoint, ApiRateLimitingFactory.RelaxedPolicyPermitLimit, ct);
+
+        // Act
+        var responseAExtra = await clientA.GetAsync(RelaxedEndpoint, ct);
+
+        // Assert — IP A is still throttled
         await responseAExtra.Should().HaveStatusCode(HttpStatusCode.TooManyRequests);
         await responseAExtra.Should().HaveErrorCode(ErrorCodes.RateLimitExceeded);
     }
 
-    [Fact]
-    public async Task DifferentIps_BothExhaustLimitsIndependently_BothGetThrottled()
+    [Theory]
+    [InlineData("10.2.0.1", "10.2.0.2")]
+    [InlineData("10.2.1.1", "10.2.1.2")]
+    public async Task DifferentIps_BothExhaustLimitsIndependently_BothGetThrottled(string ipA, string ipB)
     {
         // Arrange
-        var clientA = _factory.CreateClient().WithIp("10.2.0.1");
-        var clientB = _factory.CreateClient().WithIp("10.2.0.2");
+        var clientA = _factory.CreateClient().WithIp(ipA);
+        var clientB = _factory.CreateClient().WithIp(ipB);
         var ct = TestContext.Current.CancellationToken;
 
         // Exhaust both IPs' rate limits
@@ -87,11 +101,9 @@ public class RateLimitingIpPartitionTests
         var responseA = await clientA.GetAsync(RelaxedEndpoint, ct);
         var responseB = await clientB.GetAsync(RelaxedEndpoint, ct);
 
-        // Assert — IP A is throttled
+        // Assert — both IPs are throttled independently
         await responseA.Should().HaveStatusCode(HttpStatusCode.TooManyRequests);
         await responseA.Should().HaveErrorCode(ErrorCodes.RateLimitExceeded);
-
-        // Assert — IP B is also throttled independently
         await responseB.Should().HaveStatusCode(HttpStatusCode.TooManyRequests);
         await responseB.Should().HaveErrorCode(ErrorCodes.RateLimitExceeded);
     }
@@ -114,7 +126,7 @@ public class RateLimitingIpPartitionTests
             .Which.Should().Be(ApiRateLimitingFactory.RelaxedPolicyPermitLimit.ToString(CultureInfo.InvariantCulture));
         rejectedResponse.Headers.GetValues(Headers.RateLimitPolicy).Should().ContainSingle()
             .Which.Should().Be(RateLimitPolicies.Relaxed);
-        rejectedResponse.Headers.GetValues("Retry-After").Should().ContainSingle()
+        rejectedResponse.Headers.GetValues(RetryAfterHeader).Should().ContainSingle()
             .Which.Should().Be(ApiRateLimitingFactory.PolicyWindowSeconds.ToString(CultureInfo.InvariantCulture));
     }
 
@@ -136,7 +148,7 @@ public class RateLimitingIpPartitionTests
             .Which.Should().Be(ApiRateLimitingFactory.DefaultPolicyPermitLimit.ToString(CultureInfo.InvariantCulture));
         rejectedResponse.Headers.GetValues(Headers.RateLimitPolicy).Should().ContainSingle()
             .Which.Should().Be(RateLimitPolicies.Default);
-        rejectedResponse.Headers.GetValues("Retry-After").Should().ContainSingle()
+        rejectedResponse.Headers.GetValues(RetryAfterHeader).Should().ContainSingle()
             .Which.Should().Be(ApiRateLimitingFactory.PolicyWindowSeconds.ToString(CultureInfo.InvariantCulture));
     }
 
@@ -161,7 +173,7 @@ public class RateLimitingIpPartitionTests
             .Which.Should().Be(ApiRateLimitingFactory.StrictPolicyPermitLimit.ToString(CultureInfo.InvariantCulture));
         rejectedResponse.Headers.GetValues(Headers.RateLimitPolicy).Should().ContainSingle()
             .Which.Should().Be(RateLimitPolicies.Strict);
-        rejectedResponse.Headers.GetValues("Retry-After").Should().ContainSingle()
+        rejectedResponse.Headers.GetValues(RetryAfterHeader).Should().ContainSingle()
             .Which.Should().Be(ApiRateLimitingFactory.PolicyWindowSeconds.ToString(CultureInfo.InvariantCulture));
     }
 

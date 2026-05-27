@@ -9,14 +9,21 @@ public class IdempotencyResponseCacheTests
 {
     private const string ValidCompositeKey = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee:test-key-001";
     private const string ValidBodyHash = "abc123def456";
+    private const string User1Key = "user1:key-a";
+    private const string User2Key = "user2:key-a";
+    private const string Hash1 = "hash1";
+    private const string Hash2 = "hash2";
+    private const int DefaultStatusCode = 200;
+    private const string DefaultBody = "body";
 
     private static readonly TimeSpan DefaultTtl = TimeSpan.FromMinutes(5);
 
-    private readonly FakeTimeProvider _timeProvider = new();
+    private readonly FakeTimeProvider _timeProvider;
     private readonly IdempotencyResponseCache _cache;
 
     public IdempotencyResponseCacheTests()
     {
+        _timeProvider = new FakeTimeProvider();
         _cache = new IdempotencyResponseCache(_timeProvider);
     }
 
@@ -80,13 +87,13 @@ public class IdempotencyResponseCacheTests
     }
 
     [Theory]
-    [InlineData("user1:key-a", 200)]
-    [InlineData("user2:key-a", 201)]
+    [InlineData(User1Key, 200)]
+    [InlineData(User2Key, 201)]
     public void TryGet_KeyAmongMultiple_ReturnsCorrectEntry(string targetKey, int expectedStatus)
     {
         // Arrange
-        _cache.Store("user1:key-a", new CachedResponse(200, """{"user":"1"}""", "hash1"), DefaultTtl);
-        _cache.Store("user2:key-a", new CachedResponse(201, """{"user":"2"}""", "hash2"), DefaultTtl);
+        _cache.Store(User1Key, new CachedResponse(200, """{"user":"1"}""", Hash1), DefaultTtl);
+        _cache.Store(User2Key, new CachedResponse(201, """{"user":"2"}""", Hash2), DefaultTtl);
 
         // Act
         var result = _cache.TryGet(targetKey);
@@ -104,7 +111,7 @@ public class IdempotencyResponseCacheTests
     public void Store_InvalidCompositeKey_ThrowsArgumentException(string? compositeKey)
     {
         // Arrange
-        var response = new CachedResponse(200, "body", ValidBodyHash);
+        var response = new CachedResponse(DefaultStatusCode, DefaultBody, ValidBodyHash);
 
         // Act
         var act = () => _cache.Store(compositeKey!, response, DefaultTtl);
@@ -131,7 +138,7 @@ public class IdempotencyResponseCacheTests
     public void Store_InvalidTtl_ThrowsArgumentOutOfRangeException(int ttlSeconds)
     {
         // Arrange
-        var response = new CachedResponse(200, "body", ValidBodyHash);
+        var response = new CachedResponse(DefaultStatusCode, DefaultBody, ValidBodyHash);
 
         // Act
         var act = () => _cache.Store(ValidCompositeKey, response, TimeSpan.FromSeconds(ttlSeconds));
@@ -145,8 +152,8 @@ public class IdempotencyResponseCacheTests
     public void Store_OverwritesExistingEntry_ReturnsNewValue()
     {
         // Arrange
-        var response1 = new CachedResponse(200, "first", "hash1");
-        var response2 = new CachedResponse(201, "second", "hash2");
+        var response1 = new CachedResponse(200, "first", Hash1);
+        var response2 = new CachedResponse(201, "second", Hash2);
         _cache.Store(ValidCompositeKey, response1, DefaultTtl);
 
         // Act

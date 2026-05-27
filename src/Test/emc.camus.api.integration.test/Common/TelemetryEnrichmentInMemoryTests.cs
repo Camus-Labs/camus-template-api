@@ -14,8 +14,10 @@ public class TelemetryEnrichmentInMemoryTests
 {
     private readonly ApiInMemoryFactory _factory;
 
+    private const string InfoJwtEndpoint = "/api/v2/apiinfo/info-jwt";
     private static readonly Guid TestUserId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
     private const string TestUsername = "test-user";
+    private static readonly string[] ReadPermissions = ["api.read"];
 
     public TelemetryEnrichmentInMemoryTests(ApiInMemoryFactory factory, ITestOutputHelper outputHelper)
     {
@@ -26,6 +28,8 @@ public class TelemetryEnrichmentInMemoryTests
     [Fact]
     public async Task AnonymousRequest_TelemetryTags_EnduserAuthenticatedIsFalseAndNoIdentityTags()
     {
+        // Justification: OpenTelemetry Activity tags are not surfaced in the HTTP response;
+        // in-process ActivityCapture is the only means to verify enrichment middleware behavior.
         // Arrange
         using var capture = new ActivityCapture();
         var client = _factory.CreateClient();
@@ -52,6 +56,8 @@ public class TelemetryEnrichmentInMemoryTests
     [Fact]
     public async Task ApiKeyAuthenticatedRequest_TelemetryTags_EnduserAuthenticatedIsTrueWithoutIdentityTags()
     {
+        // Justification: OpenTelemetry Activity tags are not surfaced in the HTTP response;
+        // in-process ActivityCapture is the only means to verify enrichment middleware behavior.
         // Arrange
         using var capture = new ActivityCapture();
         var client = _factory.CreateApiKeyClient();
@@ -78,12 +84,14 @@ public class TelemetryEnrichmentInMemoryTests
     [Fact]
     public async Task JwtAuthenticatedRequest_TelemetryTags_EnduserAuthenticatedIsTrueWithNameAndId()
     {
+        // Justification: OpenTelemetry Activity tags are not surfaced in the HTTP response;
+        // in-process ActivityCapture is the only means to verify enrichment middleware behavior.
         // Arrange
         using var capture = new ActivityCapture();
         var client = _factory.CreateJwtClient(TestUserId, TestUsername);
 
         // Act
-        var response = await client.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync(InfoJwtEndpoint, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -104,6 +112,8 @@ public class TelemetryEnrichmentInMemoryTests
     [Fact]
     public async Task FailedAuthentication_TelemetryTags_InnerActivityHasErrorStatusAndExceptionEvent()
     {
+        // Justification: OpenTelemetry Activity tags are not surfaced in the HTTP response;
+        // in-process ActivityCapture is the only means to verify enrichment middleware behavior.
         // Arrange
         using var capture = new ActivityCapture();
         var client = _factory.CreateApiKeyClient();
@@ -135,12 +145,15 @@ public class TelemetryEnrichmentInMemoryTests
     [Fact]
     public async Task UnauthenticatedJwtRequest_TelemetryTags_OuterActivityHasErrorStatusAndNoInnerActivity()
     {
+        // Justification: Activity tags are enriched in-process by middleware and cannot be observed
+        // through HTTP response headers, response body, or any external service call.
+
         // Arrange
         using var capture = new ActivityCapture();
         var client = _factory.CreateClient();
 
         // Act
-        var response = await client.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync(InfoJwtEndpoint, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
@@ -161,10 +174,13 @@ public class TelemetryEnrichmentInMemoryTests
     [Fact]
     public async Task JwtWithoutPermission_TelemetryTags_OuterActivityHasErrorStatusAndNoInnerActivity()
     {
+        // Justification: Activity tags are enriched in-process by middleware and cannot be observed
+        // through HTTP response headers, response body, or any external service call.
+
         // Arrange — JWT without token.create permission hitting an endpoint that requires it
         using var capture = new ActivityCapture();
         var client = _factory.CreateJwtClient(TestUserId, TestUsername);
-        var request = new { UsernameSuffix = "test-token", Permissions = new[] { "api.read" } };
+        var request = new { UsernameSuffix = "test-token", Permissions = ReadPermissions };
 
         // Act
         var response = await client.PostAsJsonWithIdempotencyKeyAsync("/api/v2/auth/generate-token", request, TestContext.Current.CancellationToken);

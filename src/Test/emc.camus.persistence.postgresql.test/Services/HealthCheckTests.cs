@@ -7,7 +7,12 @@ namespace emc.camus.persistence.postgresql.test.Services;
 
 public class HealthCheckTests
 {
-    private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
+    private readonly Mock<IUnitOfWork> _mockUnitOfWork;
+
+    public HealthCheckTests()
+    {
+        _mockUnitOfWork = new Mock<IUnitOfWork>();
+    }
 
     // --- Constructor ---
 

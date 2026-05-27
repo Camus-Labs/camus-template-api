@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Time.Testing;
 using emc.camus.api.Mapping.V2;
 using emc.camus.api.Models.Requests.V2;
 using emc.camus.application.Auth;
@@ -10,6 +11,9 @@ public class AuthMappingExtensionsTests
     private static readonly DateTimeOffset FixedNow = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
     private static readonly DateTime ValidExpiresOn = FixedNow.UtcDateTime.AddYears(1).AddDays(-1);
     private static readonly DateTime ValidCreatedAt = FixedNow.UtcDateTime;
+    private static readonly List<string> PermissionsReadWrite = ["api.read", "api.write"];
+    private static readonly List<string> PermissionsRead = ["api.read"];
+    private static readonly Guid TestJti = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
     // --- ToCommand (AuthenticateUserRequest) ---
 
@@ -57,7 +61,7 @@ public class AuthMappingExtensionsTests
         {
             UsernameSuffix = "ci-deploy",
             ExpiresOn = ValidExpiresOn,
-            Permissions = new List<string> { "api.read", "api.write" }
+            Permissions = PermissionsReadWrite
         };
 
         // Act
@@ -97,9 +101,9 @@ public class AuthMappingExtensionsTests
         // Arrange
         var revokedAt = FixedNow.UtcDateTime.AddMonths(6);
         var view = new GeneratedTokenSummaryView(
-            jti: new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+            jti: TestJti,
             tokenUsername: "admin-token1",
-            permissions: new List<string> { "api.read" },
+            permissions: PermissionsRead,
             expiresOn: ValidExpiresOn,
             createdAt: ValidCreatedAt,
             isRevoked: true,
@@ -125,9 +129,9 @@ public class AuthMappingExtensionsTests
     {
         // Arrange
         var view = new GeneratedTokenSummaryView(
-            jti: new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+            jti: TestJti,
             tokenUsername: "admin-token1",
-            permissions: new List<string> { "api.read" },
+            permissions: PermissionsRead,
             expiresOn: ValidExpiresOn,
             createdAt: ValidCreatedAt,
             isRevoked: false,

@@ -5,6 +5,12 @@ namespace emc.camus.persistence.inmemory.test.Configurations;
 
 public class ApiInfoSettingsTests
 {
+    private const string ValidName = "Test API";
+    private const string ValidVersion = "1.0";
+    private const string ValidStatus = "Available";
+    private static readonly List<string> SingleFeatureList = ["feature1"];
+    private static readonly List<string> EmptyFeatureList = [];
+
     // --- Validate ---
 
     [Fact]
@@ -13,10 +19,10 @@ public class ApiInfoSettingsTests
         // Arrange
         var settings = new ApiInfoSettings
         {
-            Name = "Test API",
-            Version = "1.0",
-            Status = "Available",
-            Features = new List<string> { "feature1" }
+            Name = ValidName,
+            Version = ValidVersion,
+            Status = ValidStatus,
+            Features = SingleFeatureList
         };
 
         // Act
@@ -36,8 +42,8 @@ public class ApiInfoSettingsTests
         var settings = new ApiInfoSettings
         {
             Name = name!,
-            Version = "1.0",
-            Status = "Available"
+            Version = ValidVersion,
+            Status = ValidStatus
         };
 
         // Act
@@ -57,9 +63,9 @@ public class ApiInfoSettingsTests
         // Arrange
         var settings = new ApiInfoSettings
         {
-            Name = "Test API",
+            Name = ValidName,
             Version = version!,
-            Status = "Available"
+            Status = ValidStatus
         };
 
         // Act
@@ -79,8 +85,8 @@ public class ApiInfoSettingsTests
         // Arrange
         var settings = new ApiInfoSettings
         {
-            Name = "Test API",
-            Version = "1.0",
+            Name = ValidName,
+            Version = ValidVersion,
             Status = status!
         };
 
@@ -98,9 +104,9 @@ public class ApiInfoSettingsTests
         // Arrange
         var settings = new ApiInfoSettings
         {
-            Name = "Test API",
-            Version = "1.0",
-            Status = "Available",
+            Name = ValidName,
+            Version = ValidVersion,
+            Status = ValidStatus,
             Features = null!
         };
 
@@ -118,10 +124,10 @@ public class ApiInfoSettingsTests
         // Arrange
         var settings = new ApiInfoSettings
         {
-            Name = "Test API",
-            Version = "1.0",
-            Status = "Available",
-            Features = new List<string>()
+            Name = ValidName,
+            Version = ValidVersion,
+            Status = ValidStatus,
+            Features = EmptyFeatureList
         };
 
         // Act

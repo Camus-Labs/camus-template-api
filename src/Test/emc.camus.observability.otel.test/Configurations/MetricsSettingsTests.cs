@@ -5,14 +5,24 @@ namespace emc.camus.observability.otel.test.Configurations;
 
 public class MetricsSettingsTests
 {
+    private const string InvalidUri = "not-a-valid-uri";
+    private const string MetricName = "http.server.duration";
+    private const string MeterName = ".infrastructure";
+    private static readonly string[] ValidDisabledMetrics = [MetricName, "http.server.request.duration"];
+    private static readonly string[] ValidDisabledMeters = [MeterName, ".business"];
+    private static readonly string[] DisabledMetricsWithNull = [MetricName, null!];
+    private static readonly string[] DisabledMetricsWithEmpty = [MetricName, ""];
+    private static readonly string[] DisabledMetricsWithWhitespace = [MetricName, "   "];
+    private static readonly string[] DisabledMetersWithNull = [MeterName, null!];
+    private static readonly string[] DisabledMetersWithEmpty = [MeterName, ""];
+    private static readonly string[] DisabledMetersWithWhitespace = [MeterName, "   "];
+
     // --- Validate ---
 
-    [Fact]
-    public void Validate_DefaultSettings_DoesNotThrow()
+    [Theory]
+    [MemberData(nameof(ValidSettingsData))]
+    internal void Validate_ValidSettings_DoesNotThrow(MetricsSettings settings)
     {
-        // Arrange
-        var settings = new MetricsSettings();
-
         // Act
         var act = () => settings.Validate();
 
@@ -20,17 +30,12 @@ public class MetricsSettingsTests
         act.Should().NotThrow();
     }
 
-    [Fact]
-    public void Validate_DefinedExporter_DoesNotThrow()
+    public static IEnumerable<object[]> ValidSettingsData()
     {
-        // Arrange
-        var settings = new MetricsSettings { Exporter = MetricsExporter.Otlp };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
+        yield return [new MetricsSettings()];
+        yield return [new MetricsSettings { Exporter = MetricsExporter.Otlp }];
+        yield return [new MetricsSettings { Exporter = MetricsExporter.Otlp, OtlpEndpoint = "http://collector:4317" }];
+        yield return [new MetricsSettings { Exporter = MetricsExporter.Console, OtlpEndpoint = InvalidUri }];
     }
 
     [Fact]
@@ -45,23 +50,6 @@ public class MetricsSettingsTests
         // Assert
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*Invalid*Exporter*");
-    }
-
-    [Fact]
-    public void Validate_OtlpExporter_ValidEndpoint_DoesNotThrow()
-    {
-        // Arrange
-        var settings = new MetricsSettings
-        {
-            Exporter = MetricsExporter.Otlp,
-            OtlpEndpoint = "http://collector:4317"
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
     }
 
     [Theory]
@@ -92,7 +80,7 @@ public class MetricsSettingsTests
         var settings = new MetricsSettings
         {
             Exporter = MetricsExporter.Otlp,
-            OtlpEndpoint = "not-a-valid-uri"
+            OtlpEndpoint = InvalidUri
         };
 
         // Act
@@ -103,61 +91,33 @@ public class MetricsSettingsTests
             .WithMessage("*OtlpEndpoint*valid*URI*");
     }
 
-    [Fact]
-    public void Validate_NonOtlpExporter_InvalidEndpoint_DoesNotThrow()
+    [Theory]
+    [MemberData(nameof(NullCollectionData))]
+    internal void Validate_NullCollection_ThrowsInvalidOperationException(
+        MetricsSettings settings, string expectedPattern)
     {
-        // Arrange
-        var settings = new MetricsSettings
-        {
-            Exporter = MetricsExporter.Console,
-            OtlpEndpoint = "not-a-valid-uri"
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void Validate_NullDisabledMetrics_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var settings = new MetricsSettings { DisabledMetrics = null! };
-
         // Act
         var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*DisabledMetrics*null*");
+            .WithMessage(expectedPattern);
     }
 
-    [Fact]
-    public void Validate_NullDisabledMeters_ThrowsInvalidOperationException()
+    public static IEnumerable<object[]> NullCollectionData()
     {
-        // Arrange
-        var settings = new MetricsSettings { DisabledMeters = null! };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*DisabledMeters*null*");
+        yield return [new MetricsSettings { DisabledMetrics = null! }, "*DisabledMetrics*null*"];
+        yield return [new MetricsSettings { DisabledMeters = null! }, "*DisabledMeters*null*"];
     }
 
     [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Validate_DisabledMetricsWithInvalidEntry_ThrowsInvalidOperationException(string? entry)
+    [MemberData(nameof(InvalidDisabledMetricsData))]
+    internal void Validate_DisabledMetricsWithInvalidEntry_ThrowsInvalidOperationException(string[] disabledMetrics)
     {
         // Arrange
         var settings = new MetricsSettings
         {
-            DisabledMetrics = new[] { "http.server.duration", entry! }
+            DisabledMetrics = disabledMetrics
         };
 
         // Act
@@ -168,16 +128,21 @@ public class MetricsSettingsTests
             .WithMessage("*DisabledMetrics*null*empty*");
     }
 
+    public static IEnumerable<object[]> InvalidDisabledMetricsData()
+    {
+        yield return [DisabledMetricsWithNull];
+        yield return [DisabledMetricsWithEmpty];
+        yield return [DisabledMetricsWithWhitespace];
+    }
+
     [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Validate_DisabledMetersWithInvalidEntry_ThrowsInvalidOperationException(string? entry)
+    [MemberData(nameof(InvalidDisabledMetersData))]
+    internal void Validate_DisabledMetersWithInvalidEntry_ThrowsInvalidOperationException(string[] disabledMeters)
     {
         // Arrange
         var settings = new MetricsSettings
         {
-            DisabledMeters = new[] { ".infrastructure", entry! }
+            DisabledMeters = disabledMeters
         };
 
         // Act
@@ -188,15 +153,17 @@ public class MetricsSettingsTests
             .WithMessage("*DisabledMeters*null*empty*");
     }
 
-    [Fact]
-    public void Validate_PopulatedDisabledMetrics_DoesNotThrow()
+    public static IEnumerable<object[]> InvalidDisabledMetersData()
     {
-        // Arrange
-        var settings = new MetricsSettings
-        {
-            DisabledMetrics = new[] { "http.server.duration", "http.server.request.duration" }
-        };
+        yield return [DisabledMetersWithNull];
+        yield return [DisabledMetersWithEmpty];
+        yield return [DisabledMetersWithWhitespace];
+    }
 
+    [Theory]
+    [MemberData(nameof(PopulatedCollectionData))]
+    internal void Validate_PopulatedCollection_DoesNotThrow(MetricsSettings settings)
+    {
         // Act
         var act = () => settings.Validate();
 
@@ -204,19 +171,9 @@ public class MetricsSettingsTests
         act.Should().NotThrow();
     }
 
-    [Fact]
-    public void Validate_PopulatedDisabledMeters_DoesNotThrow()
+    public static IEnumerable<object[]> PopulatedCollectionData()
     {
-        // Arrange
-        var settings = new MetricsSettings
-        {
-            DisabledMeters = new[] { ".infrastructure", ".business" }
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
+        yield return [new MetricsSettings { DisabledMetrics = ValidDisabledMetrics }];
+        yield return [new MetricsSettings { DisabledMeters = ValidDisabledMeters }];
     }
 }

@@ -10,8 +10,15 @@ namespace emc.camus.observability.otel.test.Middleware;
 
 public class TraceIdHeaderMiddlewareTests : IDisposable
 {
-    private readonly Activity? _priorActivity = Activity.Current;
+    private const string FallbackTraceId = "fallback-trace-id";
+    private const string ExistingTraceId = "existing-trace-id";
+    private readonly Activity? _priorActivity;
     private static readonly RequestDelegate NoOpNext = _ => Task.CompletedTask;
+
+    public TraceIdHeaderMiddlewareTests()
+    {
+        _priorActivity = Activity.Current;
+    }
 
     public void Dispose()
     {
@@ -82,7 +89,7 @@ public class TraceIdHeaderMiddlewareTests : IDisposable
         Activity.Current = null;
         var middleware = new TraceIdHeaderMiddleware(NoOpNext);
         var (context, feature) = CreateTestContext();
-        context.TraceIdentifier = "fallback-trace-id";
+        context.TraceIdentifier = FallbackTraceId;
 
         // Act
         await middleware.InvokeAsync(context);
@@ -91,7 +98,7 @@ public class TraceIdHeaderMiddlewareTests : IDisposable
         // Assert
         context.Response.Headers.Should().ContainKey(Headers.TraceId);
         context.Response.Headers[Headers.TraceId].ToString()
-            .Should().Be("fallback-trace-id");
+            .Should().Be(FallbackTraceId);
     }
 
     // --- InvokeAsync: does not overwrite existing header ---
@@ -104,7 +111,7 @@ public class TraceIdHeaderMiddlewareTests : IDisposable
         var middleware = new TraceIdHeaderMiddleware(NoOpNext);
         var (context, feature) = CreateTestContext();
         context.TraceIdentifier = "new-trace-id";
-        context.Response.Headers[Headers.TraceId] = "existing-trace-id";
+        context.Response.Headers[Headers.TraceId] = ExistingTraceId;
 
         // Act
         await middleware.InvokeAsync(context);
@@ -112,7 +119,7 @@ public class TraceIdHeaderMiddlewareTests : IDisposable
 
         // Assert
         context.Response.Headers[Headers.TraceId].ToString()
-            .Should().Be("existing-trace-id");
+            .Should().Be(ExistingTraceId);
     }
 
 }

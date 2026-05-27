@@ -3,33 +3,24 @@ using emc.camus.api.Configurations;
 
 namespace emc.camus.api.test.Configurations;
 
-public class ErrorCodeMappingRuleTests
+public class ErrorCodeMappingRuleSettingsTests
 {
     // --- Validate: Valid Rules ---
 
-    public static IEnumerable<object[]> ValidRules()
+    public static readonly TheoryData<ErrorCodeMappingRuleSettings> ValidRules = new()
     {
-        yield return new object[]
-        {
-            new ErrorCodeMappingRule { Type = "ArgumentException", ErrorCode = "bad_request" }
-        };
-        yield return new object[]
-        {
-            new ErrorCodeMappingRule { Pattern = "not.?found", ErrorCode = "not_found" }
-        };
-        yield return new object[]
-        {
-            new ErrorCodeMappingRule { Type = "UnauthorizedAccessException", Pattern = "jwt.*expired", ErrorCode = "jwt_token_expired" }
-        };
-    }
+        new ErrorCodeMappingRuleSettings { Type = "ArgumentException", ErrorCode = "bad_request" },
+        new ErrorCodeMappingRuleSettings { Pattern = "not.?found", ErrorCode = "not_found" },
+        new ErrorCodeMappingRuleSettings { Type = "UnauthorizedAccessException", Pattern = "jwt.*expired", ErrorCode = "jwt_token_expired" }
+    };
 
     [Theory]
     [MemberData(nameof(ValidRules))]
-    public void Validate_ValidRule_Succeeds(ErrorCodeMappingRule rule)
+    public void Validate_ValidRule_Succeeds(ErrorCodeMappingRuleSettings rule)
     {
         // Arrange
         // Act
-        var act = () => rule.Validate(0);
+        var act = () => rule.Validate();
 
         // Assert
         act.Should().NotThrow();
@@ -44,14 +35,14 @@ public class ErrorCodeMappingRuleTests
     public void Validate_EmptyErrorCode_ThrowsInvalidOperationException(string? errorCode)
     {
         // Arrange
-        var rule = new ErrorCodeMappingRule
+        var rule = new ErrorCodeMappingRuleSettings
         {
             Type = "ArgumentException",
             ErrorCode = errorCode!
         };
 
         // Act
-        var act = () => rule.Validate(0);
+        var act = () => rule.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -62,14 +53,14 @@ public class ErrorCodeMappingRuleTests
     public void Validate_ErrorCodeExceedsMaxLength_ThrowsInvalidOperationException()
     {
         // Arrange
-        var rule = new ErrorCodeMappingRule
+        var rule = new ErrorCodeMappingRuleSettings
         {
             Type = "ArgumentException",
             ErrorCode = new string('a', 51)
         };
 
         // Act
-        var act = () => rule.Validate(0);
+        var act = () => rule.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -82,13 +73,13 @@ public class ErrorCodeMappingRuleTests
     public void Validate_NeitherTypeNorPattern_ThrowsInvalidOperationException()
     {
         // Arrange
-        var rule = new ErrorCodeMappingRule
+        var rule = new ErrorCodeMappingRuleSettings
         {
             ErrorCode = "some_error"
         };
 
         // Act
-        var act = () => rule.Validate(0);
+        var act = () => rule.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -101,14 +92,14 @@ public class ErrorCodeMappingRuleTests
     public void Validate_TypeExceedsMaxLength_ThrowsInvalidOperationException()
     {
         // Arrange
-        var rule = new ErrorCodeMappingRule
+        var rule = new ErrorCodeMappingRuleSettings
         {
             Type = new string('a', 101),
             ErrorCode = "some_error"
         };
 
         // Act
-        var act = () => rule.Validate(0);
+        var act = () => rule.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -121,36 +112,18 @@ public class ErrorCodeMappingRuleTests
     public void Validate_PatternExceedsMaxLength_ThrowsInvalidOperationException()
     {
         // Arrange
-        var rule = new ErrorCodeMappingRule
+        var rule = new ErrorCodeMappingRuleSettings
         {
             Pattern = new string('a', 501),
             ErrorCode = "some_error"
         };
 
         // Act
-        var act = () => rule.Validate(0);
+        var act = () => rule.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*Pattern*must not exceed*500*");
     }
 
-    // --- Validate: Index Validation ---
-
-    [Fact]
-    public void Validate_NegativeIndex_ThrowsArgumentOutOfRangeException()
-    {
-        // Arrange
-        var rule = new ErrorCodeMappingRule
-        {
-            Type = "ArgumentException",
-            ErrorCode = "bad_request"
-        };
-
-        // Act
-        var act = () => rule.Validate(-1);
-
-        // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
-    }
 }

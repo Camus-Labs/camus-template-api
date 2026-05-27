@@ -48,7 +48,8 @@ internal interface IUserDataAccess
     /// </summary>
     /// <param name="connection">The database connection to use.</param>
     /// <param name="userId">The user identifier to update.</param>
+    /// <param name="lastLogin">The UTC timestamp to set as the last login time.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The number of rows affected.</returns>
-    Task<int> UpdateLastLoginAsync(IDbConnection connection, Guid userId, CancellationToken ct = default);
+    Task<int> UpdateLastLoginAsync(IDbConnection connection, Guid userId, DateTime lastLogin, CancellationToken ct = default);
 }

@@ -17,6 +17,7 @@ internal sealed class UserRepository : IUserRepository
     private readonly UnitOfWork _unitOfWork;
     private readonly InitializationState _initState;
     private readonly IUserDataAccess _dataAccess;
+    private readonly TimeProvider _timeProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserRepository"/> class.
@@ -24,18 +25,22 @@ internal sealed class UserRepository : IUserRepository
     /// <param name="unitOfWork">Unit of work for accessing the shared database connection.</param>
     /// <param name="initState">Container-scoped initialization state shared across scoped instances.</param>
     /// <param name="dataAccess">Data access layer for raw SQL execution.</param>
+    /// <param name="timeProvider">Time provider for clock access.</param>
     public UserRepository(
         UnitOfWork unitOfWork,
         InitializationState initState,
-        IUserDataAccess dataAccess)
+        IUserDataAccess dataAccess,
+        TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(unitOfWork);
         ArgumentNullException.ThrowIfNull(initState);
         ArgumentNullException.ThrowIfNull(dataAccess);
+        ArgumentNullException.ThrowIfNull(timeProvider);
 
         _unitOfWork = unitOfWork;
         _initState = initState;
         _dataAccess = dataAccess;
+        _timeProvider = timeProvider;
     }
 
     /// <summary>
@@ -159,7 +164,7 @@ internal sealed class UserRepository : IUserRepository
         var connection = await _unitOfWork.GetConnectionAsync(ct);
 
         var rowsAffected = await ExecuteAsync(
-            () => _dataAccess.UpdateLastLoginAsync(connection, userId, ct),
+            () => _dataAccess.UpdateLastLoginAsync(connection, userId, _timeProvider.GetUtcNow().UtcDateTime, ct),
             nameof(_dataAccess.UpdateLastLoginAsync));
 
         if (rowsAffected == 0)

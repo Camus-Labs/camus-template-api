@@ -1,12 +1,12 @@
 using System.Diagnostics.Metrics;
 using FluentAssertions;
 using emc.camus.ratelimiting.inmemory.Metrics;
+using emc.camus.ratelimiting.inmemory.test.Helpers;
 
 namespace emc.camus.ratelimiting.inmemory.test.Metrics;
 
 public class RateLimitMetricsTests : IDisposable
 {
-    private const string ServiceName = "test-service";
     private const string ValidPolicyName = "default";
     private const string ValidMethod = "GET";
 
@@ -14,7 +14,7 @@ public class RateLimitMetricsTests : IDisposable
 
     public RateLimitMetricsTests()
     {
-        _sut = new RateLimitMetrics(ServiceName);
+        _sut = new RateLimitMetrics("test-service");
     }
 
     public void Dispose()
@@ -69,7 +69,7 @@ public class RateLimitMetricsTests : IDisposable
     public void RecordRejection_ValidParameters_RecordsMetric()
     {
         // Arrange
-        var (listener, getValue) = CreateMeterListener("rate_limit_rejections_total");
+        var (listener, getValue) = MeterCaptureBuilder.CreateListener("rate_limit_rejections_total");
         using var _ = listener;
 
         // Act
@@ -79,22 +79,4 @@ public class RateLimitMetricsTests : IDisposable
         getValue().Should().Be(1);
     }
 
-    private static (MeterListener Listener, Func<long> GetValue) CreateMeterListener(string instrumentName)
-    {
-        long recordedValue = 0;
-        var listener = new MeterListener();
-        listener.InstrumentPublished = (instrument, meterListener) =>
-        {
-            if (instrument.Name == instrumentName)
-            {
-                meterListener.EnableMeasurementEvents(instrument);
-            }
-        };
-        listener.SetMeasurementEventCallback<long>((_, measurement, _, _) =>
-        {
-            recordedValue = measurement;
-        });
-        listener.Start();
-        return (listener, () => recordedValue);
-    }
 }

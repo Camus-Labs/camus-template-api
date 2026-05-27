@@ -17,6 +17,9 @@ namespace emc.camus.api.integration.test.Auth;
 [Collection(PostgreSqlTestGroup.Name)]
 public class TokenRevocationCachePostgreSqlTests : IAsyncLifetime
 {
+    private const string InfoJwtEndpoint = "/api/v2/apiinfo/info-jwt";
+    private static readonly string[] ReadPermissions = ["api.read"];
+
     private readonly ApiPostgreSqlFactory _factory;
 
     public TokenRevocationCachePostgreSqlTests(ApiPostgreSqlFactory factory, ITestOutputHelper outputHelper)
@@ -45,7 +48,7 @@ public class TokenRevocationCachePostgreSqlTests : IAsyncLifetime
         tokenClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", generatedToken);
 
-        var preRevokeResponse = await tokenClient.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
+        var preRevokeResponse = await tokenClient.GetAsync(InfoJwtEndpoint, TestContext.Current.CancellationToken);
         await preRevokeResponse.EnsureSetupSuccessAsync("token must be accepted before revocation");
 
         // Revoke directly in the database — the cache does NOT know about this yet
@@ -63,7 +66,7 @@ public class TokenRevocationCachePostgreSqlTests : IAsyncLifetime
 
         // Assert — the token is now rejected by the JWT validation pipeline
         synced.Should().BeTrue("background sync service should load revoked JTIs from the database within the sync interval");
-        var response = await tokenClient.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
+        var response = await tokenClient.GetAsync(InfoJwtEndpoint, TestContext.Current.CancellationToken);
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
         await response.Should().HaveErrorCode("jwt_token_revoked");
     }
@@ -88,7 +91,7 @@ public class TokenRevocationCachePostgreSqlTests : IAsyncLifetime
         {
             UsernameSuffix = usernameSuffix,
             ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
-            Permissions = new[] { "api.read" },
+            Permissions = ReadPermissions,
         };
 
         var response = await client.PostAsJsonWithIdempotencyKeyAsync("/api/v2/auth/generate-token", request, TestContext.Current.CancellationToken);

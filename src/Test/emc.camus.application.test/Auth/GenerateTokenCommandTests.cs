@@ -7,7 +7,12 @@ namespace emc.camus.application.test.Auth;
 public class GenerateTokenCommandTests
 {
     private const string ValidSuffix = "token1";
-    private static readonly DateTime ValidExpiration = new(2099, 6, 15, 12, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTimeOffset ReferenceTime = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime ValidExpiration = ReferenceTime.UtcDateTime.AddMonths(6);
+    private static readonly IReadOnlyList<string> ValidPermissions = [Permissions.ApiRead];
+    private static readonly IReadOnlyList<string> EmptyPermissions = [];
+    private static readonly List<string> InvalidPermissionOnly = ["invalid.permission"];
+    private static readonly List<string> MixedWithInvalidPermission = [Permissions.ApiRead, "nonexistent.perm"];
 
     // --- Constructor ---
 
@@ -17,7 +22,7 @@ public class GenerateTokenCommandTests
         // Arrange
         var suffix = ValidSuffix;
         var expiresOn = ValidExpiration;
-        var permissions = new List<string> { Permissions.ApiRead };
+        var permissions = ValidPermissions.ToList();
 
         // Act
         var command = new GenerateTokenCommand(suffix, expiresOn, permissions);
@@ -25,7 +30,7 @@ public class GenerateTokenCommandTests
         // Assert
         command.UsernameSuffix.Should().Be(suffix);
         command.ExpiresOn.Should().Be(expiresOn);
-        command.Permissions.Should().BeEquivalentTo(permissions);
+        command.Permissions.Should().BeEquivalentTo(ValidPermissions);
     }
 
     [Theory]
@@ -36,7 +41,7 @@ public class GenerateTokenCommandTests
     {
         // Arrange
         // Act
-        var act = () => new GenerateTokenCommand(suffix!, ValidExpiration, [Permissions.ApiRead]);
+        var act = () => new GenerateTokenCommand(suffix!, ValidExpiration, ValidPermissions.ToList());
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -50,7 +55,7 @@ public class GenerateTokenCommandTests
         var longSuffix = new string('a', 21);
 
         // Act
-        var act = () => new GenerateTokenCommand(longSuffix, ValidExpiration, [Permissions.ApiRead]);
+        var act = () => new GenerateTokenCommand(longSuffix, ValidExpiration, ValidPermissions.ToList());
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -64,7 +69,7 @@ public class GenerateTokenCommandTests
         var defaultDate = default(DateTime);
 
         // Act
-        var act = () => new GenerateTokenCommand(ValidSuffix, defaultDate, [Permissions.ApiRead]);
+        var act = () => new GenerateTokenCommand(ValidSuffix, defaultDate, ValidPermissions.ToList());
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -86,11 +91,8 @@ public class GenerateTokenCommandTests
     [Fact]
     public void Constructor_EmptyPermissions_ThrowsArgumentOutOfRangeException()
     {
-        // Arrange
-        var emptyPermissions = new List<string>();
-
         // Act
-        var act = () => new GenerateTokenCommand(ValidSuffix, ValidExpiration, emptyPermissions);
+        var act = () => new GenerateTokenCommand(ValidSuffix, ValidExpiration, EmptyPermissions.ToList());
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -112,9 +114,9 @@ public class GenerateTokenCommandTests
             .And.ParamName.Should().Be("Permissions");
     }
 
-    public static TheoryData<List<string>, string> InvalidPermissionsTestCases => new()
+    public static readonly TheoryData<List<string>, string> InvalidPermissionsTestCases = new()
     {
-        { new List<string> { "invalid.permission" }, "invalid.permission" },
-        { new List<string> { Permissions.ApiRead, "nonexistent.perm" }, "nonexistent.perm" }
+        { InvalidPermissionOnly, "invalid.permission" },
+        { MixedWithInvalidPermission, "nonexistent.perm" }
     };
 }

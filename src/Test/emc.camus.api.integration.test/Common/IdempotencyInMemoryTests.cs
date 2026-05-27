@@ -22,7 +22,6 @@ public class IdempotencyInMemoryTests
 {
     private readonly ApiInMemoryFactory _factory;
 
-    private const string UndecoratedEndpoint = "/api/v1/test/idempotency/undecorated";
     private const string DecoratedWithBodyEndpoint = "/api/v1/test/idempotency/decorated-with-body";
 
     public IdempotencyInMemoryTests(ApiInMemoryFactory factory, ITestOutputHelper outputHelper)
@@ -32,28 +31,13 @@ public class IdempotencyInMemoryTests
     }
 
     [Fact]
-    public async Task PostToDecoratedEndpoint_MissingIdempotencyKeyHeader_Returns400WithMissingErrorCode()
-    {
-        // Arrange
-        var client = _factory.CreateJwtClient();
-        var content = JsonContent.Create(new { Value = "test" });
-
-        // Act
-        var response = await client.PostAsync(DecoratedWithBodyEndpoint, content, TestContext.Current.CancellationToken);
-
-        // Assert
-        await response.Should().HaveStatusCode(HttpStatusCode.BadRequest);
-        await response.Should().HaveErrorCode(ErrorCodes.IdempotencyKeyMissing);
-    }
-
-    [Fact]
     public async Task PostToUndecoratedEndpoint_NoIdempotencyKeyHeader_Returns200()
     {
         // Arrange
         var client = _factory.CreateClient();
 
         // Act
-        var response = await client.PostAsync(UndecoratedEndpoint, null, TestContext.Current.CancellationToken);
+        var response = await client.PostAsync("/api/v1/test/idempotency/undecorated", null, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);

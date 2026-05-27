@@ -117,17 +117,18 @@ internal sealed class UserDataAccess : IUserDataAccess
     /// </summary>
     /// <param name="connection">The database connection to use.</param>
     /// <param name="userId">The user identifier to update.</param>
+    /// <param name="lastLogin">The UTC timestamp to set as the last login time.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The number of rows affected.</returns>
     public async Task<int> UpdateLastLoginAsync(
-        IDbConnection connection, Guid userId, CancellationToken ct = default)
+        IDbConnection connection, Guid userId, DateTime lastLogin, CancellationToken ct = default)
     {
         const string updateSql = @"
             UPDATE camus.users
-            SET last_login = NOW()
+            SET last_login = @LastLogin
             WHERE id = @UserId";
 
         return await connection.ExecuteAsync(
-            new CommandDefinition(updateSql, new { userId }, cancellationToken: ct));
+            new CommandDefinition(updateSql, new { userId, lastLogin }, cancellationToken: ct));
     }
 }

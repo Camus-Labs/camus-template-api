@@ -12,6 +12,8 @@ namespace emc.camus.api.integration.test.Auth;
 [Collection(InMemoryTestGroup.Name)]
 public class AuthInMemoryEndpointTests
 {
+    private const string AuthenticateEndpoint = "/api/v2/auth/authenticate";
+
     private readonly ApiInMemoryFactory _factory;
 
     public AuthInMemoryEndpointTests(ApiInMemoryFactory factory, ITestOutputHelper outputHelper)
@@ -29,7 +31,7 @@ public class AuthInMemoryEndpointTests
         var before = DateTime.UtcNow;
 
         // Act
-        var response = await client.PostAsJsonWithIdempotencyKeyAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonWithIdempotencyKeyAsync(AuthenticateEndpoint, request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -49,7 +51,7 @@ public class AuthInMemoryEndpointTests
         var request = new { Username = "admin", Password = "wrong-password" };
 
         // Act
-        var response = await client.PostAsJsonWithIdempotencyKeyAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonWithIdempotencyKeyAsync(AuthenticateEndpoint, request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
@@ -64,7 +66,7 @@ public class AuthInMemoryEndpointTests
         var request = new { Username = "admin", Password = "admin-password" };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonAsync(AuthenticateEndpoint, request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);

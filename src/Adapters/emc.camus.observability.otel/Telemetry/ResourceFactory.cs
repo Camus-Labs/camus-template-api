@@ -8,7 +8,7 @@ namespace emc.camus.observability.otel.Telemetry
     /// <summary>
     /// Factory for creating OpenTelemetry resource builders with standard attributes.
     /// </summary>
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "ResourceBuilder return value is an opaque OTel SDK type not inspectable without a full pipeline")]
     internal static class ResourceFactory
     {
         /// <summary>

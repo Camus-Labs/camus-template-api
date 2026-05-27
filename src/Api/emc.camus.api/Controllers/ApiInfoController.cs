@@ -43,11 +43,14 @@ namespace emc.camus.api.Controllers
         /// <summary>
         /// Initializes a new instance of the <see cref="ApiInfoController"/> class.
         /// </summary>
+        /// <param name="timeProvider">Time provider for UTC clock access.</param>
         /// <param name="activitySource">Activity source for OpenTelemetry tracing.</param>
         /// <param name="apiInfoService">Application service for retrieving API information.</param>
         public ApiInfoController(
+            TimeProvider timeProvider,
             IActivitySourceWrapper activitySource,
             IApiInfoService apiInfoService)
+            : base(timeProvider)
         {
             ArgumentNullException.ThrowIfNull(activitySource);
             ArgumentNullException.ThrowIfNull(apiInfoService);
