@@ -59,9 +59,8 @@ Each adapter README contains configuration, integration, and troubleshooting det
 ## Dependency Flow
 
 ```text
-API → Application → Domain
-     ↓
-  Adapters (PostgreSQL, Observability)
+API       → Application → Domain
+Adapters  → Application
 ```
 
 **Rule:** Dependencies point inward. Domain has zero external dependencies. Adapters depend on Application

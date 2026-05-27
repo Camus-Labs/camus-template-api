@@ -107,11 +107,11 @@ Detailed usage guides for infrastructure adapters:
 
 - **[US-01: Sort Generated Tokens](stories/done/tokens-sorting/US-01-sort-generated-tokens.md)** -
   Token listing sort support
-- **[US-01: Idempotency Key Enforcement](stories/todo/idempotency-post-endpoints/US-01-idempotency-key-enforcement.md)**
+- **[US-01: Idempotency Key Enforcement](stories/done/idempotency-post-endpoints/US-01-idempotency-key-enforcement.md)**
   \- Require idempotency keys on POST endpoints
-- **[US-02: Idempotent Response Caching](stories/todo/idempotency-post-endpoints/US-02-idempotent-response-caching.md)**
+- **[US-02: Idempotent Response Caching](stories/done/idempotency-post-endpoints/US-02-idempotent-response-caching.md)**
   \- Cache and replay responses for duplicate requests
-- **[US-03: Apply Idempotency to POST Endpoints](stories/todo/idempotency-post-endpoints/US-03-apply-idempotency-to-post-endpoints.md)**
+- **[US-03: Apply Idempotency to POST Endpoints](stories/done/idempotency-post-endpoints/US-03-apply-idempotency-to-post-endpoints.md)**
   \- Apply idempotency key enforcement to existing POST endpoints
 
 ---
@@ -150,7 +150,7 @@ Infrastructure component setup guides:
 - [← Main README](../README.md) - Project overview and quick start
 - [Changelog](../CHANGELOG.md) - Version history and release notes
 - [Security Policy](../SECURITY.md) - Vulnerability reporting
-- [API Reference](http://localhost:5000/swagger) - Interactive Swagger UI (when running)
+- [API Reference](https://localhost:7220/swagger) - Interactive Swagger UI (when running locally)
 
 ---
 

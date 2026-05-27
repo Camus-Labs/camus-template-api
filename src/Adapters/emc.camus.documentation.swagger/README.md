@@ -2,7 +2,8 @@
 
 Swagger/OpenAPI documentation adapter for Camus applications.
 
-> Parent Documentation: [Main README](../../../README.md) | [Architecture Guide](../../../docs/architecture.md)
+> Parent Documentation: [Main README](../../../README.md) | [Documentation Index](../../../docs/README.md) |
+[Architecture Guide](../../../docs/architecture.md)
 
 ---
 
@@ -71,25 +72,17 @@ In `appsettings.json`:
 
 Once running, navigate to:
 
-- **Swagger UI**: `http://localhost:5000/swagger`
-- **OpenAPI JSON**: `http://localhost:5000/swagger/v1/swagger.json`
+- **Swagger UI**: `/swagger`
+- **OpenAPI JSON**: `/swagger/{version}/swagger.json`
+
+See the [Main README](../../../README.md) for environment-specific host and port details.
 
 ---
 
 ## 📝 Documenting Your API
 
-### XML Documentation Comments
-
 XML documentation generation is enabled centrally in `src/Directory.Build.props` — no per-project configuration is
-needed.
-
-Document endpoints using standard XML summary, param, returns, and response tags, along with `[ProducesResponseType]`
-attributes. See controller source files in `src/Api/emc.camus.api/Controllers/` for examples.
-
-### Swagger Annotations
-
-Use `[ApiVersion]`, `[Produces]`, and `[ProducesResponseType]` attributes for enhanced documentation. See controller
-source files for annotation patterns.
+needed. See controller source files in `src/Api/emc.camus.api/Controllers/` for annotation patterns.
 
 ---
 
@@ -98,8 +91,8 @@ source files for annotation patterns.
 ### JWT Bearer Token
 
 1. Click **"Authorize"** button in Swagger UI
-2. Get token from `/api/v2/auth/authenticate` endpoint
-3. Enter: `Bearer <your-token>`
+2. Obtain a token following the [Authentication Guide](../../../docs/authentication.md)
+3. Enter the token value in the dialog
 4. Click **"Authorize"**
 5. Test protected endpoints
 
@@ -132,13 +125,13 @@ See controller source files in `src/Api/emc.camus.api/Controllers/` for versioni
 
 ### Custom Swagger Options
 
-Customize the OpenAPI document metadata (title, description, contact, license) and add additional security definitions
-by configuring `SwaggerGenOptions` in `SwaggerSetupExtensions.cs`.
+Customize the OpenAPI document metadata (title, version, and description) and configure security definitions (Bearer,
+ApiKey) via `SwaggerSettings` in `appsettings.json`. See `SwaggerSetupExtensions.cs` for the full registration logic.
 
 ### Request/Response Examples
 
-Implement `IExamplesProvider<T>` for request/response example generation and register with `options.ExampleFilters()`.
-See `SwaggerSetupExtensions.cs` for the existing configuration.
+The adapter discovers example providers from the API assembly at startup. See `SwaggerSetupExtensions.cs` for the
+existing configuration.
 
 ---
 
@@ -173,11 +166,8 @@ See `SwaggerSetupExtensions.cs` for middleware configuration options.
 
 ### Configuration Validation
 
-Configuration is validated at startup with fail-fast behavior:
-
-- At least one version required when `Enabled: true`
-- SecuritySchemes must be "Bearer" or "ApiKey" (case-insensitive)
-- Validation skipped when `Enabled: false`
+Configuration is validated at startup with fail-fast behavior — see `SwaggerSettings.cs` for the full set of
+validation rules.
 
 ---
 
@@ -191,7 +181,7 @@ Configuration is validated at startup with fail-fast behavior:
 
 ---
 
-## 🔗 Integration
+## 🔌 Integration
 
 The adapter registers Swagger services and middleware via two extension methods in `SwaggerSetupExtensions.cs`:
 
@@ -206,14 +196,18 @@ Call these in `Program.cs` after other service registrations and before `app.Run
 
 ## 🔧 Troubleshooting
 
-| Symptom | Likely Cause |
-| ------- | ------------ |
-| Swagger UI not loading | `SwaggerSettings:Enabled` is `false` or environment is not Development |
-| No endpoints visible | Controllers missing `[ApiVersion]` attribute or route template mismatch |
-| XML comments not appearing | XML doc file not generated (check `Directory.Build.props`) |
-| Security "Authorize" button missing | `SecuritySchemes` array is empty |
-| Application fails to start with `InvalidOperationException` | `SecuritySchemes` contains an invalid value (valid: `Bearer`, `ApiKey`) |
-| 404 on `/swagger` | `UseSwaggerDocumentation()` not called or called after `app.Run()` |
+| Symptom | Likely Cause | Fix |
+| ------- | ------------ | --- |
+| Swagger UI not loading | `Enabled` is `false` or environment is not Development | Set `SwaggerSettings:Enabled` to `true` and ensure the app runs in the Development environment |
+| Empty OpenAPI document (no endpoints) | No `Versions` entries configured or controller routes do not match the version prefix | Add at least one entry to `SwaggerSettings:Versions` and verify controllers use matching `[ApiVersion]` attributes |
+| "Authorize" button missing | `SecuritySchemes` array is empty or contains invalid scheme names | Add `"Bearer"` and/or `"ApiKey"` to `SwaggerSettings:SecuritySchemes` |
+| Startup crash with `InvalidOperationException` | Configuration validation failed | Check the exception message — ensure all required fields (`Version`, `Title`, `Description`) are non-empty and scheme names are valid |
+| Swagger UI not loading | `SwaggerSettings:Enabled` is `false` or environment is not Development | Set `Enabled: true` and run with `ASPNETCORE_ENVIRONMENT=Development` |
+| No endpoints visible | Controllers missing `[ApiVersion]` attribute or route template mismatch | Add `[ApiVersion]` and verify route templates |
+| XML comments not appearing | XML doc file not generated (check `Directory.Build.props`) | Confirm `<GenerateDocumentationFile>` is enabled |
+| Security "Authorize" button missing | `SecuritySchemes` array is empty | Add `"Bearer"` or `"ApiKey"` to `SecuritySchemes` |
+| Application fails to start with `InvalidOperationException` | `SecuritySchemes` contains an invalid value (valid: `Bearer`, `ApiKey`) | Use only `"Bearer"` or `"ApiKey"` (case-insensitive) |
+| 404 on `/swagger` | `UseSwaggerDocumentation()` not called or called after `app.Run()` | Call `app.UseSwaggerDocumentation()` before `app.Run()` |
 
 ---
 

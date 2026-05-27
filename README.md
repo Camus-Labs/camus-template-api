@@ -55,6 +55,7 @@ src/
 │       ├── Common/                        # Shared types
 │       ├── Configurations/                # Settings contracts
 │       ├── Exceptions/                    # Application exceptions
+│       ├── Idempotency/                   # Idempotency contracts
 │       ├── Observability/                 # Tracing interfaces
 │       ├── RateLimiting/                  # Rate limiting contracts
 │       └── Secrets/                       # Secret provider interfaces
@@ -112,12 +113,7 @@ and dependency flow.
 
 ### Run Locally
 
-1. **Clone and navigate**:
-
-   ```text
-   git clone <your-repo>
-   cd camus-template
-   ```
+1. **Clone and navigate**: Clone the repository and navigate into its root directory (`camus-template-api`).
 
 2. **Configure secrets** (Development):
   
@@ -128,7 +124,7 @@ and dependency flow.
    [Debugging Documentation](docs/debugging.md) for alternative run methods.
 
 4. **Explore**:
-   - Swagger UI: <http://localhost:5000/swagger>
+   - Swagger UI: <https://localhost:7220/swagger> (host) or <http://localhost:5001/swagger> (container)
    - Authenticate: `POST /api/v2/auth/authenticate`
 
 ### Run with Docker

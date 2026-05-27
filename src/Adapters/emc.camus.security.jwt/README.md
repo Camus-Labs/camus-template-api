@@ -128,7 +128,7 @@ Optional claims (included only when supplied via `additionalClaims`):
 
 | Claim | Type | Description |
 | ----- | ---- | ----------- |
-| `role` | Role | User roles (e.g., "User", "Admin") |
+| `permission` | Permission | User permissions (e.g., "api.read", "api.write") |
 
 See controller source files in `src/Api/emc.camus.api/Controllers/` for claims access patterns.
 
@@ -182,8 +182,8 @@ require JWT authentication.
 
 **Client Implementation:**
 
-Handle JWT error codes on the client side: refresh the token on `jwt_token_expired`, and clear credentials and
-re-authenticate on `jwt_invalid_signature`. See `ErrorCodes.cs` for the complete list of error codes.
+Handle JWT error codes on the client side: re-authenticate to obtain a new token on `jwt_token_expired`, and clear
+credentials and re-authenticate on `jwt_invalid_signature`. See `ErrorCodes.cs` for the complete list of error codes.
 
 > **📖 Error Codes Reference:** See [ErrorCodes.cs](../../Application/emc.camus.application/Common/ErrorCodes.cs)
 for complete error code definitions.

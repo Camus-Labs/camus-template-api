@@ -102,6 +102,7 @@ namespace emc.camus.observability.otel.Telemetry
             builder.WithTracing(tracerProviderBuilder =>
             {
                 tracerProviderBuilder
+                    .AddSource(serviceName)
                     .UseResourceAttributes(serviceName, serviceVersion, instanceId, environmentName)
                     .AddAspNetCoreInstrumentationWithEnrichment()
                     .AddHttpClientInstrumentation()

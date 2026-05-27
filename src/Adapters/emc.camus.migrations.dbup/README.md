@@ -38,8 +38,8 @@ See `DatabaseMigrationSetupExtensions` in this adapter for the full registration
 
 ### Configuration (`appsettings.json`)
 
-Database connection settings (`DatabaseSettings`) are configured in the [PostgreSQL Persistence Adapter]
-(../emc.camus.persistence.postgresql/README.md). The migration adapter only requires `DBUpSettings`:
+Database connection settings (`DatabaseSettings`) are configured in the
+[PostgreSQL Persistence Adapter](../emc.camus.persistence.postgresql/README.md). The migration adapter only requires `DBUpSettings`:
 
 ```json
 {
@@ -130,7 +130,7 @@ Call `AddDaprSecrets()` and `UseDaprSecrets()` before `UseDatabaseMigrations()` 
 | ------- | ------------ |
 | `AdminSecretName cannot be null or empty.` | `Enabled` is `true` but `AdminSecretName` is blank or missing |
 | `DatabaseSettings is not registered in DI` | `AddPersistence()` was not called before `AddDatabaseMigrations()` |
-| `Database admin username secret '…' not found or empty` | Secret name mismatch or Dapr sidecar not running |
+| `UseDatabaseMigrations failed: admin username secret '…' not found or empty` | Secret name mismatch or Dapr sidecar not running |
 | `Database migration failed` | SQL error in a script — check logs for the failing statement |
 | `Failed to run database migrations` | PostgreSQL unreachable — verify host, port, and firewall |
 

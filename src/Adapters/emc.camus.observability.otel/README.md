@@ -245,7 +245,7 @@ available in error logs.
 | Missing `Trace-Id` response header | `app.UseObservability()` not called in the pipeline |
 | High memory usage from metrics | Too many custom meters or disabled-metrics list not filtering noisy meters |
 | Logs not appearing in Loki | Serilog OTLP sink not configured or Collector not forwarding to Loki |
-| `ActivitySource` spans not visible | Custom activity source name not registered in the tracing builder |
+| `ActivitySource` spans not visible | Verify the service name passed to `AddObservability()` matches the `ActivitySource` name |
 
 ---
 

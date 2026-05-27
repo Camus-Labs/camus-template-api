@@ -40,7 +40,7 @@ in `Extensions/`.
 | Folder / File | Purpose |
 | --- | --- |
 | `Controllers/` | Versioned API controllers inheriting `ApiControllerBase` |
-| `Configurations/` | Strongly-typed settings classes (`CorsSettings`, `ErrorHandlingSettings`, `IdempotencySettings`, `IdempotencyPolicies`) |
+| `Configurations/` | Strongly-typed settings classes (`CorsSettings`, `ErrorCodeMappingRuleSettings`, `ErrorHandlingSettings`, `IdempotencySettings`, `IdempotencyPolicies`, `RequestTimeoutSettings`, `RequestTimeoutPolicies`) |
 | `Extensions/` | One `*SetupExtensions.cs` file per cross-cutting concern for DI registration |
 | `Infrastructure/` | Framework-dependent service implementations (e.g., `HttpUserContext`) |
 | `Mapping/` | Request → Command and Result → Response mappers, versioned per API version |
@@ -84,7 +84,7 @@ in the pipeline to capture exceptions from all downstream components. Refer to t
     "AllowedOrigins": ["https://app.camus.com/"],
     "AllowedMethods": ["GET", "POST"],
     "AllowedHeaders": ["Content-Type", "Authorization", "Api-Key"],
-    "ExposedHeaders": ["Content-Type", "Trace-Id", "Username", "Retry-After", "RateLimit-Limit", "RateLimit-Reset", "RateLimit-Policy", "RateLimit-Window"],
+    "ExposedHeaders": ["Content-Type", "Trace-Id", "Retry-After", "RateLimit-Limit", "RateLimit-Reset", "RateLimit-Policy", "RateLimit-Window"],
     "AllowCredentials": true,
     "PreflightMaxAgeMinutes": 5
   }
@@ -93,7 +93,7 @@ in the pipeline to capture exceptions from all downstream components. Refer to t
 
 ### ErrorHandlingSettings
 
-Additional error-code mapping rules evaluated before the platform defaults:
+Additional fallback error-code mapping rules appended after the built-in platform defaults:
 
 ```json
 {
@@ -141,7 +141,8 @@ are owned by their respective adapter READMEs. See [Documentation Hub](../../../
 
 ### Adapter Registration
 
-Each adapter exposes a pair of extension methods consumed in `Program.cs`:
+Each concern exposes extension methods consumed in `Program.cs` — some expose only a builder
+registration method, some only an app middleware method, and others both:
 
 | Adapter | Builder method | App method |
 | --- | --- | --- |
@@ -158,6 +159,8 @@ Each adapter exposes a pair of extension methods consumed in `Program.cs`:
 | JWT Auth | `AddJwtAuthentication()` | — |
 | API Key Auth | `AddApiKeyAuthentication()` | — |
 | Security Headers | — | `UseSecurityHeaders()` |
+| Transport Security | — | `UseTransportSecurity()` |
+| Health Checks | `AddHealthChecks()` | `UseHealthChecks()` |
 | Request Timeouts | `AddRequestTimeoutPolicies()` | `UseRequestTimeoutPolicies()` |
 | Authorization | `AddAuthorizationPolicies()` | `UseAuthorizationPolicies()` |
 | App Services | `AddApplicationServices()` | `UseApplicationServices()` |
@@ -168,11 +171,12 @@ Each adapter exposes a pair of extension methods consumed in `Program.cs`:
 | Controller | Versions | Auth | Description |
 | --- | --- | --- | --- |
 | `ApiInfoController` | v1, v2 | Anonymous / API Key / JWT | Public and protected API information endpoints |
-| `AuthController` | v2 | API Key, JWT | User authentication, token generation, listing, and revocation |
+| `AuthController` | v1, v2 (actions: v2) | API Key, JWT | User authentication, token generation, listing, and revocation |
 
 ### Response Envelope
 
-All success responses are wrapped in `ApiResponse<T>` containing `Message`, `Data`, and `Timestamp` properties.
+Controller success responses are wrapped in `ApiResponse<T>` containing `Message`, `Data`, and `Timestamp` properties.
+Infrastructure endpoints (`/health`, `/alive`, `/ready`) return their own response format.
 Error responses use RFC 7807 `ProblemDetails`, generated automatically by `ExceptionHandlingMiddleware`.
 
 ### Metrics
@@ -183,9 +187,7 @@ The API layer exports:
 
 **Type:** Counter  
 **Unit:** responses  
-**Description:** Total error responses returned by the application
-
-**Dimensions:**
+**Description:** Total number of error responses returned by the application
 
 - `error_code` — Machine-readable error code (e.g., `jwt_token_expired`, `rate_limit_exceeded`)
 - `http_status` — HTTP status code (401, 429, 500, etc.)
@@ -217,7 +219,7 @@ The API layer exports:
 | --- | --- |
 | `403 Forbidden` on an endpoint that should be public | Missing `[AllowAnonymous]` attribute or CORS policy blocking the origin |
 | `429 Too Many Requests` in development | Rate limit policy too strict — check `InMemoryRateLimitingSettings.Policies` in `appsettings.Development.json` |
-| Swagger UI not loading | `SwaggerSettings.Enabled` is `false` in the active configuration profile |
+| Swagger UI not loading | `SwaggerSettings.Enabled` is `false` or the application is not running in the Development environment |
 | `500` with "secret" or "configuration" in logs | Dapr sidecar not running or secret store misconfigured — see [Dapr Secrets Adapter](../../Adapters/emc.camus.secrets.dapr/README.md) |
 | CORS preflight failures | `AllowedOrigins` does not include the requesting origin — update `CorsSettings` |
 | Missing `Username` / `Trace-Id` headers | Middleware pipeline order incorrect or observability adapter not registered |

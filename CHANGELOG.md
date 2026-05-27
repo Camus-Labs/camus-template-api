@@ -31,7 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Entity-centric and parameter-based write patterns in repository adapters
 - OpenTelemetry integration with multiple exporters (OTLP, Console, None)
 - Distributed tracing with trace context propagation
-- OpenTelemetry metrics for rate limit tracking (hits, rejections, undefined policies)
+- OpenTelemetry metrics for rate limit rejection tracking (rate_limit_rejections_total counter tagged by policy and method)
 - Prometheus-compatible metrics export
 - Serilog structured logging with OTLP exporter to Loki
 - Configurable log levels per namespace with trace/span ID correlation

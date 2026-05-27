@@ -55,11 +55,6 @@ for configuration details.
 
 ## Monitoring
 
-### Application Insights Integration
-
-Set the Application Insights connection string in your deployment configuration via the
-`APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable.
-
 ### Prometheus Metrics
 
 Metrics are exported to the OpenTelemetry Collector via OTLP gRPC (port 4317). The Collector's Prometheus exporter
@@ -133,7 +128,7 @@ database host.
 ### Performance issues
 
 - Check resource limits in `docker-compose.prod.yml`
-- Review Application Insights performance metrics
+- Review OTLP-exported metrics via Prometheus/Grafana
 - Enable Grafana dashboards for monitoring
 
 ## Resources
