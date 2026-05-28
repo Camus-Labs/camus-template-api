@@ -11,7 +11,7 @@
     <!-- API VERSIONING -->
     <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.1" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="../../Adapters/emc.camus.migrations.dbup/emc.camus.migrations.dbup.csproj" />
     <ProjectReference Include="../../Adapters/emc.camus.persistence.postgresql/emc.camus.persistence.postgresql.csproj" />
@@ -22,7 +22,6 @@
     <ProjectReference Include="../../Adapters/emc.camus.documentation.swagger/emc.camus.documentation.swagger.csproj" />
     <ProjectReference Include="../../Application/emc.camus.application/emc.camus.application.csproj" />
     <ProjectReference Include="../../Adapters/emc.camus.observability.otel/emc.camus.observability.otel.csproj" />
-    <ProjectReference Include="..\..\Adapters\emc.camus.ratelimiting.inmemory\emc.camus.ratelimiting.inmemory.csproj" />
     <ProjectReference Include="..\..\Adapters\emc.camus.cache.inmemory\emc.camus.cache.inmemory.csproj" />
   </ItemGroup>
 

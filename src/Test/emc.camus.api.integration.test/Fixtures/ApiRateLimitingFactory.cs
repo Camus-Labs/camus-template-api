@@ -37,11 +37,11 @@ public class ApiRateLimitingFactory : ApiFactoryBase
         builder.UseSetting("DBUpSettings:Enabled", "false");
 
         // Override rate limits with distinct values per policy to verify policy-specific enforcement
-        builder.UseSetting("InMemoryRateLimitingSettings:Policies:default:PermitLimit", DefaultPolicyPermitLimit.ToString(CultureInfo.InvariantCulture));
-        builder.UseSetting("InMemoryRateLimitingSettings:Policies:default:WindowSeconds", PolicyWindowSeconds.ToString(CultureInfo.InvariantCulture));
-        builder.UseSetting("InMemoryRateLimitingSettings:Policies:strict:PermitLimit", StrictPolicyPermitLimit.ToString(CultureInfo.InvariantCulture));
-        builder.UseSetting("InMemoryRateLimitingSettings:Policies:strict:WindowSeconds", PolicyWindowSeconds.ToString(CultureInfo.InvariantCulture));
-        builder.UseSetting("InMemoryRateLimitingSettings:Policies:relaxed:PermitLimit", RelaxedPolicyPermitLimit.ToString(CultureInfo.InvariantCulture));
-        builder.UseSetting("InMemoryRateLimitingSettings:Policies:relaxed:WindowSeconds", PolicyWindowSeconds.ToString(CultureInfo.InvariantCulture));
+        builder.UseSetting("RateLimitingSettings:Policies:default:PermitLimit", DefaultPolicyPermitLimit.ToString(CultureInfo.InvariantCulture));
+        builder.UseSetting("RateLimitingSettings:Policies:default:WindowSeconds", PolicyWindowSeconds.ToString(CultureInfo.InvariantCulture));
+        builder.UseSetting("RateLimitingSettings:Policies:strict:PermitLimit", StrictPolicyPermitLimit.ToString(CultureInfo.InvariantCulture));
+        builder.UseSetting("RateLimitingSettings:Policies:strict:WindowSeconds", PolicyWindowSeconds.ToString(CultureInfo.InvariantCulture));
+        builder.UseSetting("RateLimitingSettings:Policies:relaxed:PermitLimit", RelaxedPolicyPermitLimit.ToString(CultureInfo.InvariantCulture));
+        builder.UseSetting("RateLimitingSettings:Policies:relaxed:WindowSeconds", PolicyWindowSeconds.ToString(CultureInfo.InvariantCulture));
     }
 }
