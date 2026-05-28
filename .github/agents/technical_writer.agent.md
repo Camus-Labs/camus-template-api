@@ -41,8 +41,9 @@ with zero errors and warnings.
 1. Validate `story_file` exists and all `Integration Tester Handoff Gate` items are `Yes`; stop with the exact list
   of blockers if validation fails; otherwise proceed to Step 2.
 
-2. Read all Context files and the story file, extracting the functional requirements, the Layer Impact Matrix
-  endpoints, and all new or modified production files from the Skeleton Inventory; proceed to Step 3.
+2. Read all Context files and the story file, extracting the Layer Impact Matrix endpoints, all new or modified
+  production files from the Skeleton Inventory, and the `feature_slug` and `story_id` from the story file
+  frontmatter; proceed to Step 3.
 
 3. Run the `update-changelog` skill with `story_file` as the story path; if the skill returns `FAIL`, stop and
   report the failure reason as a blocker; otherwise proceed to Step 4.

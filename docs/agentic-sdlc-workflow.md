@@ -244,6 +244,7 @@ Example: `@technical_writer #file:docs/stories/todo/user-profiles/US-01-create-p
 6. Builds to verify changes compile, fixing errors up to 3 times
 7. Runs Markdown linting via the `markdown-lint` skill and fixes any errors up to 3 times
 8. Populates Section E — evaluates the Technical Writer Handoff Gate and sets status to DOCUMENTED
+9. Commits changes locally (`git add -A && git commit`) and confirms staged changes with the user
 
 **Deliverable:** Updated `Directory.Build.props`, `CHANGELOG.md`, Swagger annotations, Postman collection,
 Markdown lint passing, Section E populated, Technical Writer Handoff Report.
