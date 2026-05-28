@@ -16,7 +16,7 @@ namespace emc.camus.documentation.swagger.Filters
     /// Operation filter that adds default error responses using ProblemDetails.
     /// Adds 500 to all endpoints and 401/403 only to endpoints that require authentication.
     /// </summary>
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Swagger operation filter tightly coupled to Swashbuckle pipeline; tested indirectly via integration tests")]
     internal sealed class DefaultApiResponsesOperationFilter : IOperationFilter
     {
         /// <summary>

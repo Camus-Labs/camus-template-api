@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using emc.camus.application.ApiInfo;
-using emc.camus.application.Auth;
+using emc.camus.application.Common;
 using emc.camus.application.Configurations;
 using emc.camus.persistence.inmemory;
 using emc.camus.persistence.postgresql;
@@ -59,15 +58,17 @@ namespace emc.camus.api.Extensions
         /// <returns>The web application instance for method chaining.</returns>
         public static async Task<WebApplication> UsePersistenceAsync(this WebApplication app)
         {
+            var ct = app.Lifetime.ApplicationStopping;
+
             // Initialize API info and Auth service to validate required data
             // Services are scoped, so we need to create a scope to resolve them
             using (var scope = app.Services.CreateScope())
             {
-                var apiInfoService = scope.ServiceProvider.GetRequiredService<IApiInfoService>();
-                await apiInfoService.InitializeAsync();
-
-                var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
-                await authService.InitializeAsync();
+                var initializers = scope.ServiceProvider.GetServices<IServiceInitializer>();
+                foreach (var initializer in initializers)
+                {
+                    await initializer.InitializeAsync(ct);
+                }
             }
 
             return app;

@@ -7,6 +7,11 @@ namespace emc.camus.api.test.Mapping;
 
 public class CommonMappingExtensionsTests
 {
+    private static readonly List<int> TestIntItems = [1, 2, 3];
+    private static readonly List<string> ExpectedMappedItems = ["1", "2", "3"];
+    private static readonly List<string> SingleItemList = ["item"];
+    private static readonly List<int> EmptyIntList = [];
+
     // --- ToPaginationParams ---
 
     [Fact]
@@ -43,14 +48,13 @@ public class CommonMappingExtensionsTests
     public void ToPagedResponse_ValidPagedResult_MapsAllProperties()
     {
         // Arrange
-        var items = new List<int> { 1, 2, 3 };
-        var pagedResult = new PagedResult<int>(items, 10, 1, 3);
+        var pagedResult = new PagedResult<int>(TestIntItems, 10, 1, 3);
 
         // Act
         var response = pagedResult.ToPagedResponse(x => x.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
         // Assert
-        response.Items.Should().BeEquivalentTo(new List<string> { "1", "2", "3" });
+        response.Items.Should().BeEquivalentTo(ExpectedMappedItems);
         response.TotalCount.Should().Be(10);
         response.Page.Should().Be(1);
         response.PageSize.Should().Be(3);
@@ -63,8 +67,7 @@ public class CommonMappingExtensionsTests
     public void ToPagedResponse_LastPage_HasNextPageIsFalse()
     {
         // Arrange
-        var items = new List<string> { "item" };
-        var pagedResult = new PagedResult<string>(items, 3, 3, 1);
+        var pagedResult = new PagedResult<string>(SingleItemList, 3, 3, 1);
 
         // Act
         var response = pagedResult.ToPagedResponse(x => x.ToUpperInvariant());
@@ -78,7 +81,7 @@ public class CommonMappingExtensionsTests
     public void ToPagedResponse_EmptyItems_MapsToEmptyList()
     {
         // Arrange
-        var pagedResult = new PagedResult<int>(new List<int>(), 0, 1, 10);
+        var pagedResult = new PagedResult<int>(EmptyIntList, 0, 1, 10);
 
         // Act
         var response = pagedResult.ToPagedResponse(x => x * 2);

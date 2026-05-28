@@ -2,7 +2,9 @@
 
 In-memory rate limiting adapter for the Camus application using ASP.NET Core's built-in sliding window rate limiter.
 
-> **📖 Parent Documentation:** [Main README](../../../README.md) | [Architecture Guide](../../../docs/architecture.md)
+> **📖 Parent Documentation:** [Main README](../../../README.md) |
+[Architecture — Cross-Cutting Concerns](../../../docs/architecture.md#cross-cutting-concerns) |
+[Deployment — Security Checklist](../../../docs/deployment.md#security-checklist)
 
 ## Overview
 
@@ -42,13 +44,13 @@ to protect auth endpoints from brute force attacks.
                     └─────────────────┘
 ```
 
-## Installation
+## Integration
 
 **1. Add reference to your API project:**
 
 Add a `<ProjectReference>` element targeting this adapter's `.csproj` to your API project file.
 
-**2. Configure in `Program.cs`:**
+**2. Register services in `Program.cs`:**
 
 1. Call `builder.AddInMemoryRateLimiting(serviceName)` to register rate limiting services
 2. Call `app.UseForwardedHeaders()` to process proxy headers (must come before rate limiting)
@@ -57,8 +59,20 @@ Add a `<ProjectReference>` element targeting this adapter's `.csproj` to your AP
 See `InMemoryRateLimitingSetupExtensions` in this adapter for the full registration API and `Program.cs` for
 the wiring order.
 
+**Middleware ordering:**
+
+- `UseForwardedHeaders()` → `UseInMemoryRateLimiting()` → `UseAuthentication()` → Controllers
+- The `ExceptionHandlingMiddleware` in the API layer catches `RateLimitExceededException` and returns a
+  429 response with RFC 7807 Problem Details body.
+
+**Application layer interaction:**
+
+- Endpoints declare their policy via `[RateLimit(RateLimitPolicies.Strict)]` (or `Default`/`Relaxed`).
+- The adapter reads this attribute at runtime to select the partition policy.
+
 ⚠️ **Critical**: If deploying behind a reverse proxy, `UseForwardedHeaders()` must be called **before**
-`UseInMemoryRateLimiting()`. Without it, all requests from the same proxy share one rate limit.
+`UseInMemoryRateLimiting()`. Without it, the adapter reads `X-Forwarded-For` without trusted-proxy
+validation, allowing clients to spoof IPs and bypass rate limits.
 
 ## Configuration
 
@@ -67,6 +81,7 @@ Add to `appsettings.json`:
 ```json
 {
   "InMemoryRateLimitingSettings": {
+    "SegmentsPerWindow": 5,
     "Policies": {
       "default": {
         "PermitLimit": 250,
@@ -85,6 +100,12 @@ Add to `appsettings.json`:
   }
 }
 ```
+
+| Key | Default | Range | Description |
+| --- | ------- | ----- | ----------- |
+| `SegmentsPerWindow` | 5 | 1–20 | Number of segments in the sliding window. Higher values provide smoother limiting but use more memory. |
+| `Policies` | 3 built-in | — | Named policies defining `PermitLimit` and `WindowSeconds`. A `default` policy is required. |
+| `ExemptPaths` | 4 paths | — | Path prefixes exempt from rate limiting (case-insensitive, matched with StartsWith). |
 
 ## Usage
 
@@ -110,8 +131,8 @@ adapter with a Redis-backed implementation that shares state across instances.
 | Environment | Expected Headers | Configuration Required |
 | ----------- | --------------- | ---------------------- |
 | **Development/Testing** | None (direct connection) | ✅ No action needed |
-| **Nginx** | X-Forwarded-For | ⚠️ Must add `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` |
-| **HAProxy** | X-Forwarded-For | ⚠️ Must enable `option forwardfor` |
+| **Nginx** | X-Forwarded-For | ⚠️ Configure forwarding — see [Nginx proxy docs](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header) |
+| **HAProxy** | X-Forwarded-For | ⚠️ Enable forwarding — see [HAProxy docs](https://www.haproxy.com/documentation/) |
 | **Azure/AWS/GCP Load Balancers** | X-Forwarded-For | ✅ Automatic |
 
 **Without proxy headers**: All requests from the same proxy IP share one rate limit (security risk in production).
@@ -133,8 +154,9 @@ requests is available via response headers (`RateLimit-Limit`, `RateLimit-Reset`
 
 ## Response Headers
 
-The adapter adds RFC-compliant IETF Draft Rate Limit Headers to **all responses** (both 200 OK and 429 Too
-Many Requests).
+RFC-compliant IETF Draft Rate Limit Headers are added to **all responses** (both 200 OK and 429 Too
+Many Requests). This adapter's `RateLimitHeadersMiddleware` sets headers on successful responses, while
+the adapter's `HandleRateLimitRejection` callback sets all headers (including `Retry-After`) on 429 responses.
 
 **Why headers on all responses?**
 
@@ -153,13 +175,13 @@ Includes `Retry-After` header and an RFC 7807 Problem Details body with the `rat
 
 **Response Headers:**
 
-| Header | Description |
-| ------ | ----------- |
-| `RateLimit-Limit` | Maximum requests allowed in the window |
-| `RateLimit-Reset` | Unix timestamp when the window resets |
-| `Retry-After` | Seconds until the client can retry (429 only) |
-| `RateLimit-Policy` | Name of the applied rate limit policy |
-| `RateLimit-Window` | Duration of the rate limit window in seconds |
+| Header | Description | Set By |
+| ------ | ----------- | ------ |
+| `RateLimit-Limit` | Maximum requests allowed in the window | Adapter |
+| `RateLimit-Reset` | Unix timestamp when the window resets | Adapter |
+| `RateLimit-Policy` | Name of the applied rate limit policy | Adapter |
+| `RateLimit-Window` | Duration of the rate limit window in seconds | Adapter |
+| `Retry-After` | Seconds until the client can retry (429 only) | Adapter |
 
 ## Clean Architecture
 
@@ -188,7 +210,7 @@ Following clean architecture principles:
          └─────────────────────┘
 ```
 
-**Dependency Flow**: API → Adapter (implementation) ← Application (abstractions)
+**Dependency Flow**: API → Application ← Adapter (implements Application contracts)
 
 **Key Benefits**:
 
@@ -197,28 +219,14 @@ Following clean architecture principles:
 - RFC-compliant headers for client compatibility
 - Easy to swap implementations (memory → Redis → distributed cache)
 
----
-
-## Integration
-
-The adapter registers rate limiting services via two extension methods in `InMemoryRateLimitingSetupExtensions.cs`:
-
-1. **`builder.AddInMemoryRateLimiting(serviceName)`** — Reads `InMemoryRateLimitingSettings` from configuration,
-   validates policies, and registers the ASP.NET Core sliding-window rate limiter with IP-based partitioning.
-2. **`app.UseInMemoryRateLimiting()`** — Activates the rate limiting middleware. Must be called **before**
-   authentication middleware and **after** `UseForwardedHeaders()` when behind a proxy.
-
----
-
 ## Troubleshooting
 
-| Symptom | Likely Cause |
-| ------- | ------------ |
-| All requests share one rate limit | `UseForwardedHeaders()` not called before rate limiting when behind a proxy |
-| 429 responses with default policy | No `[RateLimit]` attribute on endpoint — falls back to `default` policy |
-| Unexpected default rate limits (250/50/500) | Missing `InMemoryRateLimitingSettings` section — defaults apply silently |
-| Rate limit not applied to endpoint | Endpoint path matches an entry in `ExemptPaths` |
-| Metrics not appearing | OpenTelemetry adapter not registered or meter name mismatch |
+| Symptom | Cause | Resolution |
+| ------- | ----- | ---------- |
+| All requests share one rate limit behind a proxy | `UseForwardedHeaders()` not called before `UseInMemoryRateLimiting()` | Ensure `UseForwardedHeaders()` is placed earlier in the pipeline — see `UseTransportSecurity()` in the API layer. |
+| `InvalidOperationException` at startup mentioning policies | Missing or invalid `default` policy, policy name not in allowed set, or `SegmentsPerWindow` outside 1–20 | Check `appsettings.json` against the Configuration section above. All policy names must be `default`, `strict`, or `relaxed`. |
+| Warning log: "Invalid IP format in X-Forwarded-For header" | Malformed or spoofed `X-Forwarded-For` value from upstream proxy | Verify proxy configuration passes valid IPs. The adapter falls back to `X-Real-IP` then `RemoteIpAddress`. |
+| Rate limits incorrect across multiple instances | In-memory storage is not shared between instances | Replace with a Redis-backed adapter for horizontally-scaled deployments. |
 
 ---
 
@@ -226,8 +234,6 @@ The adapter registers rate limiting services via two extension methods in `InMem
 
 - `Microsoft.AspNetCore.RateLimiting` - ASP.NET Core built-in rate limiter
 - `emc.camus.application` - Application layer abstractions (RateLimitPolicies, ErrorCodes, MeterNames)
-
-**Dependency Flow**: API → Adapter (setup) + Application (constants)
 
 ## Related Documentation
 

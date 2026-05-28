@@ -16,7 +16,7 @@ internal sealed class ApiInfoSettings
     public string Version { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the status description.
+    /// Gets or sets the status of the API.
     /// </summary>
     public string Status { get; set; } = string.Empty;
 

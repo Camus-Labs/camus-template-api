@@ -6,14 +6,17 @@
         "exiasr.hadolint",
         "github.copilot-chat",
         "github.vscode-github-actions",
+        "github.vscode-pull-request-github",
         "hashicorp.terraform",
         "mechatroner.rainbow-csv",
         "ms-azuretools.vscode-containers",
         "ms-azuretools.vscode-docker",
+        "donjayamanne.githistory",
         "ms-dotnettools.csdevkit",
         "ms-dotnettools.csharp",
         "ms-dotnettools.vscode-dotnet-runtime",
         "mtxr.sqltools",
+        "pkief.material-icon-theme",
         "mtxr.sqltools-driver-pg",
         "ryanluker.vscode-coverage-gutters"
     ]

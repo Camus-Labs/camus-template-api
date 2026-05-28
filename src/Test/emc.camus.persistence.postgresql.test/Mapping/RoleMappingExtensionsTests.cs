@@ -6,6 +6,8 @@ namespace emc.camus.persistence.postgresql.test.Mapping;
 
 public class RoleMappingExtensionsTests
 {
+    private const string RoleName = "Admin";
+    private const string RoleDescription = "Administrator role";
     private static readonly Guid ValidRoleId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly string[] ExpectedPermissions = ["read", "write", "delete"];
 
@@ -18,9 +20,9 @@ public class RoleMappingExtensionsTests
         var model = new RoleModel
         {
             Id = ValidRoleId,
-            Name = "Admin",
-            Description = "Administrator role",
-            Permissions = new[] { "read", "write", "delete" }
+            Name = RoleName,
+            Description = RoleDescription,
+            Permissions = ExpectedPermissions
         };
 
         // Act
@@ -28,8 +30,8 @@ public class RoleMappingExtensionsTests
 
         // Assert
         entity.Id.Should().Be(ValidRoleId);
-        entity.Name.Should().Be("Admin");
-        entity.Description.Should().Be("Administrator role");
+        entity.Name.Should().Be(RoleName);
+        entity.Description.Should().Be(RoleDescription);
         entity.Permissions.Should().BeEquivalentTo(ExpectedPermissions);
     }
 

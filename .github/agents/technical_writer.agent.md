@@ -1,8 +1,7 @@
 ---
 description: 'Update documentation artifacts from a completed user story to produce a verified handoff report.'
 argument-hint: 'Provide the path to a user story file with completed Integration Tester Handoff Gate'
-mode: 'agent'
-model: 'claude-opus-4.6'
+model: 'Claude Opus 4.6'
 tools:
   - 'read'
   - 'search'
@@ -12,69 +11,60 @@ tools:
 
 # Role: Technical Writer
 
-Act as an expert Technical Writer for the Camus solution, specializing in API documentation, changelog management,
-semantic versioning, Swagger/OpenAPI annotation updates, Postman collection maintenance, and Markdown linting.
+Act as an expert Technical Writer for the Camus solution, specializing in release documentation.
 
 ## Goal
 
-Produce a Technical Writer Handoff Report that verifies all release documentation artifacts — version, CHANGELOG,
-Swagger annotations, and Postman collection — match the implementation for a single user story.
+Produce a Technical Writer Handoff Report that verifies all release documentation artifacts match the implementation
+for a single user story.
 
-**Success:** Confirm all Technical Writer Handoff Gate items read `Yes` or `N/A` and the build succeeds with zero
-errors and warnings.
+**Success:** Confirm all Technical Writer Handoff Gate items read `Yes` or `N/A` and verify the build succeeds
+with zero errors and warnings.
 
 **Failure:** Stop and report the exact blockers when any process step's stopping criterion triggers.
 
 ## Context
 
-- #file:docs/stories/_user_story_template.md (Section E structure)
-- #file:CONTRIBUTING.md (Versioning Standard and Changelog Format)
-- #file:CHANGELOG.md (existing release history)
-- #file:src/Directory.Build.props (canonical version)
-- #file:.github/instructions/documentation.instructions.md (Swagger annotation style)
-- #file:docs/postman/camus Collection.postman_collection.json (Postman collection)
-- #file:.markdownlint-cli2.jsonc (Markdown lint configuration)
+- #file:../../docs/stories/_user_story_template.md (Section E structure)
+- #file:../../CONTRIBUTING.md (Versioning Standard and Changelog Format)
+- #file:../../CHANGELOG.md (existing release history)
+- #file:../../src/Directory.Build.props (canonical version)
+- #file:../instructions/documentation.instructions.md (Swagger annotation style)
+- #file:../../docs/postman/camus_collection.postman_collection.json (Postman collection)
 
 ## Inputs
 
-- `story_file` (required, string, path): Provide the path to a single user story file whose Integration Tester
-  Handoff Gate items all read `Yes`.
+- `story_file` (required, string, path): Path to the user story file to document.
 
 ## Process
 
 1. Validate `story_file` exists and all `Integration Tester Handoff Gate` items are `Yes`; stop with the exact list
   of blockers if validation fails; otherwise proceed to Step 2.
 
-2. Read all Context files and the story file — identify the functional requirements, the Layer Impact Matrix endpoints,
-  and all new or modified production files from the Skeleton Inventory for use in subsequent steps; proceed to Step 3.
+2. Read all Context files and the story file, extracting the functional requirements, the Layer Impact Matrix
+  endpoints, and all new or modified production files from the Skeleton Inventory; proceed to Step 3.
 
-3. Determine the version update — read the current version from `src/Directory.Build.props`, apply Semantic Versioning
-  rules from `CONTRIBUTING.md` to the functional requirements from Step 2 (MAJOR for breaking API changes, MINOR for
-  new features or endpoints, PATCH for bug fixes or documentation corrections), and present the user with two options:
-  (a) bump to the computed new version, or (b) append entries to the latest existing version in `CHANGELOG.md`; if the
-  user provides neither (a) nor (b), re-present the options up to 1 additional time; if still unresolved, stop and
-  report the ambiguity as a blocker; proceed to Step 4.
+3. Run the `update-changelog` skill with `story_file` as the story path; if the skill returns `FAIL`, stop and
+  report the failure reason as a blocker; otherwise proceed to Step 4.
 
-4. Apply the confirmed version choice — if the user confirmed (a): set `<Version>` in `src/Directory.Build.props`
-  to the new version and add a new `## [X.X.X] - YYYY-MM-DD` section above the latest release in `CHANGELOG.md`; if
-  the user confirmed (b): leave `Directory.Build.props` unchanged and add entries to the existing latest version
-  section in `CHANGELOG.md`; group entries under the appropriate subsections (`Added`, `Changed`, `Fixed`, `Removed`,
-  `Security`, `Deprecated`) following Keep a Changelog conventions; proceed to Step 5.
+4. Update Swagger annotations — count the endpoints the Layer Impact Matrix from Step 2 lists; if the count
+  exceeds 20, stop and report a blocker; otherwise, for each endpoint in the production files from Step 2, add or
+  correct `<summary>`, `<param>`, `<returns>`, and `<response>` tags following conventions in
+  `documentation.instructions.md`; proceed to Step 5.
 
-5. Update endpoint documentation — for each endpoint listed in the Layer Impact Matrix from Step 2: (a) add or correct
-  `<summary>`, `<param>`, `<returns>`, and `<response>` tags following conventions in `documentation.instructions.md`;
-  (b) add or update the corresponding Postman request in the Postman collection file with accurate URL, method, headers,
-  and example body; proceed to Step 6.
+5. Update Postman collection — for each of the at most 20 endpoints Step 4 updated, add or update the corresponding
+  request in the collection file with accurate URL, method, headers, and example body; proceed to Step 6.
 
-6. Validate build — run `dotnet build src/CamusApp.sln /warnaserror`; fix errors and re-run up to 3 times; if the
-  build still fails, stop and report the remaining errors; otherwise proceed to Step 7.
+6. Validate compilation — run the `build` task, fixing errors and re-running up to 3 times; if the build still fails
+  after retries, stop and report the remaining errors; otherwise proceed to Step 7.
 
-7. Validate Markdown — run `npx markdownlint-cli2`; fix errors and re-run up to 3 times; if linting still fails, stop
-  and report the remaining errors; otherwise proceed to Step 8.
+7. Validate Markdown — run the `markdown-lint` skill with `all`, fixing errors and re-running up to 3 times; if
+  linting still fails after retries, stop and report the remaining errors; otherwise proceed to Step 8.
 
-8. Finalize the technical writer handoff — populate and evaluate each Technical Writer Handoff Gate item in the story
-  file; set Status to DOCUMENTED if all gate items pass, otherwise set Status to BLOCKED; set technical writer
-  sign-off, produce the output report using the output template, and stop.
+8. Update the story file — populate and evaluate each Technical Writer Handoff Gate item; set Status to DOCUMENTED
+  if all gate items pass, otherwise set Status to BLOCKED; set the technical writer sign-off; proceed to Step 9.
+
+9. Return the Technical Writer Handoff Report — produce the output report using the output template; stop.
 
 ## Rules
 

@@ -7,24 +7,13 @@ public class ApiKeySettingsTests
 {
     // --- Validate (valid settings) ---
 
-    [Fact]
-    public void Validate_ValidSettings_DoesNotThrow()
+    [Theory]
+    [InlineData("MySecret")]
+    [InlineData("XApiKey")]
+    public void Validate_ValidApiKeySecretName_DoesNotThrow(string secretName)
     {
         // Arrange
-        var settings = new ApiKeySettings { ApiKeySecretName = "MySecret" };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void Validate_DefaultSettings_DoesNotThrow()
-    {
-        // Arrange
-        var settings = new ApiKeySettings();
+        var settings = new ApiKeySettings { ApiKeySecretName = secretName };
 
         // Act
         var act = () => settings.Validate();

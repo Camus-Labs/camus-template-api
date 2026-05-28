@@ -30,24 +30,24 @@ public class GeneratedTokenSummaryPagedExample
                 {
                     new()
                     {
-                        Jti = Guid.NewGuid(),
+                        Jti = new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567890"),
                         TokenUsername = "testuser-ci-deploy",
                         Permissions = new List<string> { "api.read", "api.write" },
-                        ExpiresOn = DateTime.UtcNow.AddDays(30),
-                        CreatedAt = DateTime.UtcNow.AddDays(-1),
+                        ExpiresOn = new DateTime(2026, 2, 14, 12, 0, 0, DateTimeKind.Utc),
+                        CreatedAt = new DateTime(2026, 1, 14, 12, 0, 0, DateTimeKind.Utc),
                         IsRevoked = false,
                         RevokedAt = null,
                         IsValid = true
                     },
                     new()
                     {
-                        Jti = Guid.NewGuid(),
+                        Jti = new Guid("b2c3d4e5-f6a7-8901-bcde-f12345678901"),
                         TokenUsername = "testuser-staging",
                         Permissions = new List<string> { "api.read" },
-                        ExpiresOn = DateTime.UtcNow.AddDays(-5),
-                        CreatedAt = DateTime.UtcNow.AddDays(-30),
+                        ExpiresOn = new DateTime(2026, 1, 10, 12, 0, 0, DateTimeKind.Utc),
+                        CreatedAt = new DateTime(2025, 12, 16, 12, 0, 0, DateTimeKind.Utc),
                         IsRevoked = true,
-                        RevokedAt = DateTime.UtcNow.AddDays(-10),
+                        RevokedAt = new DateTime(2026, 1, 5, 12, 0, 0, DateTimeKind.Utc),
                         IsValid = false
                     }
                 },
@@ -58,7 +58,7 @@ public class GeneratedTokenSummaryPagedExample
                 HasNextPage = false,
                 HasPreviousPage = false
             },
-            Timestamp = DateTime.UtcNow
+            Timestamp = new DateTime(2026, 1, 15, 12, 0, 0, DateTimeKind.Utc)
         };
     }
 }

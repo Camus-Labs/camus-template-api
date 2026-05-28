@@ -29,7 +29,7 @@ internal sealed class ApiInfoRepository : IApiInfoRepository
     /// This method must be called once at application startup to populate the in-memory store.
     /// </summary>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when API info configuration is invalid.
+    /// Thrown when the repository has already been initialized.
     /// </exception>
     public Task InitializeAsync(CancellationToken ct = default)
     {
@@ -63,6 +63,9 @@ internal sealed class ApiInfoRepository : IApiInfoRepository
     /// <param name="version">The API version to retrieve.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>An ApiInfo object if found.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="version"/> is null or whitespace.
+    /// </exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the repository has not been initialized.
     /// </exception>

@@ -7,7 +7,12 @@ namespace emc.camus.application.test.Auth;
 public class GenerateTokenCommandTests
 {
     private const string ValidSuffix = "token1";
-    private static readonly DateTime ValidExpiration = new(2099, 6, 15, 12, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTimeOffset ReferenceTime = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime ValidExpiration = ReferenceTime.UtcDateTime.AddMonths(6);
+    private static readonly IReadOnlyList<string> ValidPermissions = [Permissions.ApiRead];
+    private static readonly IReadOnlyList<string> EmptyPermissions = [];
+    private static readonly List<string> InvalidPermissionOnly = ["invalid.permission"];
+    private static readonly List<string> MixedWithInvalidPermission = [Permissions.ApiRead, "nonexistent.perm"];
 
     // --- Constructor ---
 
@@ -17,7 +22,7 @@ public class GenerateTokenCommandTests
         // Arrange
         var suffix = ValidSuffix;
         var expiresOn = ValidExpiration;
-        var permissions = new List<string> { Permissions.ApiRead };
+        var permissions = ValidPermissions.ToList();
 
         // Act
         var command = new GenerateTokenCommand(suffix, expiresOn, permissions);
@@ -25,7 +30,7 @@ public class GenerateTokenCommandTests
         // Assert
         command.UsernameSuffix.Should().Be(suffix);
         command.ExpiresOn.Should().Be(expiresOn);
-        command.Permissions.Should().BeEquivalentTo(permissions);
+        command.Permissions.Should().BeEquivalentTo(ValidPermissions);
     }
 
     [Theory]
@@ -36,11 +41,11 @@ public class GenerateTokenCommandTests
     {
         // Arrange
         // Act
-        var act = () => new GenerateTokenCommand(suffix!, ValidExpiration, [Permissions.ApiRead]);
+        var act = () => new GenerateTokenCommand(suffix!, ValidExpiration, ValidPermissions.ToList());
 
         // Assert
         act.Should().Throw<ArgumentException>()
-            .And.ParamName.Should().Be("usernameSuffix");
+            .And.ParamName.Should().Be("UsernameSuffix");
     }
 
     [Fact]
@@ -50,11 +55,11 @@ public class GenerateTokenCommandTests
         var longSuffix = new string('a', 21);
 
         // Act
-        var act = () => new GenerateTokenCommand(longSuffix, ValidExpiration, [Permissions.ApiRead]);
+        var act = () => new GenerateTokenCommand(longSuffix, ValidExpiration, ValidPermissions.ToList());
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
-            .And.ParamName.Should().Be("usernameSuffix");
+            .And.ParamName.Should().Be("UsernameSuffix");
     }
 
     [Fact]
@@ -64,7 +69,7 @@ public class GenerateTokenCommandTests
         var defaultDate = default(DateTime);
 
         // Act
-        var act = () => new GenerateTokenCommand(ValidSuffix, defaultDate, [Permissions.ApiRead]);
+        var act = () => new GenerateTokenCommand(ValidSuffix, defaultDate, ValidPermissions.ToList());
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -86,15 +91,12 @@ public class GenerateTokenCommandTests
     [Fact]
     public void Constructor_EmptyPermissions_ThrowsArgumentOutOfRangeException()
     {
-        // Arrange
-        var emptyPermissions = new List<string>();
-
         // Act
-        var act = () => new GenerateTokenCommand(ValidSuffix, ValidExpiration, emptyPermissions);
+        var act = () => new GenerateTokenCommand(ValidSuffix, ValidExpiration, EmptyPermissions.ToList());
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
-            .And.ParamName.Should().Be("permissions.Count");
+            .And.ParamName.Should().Be("Permissions");
     }
 
     [Theory]
@@ -109,12 +111,41 @@ public class GenerateTokenCommandTests
         // Assert
         act.Should().Throw<ArgumentException>()
             .WithMessage($"*Invalid permissions*{expectedInvalidPermission}*")
-            .And.ParamName.Should().Be("permissions");
+            .And.ParamName.Should().Be("Permissions");
     }
 
-    public static TheoryData<List<string>, string> InvalidPermissionsTestCases => new()
+    public static readonly TheoryData<List<string>, string> InvalidPermissionsTestCases = new()
     {
-        { new List<string> { "invalid.permission" }, "invalid.permission" },
-        { new List<string> { Permissions.ApiRead, "nonexistent.perm" }, "nonexistent.perm" }
+        { InvalidPermissionOnly, "invalid.permission" },
+        { MixedWithInvalidPermission, "nonexistent.perm" }
     };
+
+    [Theory]
+    [InlineData("with.dot")]
+    [InlineData("with-dash")]
+    [InlineData("with_underscore")]
+    [InlineData("all.3-types_ok")]
+    public void Constructor_SuffixWithAllowedSpecialCharacters_SetsProperty(string suffix)
+    {
+        // Act
+        var command = new GenerateTokenCommand(suffix, ValidExpiration, ValidPermissions.ToList());
+
+        // Assert
+        command.UsernameSuffix.Should().Be(suffix);
+    }
+
+    [Theory]
+    [InlineData("has space")]
+    [InlineData("has@symbol")]
+    [InlineData("has/slash")]
+    public void Constructor_SuffixWithInvalidCharacters_ThrowsArgumentException(string suffix)
+    {
+        // Act
+        var act = () => new GenerateTokenCommand(suffix, ValidExpiration, ValidPermissions.ToList());
+
+        // Assert
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*invalid characters*")
+            .And.ParamName.Should().Be("UsernameSuffix");
+    }
 }

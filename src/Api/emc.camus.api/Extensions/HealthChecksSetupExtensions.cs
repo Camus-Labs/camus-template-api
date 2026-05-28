@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using emc.camus.api.Models.Responses;
 using emc.camus.application.Common;
 using emc.camus.application.Configurations;
 using emc.camus.persistence.postgresql;
@@ -91,20 +92,21 @@ namespace emc.camus.api.Extensions
         {
             context.Response.ContentType = "application/json";
 
-            var response = new
+            var response = new HealthCheckDetailedResponse
             {
-                status = report.Status.ToString(),
-                checks = report.Entries.Select(entry => new
+                Status = report.Status.ToString(),
+                Checks = report.Entries.Select(entry => new HealthCheckEntryResponse
                 {
-                    name = entry.Key,
-                    status = entry.Value.Status.ToString(),
-                    description = entry.Value.Description,
-                    duration = entry.Value.Duration.TotalMilliseconds
+                    Name = entry.Key,
+                    Status = entry.Value.Status.ToString(),
+                    Description = entry.Value.Description,
+                    Duration = entry.Value.Duration.TotalMilliseconds
                 })
             };
 
             await context.Response.WriteAsync(
-                JsonSerializer.Serialize(response, JsonOptions));
+                JsonSerializer.Serialize(response, JsonOptions),
+                context.RequestAborted);
         }
     }
 }

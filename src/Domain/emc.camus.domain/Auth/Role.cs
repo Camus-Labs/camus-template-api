@@ -39,16 +39,36 @@ public class Role
     /// <exception cref="ArgumentOutOfRangeException">Thrown when id is empty.</exception>
     public Role(string name, string? description = null, List<string>? permissions = null, Guid? id = null)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(name.Length, MaxNameLength, nameof(name));
-
-        if (id.HasValue)
-            ArgumentOutOfRangeException.ThrowIfEqual(id.Value, Guid.Empty);
+        ValidateName(name);
+        ValidateId(id);
 
         Id = id ?? Guid.NewGuid();
         Name = name;
         Description = description;
         Permissions = permissions ?? new List<string>();
+    }
+
+    /// <summary>
+    /// Validates the role name is non-empty and within length constraints.
+    /// </summary>
+    /// <param name="name">The name to validate.</param>
+    /// <exception cref="ArgumentException">Thrown when name is null, empty, or whitespace.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when name exceeds max length.</exception>
+    private static void ValidateName(string name)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(name.Length, MaxNameLength, nameof(name));
+    }
+
+    /// <summary>
+    /// Validates the optional ID is not empty when provided.
+    /// </summary>
+    /// <param name="id">The optional ID to validate.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when id is empty.</exception>
+    private static void ValidateId(Guid? id)
+    {
+        if (id.HasValue)
+            ArgumentOutOfRangeException.ThrowIfEqual(id.Value, Guid.Empty);
     }
 
     /// <summary>

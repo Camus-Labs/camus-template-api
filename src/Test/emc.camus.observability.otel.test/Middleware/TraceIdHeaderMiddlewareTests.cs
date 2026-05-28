@@ -8,9 +8,23 @@ using emc.camus.observability.otel.test.Helpers;
 
 namespace emc.camus.observability.otel.test.Middleware;
 
-public class TraceIdHeaderMiddlewareTests
+public class TraceIdHeaderMiddlewareTests : IDisposable
 {
+    private const string FallbackTraceId = "fallback-trace-id";
+    private const string ExistingTraceId = "existing-trace-id";
+    private readonly Activity? _priorActivity;
     private static readonly RequestDelegate NoOpNext = _ => Task.CompletedTask;
+
+    public TraceIdHeaderMiddlewareTests()
+    {
+        _priorActivity = Activity.Current;
+    }
+
+    public void Dispose()
+    {
+        Activity.Current = _priorActivity;
+        GC.SuppressFinalize(this);
+    }
 
     private static (DefaultHttpContext Context, TestResponseFeature Feature) CreateTestContext()
     {
@@ -75,7 +89,7 @@ public class TraceIdHeaderMiddlewareTests
         Activity.Current = null;
         var middleware = new TraceIdHeaderMiddleware(NoOpNext);
         var (context, feature) = CreateTestContext();
-        context.TraceIdentifier = "fallback-trace-id";
+        context.TraceIdentifier = FallbackTraceId;
 
         // Act
         await middleware.InvokeAsync(context);
@@ -84,7 +98,7 @@ public class TraceIdHeaderMiddlewareTests
         // Assert
         context.Response.Headers.Should().ContainKey(Headers.TraceId);
         context.Response.Headers[Headers.TraceId].ToString()
-            .Should().Be("fallback-trace-id");
+            .Should().Be(FallbackTraceId);
     }
 
     // --- InvokeAsync: does not overwrite existing header ---
@@ -97,7 +111,7 @@ public class TraceIdHeaderMiddlewareTests
         var middleware = new TraceIdHeaderMiddleware(NoOpNext);
         var (context, feature) = CreateTestContext();
         context.TraceIdentifier = "new-trace-id";
-        context.Response.Headers[Headers.TraceId] = "existing-trace-id";
+        context.Response.Headers[Headers.TraceId] = ExistingTraceId;
 
         // Act
         await middleware.InvokeAsync(context);
@@ -105,7 +119,7 @@ public class TraceIdHeaderMiddlewareTests
 
         // Assert
         context.Response.Headers[Headers.TraceId].ToString()
-            .Should().Be("existing-trace-id");
+            .Should().Be(ExistingTraceId);
     }
 
 }

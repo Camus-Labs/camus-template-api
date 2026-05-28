@@ -14,6 +14,7 @@ using emc.camus.api.Mapping;
 using emc.camus.api.Mapping.V2;
 using Microsoft.AspNetCore.Http.Timeouts;
 using emc.camus.api.Configurations;
+using emc.camus.api.Filters;
 
 namespace emc.camus.api.Controllers
 {
@@ -43,11 +44,14 @@ namespace emc.camus.api.Controllers
         /// <summary>
         /// Initializes a new instance of the <see cref="AuthController"/> class.
         /// </summary>
+        /// <param name="timeProvider">Time provider for UTC clock access.</param>
         /// <param name="activitySource">Activity source for OpenTelemetry tracing.</param>
         /// <param name="authService">Authentication service for credential validation and token generation.</param>
         public AuthController(
+            TimeProvider timeProvider,
             IActivitySourceWrapper activitySource,
             IAuthService authService)
+            : base(timeProvider)
         {
             ArgumentNullException.ThrowIfNull(activitySource);
             ArgumentNullException.ThrowIfNull(authService);
@@ -63,11 +67,13 @@ namespace emc.camus.api.Controllers
         /// <param name="request">The authentication request containing Username and Password.</param>
         /// <param name="ct">Cancellation token for cooperative cancellation.</param>
         /// <returns>Authentication response with JWT token if credentials are valid; otherwise, an error response.</returns>
+        /// <response code="200">Returns the authentication result with a JWT token.</response>
         [HttpPost("authenticate")]
+        [RequireIdempotencyKey(IdempotencyPolicies.Default)]
         [Authorize(AuthenticationSchemes = AuthenticationSchemes.ApiKey)]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
-            Description = "Authenticates a user and generates a JWT token for valid credentials in API version >=2.0. Requires API Key authentication."
+            Description = "Authenticates a user and generates a JWT token for valid credentials in API version >=2.0. Requires API Key authentication. Requires the Idempotency-Key header."
         )]
         [ProducesResponseType(typeof(ApiResponse<AuthenticateUserResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> AuthenticateUser([FromBody] AuthenticateUserRequest request, CancellationToken ct)
@@ -103,11 +109,13 @@ namespace emc.camus.api.Controllers
         /// <param name="request">The token generation request containing suffix, expiration, and permissions.</param>
         /// <param name="ct">Cancellation token for cooperative cancellation.</param>
         /// <returns>Token generation response with token details and permissions.</returns>
+        /// <response code="201">Returns the generated token details.</response>
         [HttpPost("generate-token")]
+        [RequireIdempotencyKey(IdempotencyPolicies.Default)]
         [Authorize(AuthenticationSchemes = AuthenticationSchemes.JwtBearer, Policy = Permissions.TokenCreate)]
         [MapToApiVersion("2.0")]
         [SwaggerOperation(
-            Description = "Generates a custom token with specified permissions and expiration. Requires token.create permission."
+            Description = "Generates a custom token with specified permissions and expiration. Requires token.create permission. Requires the Idempotency-Key header."
         )]
         [ProducesResponseType(typeof(ApiResponse<GenerateTokenResponse>), StatusCodes.Status201Created)]
         public async Task<IActionResult> GenerateToken([FromBody] GenerateTokenRequest request, CancellationToken ct)

@@ -1,5 +1,6 @@
 using System.Data.Common;
 using emc.camus.application.Common;
+using emc.camus.persistence.postgresql.Exceptions;
 
 namespace emc.camus.persistence.postgresql.Services;
 
@@ -43,8 +44,15 @@ internal sealed class UnitOfWork : IUnitOfWork, IAsyncDisposable, IDisposable
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task BeginTransactionAsync(CancellationToken ct = default)
     {
-        var connection = await GetConnectionAsync(ct);
-        _transaction = await connection.BeginTransactionAsync(ct);
+        try
+        {
+            var connection = await GetConnectionAsync(ct);
+            _transaction = await connection.BeginTransactionAsync(ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException and not DatabaseConnectionException)
+        {
+            throw new DatabaseQueryException("Failed to begin database transaction.", ex);
+        }
     }
 
     /// <summary>
@@ -54,8 +62,15 @@ internal sealed class UnitOfWork : IUnitOfWork, IAsyncDisposable, IDisposable
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task CommitAsync(CancellationToken ct = default)
     {
-        if (_transaction != null)
-            await _transaction.CommitAsync(ct);
+        try
+        {
+            if (_transaction != null)
+                await _transaction.CommitAsync(ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new DatabaseQueryException("Failed to commit database transaction.", ex);
+        }
     }
 
     /// <summary>
@@ -65,8 +80,15 @@ internal sealed class UnitOfWork : IUnitOfWork, IAsyncDisposable, IDisposable
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task RollbackAsync()
     {
-        if (_transaction != null)
-            await _transaction.RollbackAsync(CancellationToken.None);
+        try
+        {
+            if (_transaction != null)
+                await _transaction.RollbackAsync(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            throw new DatabaseQueryException("Failed to roll back database transaction.", ex);
+        }
     }
 
     /// <summary>

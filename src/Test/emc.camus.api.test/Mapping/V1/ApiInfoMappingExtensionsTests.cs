@@ -6,6 +6,9 @@ namespace emc.camus.api.test.Mapping.V1;
 
 public class ApiInfoMappingExtensionsTests
 {
+    private static readonly List<string> TestFeatures = ["auth", "rate-limiting"];
+    private static readonly List<string> EmptyFeatures = [];
+
     // --- ToFilter ---
 
     [Fact]
@@ -25,8 +28,7 @@ public class ApiInfoMappingExtensionsTests
     public void ToResponse_ValidDetailView_MapsAllProperties()
     {
         // Arrange
-        var features = new List<string> { "auth", "rate-limiting" };
-        var view = new ApiInfoDetailView("1.0", "Available", features);
+        var view = new ApiInfoDetailView("1.0", "Available", TestFeatures);
 
         // Act
         var response = view.ToResponse();
@@ -34,14 +36,14 @@ public class ApiInfoMappingExtensionsTests
         // Assert
         response.Version.Should().Be("1.0");
         response.Status.Should().Be("Available");
-        response.Features.Should().BeEquivalentTo(features);
+        response.Features.Should().BeEquivalentTo(TestFeatures);
     }
 
     [Fact]
     public void ToResponse_EmptyFeatures_MapsEmptyList()
     {
         // Arrange
-        var view = new ApiInfoDetailView("2.0", "Active", new List<string>());
+        var view = new ApiInfoDetailView("2.0", "Active", EmptyFeatures);
 
         // Act
         var response = view.ToResponse();

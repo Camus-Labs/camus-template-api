@@ -6,8 +6,10 @@ namespace emc.camus.domain.test.Auth;
 public class ApiInfoTests
 {
     private const string ValidName = "Test API";
+    private const string AltName = "Custom API";
     private const string ValidVersion = "1.0.0";
     private const string ValidStatus = "Available";
+    private static readonly IReadOnlyList<string> ValidFeatures = ["auth", "rate-limiting"];
 
     // --- Constructor ---
 
@@ -35,8 +37,8 @@ public class ApiInfoTests
         // Arrange
         var version = ValidVersion;
         var status = ValidStatus;
-        var features = new List<string> { "auth", "rate-limiting" };
-        var name = "Custom API";
+        var features = ValidFeatures.ToList();
+        var name = AltName;
 
         // Act
         var apiInfo = new ApiInfo(name, version, status, features);
@@ -154,10 +156,10 @@ public class ApiInfoTests
     public void Reconstitute_ValidData_RebuildsAllFields()
     {
         // Arrange
-        var name = "Custom API";
+        var name = AltName;
         var version = ValidVersion;
         var status = ValidStatus;
-        var features = new List<string> { "auth", "rate-limiting" };
+        var features = ValidFeatures.ToList();
 
         // Act
         var apiInfo = ApiInfo.Reconstitute(name, version, status, features);

@@ -13,7 +13,7 @@ namespace emc.camus.application.Auth;
 /// Validates credentials via user repository and generates tokens for authenticated users.
 /// Manages transactions via IUnitOfWork and audit logging for authentication operations.
 /// </summary>
-public class AuthService : IAuthService
+public class AuthService : IAuthService, IServiceInitializer
 {
     private readonly IUserRepository _userRepository;
     private readonly ITokenGenerator _tokenGenerator;
@@ -112,11 +112,7 @@ public class AuthService : IAuthService
                 throw;
             }
         }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or KeyNotFoundException)
-        {
-            throw;
-        }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not UnauthorizedAccessException and not KeyNotFoundException and not ArgumentException and not OperationCanceledException)
         {
             throw new InvalidOperationException(
                 $"Authentication failed due to a system error. Username: {command.Username}", ex);
@@ -132,13 +128,14 @@ public class AuthService : IAuthService
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>Token generation result with token details and permissions.</returns>
     /// <exception cref="ArgumentException">Thrown when validation fails (invalid suffix, expiration, or permissions).</exception>
-    /// <exception cref="InvalidOperationException">Thrown when user context is unavailable or token generation fails.</exception>
+    /// <exception cref="UnauthorizedAccessException">Thrown when user context is unavailable.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when token generation or database operations fail.</exception>
     public virtual async Task<GenerateTokenResult> GenerateTokenAsync(GenerateTokenCommand command, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(command);
 
         var currentUserId = _userContext.GetCurrentUserId()
-            ?? throw new InvalidOperationException("User ID is not available. Ensure the user is authenticated.");
+            ?? throw new UnauthorizedAccessException("User ID is not available. Ensure the user is authenticated.");
 
         try
         {
@@ -151,7 +148,7 @@ public class AuthService : IAuthService
             var generatedToken = new GeneratedToken(
                 creator,
                 command.UsernameSuffix,
-                command.Permissions,
+                command.Permissions.ToList(),
                 command.ExpiresOn);
 
             var token = _tokenGenerator.GenerateToken(
@@ -193,11 +190,7 @@ public class AuthService : IAuthService
                 token.ExpiresOn,
                 generatedToken.TokenUsername);
         }
-        catch (Exception ex) when (ex is ArgumentException or DomainException or KeyNotFoundException or DataConflictException)
-        {
-            throw;
-        }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not ArgumentException and not DomainException and not KeyNotFoundException and not DataConflictException and not OperationCanceledException)
         {
             throw new InvalidOperationException(
                 $"Token generation failed due to a system error. User ID: {currentUserId}", ex);
@@ -212,33 +205,36 @@ public class AuthService : IAuthService
     /// <param name="sort">Optional sort parameters for ordering results.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A paged result of token summaries for the current user.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when user context is unavailable or database operations fail.</exception>
-    public virtual async Task<PagedResult<GeneratedTokenSummaryView>> GetGeneratedTokensAsync(PaginationParams pagination, GeneratedTokenFilter filter, GeneratedTokenSortParams sort, CancellationToken ct = default)
+    /// <exception cref="UnauthorizedAccessException">Thrown when user context is unavailable.</exception>
+    /// <exception cref="NotSupportedException">Thrown when token repository is not configured.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when database operations fail.</exception>
+    public virtual async Task<PagedResult<GeneratedTokenSummaryView>> GetGeneratedTokensAsync(PaginationParams pagination, GeneratedTokenFilter filter, SortParams<GeneratedTokenSortField> sort, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(pagination);
         ArgumentNullException.ThrowIfNull(filter);
         ArgumentNullException.ThrowIfNull(sort);
 
         var currentUserId = _userContext.GetCurrentUserId()
-            ?? throw new InvalidOperationException("User ID is not available. Ensure the user is authenticated.");
+            ?? throw new UnauthorizedAccessException("User ID is not available. Ensure the user is authenticated.");
 
         if (_generatedTokenRepository == null)
         {
-            throw new InvalidOperationException("Token retrieval requires a token repository.");
+            throw new NotSupportedException("Token retrieval requires a token repository.");
         }
         try
         {
             var pagedTokens = await _generatedTokenRepository.GetPagedByCreatorUserIdAsync(currentUserId, pagination, filter, sort, ct);
 
+            _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
+            {
+                { "result_page_count", (int)Math.Ceiling((double)pagedTokens.TotalCount / pagedTokens.PageSize) }
+            });
+
             var items = pagedTokens.Items.Select(t => t.ToSummaryView()).ToList();
 
             return new PagedResult<GeneratedTokenSummaryView>(items, pagedTokens.TotalCount, pagedTokens.Page, pagedTokens.PageSize);
         }
-        catch (Exception ex) when (ex is ArgumentException)
-        {
-            throw;
-        }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not ArgumentException and not OperationCanceledException)
         {
             throw new InvalidOperationException(
                 $"Failed to retrieve generated tokens for user '{currentUserId}' due to a system error.", ex);
@@ -253,20 +249,21 @@ public class AuthService : IAuthService
     /// <param name="command">The revoke token command containing the JTI.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A summary view of the revoked token.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when user context is unavailable or database operations fail.</exception>
+    /// <exception cref="UnauthorizedAccessException">Thrown when user context is unavailable or the user is not the creator of the token.</exception>
+    /// <exception cref="NotSupportedException">Thrown when token repository is not configured.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when database operations fail.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when the token is not found.</exception>
-    /// <exception cref="UnauthorizedAccessException">Thrown when the user is not the creator of the token.</exception>
     public virtual async Task<GeneratedTokenSummaryView> RevokeTokenAsync(RevokeTokenCommand command, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(command);
 
         var jti = command.Jti;
         var currentUserId = _userContext.GetCurrentUserId()
-            ?? throw new InvalidOperationException("User ID is not available. Ensure the user is authenticated.");
+            ?? throw new UnauthorizedAccessException("User ID is not available. Ensure the user is authenticated.");
 
         if (_generatedTokenRepository == null)
         {
-            throw new InvalidOperationException("Token revocation requires a token repository.");
+            throw new NotSupportedException("Token revocation requires a token repository.");
         }
 
         try
@@ -277,6 +274,11 @@ public class AuthService : IAuthService
             {
                 var generatedToken = await _generatedTokenRepository.GetByJtiAsync(jti, ct)
                     ?? throw new KeyNotFoundException($"Generated token with JTI '{jti}' not found.");
+
+                _activitySource.SetExecutionTags(Activity.Current, new Dictionary<string, object?>
+                {
+                    { "token_was_active", generatedToken.IsActive() }
+                });
 
                 generatedToken.Revoke(currentUserId);
 
@@ -299,11 +301,7 @@ public class AuthService : IAuthService
                 throw;
             }
         }
-        catch (Exception ex) when (ex is KeyNotFoundException or UnauthorizedAccessException or DomainException)
-        {
-            throw;
-        }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not KeyNotFoundException and not UnauthorizedAccessException and not DomainException and not ArgumentException and not OperationCanceledException)
         {
             throw new InvalidOperationException(
                 $"Token revocation failed for JTI '{jti}' due to a system error.", ex);
@@ -325,7 +323,7 @@ public class AuthService : IAuthService
         {
             await _userRepository.InitializeAsync(ct);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             throw new InvalidOperationException(
                 "Failed to initialize authentication service. Ensure the database is accessible.", ex);

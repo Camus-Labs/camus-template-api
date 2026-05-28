@@ -2,7 +2,9 @@ using System.Net;
 using System.Text.Json;
 using emc.camus.api.integration.test.Fixtures;
 using emc.camus.api.integration.test.Helpers;
+using emc.camus.application.Secrets;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace emc.camus.api.integration.test.HealthChecks;
 
@@ -11,17 +13,20 @@ namespace emc.camus.api.integration.test.HealthChecks;
 public class HealthCheckInMemoryDaprUnhealthyTests : IDisposable
 {
     private readonly HttpClient _client;
+    private readonly StubSecretProvider _stubSecrets;
 
     public HealthCheckInMemoryDaprUnhealthyTests(ApiInMemoryFactory factory, ITestOutputHelper outputHelper)
     {
         factory.OutputHelper = outputHelper;
         _client = factory.CreateClient();
-        StubSecretProvider.SimulateConnectivityFailure = true;
+        // Justification: secret-store connectivity failure cannot be triggered via HTTP — requires toggling the stub's SimulateConnectivityFailure flag.
+        _stubSecrets = (StubSecretProvider)factory.Services.GetRequiredService<ISecretProvider>();
+        _stubSecrets.SimulateConnectivityFailure = true;
     }
 
     public void Dispose()
     {
-        StubSecretProvider.SimulateConnectivityFailure = false;
+        _stubSecrets.SimulateConnectivityFailure = false;
         GC.SuppressFinalize(this);
     }
 

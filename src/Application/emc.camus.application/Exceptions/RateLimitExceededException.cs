@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.application.Exceptions
 {
     /// <summary>
     /// Exception thrown when a request exceeds the configured rate limit.
     /// Contains detailed information about the limit, policy, and retry timing.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public class RateLimitExceededException : Exception
     {
         /// <summary>

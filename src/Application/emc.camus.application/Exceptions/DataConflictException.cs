@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.application.Exceptions;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace emc.camus.application.Exceptions;
 /// Thrown by repositories to signal that a persistence operation conflicts with existing data.
 /// Maps to HTTP 409 Conflict in the exception handling middleware.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class DataConflictException : Exception
 {
     /// <summary>

@@ -20,7 +20,7 @@ scenarios where a database is not required.
 - 🗄️ **Configuration-Driven** — API info and user data loaded from `appsettings.json`
 - 🔐 **Secret Provider Integration** — User credentials retrieved from `ISecretProvider`
 - 📝 **Audit Logging** — No-op audit repository that logs to application logs instead of a database
-- 🔄 **Interface-Based** — Implements `IUserRepository`, `IApiInfoRepository`, and `IActionAuditRepository`
+- 🔄 **Interface-Based** — Implements `IUserRepository`, `IApiInfoRepository`, `IActionAuditRepository`, and `IUnitOfWork`
 - ⚙️ **Zero Infrastructure** — No database, no connection strings, no migrations
 
 ---
@@ -36,9 +36,10 @@ Call `builder.AddInMemoryPersistence()` to register all in-memory persistence se
 
 ## ⚙️ Configuration
 
-The adapter reads from two configuration sections in `appsettings.json`:
+This adapter is activated when the API host selects it via `DataPersistenceSettings`, and binds its own data from
+`InMemoryModelSettings`.
 
-### Data Persistence Provider (`DataPersistenceSettings`)
+### Provider Selection — API Layer (`DataPersistenceSettings`)
 
 ```json
 {
@@ -103,13 +104,15 @@ The adapter reads from two configuration sections in `appsettings.json`:
 │    IUserRepository                   │
 │    IApiInfoRepository                │
 │    IActionAuditRepository            │
+│    IUnitOfWork                       │
 └───────────────┬──────────────────────┘
-                │ depends on
+                │ implemented by
 ┌───────────────▼──────────────────────┐
 │       Adapter Layer                  │
 │    UserRepository                    │
 │    ApiInfoRepository                 │
 │    ActionAuditRepository             │
+│    UnitOfWork                        │
 └───────────────┬──────────────────────┘
                 │ uses
 ┌───────────────▼──────────────────────┐
@@ -131,8 +134,9 @@ The adapter reads from two configuration sections in `appsettings.json`:
 
 The adapter registers via the extension method in `InMemoryPersistenceSetupExtensions.cs`:
 
-- **`builder.AddInMemoryPersistence()`** — Registers all in-memory repository implementations as singletons:
-  `IUserRepository`, `IApiInfoRepository`, `IActionAuditRepository`, and `IUnitOfWork`.
+- **`builder.AddInMemoryPersistence()`** — Registers `IUserRepository` and `IApiInfoRepository` as singletons
+  (to persist data during app lifetime), and `IActionAuditRepository` and `IUnitOfWork` as scoped services
+  (one per request).
 
 Both `UserRepository` and `ApiInfoRepository` require explicit initialization at startup via their `InitializeAsync()`
 methods to load data from configuration and secrets.
@@ -145,10 +149,11 @@ methods to load data from configuration and secrets.
 | ------- | ------------ |
 | `Repository not initialized. Call InitializeAsync() first.` | `InitializeAsync()` not called at startup for the repository |
 | `Failed to retrieve username from secret` | Secret name in `InMemoryModelSettings` doesn't match a secret in the store |
-| `Duplicate API version` | Two entries in `ApiInfos` share the same `Version` value |
+| `Duplicate API version: <version>` | Two entries in `ApiInfos` share the same `Version` value |
 | `API info not found for version` | Requested version not defined in `InMemoryModelSettings.ApiInfos` |
 | Data lost after restart | Expected behavior — in-memory storage does not persist across restarts |
-| `ApiInfoRepository already initialized` | `InitializeAsync()` called more than once |
+| `ApiInfoRepository already initialized` | `InitializeAsync()` called more than once for the API info repository |
+| `UserRepository already initialized` | `InitializeAsync()` called more than once for the user repository |
 
 ---
 

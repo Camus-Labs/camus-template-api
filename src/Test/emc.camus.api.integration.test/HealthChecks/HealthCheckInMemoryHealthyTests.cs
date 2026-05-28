@@ -18,13 +18,13 @@ public class HealthCheckInMemoryHealthyTests
         _client = factory.CreateClient();
     }
 
-    [Fact]
-    public async Task AliveEndpoint_AnonymousRequest_ReturnsHealthyWithBody()
+    [Theory]
+    [InlineData("/alive")]
+    [InlineData("/ready")]
+    public async Task HealthProbeEndpoint_AnonymousRequest_ReturnsHealthyWithBody(string endpoint)
     {
-        // Arrange
-
         // Act
-        var response = await _client.GetAsync("/alive", TestContext.Current.CancellationToken);
+        var response = await _client.GetAsync(endpoint, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -55,19 +55,5 @@ public class HealthCheckInMemoryHealthyTests
         checks.Should().ContainSingle();
         checks[0].GetProperty("name").GetString().Should().Be("dapr-secrets");
         checks[0].GetProperty("status").GetString().Should().Be("Healthy");
-    }
-
-    [Fact]
-    public async Task ReadyEndpoint_AnonymousRequest_ReturnsHealthyWithBody()
-    {
-        // Arrange
-
-        // Act
-        var response = await _client.GetAsync("/ready", TestContext.Current.CancellationToken);
-
-        // Assert
-        await response.Should().HaveStatusCode(HttpStatusCode.OK);
-        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        body.Should().Be("Healthy");
     }
 }

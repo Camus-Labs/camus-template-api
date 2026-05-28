@@ -13,8 +13,8 @@ internal interface IUserDataAccess
     /// </summary>
     /// <param name="connection">The database connection to use.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
-    /// <returns>A dictionary mapping table names to their existence status.</returns>
-    Task<IDictionary<string, bool>> CheckRequiredTablesAsync(IDbConnection connection, CancellationToken ct = default);
+    /// <returns>The table existence model with status for each required table.</returns>
+    Task<TableExistenceModel> CheckRequiredTablesAsync(IDbConnection connection, CancellationToken ct = default);
 
     /// <summary>
     /// Finds a user by username including the password hash for credential verification.
@@ -48,7 +48,8 @@ internal interface IUserDataAccess
     /// </summary>
     /// <param name="connection">The database connection to use.</param>
     /// <param name="userId">The user identifier to update.</param>
+    /// <param name="lastLogin">The UTC timestamp to set as the last login time.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The number of rows affected.</returns>
-    Task<int> UpdateLastLoginAsync(IDbConnection connection, Guid userId, CancellationToken ct = default);
+    Task<int> UpdateLastLoginAsync(IDbConnection connection, Guid userId, DateTime lastLogin, CancellationToken ct = default);
 }

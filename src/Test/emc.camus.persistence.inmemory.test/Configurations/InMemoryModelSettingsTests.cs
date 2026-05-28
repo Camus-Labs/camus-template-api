@@ -7,6 +7,29 @@ namespace emc.camus.persistence.inmemory.test.Configurations;
 
 public class InMemoryModelSettingsTests
 {
+    private static readonly List<string> WritePermissionArray = [Permissions.ApiWrite];
+    private static readonly List<string> ReadPermissionArray = [Permissions.ApiRead];
+    private static readonly List<string> DefaultRoleNameArray = [InMemoryModelSettingsFactory.DefaultRoleName];
+    private static readonly List<string> NonexistentRoleArray = ["nonexistent"];
+    private static readonly List<ApiInfoSettings> EmptyApiInfoArray = [];
+    private static readonly List<RoleSettings> InvalidNameRoleArray =
+    [
+        new RoleSettings { Name = "", Permissions = ReadPermissionArray }
+    ];
+    private static readonly List<UserSettings> InvalidRoleUserArray =
+    [
+        new UserSettings
+        {
+            UsernameSecretName = "user-secret",
+            PasswordSecretName = "pass-secret",
+            Roles = NonexistentRoleArray
+        }
+    ];
+    private static readonly List<ApiInfoSettings> EmptyNameApiInfoArray =
+    [
+        new ApiInfoSettings { Name = "", Version = "1.0", Status = "Available" }
+    ];
+
     // --- Validate ---
 
     [Fact]
@@ -48,7 +71,7 @@ public class InMemoryModelSettingsTests
         settings.Roles.Add(new RoleSettings
         {
             Name = InMemoryModelSettingsFactory.DefaultRoleName,
-            Permissions = new List<string> { Permissions.ApiWrite }
+            Permissions = WritePermissionArray
         });
 
         // Act
@@ -64,10 +87,7 @@ public class InMemoryModelSettingsTests
     {
         // Arrange
         var settings = InMemoryModelSettingsFactory.Create();
-        settings.Roles = new List<RoleSettings>
-        {
-            new RoleSettings { Name = "", Permissions = new List<string> { Permissions.ApiRead } }
-        };
+        settings.Roles = InvalidNameRoleArray;
 
         // Act
         var act = () => settings.Validate();
@@ -103,7 +123,7 @@ public class InMemoryModelSettingsTests
         {
             UsernameSecretName = InMemoryModelSettingsFactory.DefaultUsernameSecret,
             PasswordSecretName = "admin-password-2",
-            Roles = new List<string> { InMemoryModelSettingsFactory.DefaultRoleName }
+            Roles = DefaultRoleNameArray
         });
 
         // Act
@@ -119,15 +139,7 @@ public class InMemoryModelSettingsTests
     {
         // Arrange
         var settings = InMemoryModelSettingsFactory.Create();
-        settings.Users = new List<UserSettings>
-        {
-            new UserSettings
-            {
-                UsernameSecretName = "user-secret",
-                PasswordSecretName = "pass-secret",
-                Roles = new List<string> { "nonexistent" }
-            }
-        };
+        settings.Users = InvalidRoleUserArray;
 
         // Act
         var act = () => settings.Validate();
@@ -159,7 +171,7 @@ public class InMemoryModelSettingsTests
     {
         // Arrange
         var settings = InMemoryModelSettingsFactory.Create();
-        settings.ApiInfos = new List<ApiInfoSettings>();
+        settings.ApiInfos = EmptyApiInfoArray;
 
         // Act
         var act = () => settings.Validate();
@@ -193,10 +205,7 @@ public class InMemoryModelSettingsTests
     {
         // Arrange
         var settings = InMemoryModelSettingsFactory.Create();
-        settings.ApiInfos = new List<ApiInfoSettings>
-        {
-            new ApiInfoSettings { Name = "", Version = "1.0", Status = "Available" }
-        };
+        settings.ApiInfos = EmptyNameApiInfoArray;
 
         // Act
         var act = () => settings.Validate();
@@ -224,15 +233,15 @@ public class InMemoryModelSettingsTests
         act.Should().NotThrow();
     }
 
-    public static IEnumerable<object?[]> NullOrEmptyRolesData() => new List<object?[]>
+    public static readonly TheoryData<object?> NullOrEmptyRolesData = new()
     {
-        new object?[] { null },
-        new object?[] { new List<RoleSettings>() }
+        { null },
+        { new List<RoleSettings>() }
     };
 
-    public static IEnumerable<object?[]> NullOrEmptyUsersData() => new List<object?[]>
+    public static readonly TheoryData<object?> NullOrEmptyUsersData = new()
     {
-        new object?[] { null },
-        new object?[] { new List<UserSettings>() }
+        { null },
+        { new List<UserSettings>() }
     };
 }

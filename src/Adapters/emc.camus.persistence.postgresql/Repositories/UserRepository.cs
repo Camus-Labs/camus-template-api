@@ -4,6 +4,7 @@ using emc.camus.domain.Auth;
 using emc.camus.persistence.postgresql.DataAccess;
 using emc.camus.persistence.postgresql.Mapping;
 using emc.camus.persistence.postgresql.Services;
+using static emc.camus.persistence.postgresql.Services.QueryExecutionGuard;
 
 namespace emc.camus.persistence.postgresql.Repositories;
 
@@ -16,6 +17,7 @@ internal sealed class UserRepository : IUserRepository
     private readonly UnitOfWork _unitOfWork;
     private readonly InitializationState _initState;
     private readonly IUserDataAccess _dataAccess;
+    private readonly TimeProvider _timeProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserRepository"/> class.
@@ -23,18 +25,22 @@ internal sealed class UserRepository : IUserRepository
     /// <param name="unitOfWork">Unit of work for accessing the shared database connection.</param>
     /// <param name="initState">Container-scoped initialization state shared across scoped instances.</param>
     /// <param name="dataAccess">Data access layer for raw SQL execution.</param>
+    /// <param name="timeProvider">Time provider for clock access.</param>
     public UserRepository(
         UnitOfWork unitOfWork,
         InitializationState initState,
-        IUserDataAccess dataAccess)
+        IUserDataAccess dataAccess,
+        TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(unitOfWork);
         ArgumentNullException.ThrowIfNull(initState);
         ArgumentNullException.ThrowIfNull(dataAccess);
+        ArgumentNullException.ThrowIfNull(timeProvider);
 
         _unitOfWork = unitOfWork;
         _initState = initState;
         _dataAccess = dataAccess;
+        _timeProvider = timeProvider;
     }
 
     /// <summary>
@@ -52,17 +58,27 @@ internal sealed class UserRepository : IUserRepository
         }
 
         var connection = await _unitOfWork.GetConnectionAsync(ct);
-        var tableStatus = await _dataAccess.CheckRequiredTablesAsync(connection, ct);
+        var tableResult = await ExecuteAsync(
+            () => _dataAccess.CheckRequiredTablesAsync(connection, ct),
+            nameof(_dataAccess.CheckRequiredTablesAsync));
+        var tableStatus = new Dictionary<string, bool>
+        {
+            ["users"] = tableResult.UsersExists,
+            ["roles"] = tableResult.RolesExists,
+            ["user_roles"] = tableResult.UserRolesExists,
+            ["role_permissions"] = tableResult.RolePermissionsExists,
+        };
 
         string[] requiredTables = ["users", "roles", "user_roles", "role_permissions"];
         var missingTables = requiredTables
-            .Where(table => !tableStatus.TryGetValue(table, out var exists) || !exists)
+            .Where(table => !tableStatus[table])
             .ToList();
 
         if (missingTables.Count > 0)
         {
+            var missingList = string.Join(", ", missingTables);
             throw new InvalidOperationException(
-                $"Required tables do not exist in the database: {string.Join(", ", missingTables)}. " +
+                $"Required tables do not exist in the database: {missingList}. " +
                 "Please run database migrations to create the schema.");
         }
 
@@ -92,13 +108,17 @@ internal sealed class UserRepository : IUserRepository
 
         var connection = await _unitOfWork.GetConnectionAsync(ct);
 
-        var userModel = await _dataAccess.FindByUsernameWithHashAsync(connection, username, ct)
+        var userModel = await ExecuteAsync(
+            () => _dataAccess.FindByUsernameWithHashAsync(connection, username, ct),
+            nameof(_dataAccess.FindByUsernameWithHashAsync))
             ?? throw new UnauthorizedAccessException(
                 "The provided credentials are invalid. User not found.");
 
         VerifyPassword(password, userModel.PasswordHash);
 
-        var roleModels = await _dataAccess.GetRolesByUserIdAsync(connection, userModel.Id, ct);
+        var roleModels = await ExecuteAsync(
+            () => _dataAccess.GetRolesByUserIdAsync(connection, userModel.Id, ct),
+            nameof(_dataAccess.GetRolesByUserIdAsync));
 
         return userModel.ToEntity(roleModels);
     }
@@ -113,14 +133,19 @@ internal sealed class UserRepository : IUserRepository
     /// <exception cref="KeyNotFoundException">Thrown when the user is not found.</exception>
     public async Task<User> GetByIdAsync(Guid userId, CancellationToken ct = default)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(userId, Guid.Empty);
         EnsureInitialized();
 
         var connection = await _unitOfWork.GetConnectionAsync(ct);
 
-        var userModel = await _dataAccess.FindByIdAsync(connection, userId, ct)
+        var userModel = await ExecuteAsync(
+            () => _dataAccess.FindByIdAsync(connection, userId, ct),
+            nameof(_dataAccess.FindByIdAsync))
             ?? throw new KeyNotFoundException($"User with ID '{userId}' not found.");
 
-        var roleModels = await _dataAccess.GetRolesByUserIdAsync(connection, userModel.Id, ct);
+        var roleModels = await ExecuteAsync(
+            () => _dataAccess.GetRolesByUserIdAsync(connection, userModel.Id, ct),
+            nameof(_dataAccess.GetRolesByUserIdAsync));
 
         return userModel.ToEntity(roleModels);
     }
@@ -133,11 +158,14 @@ internal sealed class UserRepository : IUserRepository
     /// <returns>Task representing the asynchronous operation.</returns>
     public async Task UpdateLastLoginAsync(Guid userId, CancellationToken ct = default)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(userId, Guid.Empty);
         EnsureInitialized();
 
         var connection = await _unitOfWork.GetConnectionAsync(ct);
 
-        var rowsAffected = await _dataAccess.UpdateLastLoginAsync(connection, userId, ct);
+        var rowsAffected = await ExecuteAsync(
+            () => _dataAccess.UpdateLastLoginAsync(connection, userId, _timeProvider.GetUtcNow().UtcDateTime, ct),
+            nameof(_dataAccess.UpdateLastLoginAsync));
 
         if (rowsAffected == 0)
         {

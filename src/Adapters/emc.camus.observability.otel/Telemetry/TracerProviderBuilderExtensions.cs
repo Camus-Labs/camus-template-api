@@ -1,9 +1,5 @@
 using System;
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -18,7 +14,7 @@ namespace emc.camus.observability.otel.Telemetry
     /// <summary>
     /// Extension methods for configuring OpenTelemetry tracing provider.
     /// </summary>
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "TracerProviderBuilder is abstract with no public construction API; enrichment relies on pipeline-internal state.")]
     internal static class TracerProviderBuilderExtensions
     {
         /// <summary>
@@ -31,16 +27,21 @@ namespace emc.camus.observability.otel.Telemetry
         /// <param name="environmentName">Environment name (e.g., Development, Production).</param>
         /// <returns>The configured tracing provider builder.</returns>
         public static TracerProviderBuilder UseResourceAttributes(
-            this TracerProviderBuilder builder, 
-            string serviceName, 
-            string serviceVersion, 
+            this TracerProviderBuilder builder,
+            string serviceName,
+            string serviceVersion,
             string instanceId,
             string environmentName)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceVersion);
+            ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(environmentName);
+
             builder.SetResourceBuilder(ResourceFactory.Create(serviceName, serviceVersion, instanceId, environmentName));
             return builder;
         }
-        
+
         /// <summary>
         /// Adds ASP.NET Core instrumentation to the tracing provider, including enrichment for authentication and routing.
         /// </summary>
@@ -59,18 +60,8 @@ namespace emc.camus.observability.otel.Telemetry
             return builder.AddAspNetCoreInstrumentation(options =>
             {
                 options.RecordException = true;
-                options.EnrichWithHttpRequest = EnrichWithHttpRequest;
                 options.EnrichWithHttpResponse = EnrichWithHttpResponse;
             });
-        }
-
-        /// <summary>
-        /// Enriches activity with HTTP request information.
-        /// Authentication enrichment is deferred to <see cref="EnrichWithHttpResponse"/> because
-        /// this callback fires before the authentication middleware populates <c>HttpContext.User</c>.
-        /// </summary>
-        private static void EnrichWithHttpRequest(Activity activity, HttpRequest request)
-        {
         }
 
         /// <summary>
@@ -99,7 +90,7 @@ namespace emc.camus.observability.otel.Telemetry
             }
 
             var routeData = response.HttpContext.GetRouteData();
-            
+
             var controller = routeData?.Values["controller"]?.ToString();
             if (!string.IsNullOrWhiteSpace(controller))
             {
@@ -112,7 +103,7 @@ namespace emc.camus.observability.otel.Telemetry
                 activity.SetTag("http.route.version", version);
             }
         }
-        
+
         /// <summary>
         /// Configures the tracing exporter for OpenTelemetry using Camus conventions.
         /// Supported exporters: OTLP (default), Console.
@@ -121,9 +112,11 @@ namespace emc.camus.observability.otel.Telemetry
         /// <param name="settings">OpenTelemetry configuration settings.</param>
         /// <returns>The configured tracing provider builder.</returns>
         public static TracerProviderBuilder ConfigureTracingExporter(
-            this TracerProviderBuilder builder, 
+            this TracerProviderBuilder builder,
             OpenTelemetrySettings settings)
         {
+            ArgumentNullException.ThrowIfNull(settings);
+
             var exporter = settings.Tracing.Exporter;
 
             switch (exporter)
@@ -139,7 +132,7 @@ namespace emc.camus.observability.otel.Telemetry
                 case TracingExporter.None:
                     // No exporter configured
                     break;
-                    
+
                 default:
                     throw new InvalidOperationException($"Unsupported tracing exporter: {exporter}");
             }

@@ -7,9 +7,11 @@ using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using emc.camus.application.Auth;
 using emc.camus.application.Secrets;
 using emc.camus.security.jwt.Configurations;
+using emc.camus.security.jwt.Exceptions;
 using emc.camus.security.jwt.Services;
 
 namespace emc.camus.security.jwt
@@ -42,11 +44,19 @@ namespace emc.camus.security.jwt
             {
                 var secretProvider = provider.GetRequiredService<ISecretProvider>();
                 var jwtSettings = provider.GetRequiredService<JwtSettings>();
+
                 var pem = secretProvider.GetSecret(jwtSettings.RsaPrivateKeySecretName);
 
-                var rsa = RSA.Create();
-                rsa.ImportFromPem(pem.ToCharArray());
-                return rsa;
+                try
+                {
+                    var rsa = RSA.Create();
+                    rsa.ImportFromPem(pem.ToCharArray());
+                    return rsa;
+                }
+                catch (Exception ex)
+                {
+                    throw new JwtKeyLoadException("Failed to load RSA signing key from PEM.", ex);
+                }
             });
 
             // Register RSA Security Key (wraps the DI-managed RSA instance)
@@ -62,6 +72,9 @@ namespace emc.camus.security.jwt
                 var rsaKey = provider.GetRequiredService<RsaSecurityKey>();
                 return new SigningCredentials(rsaKey, SecurityAlgorithms.RsaSha256);
             });
+
+            // Register TimeProvider (TryAdd avoids duplicate if another adapter already registered it)
+            builder.Services.TryAddSingleton(TimeProvider.System);
 
             // Register JWT Token Generator (implements ITokenGenerator for Application layer)
             builder.Services.AddSingleton<ITokenGenerator, JwtTokenGenerator>();

@@ -6,10 +6,13 @@ namespace emc.camus.persistence.postgresql.test.Mapping;
 
 public class GeneratedTokenMappingExtensionsTests
 {
+    private const string CreatorUsername = "admin";
+    private const string TokenUsername = "admin-service";
+    private static readonly DateTimeOffset ReferenceTime = new(2025, 6, 1, 12, 0, 0, TimeSpan.Zero);
     private static readonly Guid ValidJti = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly Guid ValidUserId = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-    private static readonly DateTime FixedExpiresOn = new(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc);
-    private static readonly DateTime FixedCreatedAt = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime FixedExpiresOn = ReferenceTime.AddYears(1).UtcDateTime;
+    private static readonly DateTime FixedCreatedAt = ReferenceTime.UtcDateTime;
     private static readonly string[] ExpectedPermissions = ["read", "write"];
 
     // --- ToEntity ---
@@ -22,9 +25,9 @@ public class GeneratedTokenMappingExtensionsTests
         {
             Jti = ValidJti,
             CreatorUserId = ValidUserId,
-            CreatorUsername = "admin",
-            TokenUsername = "admin-service",
-            Permissions = new[] { "read", "write" },
+            CreatorUsername = CreatorUsername,
+            TokenUsername = TokenUsername,
+            Permissions = ExpectedPermissions,
             ExpiresOn = FixedExpiresOn,
             CreatedAt = FixedCreatedAt,
             IsRevoked = false,
@@ -37,8 +40,8 @@ public class GeneratedTokenMappingExtensionsTests
         // Assert
         entity.Jti.Should().Be(ValidJti);
         entity.CreatorUserId.Should().Be(ValidUserId);
-        entity.CreatorUsername.Should().Be("admin");
-        entity.TokenUsername.Should().Be("admin-service");
+        entity.CreatorUsername.Should().Be(CreatorUsername);
+        entity.TokenUsername.Should().Be(TokenUsername);
         entity.Permissions.Should().BeEquivalentTo(ExpectedPermissions);
         entity.ExpiresOn.Should().Be(FixedExpiresOn);
         entity.CreatedAt.Should().Be(FixedCreatedAt);
@@ -54,8 +57,8 @@ public class GeneratedTokenMappingExtensionsTests
         {
             Jti = ValidJti,
             CreatorUserId = ValidUserId,
-            CreatorUsername = "admin",
-            TokenUsername = "admin-service",
+            CreatorUsername = CreatorUsername,
+            TokenUsername = TokenUsername,
             Permissions = null,
             ExpiresOn = FixedExpiresOn,
             CreatedAt = FixedCreatedAt,

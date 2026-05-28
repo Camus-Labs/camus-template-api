@@ -10,6 +10,9 @@ namespace emc.camus.api.test.Infrastructure;
 public class HttpUserContextTests
 {
     private static readonly Guid FixedUserId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static readonly List<string> PermissionsReadWrite = ["api.read", "api.write"];
+    private static readonly Claim[] NotAGuidIdentifierClaims = [new(ClaimTypes.NameIdentifier, "not-a-guid")];
+    private static readonly Claim[] UsernameOnlyClaims = [new(ClaimTypes.Name, "testuser")];
 
     private static HttpUserContext CreateContext(ClaimsPrincipal? user = null, bool hasHttpContext = true)
     {
@@ -37,7 +40,7 @@ public class HttpUserContextTests
     {
         var mockAccessor = new Mock<IHttpContextAccessor>();
         var mockHttpContext = new Mock<HttpContext>();
-        mockHttpContext.Setup(x => x.User).Returns(default(ClaimsPrincipal)!);
+        mockHttpContext.Setup(x => x.User).Returns((ClaimsPrincipal)null!);
         mockAccessor.Setup(x => x.HttpContext).Returns(mockHttpContext.Object);
         return new HttpUserContext(mockAccessor.Object);
     }
@@ -91,23 +94,18 @@ public class HttpUserContextTests
         result.Should().Be(FixedUserId);
     }
 
-    public static IEnumerable<object[]> GetCurrentUserId_NullScenarios()
+    public static readonly TheoryData<HttpUserContext> GetCurrentUserId_NullScenarios = new()
     {
-        yield return new object[] { CreateContext() };
-        yield return new object[] { CreateContext(hasHttpContext: false) };
-        yield return new object[] { CreateContextWithNullUser() };
-
-        var nullIdentityUser = new ClaimsPrincipal();
-        yield return new object[] { CreateContext(nullIdentityUser) };
-
-        var nonGuidUser = new ClaimsPrincipal(
-            new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "not-a-guid") }, "TestAuth"));
-        yield return new object[] { CreateContext(nonGuidUser) };
-
-        var missingIdUser = new ClaimsPrincipal(
-            new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, "testuser") }, "TestAuth"));
-        yield return new object[] { CreateContext(missingIdUser) };
-    }
+        CreateContext(),
+        CreateContext(hasHttpContext: false),
+        CreateContextWithNullUser(),
+        CreateContext(new ClaimsPrincipal()),
+        CreateContext(new ClaimsPrincipal(new ClaimsIdentity())),
+        CreateContext(new ClaimsPrincipal(
+            new ClaimsIdentity(NotAGuidIdentifierClaims, "TestAuth"))),
+        CreateContext(new ClaimsPrincipal(
+            new ClaimsIdentity(UsernameOnlyClaims, "TestAuth")))
+    };
 
     [Theory]
     [MemberData(nameof(GetCurrentUserId_NullScenarios))]
@@ -137,15 +135,14 @@ public class HttpUserContextTests
         result.Should().Be("admin");
     }
 
-    public static IEnumerable<object[]> GetCurrentUsername_NullScenarios()
+    public static readonly TheoryData<HttpUserContext> GetCurrentUsername_NullScenarios = new()
     {
-        yield return new object[] { CreateContext() };
-        yield return new object[] { CreateContext(hasHttpContext: false) };
-        yield return new object[] { CreateContextWithNullUser() };
-
-        var nullIdentityUser = new ClaimsPrincipal();
-        yield return new object[] { CreateContext(nullIdentityUser) };
-    }
+        CreateContext(),
+        CreateContext(hasHttpContext: false),
+        CreateContextWithNullUser(),
+        CreateContext(new ClaimsPrincipal()),
+        CreateContext(new ClaimsPrincipal(new ClaimsIdentity()))
+    };
 
     [Theory]
     [MemberData(nameof(GetCurrentUsername_NullScenarios))]
@@ -165,7 +162,7 @@ public class HttpUserContextTests
     public void GetCurrentPermissions_AuthenticatedUserWithPermissions_ReturnsPermissions()
     {
         // Arrange
-        var permissions = new List<string> { "api.read", "api.write" };
+        var permissions = PermissionsReadWrite;
         var user = CreateAuthenticatedUser(permissions: permissions);
         var context = CreateContext(user);
 
@@ -176,16 +173,15 @@ public class HttpUserContextTests
         result.Should().BeEquivalentTo(permissions);
     }
 
-    public static IEnumerable<object[]> GetCurrentPermissions_EmptyScenarios()
+    public static readonly TheoryData<HttpUserContext> GetCurrentPermissions_EmptyScenarios = new()
     {
-        yield return new object[] { CreateContext(CreateAuthenticatedUser()) };
-        yield return new object[] { CreateContext() };
-        yield return new object[] { CreateContext(hasHttpContext: false) };
-        yield return new object[] { CreateContextWithNullUser() };
-
-        var nullIdentityUser = new ClaimsPrincipal();
-        yield return new object[] { CreateContext(nullIdentityUser) };
-    }
+        CreateContext(CreateAuthenticatedUser()),
+        CreateContext(),
+        CreateContext(hasHttpContext: false),
+        CreateContextWithNullUser(),
+        CreateContext(new ClaimsPrincipal()),
+        CreateContext(new ClaimsPrincipal(new ClaimsIdentity()))
+    };
 
     [Theory]
     [MemberData(nameof(GetCurrentPermissions_EmptyScenarios))]

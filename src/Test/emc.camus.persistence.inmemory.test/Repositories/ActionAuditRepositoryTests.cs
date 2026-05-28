@@ -1,5 +1,6 @@
 using emc.camus.application.Common;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using emc.camus.persistence.inmemory.Repositories;
 
@@ -7,6 +8,17 @@ namespace emc.camus.persistence.inmemory.test.Repositories;
 
 public class ActionAuditRepositoryTests
 {
+    private const string ValidActionTitle = "TestAction";
+    private const string ValidActionSummary = "Test summary";
+    private const string ValidUsername = "admin";
+    private static readonly Guid ValidUserId = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+    private readonly Mock<ILogger<ActionAuditRepository>> _loggerMock;
+
+    public ActionAuditRepositoryTests()
+    {
+        _loggerMock = new Mock<ILogger<ActionAuditRepository>>();
+    }
     // --- Constructor ---
 
     [Fact]
@@ -25,7 +37,6 @@ public class ActionAuditRepositoryTests
     [Fact]
     public void Constructor_NullUserContext_ThrowsArgumentNullException()
     {
-        // Arrange
         // Act
         var act = () => new ActionAuditRepository(NullLogger<ActionAuditRepository>.Instance, null!);
 
@@ -40,12 +51,12 @@ public class ActionAuditRepositoryTests
     {
         // Arrange
         var userContextMock = new Mock<IUserContext>();
-        userContextMock.Setup(x => x.GetCurrentUserId()).Returns(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        userContextMock.Setup(x => x.GetCurrentUserId()).Returns(ValidUserId);
         userContextMock.Setup(x => x.GetCurrentUsername()).Returns("testuser");
-        var repository = new ActionAuditRepository(NullLogger<ActionAuditRepository>.Instance, userContextMock.Object);
+        var repository = new ActionAuditRepository(_loggerMock.Object, userContextMock.Object);
 
         // Act
-        var result = await repository.LogCurrentUserActionAsync("TestAction", "Test summary", TestContext.Current.CancellationToken);
+        var result = await repository.LogCurrentUserActionAsync(ValidActionTitle, ValidActionSummary, TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().Be(0L);
@@ -57,10 +68,10 @@ public class ActionAuditRepositoryTests
         // Arrange
         var userContextMock = new Mock<IUserContext>();
         userContextMock.Setup(x => x.GetCurrentUserId()).Returns(default(Guid?));
-        var repository = new ActionAuditRepository(NullLogger<ActionAuditRepository>.Instance, userContextMock.Object);
+        var repository = new ActionAuditRepository(_loggerMock.Object, userContextMock.Object);
 
         // Act
-        var act = () => repository.LogCurrentUserActionAsync("TestAction", "Test summary", TestContext.Current.CancellationToken);
+        var act = () => repository.LogCurrentUserActionAsync(ValidActionTitle, ValidActionSummary, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -72,12 +83,12 @@ public class ActionAuditRepositoryTests
     {
         // Arrange
         var userContextMock = new Mock<IUserContext>();
-        userContextMock.Setup(x => x.GetCurrentUserId()).Returns(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        userContextMock.Setup(x => x.GetCurrentUserId()).Returns(ValidUserId);
         userContextMock.Setup(x => x.GetCurrentUsername()).Returns(default(string?));
-        var repository = new ActionAuditRepository(NullLogger<ActionAuditRepository>.Instance, userContextMock.Object);
+        var repository = new ActionAuditRepository(_loggerMock.Object, userContextMock.Object);
 
         // Act
-        var act = () => repository.LogCurrentUserActionAsync("TestAction", "Test summary", TestContext.Current.CancellationToken);
+        var act = () => repository.LogCurrentUserActionAsync(ValidActionTitle, ValidActionSummary, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -92,10 +103,27 @@ public class ActionAuditRepositoryTests
     {
         // Arrange
         var userContextMock = new Mock<IUserContext>();
-        var repository = new ActionAuditRepository(NullLogger<ActionAuditRepository>.Instance, userContextMock.Object);
+        var repository = new ActionAuditRepository(_loggerMock.Object, userContextMock.Object);
 
         // Act
-        var act = () => repository.LogCurrentUserActionAsync(title!, "Test summary", TestContext.Current.CancellationToken);
+        var act = () => repository.LogCurrentUserActionAsync(title!, ValidActionSummary, TestContext.Current.CancellationToken);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task LogCurrentUserActionAsync_InvalidActionSummary_ThrowsArgumentException(string? summary)
+    {
+        // Arrange
+        var userContextMock = new Mock<IUserContext>();
+        var repository = new ActionAuditRepository(_loggerMock.Object, userContextMock.Object);
+
+        // Act
+        var act = () => repository.LogCurrentUserActionAsync(ValidActionTitle, summary!, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
@@ -108,14 +136,27 @@ public class ActionAuditRepositoryTests
     {
         // Arrange
         var userContextMock = new Mock<IUserContext>();
-        var repository = new ActionAuditRepository(NullLogger<ActionAuditRepository>.Instance, userContextMock.Object);
-        var userId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var repository = new ActionAuditRepository(_loggerMock.Object, userContextMock.Object);
 
         // Act
-        var result = await repository.LogActionAsync(userId, "admin", "TestAction", "Test summary", TestContext.Current.CancellationToken);
+        var result = await repository.LogActionAsync(ValidUserId, ValidUsername, ValidActionTitle, ValidActionSummary, TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().Be(0L);
+    }
+
+    [Fact]
+    public async Task LogActionAsync_EmptyGuid_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var userContextMock = new Mock<IUserContext>();
+        var repository = new ActionAuditRepository(_loggerMock.Object, userContextMock.Object);
+
+        // Act
+        var act = () => repository.LogActionAsync(Guid.Empty, ValidUsername, ValidActionTitle, ValidActionSummary, TestContext.Current.CancellationToken);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     [Theory]
@@ -126,10 +167,10 @@ public class ActionAuditRepositoryTests
     {
         // Arrange
         var userContextMock = new Mock<IUserContext>();
-        var repository = new ActionAuditRepository(NullLogger<ActionAuditRepository>.Instance, userContextMock.Object);
+        var repository = new ActionAuditRepository(_loggerMock.Object, userContextMock.Object);
 
         // Act
-        var act = () => repository.LogActionAsync(Guid.Empty, username!, "TestAction", "Test summary", TestContext.Current.CancellationToken);
+        var act = () => repository.LogActionAsync(ValidUserId, username!, ValidActionTitle, ValidActionSummary, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
@@ -143,10 +184,10 @@ public class ActionAuditRepositoryTests
     {
         // Arrange
         var userContextMock = new Mock<IUserContext>();
-        var repository = new ActionAuditRepository(NullLogger<ActionAuditRepository>.Instance, userContextMock.Object);
+        var repository = new ActionAuditRepository(_loggerMock.Object, userContextMock.Object);
 
         // Act
-        var act = () => repository.LogActionAsync(Guid.Empty, "admin", title!, "Test summary", TestContext.Current.CancellationToken);
+        var act = () => repository.LogActionAsync(ValidUserId, ValidUsername, title!, ValidActionSummary, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
@@ -160,10 +201,10 @@ public class ActionAuditRepositoryTests
     {
         // Arrange
         var userContextMock = new Mock<IUserContext>();
-        var repository = new ActionAuditRepository(NullLogger<ActionAuditRepository>.Instance, userContextMock.Object);
+        var repository = new ActionAuditRepository(_loggerMock.Object, userContextMock.Object);
 
         // Act
-        var act = () => repository.LogActionAsync(Guid.Empty, "admin", "TestAction", summary!, TestContext.Current.CancellationToken);
+        var act = () => repository.LogActionAsync(ValidUserId, ValidUsername, ValidActionTitle, summary!, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();

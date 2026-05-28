@@ -5,6 +5,12 @@ namespace emc.camus.application.test.Common;
 
 public class PaginationParamsTests
 {
+    private const int MinClampValue = 1;
+    private const int ValidPage = 3;
+    private const int ValidPageSize = 50;
+    private const int TestPageSize = 25;
+    private const int MaxPageSize = 100;
+
     // --- Constructor ---
 
     [Fact]
@@ -15,7 +21,7 @@ public class PaginationParamsTests
         var pagination = new PaginationParams();
 
         // Assert
-        pagination.Page.Should().Be(1);
+        pagination.Page.Should().Be(MinClampValue);
         pagination.PageSize.Should().Be(PaginationParams.DefaultPageSize);
     }
 
@@ -23,21 +29,21 @@ public class PaginationParamsTests
     public void Constructor_ValidParameters_SetsProperties()
     {
         // Arrange
-        var page = 3;
-        var pageSize = 50;
+        var page = ValidPage;
+        var pageSize = ValidPageSize;
 
         // Act
         var pagination = new PaginationParams(page, pageSize);
 
         // Assert
-        pagination.Page.Should().Be(3);
-        pagination.PageSize.Should().Be(50);
+        pagination.Page.Should().Be(ValidPage);
+        pagination.PageSize.Should().Be(ValidPageSize);
     }
 
     [Theory]
-    [InlineData(0, 1)]
-    [InlineData(-5, 1)]
-    [InlineData(-100, 1)]
+    [InlineData(0, MinClampValue)]
+    [InlineData(-5, MinClampValue)]
+    [InlineData(-100, MinClampValue)]
     public void Constructor_PageBelowMinimum_ClampsToOne(int page, int expectedPage)
     {
         // Arrange
@@ -49,8 +55,8 @@ public class PaginationParamsTests
     }
 
     [Theory]
-    [InlineData(0, 1)]
-    [InlineData(-10, 1)]
+    [InlineData(0, MinClampValue)]
+    [InlineData(-10, MinClampValue)]
     public void Constructor_PageSizeBelowMinimum_ClampsToOne(int pageSize, int expectedPageSize)
     {
         // Arrange
@@ -62,9 +68,9 @@ public class PaginationParamsTests
     }
 
     [Theory]
-    [InlineData(101, 100)]
-    [InlineData(500, 100)]
-    [InlineData(int.MaxValue, 100)]
+    [InlineData(101, MaxPageSize)]
+    [InlineData(500, MaxPageSize)]
+    [InlineData(int.MaxValue, MaxPageSize)]
     public void Constructor_PageSizeAboveMaximum_ClampsToMax(int pageSize, int expectedPageSize)
     {
         // Arrange
@@ -78,9 +84,9 @@ public class PaginationParamsTests
     // --- Offset ---
 
     [Theory]
-    [InlineData(1, 25, 0)]
-    [InlineData(2, 25, 25)]
-    [InlineData(3, 10, 20)]
+    [InlineData(1, TestPageSize, 0)]
+    [InlineData(2, TestPageSize, TestPageSize)]
+    [InlineData(ValidPage, 10, 20)]
     public void Offset_VariousPages_ReturnsCorrectOffset(int page, int pageSize, int expectedOffset)
     {
         // Arrange

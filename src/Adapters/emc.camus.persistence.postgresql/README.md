@@ -2,15 +2,17 @@
 
 PostgreSQL database adapter for Camus applications using Dapper and Npgsql.
 
-> **📖 Parent Documentation:** [Main README](../../../README.md) | [Architecture Guide](../../../docs/architecture.md)
+> **📖 Parent Documentation:** [Main README](../../../README.md) |
+> [Architecture Guide](../../../docs/architecture.md) |
+> [Deployment Guide](../../../docs/deployment.md)
 
 ---
 
 ## 📋 Overview
 
 This adapter provides PostgreSQL database access using Dapper micro-ORM, implementing the repository
-pattern for clean separation between data access and business logic. It supports both API information
-and user authorization data persistence.
+pattern for clean separation between data access and business logic. It supports API information,
+user authorization, token lifecycle, and action audit data persistence.
 
 ---
 
@@ -30,15 +32,9 @@ and user authorization data persistence.
 
 ### 1. Setup Database
 
-Create a PostgreSQL database and apply schema migrations via the DbUp adapter:
-
-```bash
-# Create database
-createdb camus
-```
-
-Schema is managed via the [DbUp migrations adapter](../emc.camus.migrations.dbup/README.md) — migration scripts run
-automatically at application startup when `DBUpSettings.Enabled` is `true`.
+Create a PostgreSQL database named `camus` using your preferred database administration tool or the
+`createdb` CLI utility. Schema is managed via the [DbUp migrations adapter](../emc.camus.migrations.dbup/README.md) —
+migration scripts run automatically at application startup when `DBUpSettings.Enabled` is `true`.
 
 ### 2. Configure Application Settings
 
@@ -65,14 +61,7 @@ for the full property reference.
 
 ### 3. Application Wiring
 
-The repositories are registered via `PersistenceSetupExtensions` in the API layer:
-
-- `builder.AddPersistence()` routes to `AddPostgreSqlPersistence()` when
-  `DataPersistenceSettings.Provider` is `PostgreSQL`
-- `app.UsePersistenceAsync()` initializes `AuthService` and `ApiInfoService`
-  at startup
-
-See `PersistenceSetupExtensions` in `src/Api/emc.camus.api/Extensions/` for the wiring details.
+See [Integration](#integration) for DI wiring details.
 
 ---
 
@@ -93,14 +82,26 @@ Manages user authentication and authorization:
 
 - `InitializeAsync()` - Validates database connection and schema
 - `ValidateCredentialsAsync(username, password)` - Authenticates users and loads roles
+- `GetByIdAsync(userId)` - Retrieves a user by their unique identifier
+- `UpdateLastLoginAsync(userId)` - Updates the user's last login timestamp
 
 #### GeneratedTokenRepository
 
 Manages generated token persistence with sorting and filtering:
 
 - `GetPagedByCreatorUserIdAsync(creatorUserId, pagination, filter, sort)` - Retrieves paged tokens with sorting
+- `GetByJtiAsync(jti)` - Retrieves a token by its unique JTI claim
+- `GetActiveRevokedJtisAsync()` - Returns the set of revoked JTIs for active tokens
 - `CreateAsync(generatedToken)` - Persists a new generated token
 - `SaveAsync(generatedToken)` - Persists the current state of a generated token (e.g., after revocation)
+
+#### ActionAuditRepository
+
+Manages action audit log persistence:
+
+- `LogCurrentUserActionAsync(actionTitle, actionSummary)` - Records an audit entry using the current authenticated user
+  context
+- `LogActionAsync(userId, username, actionTitle, actionSummary)` - Records an audit entry with explicit user information
 
 ---
 
@@ -148,8 +149,13 @@ See the existing repository implementations in this adapter for query patterns.
 
 ### Transaction Support
 
-Dapper supports transactions for multi-statement operations. Open a connection, begin a transaction,
-pass it to each `Execute`/`Query` call, and commit or rollback as appropriate.
+Transactions are managed through the `IUnitOfWork` abstraction registered in DI:
+
+- `BeginTransactionAsync()` - Opens a connection and begins a new transaction
+- `CommitAsync()` - Commits the current transaction
+- `RollbackAsync()` - Rolls back the current transaction
+
+All repositories within a request scope share the same connection and transaction via `UnitOfWork`.
 
 ---
 
@@ -157,10 +163,11 @@ pass it to each `Execute`/`Query` call, and commit or rollback as appropriate.
 
 ### Integration Tests
 
-For testing with PostgreSQL, create a test database and use the adapter's connection factory pointed
-at that database. Initialize the repository, then assert on query results.
+For testing with PostgreSQL, register the adapter via `builder.AddPersistence()` with
+`DataPersistenceSettings.Provider` set to `PostgreSQL` and inject the repository interfaces.
+The integration test project uses Testcontainers to provision a disposable PostgreSQL instance.
 
-See test projects in `src/Test/` for integration test patterns.
+See `src/Test/emc.camus.api.integration.test/` for integration test patterns.
 
 ---
 
@@ -170,8 +177,9 @@ This adapter integrates through extension methods in the API layer:
 
 - `builder.AddPersistence()` routes to `AddPostgreSqlPersistence()` when
   `DataPersistenceSettings.Provider` is `PostgreSQL`
-- `app.UsePersistenceAsync()` initializes `AuthService` and `ApiInfoService`
-  at startup
+- `app.UsePersistenceAsync()` resolves all `IServiceInitializer` implementations and calls
+  `InitializeAsync` at startup
+- `AddPostgreSqlHealthCheck()` registers a readiness-tagged health check for PostgreSQL connectivity
 
 See `PersistenceSetupExtensions` in `src/Api/emc.camus.api/Extensions/` for the full wiring details.
 
@@ -197,18 +205,19 @@ Failed to open database connection
 Required table 'api_info' does not exist
 ```
 
-- Run the schema script: see [DbUp migrations adapter](../emc.camus.migrations.dbup/README.md)
+- Verify DbUp migrations ran successfully at startup — see [DbUp migrations adapter](../emc.camus.migrations.dbup/README.md)
+  for troubleshooting migration failures
 - Verify you're connecting to the correct database
 
 #### Secret Retrieval Errors
 
 ```text
-Failed to retrieve password from secret 'xxx'
+Database password secret 'DBSecret' not found or empty
 ```
 
 - Verify secret exists in secret provider
 - Check secret provider configuration
-- Ensure secret names match database records
+- Ensure `UserSecretName` and `PasswordSecretName` in `DatabaseSettings` match the configured secret names
 
 ---
 

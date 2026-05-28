@@ -30,6 +30,8 @@ in `Extensions/`.
 - 🗄️ **Persistence Selection** — InMemory or PostgreSQL chosen globally via
   `DataPersistenceSettings.Provider` configuration
 - 🔑 **Secret Management** — Dapr-based secret provider loaded at startup
+- 🔏 **Idempotency** — Header-enforced per-endpoint idempotency key validation and response caching with
+  configurable TTL policies and `Idempotency-Key-Status` response header
 
 ---
 
@@ -38,15 +40,16 @@ in `Extensions/`.
 | Folder / File | Purpose |
 | --- | --- |
 | `Controllers/` | Versioned API controllers inheriting `ApiControllerBase` |
-| `Configurations/` | Strongly-typed settings classes (`CorsSettings`, `ErrorHandlingSettings`) |
+| `Configurations/` | Strongly-typed settings classes (`CorsSettings`, `ErrorCodeMappingRuleSettings`, `ErrorHandlingSettings`, `IdempotencySettings`, `IdempotencyPolicies`, `RequestTimeoutSettings`, `RequestTimeoutPolicies`) |
 | `Extensions/` | One `*SetupExtensions.cs` file per cross-cutting concern for DI registration |
 | `Infrastructure/` | Framework-dependent service implementations (e.g., `HttpUserContext`) |
 | `Mapping/` | Request → Command and Result → Response mappers, versioned per API version |
-| `Metrics/` | Custom OpenTelemetry meter and counter definitions (`ErrorMetrics`) |
-| `Middleware/` | Pipeline middleware (`ExceptionHandlingMiddleware`, `UsernameHeaderMiddleware`) |
+| `Metrics/` | Custom OpenTelemetry meter and counter definitions (`ErrorMetrics`, `IdempotencyMetrics`) |
+| `Middleware/` | Pipeline middleware (`ExceptionHandlingMiddleware`, `SecurityHeadersMiddleware`, `UsernameHeaderMiddleware`) |
 | `Models/Dtos/` | Data-transfer objects returned inside response envelopes |
 | `Models/Requests/` | Input models bound from `[FromBody]` or `[FromQuery]` |
 | `Models/Responses/` | Response envelopes (`ApiResponse<T>`, `PagedResponse<T>`) |
+| `Filters/` | Action filters and marker attributes (`IdempotencyKeyValidationFilter`, `IdempotencyResponseCachingFilter`, `RequireIdempotencyKeyAttribute`) |
 | `SwaggerExamples/` | `IExamplesProvider<T>` classes per API version |
 | `Program.cs` | Composition root — ordered adapter registration and middleware pipeline |
 
@@ -56,13 +59,7 @@ in `Extensions/`.
 
 ### Running Locally
 
-Start the API with the VS Code **run-api** task or from a terminal:
-
-```shell
-dotnet run --project src/Api/emc.camus.api/emc.camus.api.csproj
-```
-
-Hot-reload is available through the **watch-api** task.
+Start the API with the VS Code **run-api** task. Hot-reload is available through the **watch-api** task.
 
 > **📖 Development Setup:** See [Debugging Guide](../../../docs/debugging.md) for Docker Compose and VS Code
 debugger attachment.
@@ -87,7 +84,7 @@ in the pipeline to capture exceptions from all downstream components. Refer to t
     "AllowedOrigins": ["https://app.camus.com/"],
     "AllowedMethods": ["GET", "POST"],
     "AllowedHeaders": ["Content-Type", "Authorization", "Api-Key"],
-    "ExposedHeaders": ["Content-Type", "Trace-Id", "Username", "Retry-After", "RateLimit-Limit", "RateLimit-Reset", "RateLimit-Policy", "RateLimit-Window"],
+    "ExposedHeaders": ["Content-Type", "Trace-Id", "Retry-After", "RateLimit-Limit", "RateLimit-Reset", "RateLimit-Policy", "RateLimit-Window"],
     "AllowCredentials": true,
     "PreflightMaxAgeMinutes": 5
   }
@@ -96,7 +93,7 @@ in the pipeline to capture exceptions from all downstream components. Refer to t
 
 ### ErrorHandlingSettings
 
-Additional error-code mapping rules evaluated before the platform defaults:
+Additional fallback error-code mapping rules appended after the built-in platform defaults:
 
 ```json
 {
@@ -112,6 +109,29 @@ Additional error-code mapping rules evaluated before the platform defaults:
 }
 ```
 
+### IdempotencySettings
+
+```json
+{
+  "IdempotencySettings": {
+    "StandardTtlSeconds": 300,
+    "LongTermTtlSeconds": 86400
+  }
+}
+```
+
+### RequestTimeoutSettings
+
+```json
+{
+  "RequestTimeoutSettings": {
+    "DefaultTimeoutSeconds": 30,
+    "TightTimeoutSeconds": 10,
+    "ExtendedTimeoutSeconds": 60
+  }
+}
+```
+
 > **📖 Other Sections:** JWT, API Key, Rate Limiting, Swagger, Observability, Persistence, and Secret settings
 are owned by their respective adapter READMEs. See [Documentation Hub](../../../docs/README.md) for links.
 
@@ -121,12 +141,14 @@ are owned by their respective adapter READMEs. See [Documentation Hub](../../../
 
 ### Adapter Registration
 
-Each adapter exposes a pair of extension methods consumed in `Program.cs`:
+Each concern exposes extension methods consumed in `Program.cs` — some expose only a builder
+registration method, some only an app middleware method, and others both:
 
 | Adapter | Builder method | App method |
 | --- | --- | --- |
 | Observability | `AddObservability()` | `UseObservability()` |
 | Error Handling | `AddErrorHandling()` | `UseErrorHandling()` |
+| Idempotency | `AddIdempotency()` | — |
 | API Versioning | `AddApiVersioning()` | — |
 | Swagger | `AddSwaggerDocumentation()` | `UseSwaggerDocumentation()` |
 | CORS | `AddCorsPolicy()` | `UseCorsPolicy()` |
@@ -136,6 +158,10 @@ Each adapter exposes a pair of extension methods consumed in `Program.cs`:
 | Cache | `AddInMemoryCache()` | — |
 | JWT Auth | `AddJwtAuthentication()` | — |
 | API Key Auth | `AddApiKeyAuthentication()` | — |
+| Security Headers | — | `UseSecurityHeaders()` |
+| Transport Security | — | `UseTransportSecurity()` |
+| Health Checks | `AddHealthChecks()` | `UseHealthChecks()` |
+| Request Timeouts | `AddRequestTimeoutPolicies()` | `UseRequestTimeoutPolicies()` |
 | Authorization | `AddAuthorizationPolicies()` | `UseAuthorizationPolicies()` |
 | App Services | `AddApplicationServices()` | `UseApplicationServices()` |
 | Persistence | `AddPersistence()` | `UsePersistenceAsync()` |
@@ -145,11 +171,12 @@ Each adapter exposes a pair of extension methods consumed in `Program.cs`:
 | Controller | Versions | Auth | Description |
 | --- | --- | --- | --- |
 | `ApiInfoController` | v1, v2 | Anonymous / API Key / JWT | Public and protected API information endpoints |
-| `AuthController` | v2 | API Key, JWT | User authentication, token generation, listing, and revocation |
+| `AuthController` | v1, v2 (actions: v2) | API Key, JWT | User authentication, token generation, listing, and revocation |
 
 ### Response Envelope
 
-All success responses are wrapped in `ApiResponse<T>` containing `Message`, `Data`, and `Timestamp` properties.
+Controller success responses are wrapped in `ApiResponse<T>` containing `Message`, `Data`, and `Timestamp` properties.
+Infrastructure endpoints (`/health`, `/alive`, `/ready`) return their own response format.
 Error responses use RFC 7807 `ProblemDetails`, generated automatically by `ExceptionHandlingMiddleware`.
 
 ### Metrics
@@ -160,13 +187,29 @@ The API layer exports:
 
 **Type:** Counter  
 **Unit:** responses  
-**Description:** Total error responses returned by the application
-
-**Dimensions:**
+**Description:** Total number of error responses returned by the application
 
 - `error_code` — Machine-readable error code (e.g., `jwt_token_expired`, `rate_limit_exceeded`)
 - `http_status` — HTTP status code (401, 429, 500, etc.)
 - `path` — Endpoint path that produced the error
+
+#### `idempotency_cache_hit_total`
+
+**Type:** Counter
+**Unit:** requests
+**Description:** Total number of idempotency cache hits (responses replayed from cache)
+
+#### `idempotency_body_conflict_total`
+
+**Type:** Counter
+**Unit:** requests
+**Description:** Total number of idempotency body conflict rejections (same key, different body)
+
+#### `idempotency_cache_error_total`
+
+**Type:** Counter
+**Unit:** errors
+**Description:** Total number of idempotency cache infrastructure errors (fail-open)
 
 ---
 
@@ -176,7 +219,7 @@ The API layer exports:
 | --- | --- |
 | `403 Forbidden` on an endpoint that should be public | Missing `[AllowAnonymous]` attribute or CORS policy blocking the origin |
 | `429 Too Many Requests` in development | Rate limit policy too strict — check `InMemoryRateLimitingSettings.Policies` in `appsettings.Development.json` |
-| Swagger UI not loading | `SwaggerSettings.Enabled` is `false` in the active configuration profile |
+| Swagger UI not loading | `SwaggerSettings.Enabled` is `false` or the application is not running in the Development environment |
 | `500` with "secret" or "configuration" in logs | Dapr sidecar not running or secret store misconfigured — see [Dapr Secrets Adapter](../../Adapters/emc.camus.secrets.dapr/README.md) |
 | CORS preflight failures | `AllowedOrigins` does not include the requesting origin — update `CorsSettings` |
 | Missing `Username` / `Trace-Id` headers | Middleware pipeline order incorrect or observability adapter not registered |

@@ -6,14 +6,23 @@ namespace emc.camus.domain.test.Auth;
 public class UserTests
 {
     private static readonly Guid ValidId = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    private static readonly Guid ValidRoleId = new("cccccccc-cccc-cccc-cccc-cccccccccccc");
     private const string ValidUsername = "testuser";
+    private const string AdminRoleName = "Admin";
+    private static readonly IReadOnlyList<string> WriteDeletePermissions = ["write", "delete"];
+    private static readonly string[] ReadWritePermissions = ["read", "write"];
+    private static readonly string[] ReadWriteDeletePermissions = ["read", "write", "delete"];
+    private static readonly List<Role> EmptyRoleList = [];
+    private static readonly string[] NoPermissions = [];
 
-    private static Role CreateRole(string name = "Admin") =>
+    private static Role CreateRole(string name = AdminRoleName) =>
         Role.Reconstitute(
-            new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+            ValidRoleId,
             name,
             "Test role",
-            new List<string> { "read", "write" });
+            ReadWritePermissions.ToList());
+
+    private static readonly List<Role> SingleRoleList = [CreateRole()];
 
     // --- Constructor ---
 
@@ -37,11 +46,10 @@ public class UserTests
     {
         // Arrange
         var username = ValidUsername;
-        var roles = new List<Role> { CreateRole() };
         var id = ValidId;
 
         // Act
-        var user = new User(username, roles, id);
+        var user = new User(username, SingleRoleList, id);
 
         // Assert
         user.Id.Should().Be(id);
@@ -124,10 +132,9 @@ public class UserTests
         // Arrange
         var id = ValidId;
         var username = ValidUsername;
-        var roles = new List<Role> { CreateRole() };
 
         // Act
-        var user = User.Reconstitute(id, username, roles);
+        var user = User.Reconstitute(id, username, SingleRoleList);
 
         // Assert
         user.Id.Should().Be(id);
@@ -137,61 +144,37 @@ public class UserTests
 
     // --- GetPermissions ---
 
-    [Fact]
-    public void GetPermissions_NoRoles_ReturnsEmptyList()
+    public static readonly TheoryData<List<Role>, string[]> GetPermissionsCases = new()
+    {
+        { EmptyRoleList, NoPermissions },
+        {
+            new List<Role>
+            {
+                Role.Reconstitute(ValidRoleId, AdminRoleName, "Admin role", ReadWritePermissions.ToList())
+            },
+            ReadWritePermissions
+        },
+        {
+            new List<Role>
+            {
+                Role.Reconstitute(ValidRoleId, AdminRoleName, "Admin role", ReadWritePermissions.ToList()),
+                Role.Reconstitute(new Guid("dddddddd-dddd-dddd-dddd-dddddddddddd"), "Editor", "Editor role", WriteDeletePermissions.ToList())
+            },
+            ReadWriteDeletePermissions
+        }
+    };
+
+    [Theory]
+    [MemberData(nameof(GetPermissionsCases))]
+    public void GetPermissions_VariousRoleConfigurations_ReturnsExpectedPermissions(List<Role> roles, string[] expectedPermissions)
     {
         // Arrange
-        var user = new User(ValidUsername);
+        var user = User.Reconstitute(ValidId, ValidUsername, roles);
 
         // Act
         var permissions = user.GetPermissions();
 
         // Assert
-        permissions.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void GetPermissions_SingleRole_ReturnsRolePermissions()
-    {
-        // Arrange
-        var role = Role.Reconstitute(
-            new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"),
-            "Admin",
-            "Admin role",
-            new List<string> { "read", "write" });
-        var user = User.Reconstitute(ValidId, ValidUsername, new List<Role> { role });
-
-        // Act
-        var permissions = user.GetPermissions();
-
-        // Assert
-        var expected = new[] { "read", "write" };
-        permissions.Should().BeEquivalentTo(expected);
-    }
-
-    [Fact]
-    public void GetPermissions_MultipleRolesWithOverlap_ReturnsDistinctPermissions()
-    {
-        // Arrange
-        var role1 = Role.Reconstitute(
-            new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"),
-            "Admin",
-            "Admin role",
-            new List<string> { "read", "write" });
-
-        var role2 = Role.Reconstitute(
-            new Guid("dddddddd-dddd-dddd-dddd-dddddddddddd"),
-            "Editor",
-            "Editor role",
-            new List<string> { "write", "delete" });
-
-        var user = User.Reconstitute(ValidId, ValidUsername, new List<Role> { role1, role2 });
-
-        // Act
-        var permissions = user.GetPermissions();
-
-        // Assert
-        var expected = new[] { "read", "write", "delete" };
-        permissions.Should().BeEquivalentTo(expected);
+        permissions.Should().BeEquivalentTo(expectedPermissions);
     }
 }

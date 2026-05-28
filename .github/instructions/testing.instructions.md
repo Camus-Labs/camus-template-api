@@ -7,27 +7,46 @@ applyTo: "src/Test/**"
 1. Test Patterns
 
     - [ ] xUnit + FluentAssertions — no other test or assertion frameworks
-    - [ ] Arrange-Act-Assert (AAA) pattern with `// Arrange`, `// Act`, `// Assert` comments
-    - [ ] Test names: `MethodName_Scenario_ExpectedResult` or `Given_When_Then`
+    - [ ] Arrange-Act-Assert (AAA) pattern with `// Arrange`, `// Act`, `// Assert` comments —
+          `// Arrange` may be omitted when the test has no arrange statements beyond constructor setup
+    - [ ] Test names follow `MethodName_Scenario_ExpectedResult` or `Given_When_Then`
     - [ ] Each test method contains one `// Act` step — multiple assertions on the same act result belong in one
           test, not split into separate methods
-    - [ ] Tests are deterministic — no random values, no `Guid.NewGuid()` — exception:
-          `DateTime.UtcNow` / `DateTimeOffset.UtcNow` are allowed for time-relative assertions (e.g., expiration
-          windows, reset timestamps) using before/after bracketing
-    - [ ] `[Theory]` when multiple scenarios share the same logic with only different input values — do not duplicate
-          `[Fact]` methods that differ only in arrange data
-    - [ ] `[InlineData]` for simple compile-time constants — `[MemberData]` for complex objects or computed values
-          that cannot be expressed as `[InlineData]` attributes
+    - [ ] Tests are deterministic — no random values, no `Guid.NewGuid()` — exception: cryptographic
+          key generation (e.g., `RSA.Create()`) is permitted in `static readonly` fixtures when tests
+          assert on structure, not key material
+    - [ ] Tests with multiple scenarios sharing the same logic use `[Theory]`
+    - [ ] Duplicate `[Fact]` methods that differ only in arrange data are not permitted — exception: keep separate
+          `[Fact]` methods when each test verifies a distinct contract or obligation rather than the same behavior
+          with varying input data (e.g., per-parameter null-guard tests are distinct obligations — each protects
+          a different dependency and maps to a separate guard clause)
+    - [ ] `[MemberData]` never supplies delegate parameters (`Action`, `Func`, lambdas) — delegates collapse
+          the Arrange step into the data provider and break AAA visibility
+    - [ ] Tests use `[InlineData]` when every argument is an attribute-compatible literal (primitives, strings,
+          enums, `typeof`)
+    - [ ] Tests use `[MemberData]` when any argument requires object construction or runtime computation
     - [ ] No logic in tests — no `if`, `else`, `switch`, `for`, `foreach`, `while`, or `try`/`catch` in test
-          methods — tests are linear Arrange-Act-Assert sequences
+          methods
     - [ ] Async test methods return `Task` — not `async void`
-    - [ ] Test classes and `[Fact]`/`[Theory]` methods are `public`
+    - [ ] All instance field initialization in constructor body — no inline field initializers
+    - [ ] Structural literals (e.g., endpoint URLs, header names, query strings, route patterns) that appear more
+          than once in the class are declared as `private const` fields — these are infrastructure plumbing
+          with high churn risk
+    - [ ] Specification literals (e.g., expected assertion values like `"Healthy"`, `"nosniff"`, `"DENY"`,
+          status descriptions, error messages) stay inline even when repeated — they document the expected
+          behavior at the point of verification and aid test readability
+    - [ ] Arrays and collections always declared as `private static readonly` fields regardless of content category
+          — exception: `TheoryData` fields used as `[MemberData]` sources remain `public static readonly`
+          because xUnit requires public visibility for test data discovery
+    - [ ] Single-occurrence literals of any category stay inline — exception: arrays always use
+          `private static readonly` fields regardless of usage count
 
 2. Organization
 
-    - [ ] Unit test projects use `.test` suffix — integration test projects use `.integration.test` suffix
-    - [ ] Shared test builders extracted to `Helpers/` folder
-    - [ ] Test doubles (fakes, stubs, custom handlers) extracted to dedicated classes even when used by a single
+    - [ ] Unit test projects use `.test` suffix (e.g., `emc.camus.security.jwt` → `emc.camus.security.jwt.test`)
+    - [ ] Integration test projects use `.integration.test` suffix
+    - [ ] Shared test builders reside in `Helpers/` folder
+    - [ ] Test doubles (fakes, stubs, custom handlers) reside in dedicated classes — even when used by a single
           test class
 
 3. Assertions
@@ -35,8 +54,10 @@ applyTo: "src/Test/**"
     - [ ] Specific FluentAssertions methods (e.g., `.BeEquivalentTo()`, `.ContainSingle()`) — no `.BeTrue()`/
           `.BeFalse()` wrapping compound expressions
     - [ ] No commented-out assertions
+    - [ ] Exception messages use wildcard patterns (e.g., `"*authentication*required*"`) — not exact strings
+    - [ ] Never assert on `exception.Data` — assert on message patterns instead
 
-4. Coverage
+4. Test Boundaries
 
-    - [ ] Do not create artificial test scenarios solely to satisfy coverage metrics — every test must exercise a
-          realistic code path that can occur in production
+    - [ ] No reflection or access to private/internal members — assert on public return values, thrown exceptions,
+          or mock interactions

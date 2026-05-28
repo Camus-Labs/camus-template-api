@@ -1,9 +1,10 @@
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using emc.camus.application.Common;
 using emc.camus.application.Configurations;
 using emc.camus.application.Secrets;
-using System.Diagnostics.CodeAnalysis;
+using emc.camus.persistence.postgresql.Exceptions;
 using Npgsql;
 
 namespace emc.camus.persistence.postgresql.Services;
@@ -14,7 +15,7 @@ namespace emc.camus.persistence.postgresql.Services;
 /// automatic audit field population via database triggers.
 /// Supports both static connection strings and secret-based credentials.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Creates real Npgsql connections; branching logic tested via integration tests")]
 internal sealed class ConnectionFactory : IConnectionFactory
 {
     private readonly string _connectionString;
@@ -65,9 +66,9 @@ internal sealed class ConnectionFactory : IConnectionFactory
 
             return connection;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            throw new InvalidOperationException("Failed to open database connection. Ensure the database is accessible and the connection string is correct.", ex);
+            throw new DatabaseConnectionException("Failed to open database connection. Ensure the database is accessible and the connection string is correct.", ex);
         }
     }
 
@@ -106,17 +107,8 @@ internal sealed class ConnectionFactory : IConnectionFactory
         var username = secretProvider.GetSecret(settings.UserSecretName);
         var password = secretProvider.GetSecret(settings.PasswordSecretName);
 
-        if (string.IsNullOrWhiteSpace(username))
-        {
-            throw new InvalidOperationException(
-                $"Database username secret '{settings.UserSecretName}' not found or empty");
-        }
-
-        if (string.IsNullOrWhiteSpace(password))
-        {
-            throw new InvalidOperationException(
-                $"Database password secret '{settings.PasswordSecretName}' not found or empty");
-        }
+        ValidateSecret(username, settings.UserSecretName, "username");
+        ValidateSecret(password, settings.PasswordSecretName, "password");
 
         // Build connection string from components
         var connectionString = $"Host={settings.Host};Port={settings.Port};Database={settings.Database};Username={username};Password={password}";
@@ -127,6 +119,22 @@ internal sealed class ConnectionFactory : IConnectionFactory
         }
 
         return connectionString;
+    }
+
+    /// <summary>
+    /// Validates that a secret value was successfully retrieved from the secret provider.
+    /// </summary>
+    /// <param name="value">The secret value to validate.</param>
+    /// <param name="secretName">The name of the secret for error reporting.</param>
+    /// <param name="purpose">The purpose of the secret (e.g., "username", "password").</param>
+    /// <exception cref="InvalidOperationException">Thrown when the secret is null or whitespace.</exception>
+    private static void ValidateSecret(string? value, string secretName, string purpose)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException(
+                $"Database {purpose} secret '{secretName}' not found or empty");
+        }
     }
 }
 

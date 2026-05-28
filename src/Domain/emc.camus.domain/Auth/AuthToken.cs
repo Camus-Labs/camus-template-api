@@ -20,12 +20,13 @@ public class AuthToken
     /// </summary>
     /// <param name="token">The token string.</param>
     /// <param name="expiresOn">The expiration date and time (UTC).</param>
+    /// <param name="timeProvider">Optional time provider for clock control; defaults to system clock.</param>
     /// <exception cref="ArgumentException">Thrown when token is null or whitespace.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when expiresOn is not in the future.</exception>
-    public AuthToken(string token, DateTime expiresOn)
+    public AuthToken(string token, DateTime expiresOn, TimeProvider? timeProvider = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
-        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(expiresOn, DateTime.UtcNow);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(expiresOn, (timeProvider ?? TimeProvider.System).GetUtcNow().UtcDateTime);
 
         Token = token;
         ExpiresOn = expiresOn;

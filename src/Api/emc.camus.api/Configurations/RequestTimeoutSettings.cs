@@ -20,24 +20,27 @@ namespace emc.camus.api.Configurations
 
         private const int MinTimeoutSeconds = 1;
         private const int MaxTimeoutSeconds = 300;
+        private const int DefaultDefaultTimeoutSeconds = 30;
+        private const int DefaultTightTimeoutSeconds = 10;
+        private const int DefaultExtendedTimeoutSeconds = 60;
 
         /// <summary>
         /// Timeout in seconds for the default policy. Applies to all endpoints unless overridden.
         /// Default: 30 seconds.
         /// </summary>
-        public int DefaultTimeoutSeconds { get; set; } = 30;
+        public int DefaultTimeoutSeconds { get; set; } = DefaultDefaultTimeoutSeconds;
 
         /// <summary>
         /// Timeout in seconds for the tight policy. Intended for fast endpoints (simple reads, auth).
-        /// Default: 5 seconds.
+        /// Default: 10 seconds.
         /// </summary>
-        public int TightTimeoutSeconds { get; set; } = 10;
+        public int TightTimeoutSeconds { get; set; } = DefaultTightTimeoutSeconds;
 
         /// <summary>
         /// Timeout in seconds for the extended policy. Intended for slow endpoints (bulk, reports).
         /// Default: 60 seconds.
         /// </summary>
-        public int ExtendedTimeoutSeconds { get; set; } = 60;
+        public int ExtendedTimeoutSeconds { get; set; } = DefaultExtendedTimeoutSeconds;
 
         /// <summary>
         /// Validates the request timeout configuration at startup.

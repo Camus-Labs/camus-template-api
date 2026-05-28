@@ -44,6 +44,7 @@ In `appsettings.json`:
     "BaseHost": "localhost",
     "HttpPort": "3500",
     "SecretStoreName": "default-secret-store",
+    "TimeoutSeconds": 30,
     "SecretNames": ["AccessKey", "AccessSecret", "XApiKey", "RsaPrivateKeyPem"]
   }
 }
@@ -100,6 +101,7 @@ Update your production settings to reference the appropriate secret store:
     "BaseHost": "localhost",
     "HttpPort": "3500",
     "SecretStoreName": "azurekeyvault",
+    "TimeoutSeconds": 30,
     "SecretNames": ["AccessKey", "AccessSecret", "XApiKey", "RsaPrivateKeyPem"]
   }
 }
@@ -112,16 +114,21 @@ Update your production settings to reference the appropriate secret store:
 ### Dependency Inversion
 
 ```text
-┌─────────────────────────────────────┐
-│    Application Layer (Interfaces)   │
-│         ISecretProvider              │
-└──────────────┬──────────────────────┘
-               │ depends on
-               ↓
 ┌──────────────────────────────────────┐
 │      Adapter Layer (Implementation)  │
 │       DaprSecretProvider             │
 │  (implements ISecretProvider)        │
+└──────────────┬───────────────────────┘
+               │ implements
+               ↓
+┌─────────────────────────────────────┐
+│    Application Layer (Interfaces)   │
+│         ISecretProvider              │
+└─────────────────────────────────────┘
+
+┌──────────────────────────────────────┐
+│      Adapter Layer (Implementation)  │
+│       DaprSecretProvider             │
 └──────────────┬───────────────────────┘
                │ uses
                ↓
@@ -154,8 +161,9 @@ The adapter registers the Dapr secret provider via three extension methods in `D
    `DaprSecretProvider` as the `ISecretProvider` singleton.
 2. **`app.UseDaprSecrets()`** — Resolves `ISecretProvider` from DI and calls `LoadSecretsAsync()` to fetch all
    configured secrets at startup (fail-fast pattern).
-3. **`builder.AddDaprSecretHealthCheck()`** — Registers a readiness health check tagged with `HealthCheckTags.Ready`
-   that delegates to `ISecretProvider.CheckConnectivityAsync()` to verify Dapr secret store availability.
+3. **`builder.Services.AddHealthChecks().AddDaprSecretHealthCheck()`** — Registers a readiness health check
+   tagged with `HealthCheckTags.Ready` that delegates to `ISecretProvider.CheckConnectivityAsync()` to verify
+   Dapr secret store availability.
 
 Call `AddDaprSecrets()` before any adapter that depends on `ISecretProvider` (e.g., JWT, API Key, migrations).
 
@@ -166,7 +174,7 @@ Call `AddDaprSecrets()` before any adapter that depends on `ISecretProvider` (e.
 | Symptom | Likely Cause |
 | ------- | ------------ |
 | `At least one secret name must be specified in SecretNames` | `DaprSecretProviderSettings` section absent or `SecretNames` list empty in `appsettings.json` |
-| `Failed to retrieve secret 'X'` | Secret name mismatch or Dapr sidecar not running |
+| `Failed to load secret 'X'` | Secret name mismatch or Dapr sidecar not running |
 | Connection refused on port 3500 | Dapr sidecar not started — run `dapr run` or check container setup |
 | Secrets empty in production | Secret store component name doesn't match `SecretStoreName` setting |
 | Startup crash with secret error | `UseDaprSecrets()` called before Dapr sidecar is ready |

@@ -6,14 +6,40 @@ namespace emc.camus.documentation.swagger.test.Configurations;
 
 public class SwaggerSettingsTests
 {
+    private const string InvalidScheme = "InvalidScheme";
+
+    private static readonly List<ApiVersionSettings> ValidVersionsList =
+    [
+        new() { Version = "v1", Title = "Test API", Description = "Test API Description" }
+    ];
+
+    private static readonly List<ApiVersionSettings> EmptyVersionsList = [];
+
+    private static readonly List<ApiVersionSettings> NullEntryVersionsList = [null!];
+
+    private static readonly List<ApiVersionSettings> InvalidEntryVersionsList =
+    [
+        new() { Version = "", Title = "Test", Description = "Desc" }
+    ];
+
+    private static readonly List<string> EmptySchemesList = [];
+
+    private static readonly List<string> JwtBearerSchemesList = [AuthenticationSchemes.JwtBearer];
+
+    private static readonly List<string> AllSchemesList =
+    [
+        AuthenticationSchemes.JwtBearer,
+        AuthenticationSchemes.ApiKey
+    ];
+
+    private static readonly List<string> InvalidSchemesList = [InvalidScheme];
+
     // --- Validate (valid settings) ---
 
-    [Fact]
-    public void Validate_DisabledWithNoVersions_DoesNotThrow()
+    [Theory]
+    [MemberData(nameof(ValidSettingsData))]
+    internal void Validate_ValidSettings_DoesNotThrow(SwaggerSettings settings)
     {
-        // Arrange
-        var settings = new SwaggerSettings { Enabled = false };
-
         // Act
         var act = () => settings.Validate();
 
@@ -21,31 +47,27 @@ public class SwaggerSettingsTests
         act.Should().NotThrow();
     }
 
-    [Fact]
-    public void Validate_EnabledWithValidSettings_DoesNotThrow()
+    public static IEnumerable<object[]> ValidSettingsData()
     {
-        // Arrange
-        var settings = CreateValidEnabledSettings();
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void Validate_EnabledWithEmptySecuritySchemes_DoesNotThrow()
-    {
-        // Arrange
-        var settings = CreateValidEnabledSettings();
-        settings.SecuritySchemes = new List<string>();
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
+        yield return [new SwaggerSettings { Enabled = false }];
+        yield return [CreateValidEnabledSettings()];
+        yield return [new SwaggerSettings
+        {
+            Enabled = true,
+            Versions = ValidVersionsList,
+            SecuritySchemes = EmptySchemesList
+        }];
+        yield return [new SwaggerSettings
+        {
+            Enabled = true,
+            Versions = ValidVersionsList,
+            SecuritySchemes = AllSchemesList
+        }];
+        yield return [new SwaggerSettings
+        {
+            Enabled = false,
+            SecuritySchemes = InvalidSchemesList
+        }];
     }
 
     // --- Versions validation ---
@@ -71,7 +93,7 @@ public class SwaggerSettingsTests
         var settings = new SwaggerSettings
         {
             Enabled = true,
-            Versions = new List<ApiVersionSettings>()
+            Versions = EmptyVersionsList
         };
 
         // Act
@@ -89,7 +111,7 @@ public class SwaggerSettingsTests
         var settings = new SwaggerSettings
         {
             Enabled = true,
-            Versions = new List<ApiVersionSettings> { null! }
+            Versions = NullEntryVersionsList
         };
 
         // Act
@@ -107,10 +129,7 @@ public class SwaggerSettingsTests
         var settings = new SwaggerSettings
         {
             Enabled = true,
-            Versions = new List<ApiVersionSettings>
-            {
-                new() { Version = "", Title = "Test", Description = "Desc" }
-            }
+            Versions = InvalidEntryVersionsList
         };
 
         // Act
@@ -164,14 +183,14 @@ public class SwaggerSettingsTests
     {
         // Arrange
         var settings = CreateValidEnabledSettings();
-        settings.SecuritySchemes = new List<string> { "InvalidScheme" };
+        settings.SecuritySchemes = InvalidSchemesList;
 
         // Act
         var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*Invalid security scheme*InvalidScheme*");
+            .WithMessage($"*Invalid security scheme*{InvalidScheme}*");
     }
 
     [Theory]
@@ -190,59 +209,13 @@ public class SwaggerSettingsTests
         // Assert
         act.Should().NotThrow();
     }
-
-    [Fact]
-    public void Validate_EnabledWithMultipleValidSchemes_DoesNotThrow()
-    {
-        // Arrange
-        var settings = CreateValidEnabledSettings();
-        settings.SecuritySchemes = new List<string>
-        {
-            AuthenticationSchemes.JwtBearer,
-            AuthenticationSchemes.ApiKey
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void Validate_DisabledWithInvalidSchemes_DoesNotThrow()
-    {
-        // Arrange
-        var settings = new SwaggerSettings
-        {
-            Enabled = false,
-            SecuritySchemes = new List<string> { "InvalidScheme" }
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
-    }
-
-
-
     private static SwaggerSettings CreateValidEnabledSettings()
     {
         return new SwaggerSettings
         {
             Enabled = true,
-            Versions = new List<ApiVersionSettings>
-            {
-                new()
-                {
-                    Version = "v1",
-                    Title = "Test API",
-                    Description = "Test API Description"
-                }
-            },
-            SecuritySchemes = new List<string> { AuthenticationSchemes.JwtBearer }
+            Versions = ValidVersionsList,
+            SecuritySchemes = JwtBearerSchemesList
         };
     }
 }

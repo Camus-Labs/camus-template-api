@@ -53,6 +53,12 @@ namespace emc.camus.application.Observability
         void ActivityFailed(Activity? activity, Exception ex);
 
         /// <summary>
+        /// Marks the activity as cancelled and adds a standardized cancellation event.
+        /// </summary>
+        /// <param name="activity">The activity to mark as cancelled.</param>
+        void ActivityCancelled(Activity? activity);
+
+        /// <summary>
         /// Adds a timestamped event with optional tags to the activity.
         /// </summary>
         /// <param name="activity">The activity to add the event to.</param>

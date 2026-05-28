@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.application.Common;
 
 /// <summary>
 /// Defines health check tag constants shared by adapter registrations and endpoint predicates.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public static class HealthCheckTags
 {
     /// <summary>

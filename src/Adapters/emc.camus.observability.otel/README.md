@@ -17,7 +17,7 @@ Collector for flexible telemetry routing.
 ## ✨ Features
 
 - 📊 **Distributed Tracing** - Request flow visualization across services
-- 📈 **Metrics Collection** - ASP.NET Core, HTTP client, and runtime metrics
+- 📈 **Metrics Collection** - ASP.NET Core, HTTP client, runtime, and process metrics
 - 📝 **Structured Logging** - Serilog with OpenTelemetry integration
 - 🔄 **Multiple Exporters** - Console, OTLP, None (per signal)
 - 🎯 **Activity Source Wrapper** - Easy manual instrumentation
@@ -121,7 +121,7 @@ Your Application (with this adapter)
        ├─→ Metrics ─┤
        └─→ Logs ────┤
                     │
-       (OTLP gRPC/HTTP on port 4317/4318)
+         (OTLP gRPC on port 4317)
                     ↓
          OpenTelemetry Collector
                     │
@@ -140,7 +140,7 @@ Your Application (with this adapter)
 
 ---
 
-## 🔧 Configuration Examples
+## 🔧 Configuration
 
 ### Development (Console Output)
 
@@ -245,7 +245,7 @@ available in error logs.
 | Missing `Trace-Id` response header | `app.UseObservability()` not called in the pipeline |
 | High memory usage from metrics | Too many custom meters or disabled-metrics list not filtering noisy meters |
 | Logs not appearing in Loki | Serilog OTLP sink not configured or Collector not forwarding to Loki |
-| `ActivitySource` spans not visible | Custom activity source name not registered in the tracing builder |
+| `ActivitySource` spans not visible | Verify the service name passed to `AddObservability()` matches the `ActivitySource` name |
 
 ---
 

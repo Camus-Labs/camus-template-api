@@ -5,14 +5,14 @@ namespace emc.camus.observability.otel.test.Configurations;
 
 public class LogsSettingsTests
 {
+    private const string InvalidUri = "not-a-valid-uri";
+
     // --- Validate ---
 
-    [Fact]
-    public void Validate_DefaultSettings_DoesNotThrow()
+    [Theory]
+    [MemberData(nameof(ValidSettingsData))]
+    internal void Validate_ValidSettings_DoesNotThrow(LogsSettings settings)
     {
-        // Arrange
-        var settings = new LogsSettings();
-
         // Act
         var act = () => settings.Validate();
 
@@ -20,17 +20,12 @@ public class LogsSettingsTests
         act.Should().NotThrow();
     }
 
-    [Fact]
-    public void Validate_DefinedExporter_DoesNotThrow()
+    public static IEnumerable<object[]> ValidSettingsData()
     {
-        // Arrange
-        var settings = new LogsSettings { Exporter = LogsExporter.Otlp };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
+        yield return [new LogsSettings()];
+        yield return [new LogsSettings { Exporter = LogsExporter.Otlp }];
+        yield return [new LogsSettings { Exporter = LogsExporter.Otlp, OtlpEndpoint = "http://collector:4317" }];
+        yield return [new LogsSettings { Exporter = LogsExporter.Console, OtlpEndpoint = InvalidUri }];
     }
 
     [Fact]
@@ -78,23 +73,6 @@ public class LogsSettingsTests
             .WithMessage("*OutputTemplate*");
     }
 
-    [Fact]
-    public void Validate_OtlpExporter_ValidEndpoint_DoesNotThrow()
-    {
-        // Arrange
-        var settings = new LogsSettings
-        {
-            Exporter = LogsExporter.Otlp,
-            OtlpEndpoint = "http://collector:4317"
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
-    }
-
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -123,7 +101,7 @@ public class LogsSettingsTests
         var settings = new LogsSettings
         {
             Exporter = LogsExporter.Otlp,
-            OtlpEndpoint = "not-a-valid-uri"
+            OtlpEndpoint = InvalidUri
         };
 
         // Act
@@ -132,22 +110,5 @@ public class LogsSettingsTests
         // Assert
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*OtlpEndpoint*valid*URI*");
-    }
-
-    [Fact]
-    public void Validate_NonOtlpExporter_InvalidEndpoint_DoesNotThrow()
-    {
-        // Arrange
-        var settings = new LogsSettings
-        {
-            Exporter = LogsExporter.Console,
-            OtlpEndpoint = "not-a-valid-uri"
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
     }
 }

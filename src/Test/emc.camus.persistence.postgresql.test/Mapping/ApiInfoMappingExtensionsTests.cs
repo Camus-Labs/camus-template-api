@@ -6,6 +6,9 @@ namespace emc.camus.persistence.postgresql.test.Mapping;
 
 public class ApiInfoMappingExtensionsTests
 {
+    private const string ApiName = "Test API";
+    private const string ApiVersion = "1.0";
+    private const string ApiStatus = "active";
     private static readonly string[] ExpectedFeatures = ["feature1", "feature2"];
 
     // --- ToEntity ---
@@ -16,19 +19,19 @@ public class ApiInfoMappingExtensionsTests
         // Arrange
         var model = new ApiInfoModel
         {
-            Name = "Test API",
-            Version = "1.0",
-            Status = "active",
-            Features = new[] { "feature1", "feature2" }
+            Name = ApiName,
+            Version = ApiVersion,
+            Status = ApiStatus,
+            Features = ExpectedFeatures
         };
 
         // Act
         var entity = model.ToEntity();
 
         // Assert
-        entity.Name.Should().Be("Test API");
-        entity.Version.Should().Be("1.0");
-        entity.Status.Should().Be("active");
+        entity.Name.Should().Be(ApiName);
+        entity.Version.Should().Be(ApiVersion);
+        entity.Status.Should().Be(ApiStatus);
         entity.Features.Should().BeEquivalentTo(ExpectedFeatures);
     }
 
@@ -38,9 +41,9 @@ public class ApiInfoMappingExtensionsTests
         // Arrange
         var model = new ApiInfoModel
         {
-            Name = "Test API",
-            Version = "1.0",
-            Status = "active",
+            Name = ApiName,
+            Version = ApiVersion,
+            Status = ApiStatus,
             Features = null
         };
 

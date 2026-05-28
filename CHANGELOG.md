@@ -31,7 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Entity-centric and parameter-based write patterns in repository adapters
 - OpenTelemetry integration with multiple exporters (OTLP, Console, None)
 - Distributed tracing with trace context propagation
-- OpenTelemetry metrics for rate limit tracking (hits, rejections, undefined policies)
+- OpenTelemetry metrics for rate limit rejection tracking (rate_limit_rejections_total counter tagged by policy and method)
 - Prometheus-compatible metrics export
 - Serilog structured logging with OTLP exporter to Loki
 - Configurable log levels per namespace with trace/span ID correlation
@@ -63,3 +63,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   graceful skip when no persistence is registered
 - Automatic PostgreSQL query tracing via `Npgsql.OpenTelemetry` (`AddNpgsql()`), producing child spans per SQL
   command with `db.statement`, `db.system`, `db.name`, and duration
+- `[RequireIdempotencyKey]` attribute for enforcing idempotency key headers on POST endpoints
+- Idempotency key validation filter returning HTTP 400 for missing or invalid keys
+- Configurable idempotency TTL policies (default and long-term) via appsettings
+- `AddIdempotency()` API extension method for registering idempotency services
+- Idempotent response caching for POST endpoints with `Idempotency-Key-Status` header indicating cache hit or miss
+- Request body conflict detection returning HTTP 409 when the same idempotency key is reused with a different body
+- In-memory response cache adapter with per-user isolation and TTL-based expiration
+- Fail-open behavior allowing requests to proceed normally when the cache is unavailable
+- Idempotency cache metrics for hits, body conflicts, and cache errors
+- Idempotency implemented on `POST` endpoints — requests without the header will return HTTP 400

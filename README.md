@@ -13,12 +13,14 @@ architecture, authentication, deployment, and debugging.
 
 **Ready-to-use Infrastructure Adapters:**
 
-- 🔐 [Authentication](src/Adapters/emc.camus.security.jwt/README.md) — JWT Bearer + API Key
+- 🔐 [Authentication (JWT)](src/Adapters/emc.camus.security.jwt/README.md) — JWT Bearer Token
+- 🔑 [Authentication (API Key)](src/Adapters/emc.camus.security.apikey/README.md) — Header-based Service-to-Service
 - 🛡️ [Rate Limiting](src/Adapters/emc.camus.ratelimiting.inmemory/README.md) — Sliding Window Algorithm
 - 📊 [Observability](src/Adapters/emc.camus.observability.otel/README.md) — OpenTelemetry + Serilog
 - 🗄️ [Data Persistence](src/Adapters/emc.camus.persistence.postgresql/README.md) — PostgreSQL + Dapper
 - 🔒 [Secrets Management](src/Adapters/emc.camus.secrets.dapr/README.md) — Dapr
 - 📚 [API Documentation](src/Adapters/emc.camus.documentation.swagger/README.md) — Swagger/OpenAPI
+- 🔄 [Caching](src/Adapters/emc.camus.cache.inmemory/README.md) — In-memory token revocation and idempotency response caching
 
 **Architectural Foundation:**
 
@@ -64,7 +66,7 @@ src/
 │       └── Exceptions/                    # Domain exceptions
 │
 ├── Adapters/                              # 🔌 Infrastructure
-│   ├── emc.camus.cache.inmemory/          # Token revocation cache
+│   ├── emc.camus.cache.inmemory/          # Token revocation & idempotency response cache
 │   ├── emc.camus.documentation.swagger/   # Swagger/OpenAPI
 │   ├── emc.camus.migrations.dbup/         # Database migrations
 │   ├── emc.camus.observability.otel/      # OpenTelemetry
@@ -111,40 +113,27 @@ and dependency flow.
 
 ### Run Locally
 
-1. **Clone and navigate**:
-
-   ```bash
-   git clone <your-repo>
-   cd camus-template
-   ```
+1. **Clone and navigate**: Clone the repository and navigate into its root directory (`camus-template-api`).
 
 2. **Configure secrets** (Development):
   
    Edit `src/Infrastructure/dapr/secrets.json` with your development credentials. See the [Dapr Components
    README](src/Infrastructure/dapr/README.md) for the secrets file format and examples.
 
-3. **Run the API**:
-
-   ```bash
-   dotnet run --project src/Api/emc.camus.api/emc.camus.api.csproj
-   ```
+3. **Run the API** using the `run-api` VS Code task, or see
+   [Debugging Documentation](docs/debugging.md) for alternative run methods.
 
 4. **Explore**:
-   - Swagger UI: <http://localhost:5000/swagger>
+   - Swagger UI: <https://localhost:7220/swagger> (host) or <http://localhost:5001/swagger> (container)
    - Authenticate: `POST /api/v2/auth/authenticate`
 
 ### Run with Docker
 
-```bash
-# Development (with hot-reload)
-docker-compose -f docker-compose.dev.yml up --build
+Use the `docker-compose-up-dev-build` VS Code task for development with hot-reload,
+or the production compose file for deployment.
 
-# Production
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-> **📖 Detailed Guide:** See [Debugging Documentation](docs/debugging.md) for Docker development workflow
-with VS Code debugging.
+> **📖 Detailed Guide:** See [Debugging Documentation](docs/debugging.md) for Docker development
+workflow with VS Code debugging.
 
 ---
 
@@ -213,15 +202,21 @@ for the full pipeline, agent roles, and approval gates.
 
 - [Observability (OpenTelemetry)](src/Adapters/emc.camus.observability.otel/README.md) — Distributed tracing,
   metrics, and structured logging via OpenTelemetry and Serilog
-- [Rate Limiting (Memory)](src/Adapters/emc.camus.ratelimiting.inmemory/README.md)
-- [Security (JWT)](src/Adapters/emc.camus.security.jwt/README.md)
-- [Security (API Key)](src/Adapters/emc.camus.security.apikey/README.md)
-- [Secrets (Dapr)](src/Adapters/emc.camus.secrets.dapr/README.md)
-- [Persistence (PostgreSQL)](src/Adapters/emc.camus.persistence.postgresql/README.md)
+- [Rate Limiting (Memory)](src/Adapters/emc.camus.ratelimiting.inmemory/README.md) — IP-based sliding-window
+  rate limiting with policy-based configuration
+- [Security (JWT)](src/Adapters/emc.camus.security.jwt/README.md) — RSA-signed JWT token issue and validation
+- [Security (API Key)](src/Adapters/emc.camus.security.apikey/README.md) — Header-based API Key authentication
+  for service-to-service communication
+- [Secrets (Dapr)](src/Adapters/emc.camus.secrets.dapr/README.md) — Dapr-based secret retrieval with
+  local and cloud store support
+- [Persistence (PostgreSQL)](src/Adapters/emc.camus.persistence.postgresql/README.md) — Dapper-based repository
+  implementation for PostgreSQL
 - [Migrations (DbUp)](src/Adapters/emc.camus.migrations.dbup/README.md) — Ordered embedded SQL scripts with DbUp for
   PostgreSQL schema versioning
-- [Cache (Memory)](src/Adapters/emc.camus.cache.inmemory/README.md)
-- [Persistence (Memory)](src/Adapters/emc.camus.persistence.inmemory/README.md)
+- [Cache (Memory)](src/Adapters/emc.camus.cache.inmemory/README.md) — In-memory token revocation and idempotency
+  response caching
+- [Persistence (Memory)](src/Adapters/emc.camus.persistence.inmemory/README.md) — In-memory repositories for
+  development and testing
 - [Documentation (Swagger)](src/Adapters/emc.camus.documentation.swagger/README.md) — OpenAPI 3.0 documentation with
   multi-version support and Swagger UI
 

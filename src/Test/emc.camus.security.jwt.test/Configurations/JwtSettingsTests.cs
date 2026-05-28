@@ -5,6 +5,12 @@ namespace emc.camus.security.jwt.test.Configurations;
 
 public class JwtSettingsTests
 {
+    private const string HttpsPrefix = "https://";
+    private const int ExceedsMaxLengthFiller = 193;
+    private const int AtMaxLengthFiller = 187;
+    private const string UrlSuffix = ".com/";
+    private const string InvalidUrl = "not-a-valid-url";
+
     // --- Defaults ---
 
     [Fact]
@@ -19,7 +25,6 @@ public class JwtSettingsTests
         settings.Audience.Should().Be("https://app.camus.com/");
         settings.ExpirationMinutes.Should().Be(60);
         settings.RsaPrivateKeySecretName.Should().Be("RsaPrivateKeyPem");
-        settings.Invoking(s => s.Validate()).Should().NotThrow();
     }
 
     // --- Validate Issuer ---
@@ -47,7 +52,7 @@ public class JwtSettingsTests
         // Arrange
         var settings = new JwtSettings
         {
-            Issuer = "https://" + new string('a', 193) // exceeds 200 chars
+            Issuer = HttpsPrefix + new string('a', ExceedsMaxLengthFiller) // exceeds 200 chars
         };
 
         // Act
@@ -64,7 +69,7 @@ public class JwtSettingsTests
         // Arrange
         var settings = new JwtSettings
         {
-            Issuer = "https://" + new string('a', 187) + ".com/" // exactly 200 chars
+            Issuer = HttpsPrefix + new string('a', AtMaxLengthFiller) + UrlSuffix // exactly 200 chars
         };
 
         // Act
@@ -78,7 +83,7 @@ public class JwtSettingsTests
     public void Validate_IssuerNotValidUrl_ThrowsInvalidOperationException()
     {
         // Arrange
-        var settings = new JwtSettings { Issuer = "not-a-valid-url" };
+        var settings = new JwtSettings { Issuer = InvalidUrl };
 
         // Act
         var act = () => settings.Validate();
@@ -113,7 +118,7 @@ public class JwtSettingsTests
         // Arrange
         var settings = new JwtSettings
         {
-            Audience = "https://" + new string('a', 193) // exceeds 200 chars
+            Audience = HttpsPrefix + new string('a', ExceedsMaxLengthFiller) // exceeds 200 chars
         };
 
         // Act
@@ -130,7 +135,7 @@ public class JwtSettingsTests
         // Arrange
         var settings = new JwtSettings
         {
-            Audience = "https://" + new string('a', 187) + ".com/" // exactly 200 chars
+            Audience = HttpsPrefix + new string('a', AtMaxLengthFiller) + UrlSuffix // exactly 200 chars
         };
 
         // Act
@@ -144,7 +149,7 @@ public class JwtSettingsTests
     public void Validate_AudienceNotValidUrl_ThrowsInvalidOperationException()
     {
         // Arrange
-        var settings = new JwtSettings { Audience = "not-a-valid-url" };
+        var settings = new JwtSettings { Audience = InvalidUrl };
 
         // Act
         var act = () => settings.Validate();

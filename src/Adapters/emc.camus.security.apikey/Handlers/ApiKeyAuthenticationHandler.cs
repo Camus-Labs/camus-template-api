@@ -70,7 +70,11 @@ namespace emc.camus.security.apikey.Handlers
                 throw new UnauthorizedAccessException("The provided credentials are invalid. API Key does not match the configured value.");
             }
 
-            var claims = new[] { new Claim(ClaimTypes.Name, ApiKeySettings.DefaultUsername) };
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Name, ApiKeySettings.DefaultUsername),
+                new Claim(ClaimTypes.NameIdentifier, ApiKeySettings.DefaultUserId),
+            };
             var identity = new ClaimsIdentity(claims, AuthenticationSchemes.ApiKey);
             var principal = new ClaimsPrincipal(identity);
             var ticket = new AuthenticationTicket(principal, AuthenticationSchemes.ApiKey);

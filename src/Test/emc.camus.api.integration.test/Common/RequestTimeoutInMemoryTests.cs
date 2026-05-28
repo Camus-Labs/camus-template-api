@@ -12,6 +12,7 @@ namespace emc.camus.api.integration.test.Common;
 [Collection(TimeoutTestGroup.Name)]
 public class RequestTimeoutInMemoryTests
 {
+    private const string InfoEndpoint = "/api/v1/apiinfo/info";
     private readonly ApiTimeoutFactory _factory;
 
     public RequestTimeoutInMemoryTests(ApiTimeoutFactory factory, ITestOutputHelper outputHelper)
@@ -27,7 +28,7 @@ public class RequestTimeoutInMemoryTests
         var client = _factory.CreateClient();
 
         // Act
-        var response = await client.GetAsync("/api/v1/apiinfo/info", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync(InfoEndpoint, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.GatewayTimeout);
@@ -39,11 +40,12 @@ public class RequestTimeoutInMemoryTests
     {
         // Arrange
         var client = _factory.CreateClient();
+        // Justification: server-side cancellation propagation cannot be inferred from the client-side HTTP response alone.
         var slowService = _factory.Services.GetRequiredService<SlowApiInfoService>();
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
         // Act — client cancels before server responds
-        var act = () => client.GetAsync("/api/v1/apiinfo/info", cts.Token);
+        var act = () => client.GetAsync(InfoEndpoint, cts.Token);
         await act.Should().ThrowAsync<TaskCanceledException>();
 
         // Assert — server-side cancellation propagated to the service layer

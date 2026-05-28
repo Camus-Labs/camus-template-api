@@ -1,5 +1,5 @@
 ---
-applyTo: ".github/prompts/**"
+applyTo: ".github/prompts/**/*.prompt.md"
 ---
 
 # Prompts Development Conventions
@@ -10,33 +10,39 @@ applyTo: ".github/prompts/**"
     - [ ] Title (H1) is present and starts with a verb or a domain noun
     - [ ] No extra top-level sections outside the canonical set
     - [ ] Heading hierarchy is correct (H1 title, H2 sections, NO H3+ subsections)
-    - [ ] No line exceeds 120 characters — markdown table rows are exempt
-    - [ ] Prose lines that are not the last line of a paragraph contain at least 100 characters
     - [ ] No two sections contain the same constraint, instruction, or definition
-    - [ ] All prose uses active voice, imperative mood — no passive constructions ("is generated", "should be done")
-    - [ ] Every process step output is referenced in a later step or in the output template
+    - [ ] No sentence contains a "to be" + past-participle construction ("is generated", "should be done", "will be returned")
+    - [ ] Every process step output appears in a later step or in the output template
+    - [ ] All prose uses active voice — no passive constructions ("is generated", "was done")
+    - [ ] All prose uses imperative mood — no indicative constructions ("the step generates", "it returns")
 
 2. Frontmatter
 
     - [ ] Valid YAML `---` frontmatter present
-    - [ ] `description` — one sentence: verb + object + outcome
-    - [ ] `mode` — one of `agent` | `ask` | `edit`
-    - [ ] `argument-hint` — included, describes how to invoke the prompt
-    - [ ] No under-declared tools (used in steps but not listed)
+    - [ ] `description` field contains exactly one sentence
+    - [ ] `description` sentence starts with a present-tense verb
+    - [ ] `description` sentence contains a direct object
+    - [ ] `description` sentence ends with a purpose clause
+    - [ ] `description` field value is at most 1024 characters
+    - [ ] `agent` field present
+    - [ ] `agent` field is one of: `agent`, `ask`, `edit`
+    - [ ] `argument-hint` field present
+    - [ ] `argument-hint` value describes how to invoke the prompt
+    - [ ] No under-declared tools — used in steps but not listed
 
 3. Goal
 
     - [ ] Goal section exists (H2 `## Goal`)
-    - [ ] Outcome names a concrete artifact type — report, file, fix, or plan
-    - [ ] Success criteria specify pass/fail conditions
-    - [ ] Goal lists failure conditions
-    - [ ] Goal describes exactly one deliverable
+    - [ ] Outcome names a concrete artifact type (e.g., report, file, fix, or plan)
+    - [ ] `**Success:**` line exists and defines the completion condition as an imperative statement
+    - [ ] `**Failure:**` line exists and defines the abort conditions as an imperative statement
+    - [ ] Goal section contains exactly one artifact noun — no conjunctions ("and", "or") joining distinct artifact types
 
 4. Context
 
-    - [ ] Context section omitted only when no process step references a `#file:` or external data source
+    - [ ] Context section exists when any process step references a `#file:` or external data source
     - [ ] Lists required files using `#file:` references
-    - [ ] Every listed context item is consumed by at least one process step
+    - [ ] At least one process step consumes every listed context item
     - [ ] Every `#file:` reference targets an existing workspace file
 
 5. Inputs
@@ -55,14 +61,17 @@ applyTo: ".github/prompts/**"
     - [ ] Each step starts with ONE action verb
     - [ ] 3–8 total steps
     - [ ] No vague qualifiers ("as needed", "consider", "optionally", "may")
-    - [ ] Conditionals have explicit ELSE or default
+    - [ ] Conditionals have explicit ELSE or default — guard-and-stop branches where the only alternative is
+          continuation to the next numbered step satisfy this rule implicitly
     - [ ] Loops have max-iteration bound
     - [ ] Explicit stopping criterion
     - [ ] First step validates inputs
     - [ ] Last step produces the output
     - [ ] One bounded action per step — sub-item enumeration within one target is fine; no independent evaluations
-    - [ ] No step restates, negates, or overrides another step or rule
+    - [ ] No step contains a clause that duplicates or contradicts text in another step or rule
     - [ ] Every process-computed value has a placeholder in the template
+    - [ ] Procedure steps that build, test, or run the application use workspace task labels (e.g., `build`, `test-all`,
+          `test-unit`, `test-integration`, `run-api`) — not raw `dotnet` commands
 
 7. Rules
 
@@ -70,13 +79,12 @@ applyTo: ".github/prompts/**"
     - [ ] Each rule is one imperative sentence (MUST X / MUST NOT Y)
     - [ ] Rules are falsifiable (can be verified true or false)
     - [ ] At least one scope-limiting rule
-    - [ ] No rule restates, negates, or overrides another rule
-    - [ ] No rule is unenforceable or purely aspirational
+    - [ ] No rule contains a clause that duplicates or contradicts text in another rule
 
 8. Output Format
 
     - [ ] Output Format section exists (H2 `## Output Format`)
     - [ ] Fenced code block with COMPLETE report template
     - [ ] Placeholder syntax consistent (`[value]` throughout)
-    - [ ] Verdict/status labels enumerated (`PASS | FAIL`, not "a status")
+    - [ ] Verdict/status labels listed explicitly (`PASS | FAIL`, not "a status")
     - [ ] Template is copy-pasteable — no prose inside the fence

@@ -17,8 +17,8 @@ internal sealed class UserDataAccess : IUserDataAccess
     /// </summary>
     /// <param name="connection">The database connection to use.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
-    /// <returns>A dictionary mapping table names to their existence status.</returns>
-    public async Task<IDictionary<string, bool>> CheckRequiredTablesAsync(
+    /// <returns>The table existence model with status for each required table.</returns>
+    public async Task<TableExistenceModel> CheckRequiredTablesAsync(
         IDbConnection connection, CancellationToken ct = default)
     {
         const string checkTablesSql = @"
@@ -40,18 +40,8 @@ internal sealed class UserDataAccess : IUserDataAccess
                     WHERE table_schema = 'camus' AND table_name = 'role_permissions'
                 )) as role_permissions_exists";
 
-        var result = await connection.QuerySingleAsync<dynamic>(
+        return await connection.QuerySingleAsync<TableExistenceModel>(
             new CommandDefinition(checkTablesSql, cancellationToken: ct));
-
-        var resultDict = (IDictionary<string, object>)result;
-
-        return new Dictionary<string, bool>
-        {
-            ["users"] = resultDict["users_exists"] is true,
-            ["roles"] = resultDict["roles_exists"] is true,
-            ["user_roles"] = resultDict["user_roles_exists"] is true,
-            ["role_permissions"] = resultDict["role_permissions_exists"] is true,
-        };
     }
 
     /// <summary>
@@ -127,17 +117,18 @@ internal sealed class UserDataAccess : IUserDataAccess
     /// </summary>
     /// <param name="connection">The database connection to use.</param>
     /// <param name="userId">The user identifier to update.</param>
+    /// <param name="lastLogin">The UTC timestamp to set as the last login time.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The number of rows affected.</returns>
     public async Task<int> UpdateLastLoginAsync(
-        IDbConnection connection, Guid userId, CancellationToken ct = default)
+        IDbConnection connection, Guid userId, DateTime lastLogin, CancellationToken ct = default)
     {
         const string updateSql = @"
             UPDATE camus.users
-            SET last_login = NOW()
+            SET last_login = @LastLogin
             WHERE id = @UserId";
 
         return await connection.ExecuteAsync(
-            new CommandDefinition(updateSql, new { userId }, cancellationToken: ct));
+            new CommandDefinition(updateSql, new { userId, lastLogin }, cancellationToken: ct));
     }
 }

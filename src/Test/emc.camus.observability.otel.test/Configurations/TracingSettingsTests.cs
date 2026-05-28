@@ -5,14 +5,14 @@ namespace emc.camus.observability.otel.test.Configurations;
 
 public class TracingSettingsTests
 {
+    private const string InvalidUri = "not-a-valid-uri";
+
     // --- Validate ---
 
-    [Fact]
-    public void Validate_DefaultSettings_DoesNotThrow()
+    [Theory]
+    [MemberData(nameof(ValidSettingsData))]
+    internal void Validate_ValidSettings_DoesNotThrow(TracingSettings settings)
     {
-        // Arrange
-        var settings = new TracingSettings();
-
         // Act
         var act = () => settings.Validate();
 
@@ -20,17 +20,12 @@ public class TracingSettingsTests
         act.Should().NotThrow();
     }
 
-    [Fact]
-    public void Validate_DefinedExporter_DoesNotThrow()
+    public static IEnumerable<object[]> ValidSettingsData()
     {
-        // Arrange
-        var settings = new TracingSettings { Exporter = TracingExporter.Otlp };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
+        yield return [new TracingSettings()];
+        yield return [new TracingSettings { Exporter = TracingExporter.Otlp }];
+        yield return [new TracingSettings { Exporter = TracingExporter.Otlp, OtlpEndpoint = "http://collector:4317" }];
+        yield return [new TracingSettings { Exporter = TracingExporter.Console, OtlpEndpoint = InvalidUri }];
     }
 
     [Fact]
@@ -45,23 +40,6 @@ public class TracingSettingsTests
         // Assert
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*Invalid*Exporter*");
-    }
-
-    [Fact]
-    public void Validate_OtlpExporter_ValidEndpoint_DoesNotThrow()
-    {
-        // Arrange
-        var settings = new TracingSettings
-        {
-            Exporter = TracingExporter.Otlp,
-            OtlpEndpoint = "http://collector:4317"
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
     }
 
     [Theory]
@@ -92,7 +70,7 @@ public class TracingSettingsTests
         var settings = new TracingSettings
         {
             Exporter = TracingExporter.Otlp,
-            OtlpEndpoint = "not-a-valid-uri"
+            OtlpEndpoint = InvalidUri
         };
 
         // Act
@@ -101,22 +79,5 @@ public class TracingSettingsTests
         // Assert
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*OtlpEndpoint*valid*URI*");
-    }
-
-    [Fact]
-    public void Validate_NonOtlpExporter_InvalidEndpoint_DoesNotThrow()
-    {
-        // Arrange
-        var settings = new TracingSettings
-        {
-            Exporter = TracingExporter.Console,
-            OtlpEndpoint = "not-a-valid-uri"
-        };
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().NotThrow();
     }
 }

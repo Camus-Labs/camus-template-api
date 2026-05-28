@@ -18,10 +18,14 @@ namespace emc.camus.api.integration.test.Fixtures;
 /// </summary>
 public class ApiPostgreSqlFactory : ApiFactoryBase
 {
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
-
+    private readonly PostgreSqlContainer _container;
     private Respawner? _respawner;
+
+    public ApiPostgreSqlFactory()
+    {
+        _container = new PostgreSqlBuilder("postgres:16-alpine")
+            .Build();
+    }
 
     /// <summary>
     /// Returns the Testcontainer connection string for direct database assertions in tests.

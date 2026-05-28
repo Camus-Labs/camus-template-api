@@ -13,15 +13,19 @@ detailed configuration, settings, and security best practices.
 ## How to Get a Token
 
 Post credentials to the `POST /api/v2/auth/authenticate` endpoint to receive a JWT token, then include it
-in the `Authorization: Bearer` header on subsequent requests. See the Swagger UI at `/swagger` for the
-complete request/response specification.
+in the `Authorization: Bearer` header on subsequent requests. The authenticate endpoint requires API Key
+authentication (via the `Api-Key` header) since no JWT exists yet at that point. Both
+`POST /api/v2/auth/authenticate` and `POST /api/v2/auth/generate-token` require an `Idempotency-Key`
+header; requests without it receive HTTP 400. See the [API Layer README](../src/Api/emc.camus.api/README.md) for
+idempotency configuration details. See the Swagger UI at `/swagger` for the complete request/response specification.
 
 > **📖 Complete Usage Guide:** See [JWT Adapter README](../src/Adapters/emc.camus.security.jwt/README.md) for
 token generation, endpoint protection, and testing.
 
 ## JWT Claims
 
-JWT tokens include standard claims for user identification, roles, and token metadata.
+JWT tokens include standard claims for user identification and token metadata; permission claims are included
+based on the user's assigned permissions.
 
 > **📖 Complete Claims Reference:** See [JWT Adapter README](../src/Adapters/emc.camus.security.jwt/README.md) for
 detailed claims documentation and usage examples.
@@ -38,11 +42,11 @@ detailed claims documentation and usage examples.
 - 401 Unauthorized: Token missing/expired/invalid or invalid credentials
 - 403 Forbidden: Valid token, insufficient permissions
 
-## Architecture
+## Authentication Architecture
 
 - Token generation is delegated to `AuthService` via the `AuthController`.
 - Credentials and signing keys are injected via DI.
-- API versioning and observability are integrated (API version is logged and tagged).
+- API versioning and observability are integrated (trace context is enriched with trace ID and span ID).
 
 ## API Key Authentication
 

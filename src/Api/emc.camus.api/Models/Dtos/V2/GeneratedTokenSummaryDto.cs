@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.api.Models.Dtos.V2;
 
 /// <summary>
 /// Data transfer object containing a summary of a generated token (without the token value).
 /// Used as an item within paginated responses.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class GeneratedTokenSummaryDto
 {
     /// <summary>

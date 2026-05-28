@@ -1,6 +1,7 @@
 using System.Data;
 using System.Data.Common;
 using FluentAssertions;
+using Microsoft.Extensions.Time.Testing;
 using emc.camus.persistence.postgresql.DataAccess;
 using emc.camus.persistence.postgresql.Models;
 using emc.camus.persistence.postgresql.Repositories;
@@ -11,17 +12,34 @@ namespace emc.camus.persistence.postgresql.test.Repositories;
 public class UserRepositoryTests : IDisposable
 {
     private static readonly Guid UserId = Guid.Parse("a1b2c3d4-0001-0002-0003-000000000001");
-    private static readonly string Username = "testuser";
-    private static readonly string PasswordHash = BCrypt.Net.BCrypt.HashPassword("correctpassword");
+    private const string Username = "testuser";
+    private const string PasswordHash = "$2a$11$abcdefghijklmnopqrstuOVxsQf1QFlQ8j3oEjFaXIgGff.td6/we";
+    private const string DummyUsername = "user";
+    private const string DummyPassword = "pass";
+    private const string AnyPassword = "anypassword";
+    private const string AdminRoleName = "admin";
     private static readonly string[] RolePermissions = new[] { "read", "write" };
+    private static readonly Guid AdminRoleId = Guid.Parse("b2c3d4e5-0001-0002-0003-000000000002");
+    private static readonly RoleModel[] AdminRoles = new[]
+    {
+        new RoleModel { Id = AdminRoleId, Name = AdminRoleName, Description = "Administrator", Permissions = RolePermissions }
+    };
+    private static readonly RoleModel[] EmptyRoles = [];
+    private static readonly DateTimeOffset ReferenceTime = new(2025, 6, 1, 12, 0, 0, TimeSpan.Zero);
 
-    private readonly Mock<IConnectionFactory> _mockConnectionFactory = new();
-    private readonly Mock<IUserDataAccess> _mockDataAccess = new();
-    private readonly Mock<DbConnection> _mockConnection = new();
+    private readonly Mock<IConnectionFactory> _mockConnectionFactory;
+    private readonly Mock<IUserDataAccess> _mockDataAccess;
+    private readonly Mock<DbConnection> _mockConnection;
+    private readonly FakeTimeProvider _timeProvider;
     private readonly UnitOfWork _unitOfWork;
 
     public UserRepositoryTests()
     {
+        _mockConnectionFactory = new Mock<IConnectionFactory>();
+        _mockDataAccess = new Mock<IUserDataAccess>();
+        _mockConnection = new Mock<DbConnection>();
+        _timeProvider = new FakeTimeProvider(ReferenceTime);
+
         _mockConnectionFactory
             .Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(_mockConnection.Object);
@@ -37,13 +55,13 @@ public class UserRepositoryTests : IDisposable
 
     private UserRepository CreateRepository()
     {
-        return new UserRepository(_unitOfWork, new InitializationState(), _mockDataAccess.Object);
+        return new UserRepository(_unitOfWork, new InitializationState(), _mockDataAccess.Object, _timeProvider);
     }
 
     private UserRepository CreateInitializedRepository()
     {
         var initState = new InitializationState { UserRepositoryInitialized = true };
-        return new UserRepository(_unitOfWork, initState, _mockDataAccess.Object);
+        return new UserRepository(_unitOfWork, initState, _mockDataAccess.Object, _timeProvider);
     }
 
     // --- Constructor ---
@@ -51,11 +69,8 @@ public class UserRepositoryTests : IDisposable
     [Fact]
     public void Constructor_NullUnitOfWork_ThrowsArgumentNullException()
     {
-        // Arrange
-        UnitOfWork? unitOfWork = null;
-
         // Act
-        var act = () => new UserRepository(unitOfWork!, new InitializationState(), _mockDataAccess.Object);
+        var act = () => new UserRepository(null!, new InitializationState(), _mockDataAccess.Object, _timeProvider);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -65,11 +80,8 @@ public class UserRepositoryTests : IDisposable
     [Fact]
     public void Constructor_NullInitState_ThrowsArgumentNullException()
     {
-        // Arrange
-        var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
-
         // Act
-        var act = () => new UserRepository(unitOfWork, null!, _mockDataAccess.Object);
+        var act = () => new UserRepository(_unitOfWork, null!, _mockDataAccess.Object, _timeProvider);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -79,11 +91,8 @@ public class UserRepositoryTests : IDisposable
     [Fact]
     public void Constructor_NullDataAccess_ThrowsArgumentNullException()
     {
-        // Arrange
-        var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
-
         // Act
-        var act = () => new UserRepository(unitOfWork, new InitializationState(), null!);
+        var act = () => new UserRepository(_unitOfWork, new InitializationState(), null!, _timeProvider);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -110,39 +119,41 @@ public class UserRepositoryTests : IDisposable
     public async Task InitializeAsync_AllTablesExist_SetsInitializedState()
     {
         // Arrange
-        var repository = CreateRepository();
+        var initState = new InitializationState();
+        var repository = new UserRepository(_unitOfWork, initState, _mockDataAccess.Object, _timeProvider);
         _mockDataAccess
             .Setup(d => d.CheckRequiredTablesAsync(It.IsAny<IDbConnection>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<string, bool>
+            .ReturnsAsync(new TableExistenceModel
             {
-                ["users"] = true,
-                ["roles"] = true,
-                ["user_roles"] = true,
-                ["role_permissions"] = true,
+                UsersExists = true,
+                RolesExists = true,
+                UserRolesExists = true,
+                RolePermissionsExists = true,
             });
 
         // Act
         await repository.InitializeAsync(TestContext.Current.CancellationToken);
 
-        // Assert — calling again should throw "already initialized"
-        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*already initialized*");
+        // Assert
+        initState.UserRepositoryInitialized.Should().BeTrue();
     }
 
-    [Fact]
-    public async Task InitializeAsync_MissingTables_ThrowsInvalidOperationException()
+    [Theory]
+    [InlineData(false, false, "*roles*role_permissions*")]
+    [InlineData(false, true, "*roles*")]
+    public async Task InitializeAsync_MissingTables_ThrowsInvalidOperationException(
+        bool rolesExists, bool rolePermissionsExists, string expectedMessagePattern)
     {
         // Arrange
         var repository = CreateRepository();
         _mockDataAccess
             .Setup(d => d.CheckRequiredTablesAsync(It.IsAny<IDbConnection>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<string, bool>
+            .ReturnsAsync(new TableExistenceModel
             {
-                ["users"] = true,
-                ["roles"] = false,
-                ["user_roles"] = true,
-                ["role_permissions"] = false,
+                UsersExists = true,
+                RolesExists = rolesExists,
+                UserRolesExists = true,
+                RolePermissionsExists = rolePermissionsExists,
             });
 
         // Act
@@ -150,29 +161,7 @@ public class UserRepositoryTests : IDisposable
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*roles*role_permissions*");
-    }
-
-    [Fact]
-    public async Task InitializeAsync_TableKeyMissingFromStatus_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var repository = CreateRepository();
-        _mockDataAccess
-            .Setup(d => d.CheckRequiredTablesAsync(It.IsAny<IDbConnection>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<string, bool>
-            {
-                ["users"] = true,
-                ["user_roles"] = true,
-                ["role_permissions"] = true,
-            });
-
-        // Act
-        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*roles*");
+            .WithMessage(expectedMessagePattern);
     }
 
     // --- ValidateCredentialsAsync ---
@@ -184,7 +173,7 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync("user", "pass", TestContext.Current.CancellationToken);
+        var act = () => repository.ValidateCredentialsAsync(DummyUsername, DummyPassword, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -201,7 +190,7 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateInitializedRepository();
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync(username!, "pass", TestContext.Current.CancellationToken);
+        var act = () => repository.ValidateCredentialsAsync(username!, DummyPassword, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>()
@@ -218,7 +207,7 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateInitializedRepository();
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync("user", password!, TestContext.Current.CancellationToken);
+        var act = () => repository.ValidateCredentialsAsync(DummyUsername, password!, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>()
@@ -235,7 +224,7 @@ public class UserRepositoryTests : IDisposable
             .ReturnsAsync(default(UserModel?));
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync(Username, "anypassword", TestContext.Current.CancellationToken);
+        var act = () => repository.ValidateCredentialsAsync(Username, AnyPassword, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<UnauthorizedAccessException>()
@@ -269,7 +258,7 @@ public class UserRepositoryTests : IDisposable
             .ReturnsAsync(new UserModel { Id = UserId, Username = Username, PasswordHash = "not-a-valid-hash" });
 
         // Act
-        var act = () => repository.ValidateCredentialsAsync(Username, "anypassword", TestContext.Current.CancellationToken);
+        var act = () => repository.ValidateCredentialsAsync(Username, AnyPassword, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -286,10 +275,7 @@ public class UserRepositoryTests : IDisposable
             .ReturnsAsync(new UserModel { Id = UserId, Username = Username, PasswordHash = PasswordHash });
         _mockDataAccess
             .Setup(d => d.GetRolesByUserIdAsync(It.IsAny<IDbConnection>(), UserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[]
-            {
-                new RoleModel { Id = Guid.Parse("b2c3d4e5-0001-0002-0003-000000000002"), Name = "admin", Description = "Administrator", Permissions = RolePermissions }
-            });
+            .ReturnsAsync(AdminRoles);
 
         // Act
         var result = await repository.ValidateCredentialsAsync(Username, "correctpassword", TestContext.Current.CancellationToken);
@@ -298,7 +284,7 @@ public class UserRepositoryTests : IDisposable
         result.Id.Should().Be(UserId);
         result.Username.Should().Be(Username);
         result.Roles.Should().ContainSingle()
-            .Which.Name.Should().Be("admin");
+            .Which.Name.Should().Be(AdminRoleName);
         result.Roles[0].Permissions.Should().BeEquivalentTo(RolePermissions);
     }
 
@@ -311,11 +297,25 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.GetByIdAsync(Guid.Empty, TestContext.Current.CancellationToken);
+        var act = () => repository.GetByIdAsync(UserId, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*not initialized*");
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_EmptyUserId_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var repository = CreateRepository();
+
+        // Act
+        var act = () => repository.GetByIdAsync(Guid.Empty, TestContext.Current.CancellationToken);
+
+        // Assert
+        (await act.Should().ThrowAsync<ArgumentOutOfRangeException>())
+            .And.ParamName.Should().Be("userId");
     }
 
     [Fact]
@@ -345,7 +345,7 @@ public class UserRepositoryTests : IDisposable
             .ReturnsAsync(new UserModel { Id = UserId, Username = Username });
         _mockDataAccess
             .Setup(d => d.GetRolesByUserIdAsync(It.IsAny<IDbConnection>(), UserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<RoleModel>());
+            .ReturnsAsync(EmptyRoles);
 
         // Act
         var result = await repository.GetByIdAsync(UserId, TestContext.Current.CancellationToken);
@@ -365,11 +365,25 @@ public class UserRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.UpdateLastLoginAsync(Guid.Empty, TestContext.Current.CancellationToken);
+        var act = () => repository.UpdateLastLoginAsync(UserId, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*not initialized*");
+    }
+
+    [Fact]
+    public async Task UpdateLastLoginAsync_EmptyUserId_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        var repository = CreateRepository();
+
+        // Act
+        var act = () => repository.UpdateLastLoginAsync(Guid.Empty, TestContext.Current.CancellationToken);
+
+        // Assert
+        (await act.Should().ThrowAsync<ArgumentOutOfRangeException>())
+            .And.ParamName.Should().Be("userId");
     }
 
     [Fact]
@@ -378,7 +392,7 @@ public class UserRepositoryTests : IDisposable
         // Arrange
         var repository = CreateInitializedRepository();
         _mockDataAccess
-            .Setup(d => d.UpdateLastLoginAsync(It.IsAny<IDbConnection>(), UserId, It.IsAny<CancellationToken>()))
+            .Setup(d => d.UpdateLastLoginAsync(It.IsAny<IDbConnection>(), UserId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
         // Act
@@ -395,7 +409,7 @@ public class UserRepositoryTests : IDisposable
         // Arrange
         var repository = CreateInitializedRepository();
         _mockDataAccess
-            .Setup(d => d.UpdateLastLoginAsync(It.IsAny<IDbConnection>(), UserId, It.IsAny<CancellationToken>()))
+            .Setup(d => d.UpdateLastLoginAsync(It.IsAny<IDbConnection>(), UserId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act

@@ -8,15 +8,31 @@ using emc.camus.observability.otel.test.Helpers;
 
 namespace emc.camus.observability.otel.test.Logging;
 
-public class ActivityCurrentEnricherTests
+public class ActivityCurrentEnricherTests : IDisposable
 {
-    private readonly ActivityCurrentEnricher _enricher = new();
-    private readonly ILogEventPropertyFactory _propertyFactory = new LogEventPropertyFactory();
+    private const string TraceIdProperty = "trace_id";
+    private const string SpanIdProperty = "span_id";
+    private readonly Activity? _priorActivity;
+    private readonly ActivityCurrentEnricher _enricher;
+    private readonly ILogEventPropertyFactory _propertyFactory;
+
+    public ActivityCurrentEnricherTests()
+    {
+        _priorActivity = Activity.Current;
+        _enricher = new ActivityCurrentEnricher();
+        _propertyFactory = new LogEventPropertyFactory();
+    }
+
+    public void Dispose()
+    {
+        Activity.Current = _priorActivity;
+        GC.SuppressFinalize(this);
+    }
 
     private static LogEvent CreateLogEvent()
     {
         return new LogEvent(
-            DateTimeOffset.UtcNow,
+            DateTimeOffset.UnixEpoch,
             LogEventLevel.Information,
             null,
             new MessageTemplate("Test", []),
@@ -64,8 +80,8 @@ public class ActivityCurrentEnricherTests
         _enricher.Enrich(logEvent, _propertyFactory);
 
         // Assert
-        logEvent.Properties.Should().NotContainKey("trace_id");
-        logEvent.Properties.Should().NotContainKey("span_id");
+        logEvent.Properties.Should().NotContainKey(TraceIdProperty);
+        logEvent.Properties.Should().NotContainKey(SpanIdProperty);
     }
 
     // --- Enrich: with Activity ---
@@ -89,12 +105,12 @@ public class ActivityCurrentEnricherTests
         _enricher.Enrich(logEvent, _propertyFactory);
 
         // Assert
-        logEvent.Properties.Should().ContainKey("trace_id");
-        logEvent.Properties["trace_id"].ToString().Trim('"')
+        logEvent.Properties.Should().ContainKey(TraceIdProperty);
+        logEvent.Properties[TraceIdProperty].ToString().Trim('"')
             .Should().Be(activity!.TraceId.ToHexString());
 
-        logEvent.Properties.Should().ContainKey("span_id");
-        logEvent.Properties["span_id"].ToString().Trim('"')
+        logEvent.Properties.Should().ContainKey(SpanIdProperty);
+        logEvent.Properties[SpanIdProperty].ToString().Trim('"')
             .Should().Be(activity.SpanId.ToHexString());
     }
 

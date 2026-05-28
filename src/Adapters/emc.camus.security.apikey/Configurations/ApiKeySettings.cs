@@ -15,6 +15,12 @@ namespace emc.camus.security.apikey.Configurations
         /// </summary>
         public const string DefaultUsername = "ApiKeyUser";
 
+        /// <summary>
+        /// Deterministic user ID assigned to API Key authenticated requests.
+        /// Ensures idempotency cache entries are scoped per principal.
+        /// </summary>
+        public const string DefaultUserId = "00000000-0000-0000-0000-000000000001";
+
         private const string DefaultApiKeySecretName = "XApiKey";
 
         /// <summary>

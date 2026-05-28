@@ -4,9 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using emc.camus.observability.otel.Configurations;
 
 namespace emc.camus.observability.otel.Telemetry
@@ -14,7 +11,7 @@ namespace emc.camus.observability.otel.Telemetry
     /// <summary>
     /// Extension methods for configuring OpenTelemetry metrics provider.
     /// </summary>
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "MeterProviderBuilder is abstract with no public construction API; branch coverage impractical.")]
     internal static class MeterProviderBuilderExtensions
     {
         /// <summary>
@@ -27,12 +24,17 @@ namespace emc.camus.observability.otel.Telemetry
         /// <param name="environmentName">Environment name (e.g., Development, Production).</param>
         /// <returns>The configured metrics provider builder.</returns>
         public static MeterProviderBuilder UseResourceAttributes(
-            this MeterProviderBuilder builder, 
-            string serviceName, 
-            string serviceVersion,  
+            this MeterProviderBuilder builder,
+            string serviceName,
+            string serviceVersion,
             string instanceId,
             string environmentName)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceVersion);
+            ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(environmentName);
+
             builder.SetResourceBuilder(ResourceFactory.Create(serviceName, serviceVersion, instanceId, environmentName));
             return builder;
         }
@@ -45,9 +47,11 @@ namespace emc.camus.observability.otel.Telemetry
         /// <param name="settings">OpenTelemetry configuration settings.</param>
         /// <returns>The configured metrics provider builder.</returns>
         public static MeterProviderBuilder ConfigureMetricsExporter(
-            this MeterProviderBuilder builder, 
+            this MeterProviderBuilder builder,
             OpenTelemetrySettings settings)
         {
+            ArgumentNullException.ThrowIfNull(settings);
+
             var exporter = settings.Metrics.Exporter;
 
             switch (exporter)
@@ -63,7 +67,7 @@ namespace emc.camus.observability.otel.Telemetry
                 case MetricsExporter.None:
                     // No exporter configured
                     break;
-                    
+
                 default:
                     throw new InvalidOperationException($"Unsupported metrics exporter: {exporter}");
             }

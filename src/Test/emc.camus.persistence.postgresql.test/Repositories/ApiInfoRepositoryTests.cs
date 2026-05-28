@@ -10,15 +10,23 @@ namespace emc.camus.persistence.postgresql.test.Repositories;
 
 public class ApiInfoRepositoryTests : IDisposable
 {
+    private const string ApiVersion = "1.0";
+    private const string MissingVersion = "2.0";
+    private const string ApiName = "TestApi";
+    private const string ApiStatus = "active";
     private static readonly string[] ApiFeatures = new[] { "auth" };
 
-    private readonly Mock<IConnectionFactory> _mockConnectionFactory = new();
-    private readonly Mock<IApiInfoDataAccess> _mockDataAccess = new();
-    private readonly Mock<DbConnection> _mockConnection = new();
+    private readonly Mock<IConnectionFactory> _mockConnectionFactory;
+    private readonly Mock<IApiInfoDataAccess> _mockDataAccess;
+    private readonly Mock<DbConnection> _mockConnection;
     private readonly UnitOfWork _unitOfWork;
 
     public ApiInfoRepositoryTests()
     {
+        _mockConnectionFactory = new Mock<IConnectionFactory>();
+        _mockDataAccess = new Mock<IApiInfoDataAccess>();
+        _mockConnection = new Mock<DbConnection>();
+
         _mockConnectionFactory
             .Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(_mockConnection.Object);
@@ -48,11 +56,8 @@ public class ApiInfoRepositoryTests : IDisposable
     [Fact]
     public void Constructor_NullUnitOfWork_ThrowsArgumentNullException()
     {
-        // Arrange
-        UnitOfWork? unitOfWork = null;
-
         // Act
-        var act = () => new ApiInfoRepository(unitOfWork!, new InitializationState(), _mockDataAccess.Object);
+        var act = () => new ApiInfoRepository(null!, new InitializationState(), _mockDataAccess.Object);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -62,11 +67,8 @@ public class ApiInfoRepositoryTests : IDisposable
     [Fact]
     public void Constructor_NullInitState_ThrowsArgumentNullException()
     {
-        // Arrange
-        var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
-
         // Act
-        var act = () => new ApiInfoRepository(unitOfWork, null!, _mockDataAccess.Object);
+        var act = () => new ApiInfoRepository(_unitOfWork, null!, _mockDataAccess.Object);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -76,11 +78,8 @@ public class ApiInfoRepositoryTests : IDisposable
     [Fact]
     public void Constructor_NullDataAccess_ThrowsArgumentNullException()
     {
-        // Arrange
-        var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
-
         // Act
-        var act = () => new ApiInfoRepository(unitOfWork, new InitializationState(), null!);
+        var act = () => new ApiInfoRepository(_unitOfWork, new InitializationState(), null!);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -107,7 +106,8 @@ public class ApiInfoRepositoryTests : IDisposable
     public async Task InitializeAsync_TableExists_SetsInitializedState()
     {
         // Arrange
-        var repository = CreateRepository();
+        var initState = new InitializationState();
+        var repository = new ApiInfoRepository(_unitOfWork, initState, _mockDataAccess.Object);
         _mockDataAccess
             .Setup(d => d.CheckTableExistsAsync(It.IsAny<IDbConnection>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -116,9 +116,7 @@ public class ApiInfoRepositoryTests : IDisposable
         await repository.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*already initialized*");
+        initState.ApiInfoRepositoryInitialized.Should().BeTrue();
     }
 
     [Fact]
@@ -147,7 +145,7 @@ public class ApiInfoRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.GetByVersionAsync("1.0", TestContext.Current.CancellationToken);
+        var act = () => repository.GetByVersionAsync(ApiVersion, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -177,15 +175,15 @@ public class ApiInfoRepositoryTests : IDisposable
         // Arrange
         var repository = CreateInitializedRepository();
         _mockDataAccess
-            .Setup(d => d.FindByVersionAsync(It.IsAny<IDbConnection>(), "2.0", It.IsAny<CancellationToken>()))
+            .Setup(d => d.FindByVersionAsync(It.IsAny<IDbConnection>(), MissingVersion, It.IsAny<CancellationToken>()))
             .ReturnsAsync(default(ApiInfoModel?));
 
         // Act
-        var act = () => repository.GetByVersionAsync("2.0", TestContext.Current.CancellationToken);
+        var act = () => repository.GetByVersionAsync(MissingVersion, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<KeyNotFoundException>()
-            .WithMessage("*2.0*");
+            .WithMessage($"*{MissingVersion}*");
     }
 
     [Fact]
@@ -194,15 +192,15 @@ public class ApiInfoRepositoryTests : IDisposable
         // Arrange
         var repository = CreateInitializedRepository();
         _mockDataAccess
-            .Setup(d => d.FindByVersionAsync(It.IsAny<IDbConnection>(), "1.0", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ApiInfoModel { Name = "TestApi", Version = "1.0", Status = "active", Features = ApiFeatures });
+            .Setup(d => d.FindByVersionAsync(It.IsAny<IDbConnection>(), ApiVersion, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApiInfoModel { Name = ApiName, Version = ApiVersion, Status = ApiStatus, Features = ApiFeatures });
 
         // Act
-        var result = await repository.GetByVersionAsync("1.0", TestContext.Current.CancellationToken);
+        var result = await repository.GetByVersionAsync(ApiVersion, TestContext.Current.CancellationToken);
 
         // Assert
-        result.Name.Should().Be("TestApi");
-        result.Version.Should().Be("1.0");
-        result.Status.Should().Be("active");
+        result.Name.Should().Be(ApiName);
+        result.Version.Should().Be(ApiVersion);
+        result.Status.Should().Be(ApiStatus);
     }
 }

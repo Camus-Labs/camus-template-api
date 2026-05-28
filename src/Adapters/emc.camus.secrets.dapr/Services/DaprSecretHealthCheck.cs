@@ -31,13 +31,15 @@ internal sealed class DaprSecretHealthCheck : IHealthCheck
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context, CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(context);
+
         try
         {
             await _secretProvider.CheckConnectivityAsync(ct);
 
             return HealthCheckResult.Healthy("Dapr secret store is reachable");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HealthCheckResult.Unhealthy("Dapr secret store is unreachable", ex);
         }

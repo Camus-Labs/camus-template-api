@@ -83,13 +83,11 @@ For run commands and VS Code tasks, see the [Test README](../README.md#integrati
 ```text
 emc.camus.api.integration.test/
 ├── ApiInfo/              Feature area: API info endpoint tests
-├── Auth/                 Feature area: authentication and token endpoint tests
-├── Common/               Middleware, rate-limiting, telemetry, and timeout tests
+├── Auth/                 Feature area: authentication, token, and revocation cache tests
+├── Common/               Middleware, rate-limiting, telemetry, timeout, and unit-of-work tests
 ├── Fixtures/             Factory variants and collection fixture definitions
 ├── HealthChecks/         Health check endpoint tests
 ├── Helpers/              Shared utilities (auth, seeding, assertion extensions)
-├── InMemoryCache/        Token revocation cache tests
-├── PostgreSqlPersistence/ Unit-of-work transaction tests
 ├── xunit.runner.json     Runner configuration
 └── *.csproj              Project file with test dependencies
 ```

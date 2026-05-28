@@ -6,8 +6,16 @@ namespace emc.camus.cache.inmemory.test.Services;
 public class TokenRevocationCacheTests
 {
     private static readonly Guid ValidJti = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static readonly Guid ReplacementJti = new("cccccccc-cccc-cccc-cccc-cccccccccccc");
+    private static readonly HashSet<Guid> EmptyJtiSet = [];
+    private static readonly HashSet<Guid> ReplacementJtiSet = [ReplacementJti];
 
-    private readonly TokenRevocationCache _cache = new();
+    private readonly TokenRevocationCache _cache;
+
+    public TokenRevocationCacheTests()
+    {
+        _cache = new TokenRevocationCache();
+    }
 
     // --- IsRevoked ---
 
@@ -122,7 +130,7 @@ public class TokenRevocationCacheTests
         _cache.IsRevoked(ValidJti).Should().BeTrue("precondition: token should be revoked");
 
         // Act
-        _cache.Refresh([]);
+        _cache.Refresh(EmptyJtiSet);
 
         // Assert
         _cache.IsRevoked(ValidJti).Should().BeFalse();
@@ -133,13 +141,12 @@ public class TokenRevocationCacheTests
     {
         // Arrange — cache has one token, replacement has a different one
         _cache.Revoke(ValidJti);
-        var replacementJti = new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc");
 
         // Act
-        _cache.Refresh([replacementJti]);
+        _cache.Refresh(ReplacementJtiSet);
 
         // Assert
         _cache.IsRevoked(ValidJti).Should().BeFalse("old entry should be removed");
-        _cache.IsRevoked(replacementJti).Should().BeTrue("new entry should be present");
+        _cache.IsRevoked(ReplacementJti).Should().BeTrue("new entry should be present");
     }
 }

@@ -8,33 +8,24 @@ public class GeneratedTokenSummaryViewTests
     private static readonly Guid ValidJti = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private const string ValidTokenUsername = "admin-token1";
     private static readonly IReadOnlyList<string> ValidPermissions = new List<string> { Permissions.ApiRead, Permissions.ApiWrite };
-    private static readonly DateTime ValidExpiration = new(2099, 12, 31, 23, 59, 59, DateTimeKind.Utc);
-    private static readonly DateTime ValidCreatedAt = new(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTimeOffset ReferenceTime = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime ValidExpiration = ReferenceTime.UtcDateTime.AddYears(1);
+    private static readonly DateTime ValidCreatedAt = ReferenceTime.UtcDateTime.AddYears(-2);
 
     // --- Constructor ---
 
     [Fact]
     public void Constructor_ValidParameters_SetsProperties()
     {
-        // Arrange
-        var jti = ValidJti;
-        var tokenUsername = ValidTokenUsername;
-        var permissions = ValidPermissions;
-        var expiresOn = ValidExpiration;
-        var createdAt = ValidCreatedAt;
-        var isRevoked = false;
-        DateTime? revokedAt = null;
-        var isValid = true;
-
         // Act
-        var view = new GeneratedTokenSummaryView(jti, tokenUsername, permissions, expiresOn, createdAt, isRevoked, revokedAt, isValid);
+        var view = new GeneratedTokenSummaryView(ValidJti, ValidTokenUsername, ValidPermissions, ValidExpiration, ValidCreatedAt, false, null, true);
 
         // Assert
-        view.Jti.Should().Be(jti);
-        view.TokenUsername.Should().Be(tokenUsername);
-        view.Permissions.Should().BeEquivalentTo(permissions);
-        view.ExpiresOn.Should().Be(expiresOn);
-        view.CreatedAt.Should().Be(createdAt);
+        view.Jti.Should().Be(ValidJti);
+        view.TokenUsername.Should().Be(ValidTokenUsername);
+        view.Permissions.Should().BeEquivalentTo(ValidPermissions);
+        view.ExpiresOn.Should().Be(ValidExpiration);
+        view.CreatedAt.Should().Be(ValidCreatedAt);
         view.IsRevoked.Should().BeFalse();
         view.RevokedAt.Should().BeNull();
         view.IsValid.Should().BeTrue();

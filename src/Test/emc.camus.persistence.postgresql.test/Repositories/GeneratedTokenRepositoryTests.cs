@@ -1,6 +1,7 @@
 using System.Data;
 using System.Data.Common;
 using FluentAssertions;
+using Microsoft.Extensions.Time.Testing;
 using emc.camus.application.Auth;
 using emc.camus.application.Common;
 using emc.camus.application.Exceptions;
@@ -14,17 +15,39 @@ namespace emc.camus.persistence.postgresql.test.Repositories;
 
 public class GeneratedTokenRepositoryTests : IDisposable
 {
+    private const string CreatorUsername = "creator";
+    private const string TokenUsername = "creator-suffix";
+    private static readonly DateTimeOffset ReferenceTime = new(2025, 6, 1, 12, 0, 0, TimeSpan.Zero);
     private static readonly Guid Jti = Guid.Parse("a1b2c3d4-0001-0002-0003-000000000001");
+    private static readonly Guid[] SingleJtiArray = [Jti];
     private static readonly Guid CreatorUserId = Guid.Parse("b2c3d4e5-0001-0002-0003-000000000002");
     private static readonly string[] TokenPermissions = new[] { "read", "write" };
+    private static readonly DateTime FixedExpiresOn = ReferenceTime.AddYears(1).UtcDateTime;
+    private static readonly DateTime FixedCreatedAt = ReferenceTime.UtcDateTime;
+    private static readonly GeneratedTokenModel[] SingleTokenPage = new[]
+    {
+        new GeneratedTokenModel
+        {
+            Jti = Jti, CreatorUserId = CreatorUserId, CreatorUsername = CreatorUsername,
+            TokenUsername = TokenUsername, Permissions = TokenPermissions,
+            ExpiresOn = FixedExpiresOn, CreatedAt = FixedCreatedAt,
+            IsRevoked = false
+        }
+    };
 
-    private readonly Mock<IConnectionFactory> _mockConnectionFactory = new();
-    private readonly Mock<IGeneratedTokenDataAccess> _mockDataAccess = new();
-    private readonly Mock<DbConnection> _mockConnection = new();
+    private readonly Mock<IConnectionFactory> _mockConnectionFactory;
+    private readonly Mock<IGeneratedTokenDataAccess> _mockDataAccess;
+    private readonly Mock<DbConnection> _mockConnection;
+    private readonly FakeTimeProvider _timeProvider;
     private readonly UnitOfWork _unitOfWork;
 
     public GeneratedTokenRepositoryTests()
     {
+        _mockConnectionFactory = new Mock<IConnectionFactory>();
+        _mockDataAccess = new Mock<IGeneratedTokenDataAccess>();
+        _mockConnection = new Mock<DbConnection>();
+        _timeProvider = new FakeTimeProvider(ReferenceTime);
+
         _mockConnectionFactory
             .Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(_mockConnection.Object);
@@ -40,15 +63,15 @@ public class GeneratedTokenRepositoryTests : IDisposable
 
     private GeneratedTokenRepository CreateRepository()
     {
-        return new GeneratedTokenRepository(_unitOfWork, _mockDataAccess.Object);
+        return new GeneratedTokenRepository(_unitOfWork, _mockDataAccess.Object, _timeProvider);
     }
 
     private static GeneratedToken CreateToken()
     {
         return GeneratedToken.Reconstitute(
-            Jti, CreatorUserId, "creator", "creator-suffix",
-            new List<string> { "read", "write" },
-            DateTime.UtcNow.AddDays(30), DateTime.UtcNow.AddDays(-1),
+            Jti, CreatorUserId, CreatorUsername, TokenUsername,
+            new List<string>(TokenPermissions),
+            FixedExpiresOn, FixedCreatedAt,
             false, null);
     }
 
@@ -57,11 +80,8 @@ public class GeneratedTokenRepositoryTests : IDisposable
     [Fact]
     public void Constructor_NullUnitOfWork_ThrowsArgumentNullException()
     {
-        // Arrange
-        UnitOfWork? unitOfWork = null;
-
         // Act
-        var act = () => new GeneratedTokenRepository(unitOfWork!, _mockDataAccess.Object);
+        var act = () => new GeneratedTokenRepository(null!, _mockDataAccess.Object, _timeProvider);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -71,11 +91,8 @@ public class GeneratedTokenRepositoryTests : IDisposable
     [Fact]
     public void Constructor_NullDataAccess_ThrowsArgumentNullException()
     {
-        // Arrange
-        var unitOfWork = new UnitOfWork(_mockConnectionFactory.Object);
-
         // Act
-        var act = () => new GeneratedTokenRepository(unitOfWork, null!);
+        var act = () => new GeneratedTokenRepository(_unitOfWork, null!, _timeProvider);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -124,7 +141,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .Setup(d => d.JtiExistsAsync(It.IsAny<IDbConnection>(), Jti, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _mockDataAccess
-            .Setup(d => d.TokenUsernameExistsAsync(It.IsAny<IDbConnection>(), "creator-suffix", It.IsAny<CancellationToken>()))
+            .Setup(d => d.TokenUsernameExistsAsync(It.IsAny<IDbConnection>(), TokenUsername, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -136,7 +153,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task CreateAsync_CreatorNotFound_ThrowsKeyNotFoundException()
+    public async Task CreateAsync_CreatorNotFound_ThrowsDataConflictException()
     {
         // Arrange
         var repository = CreateRepository();
@@ -144,7 +161,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .Setup(d => d.JtiExistsAsync(It.IsAny<IDbConnection>(), Jti, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _mockDataAccess
-            .Setup(d => d.TokenUsernameExistsAsync(It.IsAny<IDbConnection>(), "creator-suffix", It.IsAny<CancellationToken>()))
+            .Setup(d => d.TokenUsernameExistsAsync(It.IsAny<IDbConnection>(), TokenUsername, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _mockDataAccess
             .Setup(d => d.CreatorUserExistsAsync(It.IsAny<IDbConnection>(), CreatorUserId, It.IsAny<CancellationToken>()))
@@ -154,7 +171,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
         var act = () => repository.CreateAsync(CreateToken(), TestContext.Current.CancellationToken);
 
         // Assert
-        await act.Should().ThrowAsync<KeyNotFoundException>()
+        await act.Should().ThrowAsync<DataConflictException>()
             .WithMessage($"*{CreatorUserId}*");
     }
 
@@ -167,7 +184,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .Setup(d => d.JtiExistsAsync(It.IsAny<IDbConnection>(), Jti, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _mockDataAccess
-            .Setup(d => d.TokenUsernameExistsAsync(It.IsAny<IDbConnection>(), "creator-suffix", It.IsAny<CancellationToken>()))
+            .Setup(d => d.TokenUsernameExistsAsync(It.IsAny<IDbConnection>(), TokenUsername, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _mockDataAccess
             .Setup(d => d.CreatorUserExistsAsync(It.IsAny<IDbConnection>(), CreatorUserId, It.IsAny<CancellationToken>()))
@@ -220,9 +237,9 @@ public class GeneratedTokenRepositoryTests : IDisposable
             .Setup(d => d.FindByJtiAsync(It.IsAny<IDbConnection>(), Jti, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GeneratedTokenModel
             {
-                Jti = Jti, CreatorUserId = CreatorUserId, CreatorUsername = "creator",
-                TokenUsername = "creator-suffix", Permissions = TokenPermissions,
-                ExpiresOn = DateTime.UtcNow.AddDays(30), CreatedAt = DateTime.UtcNow,
+                Jti = Jti, CreatorUserId = CreatorUserId, CreatorUsername = CreatorUsername,
+                TokenUsername = TokenUsername, Permissions = TokenPermissions,
+                ExpiresOn = FixedExpiresOn, CreatedAt = FixedCreatedAt,
                 IsRevoked = false
             });
 
@@ -232,7 +249,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
         // Assert
         result.Should().NotBeNull();
         result!.Jti.Should().Be(Jti);
-        result.TokenUsername.Should().Be("creator-suffix");
+        result.TokenUsername.Should().Be(TokenUsername);
     }
 
     // --- GetPagedByCreatorUserIdAsync ---
@@ -244,7 +261,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.GetPagedByCreatorUserIdAsync(Guid.Empty, new PaginationParams(), new GeneratedTokenFilter(), new GeneratedTokenSortParams(), ct: TestContext.Current.CancellationToken);
+        var act = () => repository.GetPagedByCreatorUserIdAsync(Guid.Empty, new PaginationParams(), new GeneratedTokenFilter(), new SortParams<GeneratedTokenSortField>(), ct: TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
@@ -257,7 +274,7 @@ public class GeneratedTokenRepositoryTests : IDisposable
         var repository = CreateRepository();
 
         // Act
-        var act = () => repository.GetPagedByCreatorUserIdAsync(CreatorUserId, null!, new GeneratedTokenFilter(), new GeneratedTokenSortParams(), ct: TestContext.Current.CancellationToken);
+        var act = () => repository.GetPagedByCreatorUserIdAsync(CreatorUserId, null!, new GeneratedTokenFilter(), new SortParams<GeneratedTokenSortField>(), ct: TestContext.Current.CancellationToken);
 
         // Assert
         (await act.Should().ThrowAsync<ArgumentNullException>())
@@ -270,11 +287,11 @@ public class GeneratedTokenRepositoryTests : IDisposable
         // Arrange
         var repository = CreateRepository();
         _mockDataAccess
-            .Setup(d => d.CountByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, It.IsAny<CancellationToken>()))
+            .Setup(d => d.CountByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
         // Act
-        var result = await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), new GeneratedTokenFilter(), new GeneratedTokenSortParams(), ct: TestContext.Current.CancellationToken);
+        var result = await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), new GeneratedTokenFilter(), new SortParams<GeneratedTokenSortField>(), ct: TestContext.Current.CancellationToken);
 
         // Assert
         result.Items.Should().BeEmpty();
@@ -288,23 +305,14 @@ public class GeneratedTokenRepositoryTests : IDisposable
         var repository = CreateRepository();
         var pagination = new PaginationParams(1, 10);
         _mockDataAccess
-            .Setup(d => d.CountByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, It.IsAny<CancellationToken>()))
+            .Setup(d => d.CountByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _mockDataAccess
-            .Setup(d => d.GetPageByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, 10, 0, It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[]
-            {
-                new GeneratedTokenModel
-                {
-                    Jti = Jti, CreatorUserId = CreatorUserId, CreatorUsername = "creator",
-                    TokenUsername = "creator-suffix", Permissions = TokenPermissions,
-                    ExpiresOn = DateTime.UtcNow.AddDays(30), CreatedAt = DateTime.UtcNow,
-                    IsRevoked = false
-                }
-            });
+            .Setup(d => d.GetPageByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, 10, 0, It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(SingleTokenPage);
 
         // Act
-        var result = await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, pagination, new GeneratedTokenFilter(), new GeneratedTokenSortParams(), ct: TestContext.Current.CancellationToken);
+        var result = await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, pagination, new GeneratedTokenFilter(), new SortParams<GeneratedTokenSortField>(), ct: TestContext.Current.CancellationToken);
 
         // Assert
         result.TotalCount.Should().Be(1);
@@ -319,15 +327,15 @@ public class GeneratedTokenRepositoryTests : IDisposable
         var repository = CreateRepository();
         var filter = new GeneratedTokenFilter(excludeRevoked: true, excludeExpired: true);
         _mockDataAccess
-            .Setup(d => d.CountByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, true, true, It.IsAny<CancellationToken>()))
+            .Setup(d => d.CountByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, true, true, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
         // Act
-        await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), filter, new GeneratedTokenSortParams(), ct: TestContext.Current.CancellationToken);
+        await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), filter, new SortParams<GeneratedTokenSortField>(), ct: TestContext.Current.CancellationToken);
 
         // Assert
         _mockDataAccess.Verify(d => d.CountByCreatorUserIdAsync(
-            It.IsAny<IDbConnection>(), CreatorUserId, true, true, It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<IDbConnection>(), CreatorUserId, true, true, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -340,29 +348,20 @@ public class GeneratedTokenRepositoryTests : IDisposable
     {
         // Arrange
         var repository = CreateRepository();
-        var sort = new GeneratedTokenSortParams(sortBy, sortDirection);
+        var sort = new SortParams<GeneratedTokenSortField>(sortBy, sortDirection);
         _mockDataAccess
-            .Setup(d => d.CountByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, It.IsAny<CancellationToken>()))
+            .Setup(d => d.CountByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _mockDataAccess
-            .Setup(d => d.GetPageByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, 25, 0, expectedColumn, expectedDirection, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[]
-            {
-                new GeneratedTokenModel
-                {
-                    Jti = Jti, CreatorUserId = CreatorUserId, CreatorUsername = "creator",
-                    TokenUsername = "creator-suffix", Permissions = TokenPermissions,
-                    ExpiresOn = DateTime.UtcNow.AddDays(30), CreatedAt = DateTime.UtcNow,
-                    IsRevoked = false
-                }
-            });
+            .Setup(d => d.GetPageByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, 25, 0, expectedColumn, expectedDirection, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(SingleTokenPage);
 
         // Act
         await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), new GeneratedTokenFilter(), sort: sort, ct: TestContext.Current.CancellationToken);
 
         // Assert
         _mockDataAccess.Verify(d => d.GetPageByCreatorUserIdAsync(
-            It.IsAny<IDbConnection>(), CreatorUserId, false, false, 25, 0, expectedColumn, expectedDirection, It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<IDbConnection>(), CreatorUserId, false, false, 25, 0, expectedColumn, expectedDirection, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -371,27 +370,18 @@ public class GeneratedTokenRepositoryTests : IDisposable
         // Arrange
         var repository = CreateRepository();
         _mockDataAccess
-            .Setup(d => d.CountByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, It.IsAny<CancellationToken>()))
+            .Setup(d => d.CountByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _mockDataAccess
-            .Setup(d => d.GetPageByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, 25, 0, null, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[]
-            {
-                new GeneratedTokenModel
-                {
-                    Jti = Jti, CreatorUserId = CreatorUserId, CreatorUsername = "creator",
-                    TokenUsername = "creator-suffix", Permissions = TokenPermissions,
-                    ExpiresOn = DateTime.UtcNow.AddDays(30), CreatedAt = DateTime.UtcNow,
-                    IsRevoked = false
-                }
-            });
+            .Setup(d => d.GetPageByCreatorUserIdAsync(It.IsAny<IDbConnection>(), CreatorUserId, false, false, 25, 0, null, null, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(SingleTokenPage);
 
         // Act
-        await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), new GeneratedTokenFilter(), new GeneratedTokenSortParams(), ct: TestContext.Current.CancellationToken);
+        await repository.GetPagedByCreatorUserIdAsync(CreatorUserId, new PaginationParams(), new GeneratedTokenFilter(), new SortParams<GeneratedTokenSortField>(), ct: TestContext.Current.CancellationToken);
 
         // Assert
         _mockDataAccess.Verify(d => d.GetPageByCreatorUserIdAsync(
-            It.IsAny<IDbConnection>(), CreatorUserId, false, false, 25, 0, null, null, It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<IDbConnection>(), CreatorUserId, false, false, 25, 0, null, null, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // --- SaveAsync ---
@@ -451,8 +441,8 @@ public class GeneratedTokenRepositoryTests : IDisposable
         // Arrange
         var repository = CreateRepository();
         _mockDataAccess
-            .Setup(d => d.GetActiveRevokedJtisAsync(It.IsAny<IDbConnection>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { Jti });
+            .Setup(d => d.GetActiveRevokedJtisAsync(It.IsAny<IDbConnection>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(SingleJtiArray);
 
         // Act
         var result = await repository.GetActiveRevokedJtisAsync(TestContext.Current.CancellationToken);

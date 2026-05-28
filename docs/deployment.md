@@ -27,8 +27,9 @@ Start the production stack using the `docker-compose.prod.yml` file in detached 
 ### 3. Environment Configuration
 
 Override configuration via environment variables using the `__` separator. See the
-[Persistence Adapter README](../src/Adapters/emc.camus.persistence.postgresql/README.md#2-configure-application-settings)
-for the full `DatabaseSettings` and `DataPersistenceSettings` JSON structure.
+[Persistence Adapter README](../src/Adapters/emc.camus.persistence.postgresql/README.md)
+for the full `DatabaseSettings` and `DataPersistenceSettings` JSON
+structure.
 
 Secrets (JWT private key, API key, database passwords) are managed through Dapr secret stores — see the
 [Secrets Adapter README](../src/Adapters/emc.camus.secrets.dapr/README.md) for details.
@@ -54,15 +55,10 @@ for configuration details.
 
 ## Monitoring
 
-### Application Insights Integration
-
-Set the Application Insights connection string in your deployment configuration via the
-`APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable.
-
 ### Prometheus Metrics
 
-Expose a container port named `metrics` on port 80 (TCP) in your pod spec. Configure Prometheus to scrape the
-`/metrics` path on that target. The metrics endpoint is exposed by the OpenTelemetry adapter — see the
+Metrics are exported to the OpenTelemetry Collector via OTLP gRPC (port 4317). The Collector's Prometheus exporter
+serves the scrape endpoint — configure Prometheus to scrape the Collector, not the application directly. See the
 [Observability Adapter README](../src/Adapters/emc.camus.observability.otel/README.md) for configuration details.
 
 ## Dapr Secret Store Configuration
@@ -132,7 +128,7 @@ database host.
 ### Performance issues
 
 - Check resource limits in `docker-compose.prod.yml`
-- Review Application Insights performance metrics
+- Review OTLP-exported metrics via Prometheus/Grafana
 - Enable Grafana dashboards for monitoring
 
 ## Resources

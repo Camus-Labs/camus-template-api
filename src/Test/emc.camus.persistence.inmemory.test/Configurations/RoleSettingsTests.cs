@@ -6,6 +6,10 @@ namespace emc.camus.persistence.inmemory.test.Configurations;
 
 public class RoleSettingsTests
 {
+    private const string ValidRoleName = "admin";
+    private static readonly List<string> ReadPermissionArray = [Permissions.ApiRead];
+    private static readonly List<string> AllValidPermissionsArray = [Permissions.ApiRead, Permissions.ApiWrite, Permissions.TokenCreate];
+
     // --- Validate ---
 
     [Fact]
@@ -14,8 +18,8 @@ public class RoleSettingsTests
         // Arrange
         var settings = new RoleSettings
         {
-            Name = "admin",
-            Permissions = new List<string> { Permissions.ApiRead }
+            Name = ValidRoleName,
+            Permissions = ReadPermissionArray
         };
 
         // Act
@@ -35,7 +39,7 @@ public class RoleSettingsTests
         var settings = new RoleSettings
         {
             Name = name!,
-            Permissions = new List<string> { Permissions.ApiRead }
+            Permissions = ReadPermissionArray
         };
 
         // Act
@@ -53,7 +57,7 @@ public class RoleSettingsTests
         var settings = new RoleSettings
         {
             Name = new string('a', 51),
-            Permissions = new List<string> { Permissions.ApiRead }
+            Permissions = ReadPermissionArray
         };
 
         // Act
@@ -71,7 +75,7 @@ public class RoleSettingsTests
         // Arrange
         var settings = new RoleSettings
         {
-            Name = "admin",
+            Name = ValidRoleName,
             Permissions = permissions!
         };
 
@@ -91,7 +95,7 @@ public class RoleSettingsTests
         // Arrange
         var settings = new RoleSettings
         {
-            Name = "admin",
+            Name = ValidRoleName,
             Permissions = permissions
         };
 
@@ -109,8 +113,8 @@ public class RoleSettingsTests
         // Arrange
         var settings = new RoleSettings
         {
-            Name = "admin",
-            Permissions = new List<string> { Permissions.ApiRead, Permissions.ApiWrite, Permissions.TokenCreate }
+            Name = ValidRoleName,
+            Permissions = AllValidPermissionsArray
         };
 
         // Act
@@ -120,15 +124,15 @@ public class RoleSettingsTests
         act.Should().NotThrow();
     }
 
-    public static IEnumerable<object?[]> NullOrEmptyPermissionsData() => new List<object?[]>
+    public static readonly TheoryData<List<string>?> NullOrEmptyPermissionsData = new()
     {
-        new object?[] { null },
-        new object?[] { new List<string>() }
+        { null },
+        { new List<string>() }
     };
 
-    public static IEnumerable<object?[]> InvalidPermissionsData() => new List<object?[]>
+    public static readonly TheoryData<List<string>, string> InvalidPermissionsData = new()
     {
-        new object?[] { new List<string> { "invalid.permission" }, "invalid.permission" },
-        new object?[] { new List<string> { Permissions.ApiRead, "nonexistent.perm" }, "nonexistent.perm" }
+        { new List<string> { "invalid.permission" }, "invalid.permission" },
+        { new List<string> { Permissions.ApiRead, "nonexistent.perm" }, "nonexistent.perm" }
     };
 }

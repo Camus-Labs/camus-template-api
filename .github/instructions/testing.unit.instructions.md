@@ -1,5 +1,5 @@
 ---
-applyTo: "{src/Test/**,!src/Test/**integration.test/**}"
+applyTo: "{src/Test/**/*.cs,!src/Test/**integration.test/**/*.cs}"
 ---
 
 # Unit Testing Conventions
@@ -7,47 +7,55 @@ applyTo: "{src/Test/**,!src/Test/**integration.test/**}"
 1. Frameworks & Mocking
 
     - [ ] Moq as the only mocking framework — no other mocking libraries
-    - [ ] Mocks only for external dependencies (e.g., database, HTTP, file system)
+    - [ ] Mocks only for abstractions (interfaces or abstract classes) that cross process or I/O boundaries
+          (e.g., database, HTTP, file system, clock, hosting environment)
     - [ ] No mocks for domain logic — test real implementations
-    - [ ] Mock application services when testing controllers
-    - [ ] Mock adapters when testing application layer
-    - [ ] Mock DataAccess interfaces when testing repository implementations
+    - [ ] Controller tests mock application services — not real implementations
+    - [ ] Application-layer tests mock adapters — not real infrastructure
+    - [ ] Repository tests mock DataAccess interfaces — not real data stores
     - [ ] No `Mock.Verify*()` on methods whose return value is already captured and asserted
     - [ ] Configure mocks with only the methods the class exercises — no `Setup` for members that no test
           in the class uses
 
 2. Isolation & Setup
 
-    - [ ] Tests are isolated — no shared mutable state, no static mutable fields, no `IClassFixture<T>` mutation
-          across tests
-    - [ ] Per-test setup in constructor, cleanup via `IDisposable` — no static initializers or manual lifecycle
-          management
+    - [ ] Tests are isolated — no shared mutable state across tests — exception: `private static readonly`
+          fields (cryptographic fixtures, collections, test data) are permitted when no test or SUT mutates them
+    - [ ] Cleanup via `IDisposable` — no static initializers or manual lifecycle management
     - [ ] No `Thread.Sleep()` or `Task.Delay()` — use deterministic time abstractions or controlled waits
-    - [ ] No reflection or access to private/internal members — assert on public return values, thrown exceptions,
-          or mock interactions
-    - [ ] Values shared between the constructor (or shared setup) and test assertions as `private const` or
-          `private static readonly` fields — constant array data as `private static readonly` fields (C# has no
-          `const` array; inlining allocates a new array each time) — all other values (single-method arrange/assert,
-          constructor filler not verified by any assertion, assertion-only literals) stay inline
+    - [ ] Inject `FakeTimeProvider` (from `Microsoft.Extensions.Time.Testing`) when the SUT depends on
+          `TimeProvider`
+    - [ ] Derive all time-sensitive assertions from `_timeProvider.GetUtcNow()` — no inline
+          `DateTime.UtcNow` or `DateTimeOffset.UtcNow` in assertions
+    - [ ] When the SUT does not depend on `TimeProvider`, dates used purely as test input/output data use a
+          `private static readonly` field (e.g., `private static readonly DateTimeOffset FixedNow = ...`) with
+          derived values expressed relative to it — no inline `new DateTime(...)` literals scattered across methods
 
 3. Scope & Coverage
 
-    - [ ] No tests for trivial code (e.g., plain auto-properties, simple DTOs with no logic, compiler-guaranteed
-          behavior) — covered indirectly through tests that exercise real behavior
+    - [ ] No mock overrides to force execution into a branch unreachable via the SUT's public API — tests exercise
+          only code paths reachable under normal or documented error conditions
+    - [ ] No test classes targeting production classes that contain only auto-properties, parameterless
+          constructors, or no method bodies — covered indirectly through tests that exercise real behavior
     - [ ] No integration test artifacts in this scope — no `[Trait("Category", "Integration")]` annotations,
           `IAsyncLifetime` container fixtures, or `WebApplicationFactory` usage
 
 4. Organization
 
-    - [ ] Tests in correct project matching production structure (e.g., `emc.camus.security.jwt.test`)
     - [ ] Test classes mirror production code structure (e.g., `Configurations/JwtSettingsTests.cs`)
-    - [ ] Each adapter test project name matches its production counterpart (e.g.,
-          `emc.camus.security.jwt.test` → `emc.camus.security.jwt`)
     - [ ] One test class per production class — file name matches with `Tests` suffix
           (e.g., `AuthService` → `AuthServiceTests`) — exception: classes annotated with
           `[ExcludeFromCodeCoverage]` do not require a corresponding test class
 
-5. Assertions
+5. Log Assertions (fail-open / silent-continue paths)
 
-    - [ ] Exception messages: wildcard patterns (e.g., `"*authentication*required*"`) — not exact strings
-    - [ ] Never assert on `exception.Data` — assert on message patterns instead
+    - [ ] Use `LogCaptureBuilder.Create<T>()` (from the test project's `Helpers/` folder) to obtain a
+          `(Mock<ILogger<T>> Mock, ConcurrentBag<(LogLevel Level, string Message)> Entries)` tuple
+    - [ ] Assert both `LogLevel` and a message substring containing at least one context identifier — not just the
+          presence of any log entry
+    - [ ] Log assertions include at least one context identifier (e.g., idempotency key, username) that proves
+          the correct branch ran — no assertions on generic messages that match multiple branches
+    - [ ] Do NOT use `Mock.Verify(...)` on `ILogger` — use the captured entries bag instead
+    - [ ] Reserve log assertions for paths with no other observable outcome (no return value change, no
+          exception, no state mutation) — if a return value or exception already covers the path, a log
+          assertion is redundant

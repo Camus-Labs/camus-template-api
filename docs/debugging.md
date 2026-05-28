@@ -70,7 +70,7 @@ from the workspace root).
 
 - Mounts `./src:/src:cached` for hot reload
 - Excludes `bin/obj` folders to avoid conflicts
-- Exposes port `5001` for debugger (optional)
+- Exposes port `5001` for the containerized application (host 5001 → container 80)
 
 ### launch.json
 
@@ -128,13 +128,8 @@ run task **`docker-compose-up-dev-build`** to rebuild.
 
 ### Breakpoints not hitting
 
-**Solution:** Verify source file mapping in launch.json
-
-```json
-"sourceFileMap": {
-    "/src": "${workspaceFolder}/src"
-}
-```
+**Solution:** Verify the `sourceFileMap` entry in your `.vscode/launch.json` maps the container path `/src`
+to `${workspaceFolder}/src`. See the project's `.vscode/launch.json` for the canonical configuration.
 
 ### Build errors after code changes
 
@@ -154,10 +149,12 @@ to force a clean rebuild of the API service.
 
 Override in `docker-compose.dev.yml` or `.env` file:
 
-```env
-ASPNETCORE_ENVIRONMENT=Development
-POSTGRES_PASSWORD=camus_dev_password
-OpenTelemetrySettings__Tracing__Exporter=otlp
+```json
+{
+  "ASPNETCORE_ENVIRONMENT": "Development",
+  "POSTGRES_PASSWORD": "camus_dev_password",
+  "OpenTelemetrySettings__Tracing__Exporter": "Otlp"
+}
 ```
 
 ## 📝 Notes

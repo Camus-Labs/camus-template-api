@@ -40,7 +40,8 @@ internal sealed partial class ActionAuditRepository : IActionAuditRepository
     /// <param name="actionSummary">A detailed summary of what was done.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A dummy audit entry ID of 0.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="actionTitle"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="actionTitle"/> or <paramref name="actionSummary"/> is null or whitespace.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the authenticated user context does not provide a valid user ID or username.</exception>
     public Task<long> LogCurrentUserActionAsync(
         string actionTitle,
         string actionSummary,
@@ -66,8 +67,11 @@ internal sealed partial class ActionAuditRepository : IActionAuditRepository
     /// <param name="actionSummary">A detailed summary of what was done.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A dummy audit entry ID of 0.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="userId"/> is <see cref="Guid.Empty"/>.
+    /// </exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="username"/> or <paramref name="actionTitle"/> is null or whitespace.
+    /// Thrown when <paramref name="username"/>, <paramref name="actionTitle"/>, or <paramref name="actionSummary"/> is null or whitespace.
     /// </exception>
     public Task<long> LogActionAsync(
         Guid userId,

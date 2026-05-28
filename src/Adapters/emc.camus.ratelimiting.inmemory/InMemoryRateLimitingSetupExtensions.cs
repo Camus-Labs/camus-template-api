@@ -13,7 +13,6 @@ using emc.camus.application.Exceptions;
 using emc.camus.application.RateLimiting;
 using emc.camus.application.Common;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 
 namespace emc.camus.ratelimiting.inmemory
@@ -25,17 +24,9 @@ namespace emc.camus.ratelimiting.inmemory
     /// ⚠️ WARNING: This implementation uses in-memory storage and is NOT suitable for
     /// multi-instance deployments. For production scale-out scenarios, use the Redis adapter.
     /// </summary>
-    [ExcludeFromCodeCoverage]
-    public static partial class InMemoryRateLimitingSetupExtensions
+    [ExcludeFromCodeCoverage(Justification = "DI wiring with framework-coupled branching logic (HttpContext partitioning, endpoint metadata) impractical to unit-test in isolation")]
+    public static class InMemoryRateLimitingSetupExtensions
     {
-        [LoggerMessage(Level = LogLevel.Warning,
-            Message = "Rate limit policy '{PolicyName}' not found in configuration. Falling back to '{DefaultPolicy}' policy. Endpoint: {Method} {Path}")]
-        private static partial void LogPolicyNotFound(ILogger logger, string policyName, string defaultPolicy, string method, string path);
-
-        [LoggerMessage(Level = LogLevel.Warning,
-            Message = "Rate limit exceeded for IP: {IpAddress}, Policy: {Policy}, Endpoint: {Method} {Path}, Limit: {Limit} req/{Window}s")]
-        private static partial void LogRateLimitExceeded(ILogger logger, string ipAddress, string policy, string method, string path, int limit, int window);
-
         /// <summary>
         /// Registers in-memory rate limiting services with policy-based sliding window configuration.
         /// Endpoints can specify policies using [RateLimit("policyName")] attribute from API project.
@@ -46,6 +37,8 @@ namespace emc.camus.ratelimiting.inmemory
         /// <returns>The web application builder for method chaining.</returns>
         public static WebApplicationBuilder AddInMemoryRateLimiting(this WebApplicationBuilder builder, string serviceName)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+
             // Load and validate rate limit settings
             var settings = builder.Configuration.GetSection(InMemoryRateLimitingSettings.ConfigurationSectionName).Get<InMemoryRateLimitingSettings>() ?? new InMemoryRateLimitingSettings();
             settings.Validate();
@@ -67,9 +60,9 @@ namespace emc.camus.ratelimiting.inmemory
                     if (IsExemptPath(context, settings))
                     {
                         // Store partition info for response headers
-                        context.Items["RateLimit:Policy"] = "exempt";
-                        context.Items["RateLimit:Limit"] = "unlimited";
-                        context.Items["RateLimit:Window"] = "N/A";
+                        context.Items[RateLimitContextKeys.Policy] = "exempt";
+                        context.Items[RateLimitContextKeys.Limit] = "unlimited";
+                        context.Items[RateLimitContextKeys.Window] = "N/A";
                         return RateLimitPartition.GetNoLimiter("exempt");
                     }
 
@@ -81,7 +74,7 @@ namespace emc.camus.ratelimiting.inmemory
                 });
 
                 // Configure rejection handler with logging and metrics
-                options.OnRejected = (context, ct) =>
+                options.OnRejected = (context, _) =>
                 {
                     HandleRateLimitRejection(context, settings);
                     return new ValueTask();
@@ -151,10 +144,11 @@ namespace emc.camus.ratelimiting.inmemory
                             return policyName;
                         }
 
-                        // Log warning if policy not found (misconfiguration)
-                        var logger = context.RequestServices.GetRequiredService<ILogger<WebApplication>>();
-
-                        LogPolicyNotFound(logger, policyName, RateLimitPolicies.Default, context.Request.Method, context.Request.Path);
+                        // Misconfiguration: attribute references a policy not defined in settings
+                        var availablePolicies = string.Join(", ", settings.Policies.Keys);
+                        throw new InvalidOperationException(
+                            $"Rate limit policy '{policyName}' referenced by endpoint [{context.Request.Method}] {context.Request.Path} " +
+                            $"is not defined in configuration. Available policies: {availablePolicies}");
                     }
                 }
             }
@@ -178,9 +172,9 @@ namespace emc.camus.ratelimiting.inmemory
             var policy = settings.Policies[policyName];
 
             // Store partition info for response headers
-            context.Items["RateLimit:Policy"] = policyName;
-            context.Items["RateLimit:Limit"] = policy.PermitLimit;
-            context.Items["RateLimit:Window"] = policy.WindowSeconds;
+            context.Items[RateLimitContextKeys.Policy] = policyName;
+            context.Items[RateLimitContextKeys.Limit] = policy.PermitLimit;
+            context.Items[RateLimitContextKeys.Window] = policy.WindowSeconds;
 
             return RateLimitPartition.GetSlidingWindowLimiter(
                 partitionKey: $"{policyName}-ip-{ipAddress}",
@@ -203,16 +197,13 @@ namespace emc.camus.ratelimiting.inmemory
             InMemoryRateLimitingSettings settings)
         {
             // Resolve services from request scope
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<WebApplication>>();
             var metrics = context.HttpContext.RequestServices.GetRequiredService<RateLimitMetrics>();
-            var ipResolver = context.HttpContext.RequestServices.GetRequiredService<ClientIpResolver>();
+            var timeProvider = context.HttpContext.RequestServices.GetRequiredService<TimeProvider>();
 
-            var endpoint = context.HttpContext.Request.Path;
             var method = context.HttpContext.Request.Method;
-            var ipAddress = ipResolver.GetClientIpAddress(context.HttpContext);
 
             // Get policy name from context (set during partition creation)
-            var policyName = context.HttpContext.Items["RateLimit:Policy"]?.ToString() ?? "unknown";
+            var policyName = context.HttpContext.Items[RateLimitContextKeys.Policy]?.ToString() ?? "unknown";
             if (!settings.Policies.TryGetValue(policyName, out var policy))
             {
                 policy = settings.Policies[RateLimitPolicies.Default];
@@ -220,7 +211,7 @@ namespace emc.camus.ratelimiting.inmemory
 
             // Calculate retry and reset times
             var retryAfterSeconds = policy.WindowSeconds;
-            var resetTimestamp = DateTimeOffset.UtcNow.AddSeconds(retryAfterSeconds).ToUnixTimeSeconds();
+            var resetTimestamp = timeProvider.GetUtcNow().AddSeconds(retryAfterSeconds).ToUnixTimeSeconds();
 
             // Add rate limiting headers before throwing exception
             // These will be preserved when ExceptionHandlingMiddleware catches the exception
@@ -233,12 +224,6 @@ namespace emc.camus.ratelimiting.inmemory
             // Custom headers for additional context (backward compatibility)
             context.HttpContext.Response.Headers[Headers.RateLimitPolicy] = policyName;
             context.HttpContext.Response.Headers[Headers.RateLimitWindow] = policy.WindowSeconds.ToString(CultureInfo.InvariantCulture);
-
-            // Log rate limit rejection
-            LogRateLimitExceeded(
-                logger, ipAddress, policyName, method, endpoint,
-                policy.PermitLimit,
-                policy.WindowSeconds);
 
             metrics.RecordRejection(policyName, method);
 

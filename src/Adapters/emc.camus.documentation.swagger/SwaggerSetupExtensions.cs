@@ -18,7 +18,7 @@ namespace emc.camus.documentation.swagger
     /// <summary>
     /// Provides extension methods for configuring Swagger/OpenAPI documentation.
     /// </summary>
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "DI wiring tightly coupled to ASP.NET Core builder and Swashbuckle pipeline; branching logic impractical to unit-test in isolation")]
     public static class SwaggerSetupExtensions
     {
         /// <summary>

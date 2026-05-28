@@ -7,6 +7,31 @@ namespace emc.camus.persistence.inmemory.test.Repositories;
 
 public class ApiInfoRepositoryTests
 {
+    private const string ValidVersion = "1.0";
+    private const string ValidStatus = "Available";
+    private static readonly List<string> EmptyFeatureArray = [];
+    private static readonly List<ApiInfoSettings> EmptyApiInfoArray = [];
+    private static readonly List<ApiInfoSettings> CaseInsensitiveApiInfoArray =
+    [
+        new ApiInfoSettings
+        {
+            Name = "Test API",
+            Version = "V1",
+            Status = ValidStatus,
+            Features = EmptyFeatureArray
+        }
+    ];
+    private static readonly List<ApiInfoSettings> EmptyNameApiInfoArray =
+    [
+        new ApiInfoSettings
+        {
+            Name = "",
+            Version = ValidVersion,
+            Status = ValidStatus,
+            Features = EmptyFeatureArray
+        }
+    ];
+
     // --- Constructor ---
 
     [Fact]
@@ -56,8 +81,7 @@ public class ApiInfoRepositoryTests
     public async Task InitializeAsync_EmptyApiInfos_DoesNotThrow()
     {
         // Arrange
-        var settings = CreateValidSettings();
-        settings.ApiInfos = new List<ApiInfoSettings>();
+        var settings = CreateValidSettings(apiInfos: EmptyApiInfoArray);
         var repository = new ApiInfoRepository(settings);
 
         // Act
@@ -67,8 +91,9 @@ public class ApiInfoRepositoryTests
         await act.Should().NotThrowAsync();
     }
 
-    [Fact]
-    public async Task InitializeAsync_NullFeatures_DefaultsToEmptyList()
+    [Theory]
+    [MemberData(nameof(NullOrEmptyFeaturesData))]
+    public async Task GetByVersionAsync_NullOrEmptyFeatures_ReturnsEmptyFeatures(List<string>? features)
     {
         // Arrange
         var settings = CreateValidSettings(apiInfos: new List<ApiInfoSettings>
@@ -78,7 +103,7 @@ public class ApiInfoRepositoryTests
                 Name = InMemoryModelSettingsFactory.DefaultApiName,
                 Version = InMemoryModelSettingsFactory.DefaultApiVersion,
                 Status = InMemoryModelSettingsFactory.DefaultApiStatus,
-                Features = null!
+                Features = features!
             }
         });
         var repository = new ApiInfoRepository(settings);
@@ -116,16 +141,7 @@ public class ApiInfoRepositoryTests
     public async Task GetByVersionAsync_CaseInsensitiveLookup_ReturnsApiInfo()
     {
         // Arrange
-        var settings = CreateValidSettings(apiInfos: new List<ApiInfoSettings>
-        {
-            new ApiInfoSettings
-            {
-                Name = "Test API",
-                Version = "V1",
-                Status = "Available",
-                Features = new List<string>()
-            }
-        });
+        var settings = CreateValidSettings(apiInfos: CaseInsensitiveApiInfoArray);
         var repository = new ApiInfoRepository(settings);
         await repository.InitializeAsync(TestContext.Current.CancellationToken);
 
@@ -161,7 +177,7 @@ public class ApiInfoRepositoryTests
         var repository = new ApiInfoRepository(settings);
 
         // Act
-        var act = () => repository.GetByVersionAsync("1.0", TestContext.Current.CancellationToken);
+        var act = () => repository.GetByVersionAsync(ValidVersion, TestContext.Current.CancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -190,16 +206,7 @@ public class ApiInfoRepositoryTests
     public async Task InitializeAsync_ApiInfoWithoutName_ThrowsArgumentException()
     {
         // Arrange
-        var settings = CreateValidSettings(apiInfos: new List<ApiInfoSettings>
-        {
-            new ApiInfoSettings
-            {
-                Name = "",
-                Version = "1.0",
-                Status = "Available",
-                Features = new List<string>()
-            }
-        });
+        var settings = CreateValidSettings(apiInfos: EmptyNameApiInfoArray);
         var repository = new ApiInfoRepository(settings);
 
         // Act
@@ -209,29 +216,11 @@ public class ApiInfoRepositoryTests
         await act.Should().ThrowAsync<ArgumentException>();
     }
 
-    [Fact]
-    public async Task GetByVersionAsync_ApiInfoWithEmptyFeatures_ReturnsEmptyFeatures()
+    public static readonly TheoryData<List<string>?> NullOrEmptyFeaturesData = new()
     {
-        // Arrange
-        var settings = CreateValidSettings(apiInfos: new List<ApiInfoSettings>
-        {
-            new ApiInfoSettings
-            {
-                Name = "Test API",
-                Version = "1.0",
-                Status = "Available",
-                Features = new List<string>()
-            }
-        });
-        var repository = new ApiInfoRepository(settings);
-        await repository.InitializeAsync(TestContext.Current.CancellationToken);
-
-        // Act
-        var result = await repository.GetByVersionAsync("1.0", TestContext.Current.CancellationToken);
-
-        // Assert
-        result.Features.Should().BeEmpty();
-    }
+        { null },
+        { new List<string>() }
+    };
 
     private static InMemoryModelSettings CreateValidSettings(List<ApiInfoSettings>? apiInfos = null)
     {

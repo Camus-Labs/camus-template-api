@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.api.Models.Requests.V2;
 
 /// <summary>
 /// Request model for generating a custom token with specific permissions and expiration.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class GenerateTokenRequest
 {
     /// <summary>

@@ -1,12 +1,12 @@
 ---
-applyTo: ".github/instructions/**"
+applyTo: ".github/instructions/*.instructions.md"
 ---
 
 # Instructions File Conventions
 
 1. Structure
 
-    - [ ] Valid YAML `---` frontmatter with `applyTo` glob pattern
+    - [ ] Valid YAML `---` frontmatter containing an `applyTo` glob pattern — instruction files require `applyTo`
     - [ ] `applyTo` targets the narrowest scope that covers all files the checks apply to
     - [ ] H1 title describes the scope (e.g., "API Layer Conventions", "C# Coding Standards")
     - [ ] No prose introduction between H1 and first numbered section
@@ -17,19 +17,24 @@ applyTo: ".github/instructions/**"
 2. Check Quality
 
     - [ ] Each check is one falsifiable statement — can be verified true or false against a file
-    - [ ] Active voice, declarative ("No business logic" not "Should avoid business logic")
+    - [ ] Active voice, declarative (e.g., "No business logic") — not "Should avoid business logic"
     - [ ] Inline examples, when present, appear in parentheses (e.g., `rule (example)`)
     - [ ] Rationale or contrast, when present, after em-dash (e.g., `rule — rationale`)
     - [ ] No vague qualifiers ("as needed", "consider", "optionally", "when appropriate")
-    - [ ] No aspirational checks that cannot be mechanically verified
 
 3. Scope & Overlap
 
-    - [ ] No check duplicated across instruction files — each rule has exactly one owner
-    - [ ] Cross-cutting checks in `csharp.instructions.md` — layer-specific checks in layer files
-    - [ ] Specialized instruction files (e.g., `adapters.persistence.instructions.md`) do not restate parent file
-          checks (`adapters.instructions.md`)
-    - [ ] Checks reference concrete code/file boundaries — not other instruction files for rule delegation
+    - [ ] No check duplicated across files whose `applyTo` globs overlap — each rule has exactly one owner per
+          matched file; files with non-overlapping scopes may contain identical checks
+    - [ ] Cross-cutting checks reside in the language-scope file (e.g.,
+          `.github/instructions/csharp.instructions.md`) — not in layer-specific files (e.g.,
+          `.github/instructions/api.instructions.md`)
+    - [ ] Layer-specific checks reside in their layer file (e.g.,
+          `.github/instructions/api.instructions.md`) — not in the language-scope file
+    - [ ] Specialized instruction files (e.g., `.github/instructions/api.instructions.md`) do not restate rules
+          already covered by broader-scope instruction files (e.g., `.github/instructions/csharp.instructions.md`)
+          whose `applyTo` glob is a superset of theirs
+    - [ ] Checks reference concrete file paths or glob patterns — not abstract references to other instruction files
 
 4. Section Naming
 

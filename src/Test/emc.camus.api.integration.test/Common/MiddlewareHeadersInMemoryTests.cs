@@ -14,8 +14,8 @@ public class MiddlewareHeadersInMemoryTests
 {
     private readonly ApiInMemoryFactory _factory;
 
-    private const string ExpectedPermitLimit = "10000";
-    private const string ExpectedWindowSeconds = "60";
+    private const string InfoJwtEndpoint = "/api/v2/apiinfo/info-jwt";
+    private const string ReferrerPolicyHeader = "Referrer-Policy";
 
     public MiddlewareHeadersInMemoryTests(ApiInMemoryFactory factory, ITestOutputHelper outputHelper)
     {
@@ -37,20 +37,20 @@ public class MiddlewareHeadersInMemoryTests
 
         response.Headers.GetValues(HeaderNames.XContentTypeOptions).Should().ContainSingle().Which.Should().Be("nosniff");
         response.Headers.GetValues(HeaderNames.XFrameOptions).Should().ContainSingle().Which.Should().Be("DENY");
-        response.Headers.GetValues("Referrer-Policy").Should().ContainSingle().Which.Should().Be("strict-origin-when-cross-origin");
+        response.Headers.GetValues(ReferrerPolicyHeader).Should().ContainSingle().Which.Should().Be("strict-origin-when-cross-origin");
         response.Headers.GetValues(HeaderNames.XXSSProtection).Should().ContainSingle().Which.Should().Be("1; mode=block");
         response.Headers.GetValues(HeaderNames.ContentSecurityPolicy).Should().ContainSingle()
             .Which.Should().Contain("default-src 'self'");
         response.Headers.GetValues(Headers.TraceId).Should().ContainSingle()
             .Which.Should().NotBeNullOrWhiteSpace();
         response.Headers.GetValues(Headers.RateLimitLimit).Should().ContainSingle()
-            .Which.Should().Be(ExpectedPermitLimit);
+            .Which.Should().Be("10000");
         response.Headers.GetValues(Headers.RateLimitReset).Should().ContainSingle()
             .Which.Should().NotBeNullOrWhiteSpace();
         response.Headers.GetValues(Headers.RateLimitPolicy).Should().ContainSingle()
             .Which.Should().Be(RateLimitPolicies.Relaxed);
         response.Headers.GetValues(Headers.RateLimitWindow).Should().ContainSingle()
-            .Which.Should().Be(ExpectedWindowSeconds);
+            .Which.Should().Be("60");
         response.Headers.GetValues(Headers.Username).Should().ContainSingle()
             .Which.Should().Be("anonymous");
     }
@@ -62,27 +62,27 @@ public class MiddlewareHeadersInMemoryTests
         var client = _factory.CreateJwtClient();
 
         // Act
-        var response = await client.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync(InfoJwtEndpoint, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
 
         response.Headers.GetValues(HeaderNames.XContentTypeOptions).Should().ContainSingle().Which.Should().Be("nosniff");
         response.Headers.GetValues(HeaderNames.XFrameOptions).Should().ContainSingle().Which.Should().Be("DENY");
-        response.Headers.GetValues("Referrer-Policy").Should().ContainSingle().Which.Should().Be("strict-origin-when-cross-origin");
+        response.Headers.GetValues(ReferrerPolicyHeader).Should().ContainSingle().Which.Should().Be("strict-origin-when-cross-origin");
         response.Headers.GetValues(HeaderNames.XXSSProtection).Should().ContainSingle().Which.Should().Be("1; mode=block");
         response.Headers.GetValues(HeaderNames.ContentSecurityPolicy).Should().ContainSingle()
             .Which.Should().Contain("default-src 'self'");
         response.Headers.GetValues(Headers.TraceId).Should().ContainSingle()
             .Which.Should().NotBeNullOrWhiteSpace();
         response.Headers.GetValues(Headers.RateLimitLimit).Should().ContainSingle()
-            .Which.Should().Be(ExpectedPermitLimit);
+            .Which.Should().Be("10000");
         response.Headers.GetValues(Headers.RateLimitReset).Should().ContainSingle()
             .Which.Should().NotBeNullOrWhiteSpace();
         response.Headers.GetValues(Headers.RateLimitPolicy).Should().ContainSingle()
             .Which.Should().Be(RateLimitPolicies.Default);
         response.Headers.GetValues(Headers.RateLimitWindow).Should().ContainSingle()
-            .Which.Should().Be(ExpectedWindowSeconds);
+            .Which.Should().Be("60");
         response.Headers.GetValues(Headers.Username).Should().ContainSingle()
             .Which.Should().Be("test-user");
     }
@@ -101,20 +101,20 @@ public class MiddlewareHeadersInMemoryTests
 
         response.Headers.GetValues(HeaderNames.XContentTypeOptions).Should().ContainSingle().Which.Should().Be("nosniff");
         response.Headers.GetValues(HeaderNames.XFrameOptions).Should().ContainSingle().Which.Should().Be("DENY");
-        response.Headers.GetValues("Referrer-Policy").Should().ContainSingle().Which.Should().Be("strict-origin-when-cross-origin");
+        response.Headers.GetValues(ReferrerPolicyHeader).Should().ContainSingle().Which.Should().Be("strict-origin-when-cross-origin");
         response.Headers.GetValues(HeaderNames.XXSSProtection).Should().ContainSingle().Which.Should().Be("1; mode=block");
         response.Headers.GetValues(HeaderNames.ContentSecurityPolicy).Should().ContainSingle()
             .Which.Should().Contain("default-src 'self'");
         response.Headers.GetValues(Headers.TraceId).Should().ContainSingle()
             .Which.Should().NotBeNullOrWhiteSpace();
         response.Headers.GetValues(Headers.RateLimitLimit).Should().ContainSingle()
-            .Which.Should().Be(ExpectedPermitLimit);
+            .Which.Should().Be("10000");
         response.Headers.GetValues(Headers.RateLimitReset).Should().ContainSingle()
             .Which.Should().NotBeNullOrWhiteSpace();
         response.Headers.GetValues(Headers.RateLimitPolicy).Should().ContainSingle()
             .Which.Should().Be(RateLimitPolicies.Default);
         response.Headers.GetValues(Headers.RateLimitWindow).Should().ContainSingle()
-            .Which.Should().Be(ExpectedWindowSeconds);
+            .Which.Should().Be("60");
         response.Headers.GetValues(Headers.Username).Should().ContainSingle()
             .Which.Should().Be("ApiKeyUser");
     }
@@ -126,27 +126,28 @@ public class MiddlewareHeadersInMemoryTests
         var client = _factory.CreateClient();
 
         // Act
-        var response = await client.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync(InfoJwtEndpoint, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
+        await response.Should().HaveErrorCode("jwt_authentication_required");
 
         response.Headers.GetValues(HeaderNames.XContentTypeOptions).Should().ContainSingle().Which.Should().Be("nosniff");
         response.Headers.GetValues(HeaderNames.XFrameOptions).Should().ContainSingle().Which.Should().Be("DENY");
-        response.Headers.GetValues("Referrer-Policy").Should().ContainSingle().Which.Should().Be("strict-origin-when-cross-origin");
+        response.Headers.GetValues(ReferrerPolicyHeader).Should().ContainSingle().Which.Should().Be("strict-origin-when-cross-origin");
         response.Headers.GetValues(HeaderNames.XXSSProtection).Should().ContainSingle().Which.Should().Be("1; mode=block");
         response.Headers.GetValues(HeaderNames.ContentSecurityPolicy).Should().ContainSingle()
             .Which.Should().Contain("default-src 'self'");
         response.Headers.GetValues(Headers.TraceId).Should().ContainSingle()
             .Which.Should().NotBeNullOrWhiteSpace();
         response.Headers.GetValues(Headers.RateLimitLimit).Should().ContainSingle()
-            .Which.Should().Be(ExpectedPermitLimit);
+            .Which.Should().Be("10000");
         response.Headers.GetValues(Headers.RateLimitReset).Should().ContainSingle()
             .Which.Should().NotBeNullOrWhiteSpace();
         response.Headers.GetValues(Headers.RateLimitPolicy).Should().ContainSingle()
             .Which.Should().Be(RateLimitPolicies.Default);
         response.Headers.GetValues(Headers.RateLimitWindow).Should().ContainSingle()
-            .Which.Should().Be(ExpectedWindowSeconds);
+            .Which.Should().Be("60");
         response.Headers.Should().NotContainKey(Headers.Username);
     }
 }

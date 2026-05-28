@@ -31,7 +31,7 @@ public interface IAuthService
     /// <param name="sort">Optional sort parameters for ordering results.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>A paged result of token summaries for the current user.</returns>
-    Task<PagedResult<GeneratedTokenSummaryView>> GetGeneratedTokensAsync(PaginationParams pagination, GeneratedTokenFilter filter, GeneratedTokenSortParams sort, CancellationToken ct = default);
+    Task<PagedResult<GeneratedTokenSummaryView>> GetGeneratedTokensAsync(PaginationParams pagination, GeneratedTokenFilter filter, SortParams<GeneratedTokenSortField> sort, CancellationToken ct = default);
 
     /// <summary>
     /// Revokes a generated token by its JTI. Only the creator of the token can revoke it.
@@ -41,11 +41,4 @@ public interface IAuthService
     /// <returns>A summary view of the revoked token.</returns>
     Task<GeneratedTokenSummaryView> RevokeTokenAsync(RevokeTokenCommand command, CancellationToken ct = default);
 
-    /// <summary>
-    /// Initializes the user repository to load users and roles.
-    /// Should be called during application startup.
-    /// </summary>
-    /// <param name="ct">Cancellation token for cooperative cancellation.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    Task InitializeAsync(CancellationToken ct = default);
 }

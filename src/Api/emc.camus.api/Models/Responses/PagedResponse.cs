@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.api.Models.Responses;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace emc.camus.api.Models.Responses;
 /// Used as the Data payload inside ApiResponse for list endpoints.
 /// </summary>
 /// <typeparam name="T">The type of the items in the result set.</typeparam>
+[ExcludeFromCodeCoverage]
 public class PagedResponse<T>
 {
     /// <summary>

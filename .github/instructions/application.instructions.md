@@ -6,6 +6,9 @@ applyTo: "src/Application/**/*.cs"
 
 1. Scope Compliance
 
+    - [ ] No business rules or domain logic — those belong in Domain entities
+    - [ ] No direct infrastructure access — those belong in Adapters
+    - [ ] No middleware or DI registration
     - [ ] Custom attributes target cross-cutting concerns only (e.g., [RateLimit])
     - [ ] Driven port interfaces abstract all infrastructure interactions (e.g., `IUserRepository`,
           `ITokenGenerator`)
@@ -21,16 +24,22 @@ applyTo: "src/Application/**/*.cs"
           shape as a Result
     - [ ] Query-input records live in `*Filters.cs` as non-positional sealed records with default parameter values —
           exception: required lookup keys (e.g., entity ID, version) that identify a specific entity stay required
-    - [ ] Sort-input types (enums and sort-param records) live in `*Sorting.cs` — distinct from filters
+    - [ ] Sort-input types (enums and sort-param records) live in `*Sorting.cs` — distinct from filters —
+          exception: generic base types in `Common/` (e.g., `SortDirection`, `SortParams<T>`) keep their own
+          descriptive file names
     - [ ] Query-output records live in `*Views.cs` as non-positional sealed records
     - [ ] Service method parameters are Application-layer types (`*Command`, `*Filter`, `*SortParams`,
           `PaginationParams`) — never raw primitives, domain entities, or API models
     - [ ] Service methods return View or Result types
+    - [ ] Startup initialization lives on a separate `IServiceInitializer` interface in `Common/` — never on
+          driving port interfaces (`IAuthService`, `IApiInfoService`)
     - [ ] View names contain the entity and a content/shape qualifier — never a filter-dimension qualifier
           (`GeneratedTokenSummaryView`, not `GeneratedTokenByUserView`)
     - [ ] Filter naming targets the entity (`GeneratedTokenFilter`, not `GeneratedTokenSummaryFilter`)
-    - [ ] Common types in `Common/` folder: `PaginationParams`, `PagedResult<T>`
-    - [ ] List query methods accept `PaginationParams` and return `PagedResult<T>`
+    - [ ] Common reusable Application-layer types live in the `Common/` folder (e.g., `PaginationParams`,
+          `PagedResult<T>`, `IServiceInitializer`)
+    - [ ] List query methods accept `PaginationParams`
+    - [ ] List query methods return `PagedResult<T>`
 
 3. Validation & Error Handling
 
@@ -43,17 +52,18 @@ applyTo: "src/Application/**/*.cs"
           `*View`) — business constraints (limits, ranges, windows, authorization rules, invariants) never appear in
           Application-layer constructors
     - [ ] Service methods wrap port calls in try-catch
-    - [ ] Precondition checks (parameter validation, context availability) run before the try-catch — only
-          port/infrastructure calls go inside
+    - [ ] Precondition checks (parameter validation, context availability) run before the try-catch
     - [ ] Catch blocks add business operation context to exceptions (e.g., `"Failed to cancel order {orderId}"`)
     - [ ] Exception filters in catch blocks list only domain and validation exception types (`DomainException`,
           `ArgumentException`, `UnauthorizedAccessException`, `KeyNotFoundException`, `DataConflictException`) — never
-          `InvalidOperationException` (reserved for infrastructure failure wrapping)
+          `InvalidOperationException` — reserved for infrastructure failure wrapping
     - [ ] Domain and validation exceptions caught by exception filters are re-thrown unchanged — never wrapped or
           swallowed
-    - [ ] Infrastructure failures wrapped in `InvalidOperationException` preserving inner exception
-    - [ ] Transactional methods: inner catch calls `Rollback()` + `throw;`, outer catch wraps in
-          `InvalidOperationException` preserving inner exception
+    - [ ] Service methods wrap infrastructure failures in `InvalidOperationException` preserving the inner
+          exception
+    - [ ] Transactional methods call `Rollback()` and re-throw in the inner catch block
+    - [ ] Transactional methods wrap failures in `InvalidOperationException` in the outer catch while preserving
+          the inner exception
 
 4. Observability
 

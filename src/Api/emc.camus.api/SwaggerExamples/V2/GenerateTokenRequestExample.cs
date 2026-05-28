@@ -21,7 +21,7 @@ public class GenerateTokenRequestExample
         return new GenerateTokenRequest
         {
             UsernameSuffix = "ci-deploy",
-            ExpiresOn = DateTime.UtcNow.AddDays(30),
+            ExpiresOn = new DateTime(2026, 2, 14, 12, 0, 0, DateTimeKind.Utc),
             Permissions = new List<string> { "api.read", "api.write" }
         };
     }

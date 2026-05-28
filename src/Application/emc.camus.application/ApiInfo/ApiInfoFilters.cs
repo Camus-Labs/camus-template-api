@@ -16,8 +16,14 @@ public sealed record ApiInfoFilter
     /// <param name="version">The API version to query.</param>
     public ApiInfoFilter(string version)
     {
+        // Normalize version: "2" → "2.0" (URL segment may omit minor version)
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(version.Length, DomainApiInfo.MaxVersionLength, nameof(version));
-        Version = version;
+        Version = version.Contains('.') ? version : $"{version}.0";
+        ValidateVersion();
+    }
+
+    private void ValidateVersion()
+    {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(Version.Length, DomainApiInfo.MaxVersionLength, nameof(Version));
     }
 }

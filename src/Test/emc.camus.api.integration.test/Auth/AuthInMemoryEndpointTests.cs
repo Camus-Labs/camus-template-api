@@ -12,6 +12,8 @@ namespace emc.camus.api.integration.test.Auth;
 [Collection(InMemoryTestGroup.Name)]
 public class AuthInMemoryEndpointTests
 {
+    private const string AuthenticateEndpoint = "/api/v2/auth/authenticate";
+
     private readonly ApiInMemoryFactory _factory;
 
     public AuthInMemoryEndpointTests(ApiInMemoryFactory factory, ITestOutputHelper outputHelper)
@@ -26,9 +28,10 @@ public class AuthInMemoryEndpointTests
         // Arrange
         var client = _factory.CreateApiKeyClient();
         var request = new { Username = "admin", Password = "admin-password" };
+        var before = DateTime.UtcNow;
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonWithIdempotencyKeyAsync(AuthenticateEndpoint, request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -37,7 +40,7 @@ public class AuthInMemoryEndpointTests
         body.Should().NotBeNull();
         body!.Data.Should().NotBeNull();
         body.Data!.Token.Should().NotBeNullOrWhiteSpace();
-        body.Data.ExpiresOn.Should().BeAfter(DateTime.UtcNow);
+        body.Data.ExpiresOn.Should().BeAfter(before);
     }
 
     [Fact]
@@ -48,7 +51,7 @@ public class AuthInMemoryEndpointTests
         var request = new { Username = "admin", Password = "wrong-password" };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonWithIdempotencyKeyAsync(AuthenticateEndpoint, request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
@@ -63,10 +66,11 @@ public class AuthInMemoryEndpointTests
         var request = new { Username = "admin", Password = "admin-password" };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/v2/auth/authenticate", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonAsync(AuthenticateEndpoint, request, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
         await response.Should().HaveErrorCode("apikey_authentication_required");
     }
+
 }

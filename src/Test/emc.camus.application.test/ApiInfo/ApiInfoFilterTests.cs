@@ -46,6 +46,6 @@ public class ApiInfoFilterTests
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
-            .And.ParamName.Should().Be("version");
+            .And.ParamName.Should().Be("Version");
     }
 }

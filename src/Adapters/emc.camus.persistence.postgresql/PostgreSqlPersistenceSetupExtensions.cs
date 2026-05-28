@@ -50,6 +50,9 @@ namespace emc.camus.persistence.postgresql
             // Register audit repository (shared across Auth and AppData)
             builder.Services.AddScoped<IActionAuditRepository, ActionAuditRepository>();
 
+            // Register TimeProvider if not already registered (required by repositories for clock access)
+            builder.Services.TryAddSingleton(TimeProvider.System);
+
             // Register data access layers
             builder.Services.AddSingleton<IUserDataAccess, UserDataAccess>();
             builder.Services.AddSingleton<IApiInfoDataAccess, ApiInfoDataAccess>();

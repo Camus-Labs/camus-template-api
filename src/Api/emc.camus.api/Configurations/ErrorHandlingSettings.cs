@@ -16,7 +16,7 @@ public class ErrorHandlingSettings
     /// These rules are evaluated before platform rules, allowing configuration overrides.
     /// Rules can match on exception type, message pattern, or both.
     /// </summary>
-    public List<ErrorCodeMappingRule> AdditionalRules { get; set; } = new();
+    public List<ErrorCodeMappingRuleSettings> AdditionalRules { get; set; } = new();
 
     /// <summary>
     /// Validates the error handling settings.
@@ -38,7 +38,13 @@ public class ErrorHandlingSettings
 
         for (int i = 0; i < AdditionalRules.Count; i++)
         {
-            AdditionalRules[i].Validate(i);
+            if (AdditionalRules[i] is null)
+            {
+                throw new InvalidOperationException($"AdditionalRules[{i}] cannot be null.");
+            }
+
+            AdditionalRules[i].RuleIndex = i;
+            AdditionalRules[i].Validate();
         }
     }
 }

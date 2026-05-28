@@ -47,6 +47,8 @@ public sealed class SecurityHeadersMiddleware
     /// <param name="environment">The hosting environment.</param>
     public SecurityHeadersMiddleware(RequestDelegate next, IWebHostEnvironment environment)
     {
+        ArgumentNullException.ThrowIfNull(environment);
+
         _next = next;
         _isDevelopment = environment.IsDevelopment();
     }

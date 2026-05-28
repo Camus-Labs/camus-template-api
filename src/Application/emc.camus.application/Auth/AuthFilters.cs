@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.application.Auth;
 
 /// <summary>
 /// Filter criteria for querying generated tokens.
 /// Used alongside PaginationParams to filter and paginate results.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed record GeneratedTokenFilter
 {
     /// <summary>When true, excludes revoked tokens from the results.</summary>

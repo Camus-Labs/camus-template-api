@@ -21,7 +21,7 @@ builder.Host.UseDefaultServiceProvider(options =>
 
 builder.Host.ConfigureHostOptions(options =>
 {
-    options.ShutdownTimeout = TimeSpan.FromSeconds(30);
+    options.ShutdownTimeout = TimeSpan.FromSeconds(Program.ShutdownTimeoutSeconds);
     options.ServicesStartConcurrently = true;
     options.ServicesStopConcurrently = true;
 });
@@ -44,103 +44,106 @@ builder.AddErrorHandling(SERVICE_NAME);
 // Step 3: Configure request timeouts (prevents cascading failures from hanging calls)
 builder.AddRequestTimeoutPolicies();
 
-// Step 4: Configure API versioning
+// Step 4: Configure idempotency key validation
+builder.AddIdempotency(SERVICE_NAME);
+
+// Step 5: Configure API versioning
 builder.AddApiVersioning();
 
-// Step 5: Add Swagger documentation via adapter (depends on API versioning)
+// Step 6: Add Swagger documentation via adapter (depends on API versioning)
 builder.AddSwaggerDocumentation();
 
-// Step 6: Configure CORS policy
+// Step 7: Configure CORS policy
 builder.AddCorsPolicy();
 
-// Step 7: Configure rate limiting (always enabled for security)
+// Step 8: Configure rate limiting (always enabled for security)
 builder.AddInMemoryRateLimiting(SERVICE_NAME);
 
-// Step 8: Configure Secrets Provider using Dapr Adapter
+// Step 9: Configure Secrets Provider using Dapr Adapter
 builder.AddDaprSecrets();
 
-// Step 9: Configure data persistence (depends on secrets for DB credentials)
+// Step 10: Configure data persistence (depends on secrets for DB credentials)
 builder.AddPersistence();
 
-// Step 10: Configure database migrations (depends on persistence settings)
+// Step 11: Configure database migrations (depends on persistence settings)
 builder.AddDatabaseMigrations();
 
-// Step 11: Configure in-memory cache (token revocation denylist)
+// Step 12: Configure in-memory cache (token revocation denylist)
 builder.AddInMemoryCache();
 
-// Step 12: Configure Authentication using Security Adapters (depends on secrets)
+// Step 13: Configure Authentication using Security Adapters (depends on secrets)
 builder.AddJwtAuthentication();
 builder.AddApiKeyAuthentication();
 
-// Step 13: Configure authorization policies (depends on authentication)
+// Step 14: Configure authorization policies (depends on authentication)
 builder.AddAuthorizationPolicies();
 
-// Step 14: Configure application services (IUserContext, etc.)
+// Step 15: Configure application services (IUserContext, etc.)
 builder.AddApplicationServices();
 
-// Step 15: Configure health check services
+// Step 16: Configure health check services
 builder.AddHealthChecks();
 
-// Step 16: Build App Builder
+// Step 17: Build App Builder
 var app = builder.Build();
 
-// Step 17: Get logger for startup events
+// Step 18: Get logger for startup events
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 
 Program.LogServiceStarting(startupLogger, SERVICE_NAME, SERVICE_VERSION, ENV_NAME);
 Program.LogInstanceId(startupLogger, INSTANCE_ID);
 
-// Step 18: Configure transport security (forwarded headers, HSTS, HTTPS redirection)
+// Step 19: Configure transport security (forwarded headers, HSTS, HTTPS redirection)
 app.UseTransportSecurity();
 
-// Step 19: Add security headers (X-Content-Type-Options, X-Frame-Options, CSP, Referrer-Policy)
+// Step 20: Add security headers (X-Content-Type-Options, X-Frame-Options, CSP, Referrer-Policy)
 app.UseSecurityHeaders();
 
-// Step 20: Enable observability middleware (adds Trace Id header to responses)
+// Step 21: Enable observability middleware (adds Trace Id header to responses)
 // Must be BEFORE exception handling so trace IDs are available in error logs
 app.UseObservability();
 
-// Step 21: Apply request timeouts (BEFORE error handling so timeout exceptions propagate to it)
+// Step 22: Apply request timeouts (BEFORE error handling so timeout exceptions propagate to it)
 app.UseRequestTimeoutPolicies();
 
-// Step 22: Global exception handling middleware (catches auth, authz, timeout, and app exceptions)
+// Step 23: Global exception handling middleware (catches auth, authz, timeout, and app exceptions)
 // Must be EARLY in pipeline to catch exceptions from rate limiting, auth, etc.
 app.UseErrorHandling();
 
-// Step 23: Enable Swagger UI in development
+// Step 24: Enable Swagger UI in development
 app.UseSwaggerDocumentation();
 
-// Step 24: Apply CORS policy (before authentication to allow preflight requests)
+// Step 25: Apply CORS policy (before authentication to allow preflight requests)
 app.UseCorsPolicy();
 
-// Step 25: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
+// Step 26: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
 app.UseInMemoryRateLimiting();
 
-// Step 26: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
+// Step 27: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
 app.UseDaprSecrets();
 
-// Step 27: Run database migrations (creates schema and tables if needed)
+// Step 28: Run database migrations (creates schema and tables if needed)
 app.UseDatabaseMigrations(startupLogger);
 
-// Step 28: Add Authentication and Authorization
+// Step 29: Add Authentication and Authorization
 app.UseAuthentication();
 
-// Step 29: Apply authorization middleware
+// Step 30: Apply authorization middleware
 app.UseAuthorizationPolicies();
 
-// Step 30: Initialize persistence-dependent data (load API info)
+// Step 31: Initialize persistence-dependent data (load API info)
 await app.UsePersistenceAsync();
 
-// Step 31: Apply application services (adds Username header + endpoint routing)
+// Step 32: Apply application services (adds Username header + endpoint routing)
 app.UseApplicationServices();
 
-// Step 32: Map health check endpoints (liveness, readiness, overall health)
+// Step 33: Map health check endpoints (liveness, readiness, overall health)
 app.UseHealthChecks();
 
 
 Program.LogStartupComplete(startupLogger, SERVICE_NAME);
 
-// Step 33: Run the app
+// Step 34: Run the app
 await app.RunAsync();
 
 /// <summary>
@@ -149,6 +152,8 @@ await app.RunAsync();
 [ExcludeFromCodeCoverage]
 public partial class Program
 {
+    private const int ShutdownTimeoutSeconds = 30;
+
     [LoggerMessage(Level = LogLevel.Information,
         Message = "Starting {ServiceName} v{ServiceVersion} in {Environment} environment")]
     internal static partial void LogServiceStarting(ILogger logger, string serviceName, string serviceVersion, string environment);

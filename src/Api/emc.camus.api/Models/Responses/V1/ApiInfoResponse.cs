@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.api.Models.Responses.V1;
 
 /// <summary>
 /// API response DTO for API information.
 /// Contains API metadata including version, status, and available features.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class ApiInfoResponse
 {
     /// <summary>

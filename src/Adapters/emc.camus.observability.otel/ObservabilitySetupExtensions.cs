@@ -37,22 +37,23 @@ namespace emc.camus.observability.otel
             string instanceId,
             string environmentName)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceVersion);
+            ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(environmentName);
+
             var configuration = builder.Configuration;
-            var normalizedServiceName = string.IsNullOrWhiteSpace(serviceName) ? "unknown-service-name" : serviceName.Trim();
-            var normalizedServiceVersion = string.IsNullOrWhiteSpace(serviceVersion) ? "unknown-service-version" : serviceVersion.Trim();
-            var normalizedEnvironmentName = string.IsNullOrWhiteSpace(environmentName) ? "unknown-environment" : environmentName.Trim();
-            var normalizedInstanceId = string.IsNullOrWhiteSpace(instanceId) ? "unknown-instance-id" : instanceId.Trim();
 
             // Parse OpenTelemetry settings once from configuration
             var settings = configuration.GetSection(OpenTelemetrySettings.ConfigurationSectionName).Get<OpenTelemetrySettings>() ?? new OpenTelemetrySettings();
             settings.Validate();
             builder.Services.AddSingleton(settings);
 
-            builder.Host.UseSerilogWithOpenTelemetry(settings, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);
-            builder.Services.AddOpenTelemetryServices(settings, normalizedServiceName, normalizedServiceVersion, normalizedInstanceId, normalizedEnvironmentName);
+            builder.Host.UseSerilogWithOpenTelemetry(settings, serviceName, serviceVersion, instanceId, environmentName);
+            builder.Services.AddOpenTelemetryServices(settings, serviceName, serviceVersion, instanceId, environmentName);
 
             // Register ActivitySource and wrapper for distributed tracing
-            builder.Services.AddSingleton(_ => new ActivitySource(normalizedServiceName, normalizedServiceVersion));
+            builder.Services.AddSingleton(_ => new ActivitySource(serviceName, serviceVersion));
             builder.Services.AddSingleton<IActivitySourceWrapper, ActivitySourceWrapper>();
 
             // Ensure Serilog flushes on shutdown to avoid log loss

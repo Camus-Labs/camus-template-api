@@ -6,7 +6,8 @@ namespace emc.camus.application.test.Auth;
 public class AuthenticateUserResultTests
 {
     private const string ValidToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test-token";
-    private static readonly DateTime ValidExpiration = new(2099, 12, 31, 23, 59, 59, DateTimeKind.Utc);
+    private static readonly DateTimeOffset ReferenceTime = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime ValidExpiration = ReferenceTime.UtcDateTime.AddYears(1);
 
     // --- Constructor ---
 

@@ -26,10 +26,10 @@ public class GenerateTokenResponseExample
             Data = new GenerateTokenResponse
             {
                 Token = "{{JWT_TOKEN_HERE}}",
-                ExpiresOn = DateTime.UtcNow.AddDays(30),
+                ExpiresOn = new DateTime(2026, 2, 14, 12, 0, 0, DateTimeKind.Utc),
                 TokenUsername = "testuser-ci-deploy"
             },
-            Timestamp = DateTime.UtcNow
+            Timestamp = new DateTime(2026, 1, 15, 12, 0, 0, DateTimeKind.Utc)
         };
     }
 }

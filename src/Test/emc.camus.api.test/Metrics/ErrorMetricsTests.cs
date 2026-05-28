@@ -1,24 +1,28 @@
+using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 
 using emc.camus.api.Metrics;
+using emc.camus.api.test.Helpers;
 
 namespace emc.camus.api.test.Metrics;
 
 public class ErrorMetricsTests : IDisposable
 {
     private const string ServiceName = "test-service";
+    private const string ErrorResponsesMetricName = "error_responses_total";
     private const string ValidErrorCode = "test_error";
     private const int ValidHttpStatus = 500;
     private const string ValidPath = "/api/test";
 
     private readonly Mock<ILogger<ErrorMetrics>> _mockLogger;
+    private readonly ConcurrentBag<(LogLevel Level, string Message)> _logEntries;
     private readonly ErrorMetrics _sut;
 
     public ErrorMetricsTests()
     {
-        _mockLogger = new Mock<ILogger<ErrorMetrics>>();
+        (_mockLogger, _logEntries) = LogCaptureBuilder.Create<ErrorMetrics>();
         _sut = new ErrorMetrics(ServiceName, _mockLogger.Object);
     }
 
@@ -98,62 +102,32 @@ public class ErrorMetricsTests : IDisposable
     public void RecordError_ValidInput_RecordsMetric()
     {
         // Arrange
-        long recordedValue = 0;
-        using var listener = new MeterListener();
-        listener.InstrumentPublished = (instrument, meterListener) =>
-        {
-            if (instrument.Name == "error_responses_total")
-            {
-                meterListener.EnableMeasurementEvents(instrument);
-            }
-        };
-        listener.SetMeasurementEventCallback<long>((_, measurement, _, _) =>
-        {
-            recordedValue = measurement;
-        });
-        listener.Start();
+        var (listener, getValue) = CreateMeterListener(ErrorResponsesMetricName);
+        using var _ = listener;
 
         // Act
         _sut.RecordError(ValidErrorCode, ValidHttpStatus, ValidPath);
 
         // Assert
         listener.RecordObservableInstruments();
-        recordedValue.Should().Be(1);
+        getValue().Should().Be(1);
     }
 
     [Fact]
-    public void RecordError_CounterThrows_SuppressesExceptionAndLogs()
+    public void RecordError_CounterThrows_SuppressesException()
     {
-        // Arrange - enable logging and register a listener that throws when a measurement is recorded
-        var logger = new Mock<ILogger<ErrorMetrics>>();
-        logger.Setup(x => x.IsEnabled(LogLevel.Warning)).Returns(true);
-        using var metrics = new ErrorMetrics(ServiceName, logger.Object);
-
-        using var listener = new MeterListener();
-        listener.InstrumentPublished = (instrument, meterListener) =>
-        {
-            if (instrument.Name == "error_responses_total")
-            {
-                meterListener.EnableMeasurementEvents(instrument);
-            }
-        };
+        // Arrange — register a listener that throws when a measurement is recorded
+        var (listener, _) = CreateMeterListener(ErrorResponsesMetricName);
+        using var __ = listener;
         listener.SetMeasurementEventCallback<long>((_, _, _, _) =>
             throw new InvalidOperationException("Simulated telemetry failure"));
-        listener.Start();
 
         // Act
-        var act = () => metrics.RecordError(ValidErrorCode, ValidHttpStatus, ValidPath);
+        _sut.RecordError(ValidErrorCode, ValidHttpStatus, ValidPath);
 
         // Assert
-        act.Should().NotThrow();
-        logger.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("error metrics")),
-                It.IsAny<InvalidOperationException>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        _logEntries.Should().Contain(e =>
+            e.Level == LogLevel.Warning && e.Message.Contains(ValidErrorCode));
     }
 
     [Fact]
@@ -172,5 +146,24 @@ public class ErrorMetricsTests : IDisposable
 
         // Assert
         act.Should().NotThrow();
+    }
+
+    private static (MeterListener Listener, Func<long> GetValue) CreateMeterListener(string instrumentName)
+    {
+        long recordedValue = 0;
+        var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, meterListener) =>
+        {
+            if (instrument.Name == instrumentName)
+            {
+                meterListener.EnableMeasurementEvents(instrument);
+            }
+        };
+        listener.SetMeasurementEventCallback<long>((_, measurement, _, _) =>
+        {
+            recordedValue = measurement;
+        });
+        listener.Start();
+        return (listener, () => recordedValue);
     }
 }

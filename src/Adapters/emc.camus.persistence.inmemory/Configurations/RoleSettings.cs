@@ -1,5 +1,3 @@
-using emc.camus.application.Auth;
-
 namespace emc.camus.persistence.inmemory.Configurations;
 
 /// <summary>
@@ -56,7 +54,9 @@ internal sealed class RoleSettings
 
         if (invalidPermissions.Count > 0)
         {
-            throw new InvalidOperationException($"Role '{Name}' has invalid permissions: {string.Join(", ", invalidPermissions)}. Valid permissions are: {string.Join(", ", validPermissions)}");
+            var invalidList = string.Join(", ", invalidPermissions);
+            var validList = string.Join(", ", validPermissions);
+            throw new InvalidOperationException($"Role '{Name}' has invalid permissions: {invalidList}. Valid permissions are: {validList}");
         }
     }
 }

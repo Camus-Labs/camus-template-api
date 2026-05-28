@@ -3,6 +3,7 @@ using System.Net;
 using System.Text.Json;
 using emc.camus.application.Secrets;
 using emc.camus.secrets.dapr.Configurations;
+using emc.camus.secrets.dapr.Exceptions;
 
 namespace emc.camus.secrets.dapr.Services
 {
@@ -45,6 +46,7 @@ namespace emc.camus.secrets.dapr.Services
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="secretNames"/> is null.</exception>
         /// <exception cref="ArgumentException">Thrown when any secret name is null or whitespace.</exception>
         /// <exception cref="InvalidOperationException">Thrown when a secret is not found, empty, or cannot be parsed.</exception>
+        /// <exception cref="DaprSecretStoreException">Thrown when a technology-level failure occurs communicating with the Dapr sidecar.</exception>
         public async Task LoadSecretsAsync(IEnumerable<string> secretNames, CancellationToken ct = default)
         {
             ArgumentNullException.ThrowIfNull(secretNames);
@@ -84,9 +86,9 @@ namespace emc.camus.secrets.dapr.Services
 
         private static void ValidateSecretNames(List<string> secretNames)
         {
-            if (secretNames.Any(s => string.IsNullOrWhiteSpace(s)))
+            foreach (var name in secretNames)
             {
-                throw new ArgumentException("Secret names cannot contain null or whitespace entries.", nameof(secretNames));
+                ArgumentException.ThrowIfNullOrWhiteSpace(name, nameof(secretNames));
             }
         }
 
@@ -121,13 +123,9 @@ namespace emc.camus.secrets.dapr.Services
 
                 ParseAndStoreSecret(secretName, responseContent);
             }
-            catch (InvalidOperationException)
+            catch (Exception ex) when (ex is not InvalidOperationException and not OperationCanceledException)
             {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to load secret '{secretName}' from store '{_settings.SecretStoreName}'", ex);
+                throw new DaprSecretStoreException($"Failed to load secret '{secretName}' from store '{_settings.SecretStoreName}'", ex);
             }
         }
 
@@ -144,7 +142,16 @@ namespace emc.camus.secrets.dapr.Services
         private void ParseAndStoreSecret(string secretName, string responseContent)
         {
             // Dapr returns JSON: { "secretName": "value" }
-            var secretData = JsonSerializer.Deserialize<Dictionary<string, string>>(responseContent);
+            Dictionary<string, string>? secretData;
+            try
+            {
+                secretData = JsonSerializer.Deserialize<Dictionary<string, string>>(responseContent);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to parse secret '{secretName}': response was not valid JSON", ex);
+            }
 
             if (secretData == null)
             {
@@ -171,17 +178,24 @@ namespace emc.camus.secrets.dapr.Services
         /// </summary>
         /// <param name="ct">The cancellation token.</param>
         /// <returns>A task representing the asynchronous connectivity check.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the secret store is unreachable.</exception>
+        /// <exception cref="DaprSecretStoreException">Thrown when a technology-level failure occurs communicating with the Dapr sidecar.</exception>
         public async Task CheckConnectivityAsync(CancellationToken ct = default)
         {
             try
             {
                 using var response = await _httpClient.GetAsync("bulk", ct);
+
+                if (response.StatusCode >= HttpStatusCode.BadRequest && response.StatusCode < HttpStatusCode.InternalServerError)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to check connectivity for secret store '{_settings.SecretStoreName}': received HTTP {(int)response.StatusCode}");
+                }
+
                 response.EnsureSuccessStatusCode();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not InvalidOperationException and not OperationCanceledException)
             {
-                throw new InvalidOperationException($"Failed to check connectivity for secret store '{_settings.SecretStoreName}'", ex);
+                throw new DaprSecretStoreException($"Failed to check connectivity for secret store '{_settings.SecretStoreName}'", ex);
             }
         }
     }

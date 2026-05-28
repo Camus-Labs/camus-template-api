@@ -2,6 +2,7 @@ using emc.camus.api.Models.Dtos.V2;
 using emc.camus.api.Models.Requests.V2;
 using emc.camus.api.Models.Responses.V2;
 using emc.camus.application.Auth;
+using emc.camus.application.Common;
 
 namespace emc.camus.api.Mapping.V2;
 
@@ -106,9 +107,9 @@ public static class AuthMappingExtensions
     /// </summary>
     /// <param name="query">The query from the API request.</param>
     /// <returns>Sort parameters for the application layer.</returns>
-    public static GeneratedTokenSortParams ToSortParams(this GetGeneratedTokensQuery query)
+    public static SortParams<GeneratedTokenSortField> ToSortParams(this GetGeneratedTokensQuery query)
     {
-        return new GeneratedTokenSortParams(query.SortBy, query.SortDirection);
+        return new SortParams<GeneratedTokenSortField>(query.SortBy, query.SortDirection);
     }
 
     /// <summary>

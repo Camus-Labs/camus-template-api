@@ -38,7 +38,7 @@ public class ApiInfoResponseExample : IExamplesProvider<ApiResponse<ApiInfoRespo
                     "Health Checks & Liveness Probes"
                 }
             },
-            Timestamp = DateTime.UtcNow
+            Timestamp = new DateTime(2026, 1, 15, 12, 0, 0, DateTimeKind.Utc)
         };
     }
 }

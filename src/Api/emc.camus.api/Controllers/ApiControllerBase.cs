@@ -16,6 +16,18 @@ namespace emc.camus.api.Controllers;
 /// </remarks>
 public abstract class ApiControllerBase : ControllerBase
 {
+    private readonly TimeProvider _timeProvider;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiControllerBase"/> class.
+    /// </summary>
+    /// <param name="timeProvider">Time provider for UTC clock access.</param>
+    protected ApiControllerBase(TimeProvider timeProvider)
+    {
+        ArgumentNullException.ThrowIfNull(timeProvider);
+        _timeProvider = timeProvider;
+    }
+
     /// <summary>
     /// Returns a successful response (200 OK) with data wrapped in ApiResponse.
     /// </summary>
@@ -29,7 +41,7 @@ public abstract class ApiControllerBase : ControllerBase
         {
             Message = message,
             Data = data,
-            Timestamp = DateTime.UtcNow
+            Timestamp = _timeProvider.GetUtcNow().UtcDateTime
         });
     }
 
@@ -51,7 +63,7 @@ public abstract class ApiControllerBase : ControllerBase
         {
             Message = message,
             Data = data,
-            Timestamp = DateTime.UtcNow
+            Timestamp = _timeProvider.GetUtcNow().UtcDateTime
         };
 
         return CreatedAtAction(actionName, routeValues, response);
@@ -71,7 +83,7 @@ public abstract class ApiControllerBase : ControllerBase
         {
             Message = message,
             Data = data,
-            Timestamp = DateTime.UtcNow
+            Timestamp = _timeProvider.GetUtcNow().UtcDateTime
         });
     }
 

@@ -16,8 +16,7 @@ Domain, Application, and Adapter layers interact.
 - Layer structure and responsibilities
 - Dependency inversion principle
 - Adapter pattern implementation
-- Observability stack architecture
-- Security architecture
+- Cross-cutting concerns (observability, security, caching, idempotency, rate limiting, migrations)
 
 ---
 
@@ -91,7 +90,8 @@ Detailed usage guides for infrastructure adapters:
 - **[Persistence (PostgreSQL)](../src/Adapters/emc.camus.persistence.postgresql/README.md)** - Database adapter and
   repository pattern
 - **[Migrations (DbUp)](../src/Adapters/emc.camus.migrations.dbup/README.md)** - Database schema versioning with DbUp
-- **[Cache (Memory)](../src/Adapters/emc.camus.cache.inmemory/README.md)** - Token revocation caching
+- **[Cache (Memory)](../src/Adapters/emc.camus.cache.inmemory/README.md)** - Token revocation and idempotency
+  response caching
 - **[Persistence (Memory)](../src/Adapters/emc.camus.persistence.inmemory/README.md)** - In-memory repositories for
   development and testing
 - **[Documentation (Swagger)](../src/Adapters/emc.camus.documentation.swagger/README.md)** -
@@ -99,11 +99,20 @@ Detailed usage guides for infrastructure adapters:
 
 ---
 
-## Story Templates
+## Story Template
 
 - **[User Story Template](stories/_user_story_template.md)** - Standard template for writing user stories
-- **[US-01: Sort Generated Tokens](stories/todo/tokens-sorting/US-01-sort-generated-tokens.md)** - Token listing
-  sort support
+
+### Completed Stories
+
+- **[US-01: Sort Generated Tokens](stories/done/tokens-sorting/US-01-sort-generated-tokens.md)** -
+  Token listing sort support
+- **[US-01: Idempotency Key Enforcement](stories/done/idempotency-post-endpoints/US-01-idempotency-key-enforcement.md)**
+  \- Require idempotency keys on POST endpoints
+- **[US-02: Idempotent Response Caching](stories/done/idempotency-post-endpoints/US-02-idempotent-response-caching.md)**
+  \- Cache and replay responses for duplicate requests
+- **[US-03: Apply Idempotency to POST Endpoints](stories/done/idempotency-post-endpoints/US-03-apply-idempotency-to-post-endpoints.md)**
+  \- Apply idempotency key enforcement to existing POST endpoints
 
 ---
 
@@ -141,7 +150,7 @@ Infrastructure component setup guides:
 - [← Main README](../README.md) - Project overview and quick start
 - [Changelog](../CHANGELOG.md) - Version history and release notes
 - [Security Policy](../SECURITY.md) - Vulnerability reporting
-- [API Reference](http://localhost:5000/swagger) - Interactive Swagger UI (when running)
+- [API Reference](https://localhost:7220/swagger) - Interactive Swagger UI (when running locally)
 
 ---
 

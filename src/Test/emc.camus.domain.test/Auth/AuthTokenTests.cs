@@ -1,12 +1,20 @@
 using FluentAssertions;
 using emc.camus.domain.Auth;
+using Microsoft.Extensions.Time.Testing;
 
 namespace emc.camus.domain.test.Auth;
 
 public class AuthTokenTests
 {
     private const string ValidToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test-token";
-    private static readonly DateTime FutureExpiration = new(2099, 12, 31, 23, 59, 59, DateTimeKind.Utc);
+    private static readonly DateTimeOffset FixedNow = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+    private readonly FakeTimeProvider _timeProvider;
+
+    public AuthTokenTests()
+    {
+        _timeProvider = new FakeTimeProvider(FixedNow);
+    }
 
     // --- Constructor ---
 
@@ -15,10 +23,10 @@ public class AuthTokenTests
     {
         // Arrange
         var token = ValidToken;
-        var expiresOn = FutureExpiration;
+        var expiresOn = _timeProvider.GetUtcNow().UtcDateTime.AddYears(1);
 
         // Act
-        var authToken = new AuthToken(token, expiresOn);
+        var authToken = new AuthToken(token, expiresOn, _timeProvider);
 
         // Assert
         authToken.Token.Should().Be(token);
@@ -31,9 +39,8 @@ public class AuthTokenTests
     [InlineData("   ")]
     public void Constructor_InvalidToken_ThrowsArgumentException(string? token)
     {
-        // Arrange
         // Act
-        var act = () => new AuthToken(token!, FutureExpiration);
+        var act = () => new AuthToken(token!, _timeProvider.GetUtcNow().UtcDateTime.AddYears(1), _timeProvider);
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -44,10 +51,10 @@ public class AuthTokenTests
     public void Constructor_PastExpiration_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
-        var pastDate = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var pastDate = _timeProvider.GetUtcNow().UtcDateTime.AddYears(-1);
 
         // Act
-        var act = () => new AuthToken(ValidToken, pastDate);
+        var act = () => new AuthToken(ValidToken, pastDate, _timeProvider);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()

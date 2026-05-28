@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 
 namespace emc.camus.api.Models.Responses
 {
@@ -6,6 +7,7 @@ namespace emc.camus.api.Models.Responses
     /// Use HTTP status codes (200 OK, 201 Created, etc.) to indicate success; use ProblemDetails for errors.
     /// </summary>
     /// <typeparam name="T">The type of the data payload (e.g., ApiInfo, AuthenticateUserResponse, etc.)</typeparam>
+    [ExcludeFromCodeCoverage]
     public class ApiResponse<T>
     {
         /// <summary>
@@ -22,6 +24,6 @@ namespace emc.camus.api.Models.Responses
         /// Gets or sets the timestamp when this response was generated (UTC).
         /// Useful for caching, debugging, and client-side temporal logic.
         /// </summary>
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public DateTime Timestamp { get; set; }
     }
 }

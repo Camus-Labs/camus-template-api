@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Options;
 using emc.camus.api.Configurations;
 using emc.camus.api.Metrics;
 using emc.camus.application.Common;
@@ -33,9 +32,10 @@ namespace emc.camus.api.Middleware
         /// These rules map common exception types to their corresponding error codes.
         /// Additional rules can be added via configuration (ErrorHandlingSettings.AdditionalRules).
         /// </summary>
-        private static readonly IReadOnlyList<ErrorCodeMappingRule> PlatformRules = new List<ErrorCodeMappingRule>
+        private static readonly IReadOnlyList<ErrorCodeMappingRuleSettings> PlatformRules = new List<ErrorCodeMappingRuleSettings>
         {
             new() { Type = nameof(RateLimitExceededException), ErrorCode = ErrorCodes.RateLimitExceeded },
+            new() { Type = nameof(DataConflictException), Pattern = "idempotency.*body", ErrorCode = ErrorCodes.IdempotencyBodyConflict },
             new() { Type = nameof(DataConflictException), ErrorCode = ErrorCodes.DataConflict },
             new() { Type = nameof(DomainException), ErrorCode = ErrorCodes.DomainRuleViolation },
             new() { Type = nameof(KeyNotFoundException), ErrorCode = ErrorCodes.NotFound },
@@ -56,6 +56,8 @@ namespace emc.camus.api.Middleware
             new() { Type = nameof(UnauthorizedAccessException), Pattern = "username.*password|password.*mismatch", ErrorCode = ErrorCodes.AuthInvalidCredentials },
             new() { Type = nameof(UnauthorizedAccessException), Pattern = "invalid|credentials|incorrect", ErrorCode = ErrorCodes.InvalidCredentials },
             new() { Type = nameof(UnauthorizedAccessException), ErrorCode = ErrorCodes.Unauthorized },
+            new() { Type = nameof(ArgumentException), Pattern = "idempotency.*key.*missing", ErrorCode = ErrorCodes.IdempotencyKeyMissing },
+            new() { Type = nameof(ArgumentException), Pattern = "idempotency.*key.*invalid", ErrorCode = ErrorCodes.IdempotencyKeyInvalid },
             new() { Type = nameof(ArgumentException), ErrorCode = ErrorCodes.BadRequest },
             new() { Type = nameof(ArgumentOutOfRangeException), ErrorCode = ErrorCodes.BadRequest },
             new() { Type = nameof(ArgumentNullException), ErrorCode = ErrorCodes.BadRequest },
@@ -69,7 +71,7 @@ namespace emc.camus.api.Middleware
         private readonly RequestDelegate _next;
         private readonly ILogger<ExceptionHandlingMiddleware> _logger;
         private readonly IHostEnvironment _environment;
-        private readonly IReadOnlyList<ErrorCodeMappingRule> _allRules;
+        private readonly IReadOnlyList<ErrorCodeMappingRuleSettings> _allRules;
         private readonly ErrorMetrics _errorMetrics;
 
         [LoggerMessage(Level = LogLevel.Error,
@@ -94,7 +96,7 @@ namespace emc.camus.api.Middleware
             RequestDelegate next,
             ILogger<ExceptionHandlingMiddleware> logger,
             IHostEnvironment environment,
-            IOptions<ErrorHandlingSettings> settings,
+            ErrorHandlingSettings settings,
             ErrorMetrics errorMetrics)
         {
             ArgumentNullException.ThrowIfNull(logger);
@@ -107,8 +109,8 @@ namespace emc.camus.api.Middleware
             _environment = environment;
             _errorMetrics = errorMetrics;
 
-            // Combine rules once at startup: AdditionalRules first (allow config overrides), then PlatformRules
-            _allRules = settings.Value.AdditionalRules.Concat(PlatformRules).ToList().AsReadOnly();
+            // Combine rules once at startup: PlatformRules first (specific patterns take precedence), then AdditionalRules as fallbacks
+            _allRules = PlatformRules.Concat(settings.AdditionalRules).ToList().AsReadOnly();
         }
 
         /// <summary>
@@ -159,7 +161,8 @@ namespace emc.camus.api.Middleware
 
             var json = JsonSerializer.Serialize(problemDetails, ProblemDetailsSerializerOptions);
 
-            return context.Response.WriteAsync(json);
+            // Compensating action: always deliver the error response even after cancellation.
+            return context.Response.WriteAsync(json, CancellationToken.None);
         }
 
         /// <summary>
@@ -288,7 +291,7 @@ namespace emc.camus.api.Middleware
 
         /// <summary>
         /// Resolves an exception to a machine-readable error code using configured rules.
-        /// Evaluates AdditionalRules (from configuration) before PlatformRules (built-in).
+        /// Evaluates PlatformRules (built-in, pattern-specific) before AdditionalRules (from configuration).
         /// </summary>
         private string ResolveErrorCode(Exception exception)
         {
@@ -305,7 +308,7 @@ namespace emc.camus.api.Middleware
         /// Evaluates a single error code mapping rule against the exception type name and message.
         /// Returns the matched error code, or null if the rule does not match.
         /// </summary>
-        private string? MatchErrorCode(ErrorCodeMappingRule rule, string exceptionTypeName, string exceptionMessage)
+        private string? MatchErrorCode(ErrorCodeMappingRuleSettings rule, string exceptionTypeName, string exceptionMessage)
         {
             // Check type match (if specified)
             if (!string.IsNullOrWhiteSpace(rule.Type) &&

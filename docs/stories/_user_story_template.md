@@ -150,9 +150,17 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Ready for implementation: `[Yes | No]`
 - Tester sign-off: `[Name, Date]`
 
+### Regression Fixes Log
+
+| # | Test File | Test Method | Change Made | Reason |
+| --- | --- | --- | --- | --- |
+| [n] | [test file path] | [method name] | [description of fix] | [contract change that caused the break] |
+
 ### Developer Handoff Gate
 
-- All tests pass (TDD green): `[Yes | No]`
+- All unit tests pass (TDD green): `[Yes | No]`
+- All existing integration tests pass: `[Yes | No]`
+- Regression fixes documented (if any): `[Yes | N/A]`
 - Build succeeds with zero warnings: `[Yes | No]`
 - Ready for code review: `[Yes | No]`
 - Developer sign-off: `[Name, Date]`
@@ -219,3 +227,39 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Build succeeds with zero errors and warnings: `[Yes | No]`
 - Ready for review: `[Yes | No]`
 - Technical Writer sign-off: `[Name, Date]`
+
+---
+
+## Section F - QA Tester
+
+### Test Suite
+
+- Unit tests: `[pass_count]` passed, `[fail_count]` failed
+- Integration tests: `[pass_count]` passed, `[fail_count]` failed
+- Full suite: `[PASS | FAIL]`
+
+### Coverage
+
+- Files analyzed: `[count]`
+- Files at 100%: `[count]`
+- Gaps closed: `[count]` file(s), `[test_count]` test(s) added
+- Gaps deferred: `[count]` file(s) (user decision)
+
+### Local Validation
+
+- User confirmed: `[Yes | No | Skipped]`
+- Issues reported: `[description or "None"]`
+
+### Stories Moved
+
+- `[story-file]` → `docs/stories/done/[request-slug]/`
+
+### QA Tester Handoff Gate
+
+- All handoff gates (A through E) pass: `[Yes | No]`
+- Full test suite passes: `[Yes | No]`
+- Coverage gaps addressed or acknowledged: `[Yes | No]`
+- Local validation confirmed by user: `[Yes | No]`
+- Stories moved to done: `[Yes | No]`
+- Ready for release: `[Yes | No]`
+- QA Tester sign-off: `[Name, Date]`

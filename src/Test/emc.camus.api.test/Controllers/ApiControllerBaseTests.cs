@@ -1,25 +1,25 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using emc.camus.api.Controllers;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Time.Testing;
 using emc.camus.api.Models.Responses;
+using emc.camus.api.test.Helpers;
 
 namespace emc.camus.api.test.Controllers;
 
 public class ApiControllerBaseTests
 {
-    private sealed class TestableController : ApiControllerBase
+    private readonly FakeTimeProvider _timeProvider;
+
+    public ApiControllerBaseTests()
     {
-        public IActionResult CallSuccess<T>(T data, string message) => Success(data, message);
-        public IActionResult CallCreated<T>(T data, string message, string? actionName = null, object? routeValues = null)
-            => Created(data, message, actionName, routeValues);
-        public IActionResult CallAccepted<T>(T data, string message) => Accepted(data, message);
-        public IActionResult CallNoContentSuccess() => NoContentSuccess();
+        _timeProvider = new FakeTimeProvider();
     }
 
-    private static TestableController CreateController()
+    private TestableController CreateController()
     {
-        var controller = new TestableController();
+        var controller = new TestableController(_timeProvider);
         controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()
@@ -30,7 +30,7 @@ public class ApiControllerBaseTests
     // --- Success ---
 
     [Fact]
-    public void Success_ReturnsOkObjectResultWithApiResponse()
+    public void Success_WhenCalled_ReturnsOkObjectResultWithApiResponse()
     {
         // Arrange
         var controller = CreateController();
@@ -45,7 +45,7 @@ public class ApiControllerBaseTests
         var response = okResult.Value.Should().BeOfType<ApiResponse<string>>().Subject;
         response.Data.Should().Be("test-data");
         response.Message.Should().Be("Operation succeeded");
-        response.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(2));
+        response.Timestamp.Should().Be(_timeProvider.GetUtcNow().UtcDateTime);
     }
 
     // --- Created ---
@@ -66,7 +66,7 @@ public class ApiControllerBaseTests
         var response = createdResult.Value.Should().BeOfType<ApiResponse<string>>().Subject;
         response.Data.Should().Be("new-resource");
         response.Message.Should().Be("Resource created");
-        response.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(2));
+        response.Timestamp.Should().Be(_timeProvider.GetUtcNow().UtcDateTime);
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class ApiControllerBaseTests
     // --- Accepted ---
 
     [Fact]
-    public void Accepted_ReturnsAcceptedResultWithApiResponse()
+    public void Accepted_WhenCalled_ReturnsAcceptedResultWithApiResponse()
     {
         // Arrange
         var controller = CreateController();
@@ -102,13 +102,13 @@ public class ApiControllerBaseTests
         var response = acceptedResult.Value.Should().BeOfType<ApiResponse<string>>().Subject;
         response.Data.Should().Be("op-123");
         response.Message.Should().Be("Request accepted");
-        response.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(2));
+        response.Timestamp.Should().Be(_timeProvider.GetUtcNow().UtcDateTime);
     }
 
     // --- NoContentSuccess ---
 
     [Fact]
-    public void NoContentSuccess_ReturnsNoContentResult()
+    public void NoContentSuccess_WhenCalled_ReturnsNoContentResult()
     {
         // Arrange
         var controller = CreateController();

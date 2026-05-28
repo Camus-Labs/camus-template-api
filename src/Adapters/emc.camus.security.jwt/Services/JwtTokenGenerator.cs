@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using emc.camus.application.Auth;
 using emc.camus.domain.Auth;
 using emc.camus.security.jwt.Configurations;
+using emc.camus.security.jwt.Exceptions;
 
 namespace emc.camus.security.jwt.Services;
 
@@ -14,21 +15,26 @@ internal sealed class JwtTokenGenerator : ITokenGenerator
 {
     private readonly JwtSettings _jwtSettings;
     private readonly SigningCredentials _signingCredentials;
+    private readonly TimeProvider _timeProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="JwtTokenGenerator"/> class.
     /// </summary>
     /// <param name="jwtSettings">JWT configuration settings.</param>
     /// <param name="signingCredentials">Signing credentials for token generation.</param>
+    /// <param name="timeProvider">Time provider for token expiration and issued-at calculations.</param>
     public JwtTokenGenerator(
         JwtSettings jwtSettings,
-        SigningCredentials signingCredentials)
+        SigningCredentials signingCredentials,
+        TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(jwtSettings);
         ArgumentNullException.ThrowIfNull(signingCredentials);
+        ArgumentNullException.ThrowIfNull(timeProvider);
 
         _jwtSettings = jwtSettings;
         _signingCredentials = signingCredentials;
+        _timeProvider = timeProvider;
     }
 
     /// <summary>
@@ -44,7 +50,7 @@ internal sealed class JwtTokenGenerator : ITokenGenerator
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
 
         var jti = Guid.NewGuid();
-        var expiresOn = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
+        var expiresOn = _timeProvider.GetUtcNow().DateTime.AddMinutes(_jwtSettings.ExpirationMinutes);
 
         return GenerateToken(userId, username, jti, expiresOn, additionalClaims);
     }
@@ -74,7 +80,7 @@ internal sealed class JwtTokenGenerator : ITokenGenerator
             new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new Claim(JwtRegisteredClaimNames.UniqueName, username),
             new Claim(JwtRegisteredClaimNames.Jti, jti.ToString()),
-            new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture), ClaimValueTypes.Integer64)
+            new Claim(JwtRegisteredClaimNames.Iat, _timeProvider.GetUtcNow().ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture), ClaimValueTypes.Integer64)
         };
 
         // Add additional claims if provided
@@ -83,16 +89,23 @@ internal sealed class JwtTokenGenerator : ITokenGenerator
             claims.AddRange(additionalClaims);
         }
 
-        var jwtToken = new JwtSecurityToken(
-            issuer: _jwtSettings.Issuer,
-            audience: _jwtSettings.Audience,
-            claims: claims,
-            expires: expiresOn,
-            signingCredentials: _signingCredentials
-        );
+        try
+        {
+            var jwtToken = new JwtSecurityToken(
+                issuer: _jwtSettings.Issuer,
+                audience: _jwtSettings.Audience,
+                claims: claims,
+                expires: expiresOn,
+                signingCredentials: _signingCredentials
+            );
 
-        var token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+            var token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
 
-        return new AuthToken(token, expiresOn);
+            return new AuthToken(token, expiresOn);
+        }
+        catch (Exception ex)
+        {
+            throw new JwtTokenGenerationException("Failed to generate JWT token.", ex);
+        }
     }
 }

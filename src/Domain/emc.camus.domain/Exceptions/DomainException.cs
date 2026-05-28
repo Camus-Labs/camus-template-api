@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.domain.Exceptions;
 
 /// <summary>
 /// Thrown when a domain business invariant is violated.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class DomainException : Exception
 {
     /// <summary>

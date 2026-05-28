@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using FluentAssertions;
+using Microsoft.Extensions.Time.Testing;
 using emc.camus.application.Observability;
 using emc.camus.observability.otel.Services;
 
@@ -7,19 +8,32 @@ namespace emc.camus.observability.otel.test.Services;
 
 public class ActivitySourceWrapperTests : IDisposable
 {
-    private readonly ActivitySource _activitySource = new("test-activity-source");
+    private const string TestOperationName = "test-op";
+    private const string OtelStatusCodeTag = "otel.status_code";
+    private const string ExceptionEventName = "exception";
+    private const string CacheMissEvent = "cache_miss";
+    private const string CredentialsValidatedEvent = "credentials_validated";
+    private static readonly Dictionary<string, object?> RequestTags = new() { { "userId", "abc" }, { "count", 5 } };
+    private static readonly Dictionary<string, object?> ExecutionTags = new() { { "duration", 42 } };
+    private static readonly Dictionary<string, object?> ResponseTags = new() { { "status", 200 } };
+    private static readonly Dictionary<string, object?> SingleEntryTags = new() { { "key", "value" } };
+    private static readonly Dictionary<string, object?> CacheEventTags = new() { { "cache.key", "user:123" }, { "cache.hit", false } };
+    private readonly ActivitySource _activitySource;
     private readonly ActivityListener _listener;
+    private readonly FakeTimeProvider _timeProvider;
     private readonly ActivitySourceWrapper _wrapper;
 
     public ActivitySourceWrapperTests()
     {
+        _activitySource = new ActivitySource("test-activity-source");
+        _timeProvider = new FakeTimeProvider();
         _listener = new ActivityListener
         {
             ShouldListenTo = _ => true,
             Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData
         };
         ActivitySource.AddActivityListener(_listener);
-        _wrapper = new ActivitySourceWrapper(_activitySource);
+        _wrapper = new ActivitySourceWrapper(_activitySource, _timeProvider);
     }
 
     public void Dispose()
@@ -36,7 +50,7 @@ public class ActivitySourceWrapperTests : IDisposable
     {
         // Arrange
         // Act
-        var act = () => new ActivitySourceWrapper(null!);
+        var act = () => new ActivitySourceWrapper(null!, _timeProvider);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -50,12 +64,12 @@ public class ActivitySourceWrapperTests : IDisposable
     {
         // Arrange
         // Act
-        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
+        using var activity = _wrapper.StartActivity(TestOperationName, OperationType.Read);
 
         // Assert
         activity.Should().NotBeNull();
         activity!.GetTagItem("operation.type").Should().Be("read");
-        activity.GetTagItem("otel.status_code").Should().Be("UNSET");
+        activity.GetTagItem(OtelStatusCodeTag).Should().Be("UNSET");
     }
 
     [Theory]
@@ -78,7 +92,7 @@ public class ActivitySourceWrapperTests : IDisposable
     {
         // Arrange
         // Act
-        var act = () => _wrapper.StartActivity("test-op", (OperationType)999);
+        var act = () => _wrapper.StartActivity(TestOperationName, (OperationType)999);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>()
@@ -91,11 +105,10 @@ public class ActivitySourceWrapperTests : IDisposable
     public void SetRequestTags_WithActivity_AddsPrefixedTags()
     {
         // Arrange
-        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
-        var tags = new Dictionary<string, object?> { { "userId", "abc" }, { "count", 5 } };
+        using var activity = _wrapper.StartActivity(TestOperationName, OperationType.Read);
 
         // Act
-        _wrapper.SetRequestTags(activity, tags);
+        _wrapper.SetRequestTags(activity, RequestTags);
 
         // Assert
         activity!.GetTagItem("request.userId").Should().Be("abc");
@@ -106,10 +119,8 @@ public class ActivitySourceWrapperTests : IDisposable
     public void SetRequestTags_NullActivity_DoesNotThrow()
     {
         // Arrange
-        var tags = new Dictionary<string, object?> { { "key", "value" } };
-
         // Act
-        var act = () => _wrapper.SetRequestTags(null, tags);
+        var act = () => _wrapper.SetRequestTags(null, SingleEntryTags);
 
         // Assert
         act.Should().NotThrow();
@@ -119,7 +130,7 @@ public class ActivitySourceWrapperTests : IDisposable
     public void SetRequestTags_NullTags_ThrowsArgumentNullException()
     {
         // Arrange
-        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
+        using var activity = _wrapper.StartActivity(TestOperationName, OperationType.Read);
 
         // Act
         var act = () => _wrapper.SetRequestTags(activity, null!);
@@ -135,11 +146,10 @@ public class ActivitySourceWrapperTests : IDisposable
     public void SetExecutionTags_WithActivity_AddsPrefixedTags()
     {
         // Arrange
-        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
-        var tags = new Dictionary<string, object?> { { "duration", 42 } };
+        using var activity = _wrapper.StartActivity(TestOperationName, OperationType.Read);
 
         // Act
-        _wrapper.SetExecutionTags(activity, tags);
+        _wrapper.SetExecutionTags(activity, ExecutionTags);
 
         // Assert
         activity!.GetTagItem("execution.duration").Should().Be(42);
@@ -149,10 +159,8 @@ public class ActivitySourceWrapperTests : IDisposable
     public void SetExecutionTags_NullActivity_DoesNotThrow()
     {
         // Arrange
-        var tags = new Dictionary<string, object?> { { "key", "value" } };
-
         // Act
-        var act = () => _wrapper.SetExecutionTags(null, tags);
+        var act = () => _wrapper.SetExecutionTags(null, SingleEntryTags);
 
         // Assert
         act.Should().NotThrow();
@@ -162,7 +170,7 @@ public class ActivitySourceWrapperTests : IDisposable
     public void SetExecutionTags_NullTags_ThrowsArgumentNullException()
     {
         // Arrange
-        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
+        using var activity = _wrapper.StartActivity(TestOperationName, OperationType.Read);
 
         // Act
         var act = () => _wrapper.SetExecutionTags(activity, null!);
@@ -178,11 +186,10 @@ public class ActivitySourceWrapperTests : IDisposable
     public void SetResponseTags_WithActivity_AddsPrefixedTags()
     {
         // Arrange
-        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
-        var tags = new Dictionary<string, object?> { { "status", 200 } };
+        using var activity = _wrapper.StartActivity(TestOperationName, OperationType.Read);
 
         // Act
-        _wrapper.SetResponseTags(activity, tags);
+        _wrapper.SetResponseTags(activity, ResponseTags);
 
         // Assert
         activity!.GetTagItem("response.status").Should().Be(200);
@@ -192,10 +199,8 @@ public class ActivitySourceWrapperTests : IDisposable
     public void SetResponseTags_NullActivity_DoesNotThrow()
     {
         // Arrange
-        var tags = new Dictionary<string, object?> { { "key", "value" } };
-
         // Act
-        var act = () => _wrapper.SetResponseTags(null, tags);
+        var act = () => _wrapper.SetResponseTags(null, SingleEntryTags);
 
         // Assert
         act.Should().NotThrow();
@@ -205,7 +210,7 @@ public class ActivitySourceWrapperTests : IDisposable
     public void SetResponseTags_NullTags_ThrowsArgumentNullException()
     {
         // Arrange
-        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
+        using var activity = _wrapper.StartActivity(TestOperationName, OperationType.Read);
 
         // Act
         var act = () => _wrapper.SetResponseTags(activity, null!);
@@ -221,13 +226,13 @@ public class ActivitySourceWrapperTests : IDisposable
     public void ActivitySucceeded_WithActivity_SetsStatusCodeToOk()
     {
         // Arrange
-        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
+        using var activity = _wrapper.StartActivity(TestOperationName, OperationType.Read);
 
         // Act
         _wrapper.ActivitySucceeded(activity);
 
         // Assert
-        activity!.GetTagItem("otel.status_code").Should().Be("OK");
+        activity!.GetTagItem(OtelStatusCodeTag).Should().Be("OK");
     }
 
     [Fact]
@@ -247,18 +252,18 @@ public class ActivitySourceWrapperTests : IDisposable
     public void ActivityFailed_WithActivity_SetsErrorStatusAndAddsExceptionEvent()
     {
         // Arrange
-        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
+        using var activity = _wrapper.StartActivity(TestOperationName, OperationType.Read);
         var exception = new InvalidOperationException("something broke");
 
         // Act
         _wrapper.ActivityFailed(activity, exception);
 
         // Assert
-        activity!.GetTagItem("otel.status_code").Should().Be("ERROR");
+        activity!.GetTagItem(OtelStatusCodeTag).Should().Be("ERROR");
         activity.GetTagItem("otel.status_description").Should().Be("something broke");
 
-        activity.Events.Should().ContainSingle(e => e.Name == "exception");
-        var exceptionEvent = activity.Events.Single(e => e.Name == "exception");
+        activity.Events.Should().ContainSingle(e => e.Name == ExceptionEventName);
+        var exceptionEvent = activity.Events.Single(e => e.Name == ExceptionEventName);
         exceptionEvent.Tags.Should().Contain(t => t.Key == "exception.type" && (string)t.Value! == typeof(InvalidOperationException).FullName);
         exceptionEvent.Tags.Should().Contain(t => t.Key == "exception.message" && (string)t.Value! == "something broke");
     }
@@ -280,7 +285,7 @@ public class ActivitySourceWrapperTests : IDisposable
     public void ActivityFailed_NullException_ThrowsArgumentNullException()
     {
         // Arrange
-        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
+        using var activity = _wrapper.StartActivity(TestOperationName, OperationType.Read);
 
         // Act
         var act = () => _wrapper.ActivityFailed(activity, null!);
@@ -296,19 +301,14 @@ public class ActivitySourceWrapperTests : IDisposable
     public void AddEvent_WithActivityAndTags_AddsEventWithTags()
     {
         // Arrange
-        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
-        var tags = new Dictionary<string, object?>
-        {
-            { "cache.key", "user:123" },
-            { "cache.hit", false }
-        };
+        using var activity = _wrapper.StartActivity(TestOperationName, OperationType.Read);
 
         // Act
-        _wrapper.AddEvent(activity, "cache_miss", tags);
+        _wrapper.AddEvent(activity, CacheMissEvent, CacheEventTags);
 
         // Assert
-        activity!.Events.Should().ContainSingle(e => e.Name == "cache_miss");
-        var evt = activity.Events.Single(e => e.Name == "cache_miss");
+        activity!.Events.Should().ContainSingle(e => e.Name == CacheMissEvent);
+        var evt = activity.Events.Single(e => e.Name == CacheMissEvent);
         evt.Tags.Should().Contain(t => t.Key == "cache.key" && (string)t.Value! == "user:123");
         evt.Tags.Should().Contain(t => t.Key == "cache.hit" && (bool)t.Value! == false);
     }
@@ -317,14 +317,14 @@ public class ActivitySourceWrapperTests : IDisposable
     public void AddEvent_WithActivityAndNoTags_AddsEventWithoutTags()
     {
         // Arrange
-        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
+        using var activity = _wrapper.StartActivity(TestOperationName, OperationType.Read);
 
         // Act
-        _wrapper.AddEvent(activity, "credentials_validated");
+        _wrapper.AddEvent(activity, CredentialsValidatedEvent);
 
         // Assert
-        activity!.Events.Should().ContainSingle(e => e.Name == "credentials_validated");
-        var evt = activity.Events.Single(e => e.Name == "credentials_validated");
+        activity!.Events.Should().ContainSingle(e => e.Name == CredentialsValidatedEvent);
+        var evt = activity.Events.Single(e => e.Name == CredentialsValidatedEvent);
         evt.Tags.Should().BeEmpty();
     }
 
@@ -346,7 +346,7 @@ public class ActivitySourceWrapperTests : IDisposable
     public void AddEvent_InvalidName_ThrowsArgumentException(string? name)
     {
         // Arrange
-        using var activity = _wrapper.StartActivity("test-op", OperationType.Read);
+        using var activity = _wrapper.StartActivity(TestOperationName, OperationType.Read);
 
         // Act
         var act = () => _wrapper.AddEvent(activity, name!);
@@ -365,7 +365,7 @@ public class ActivitySourceWrapperTests : IDisposable
         Activity? capturedActivity = null;
 
         // Act
-        var result = await _wrapper.StartActivityAndRunAsync("test-op", OperationType.Read, activity =>
+        var result = await _wrapper.StartActivityAndRunAsync(TestOperationName, OperationType.Read, activity =>
         {
             capturedActivity = activity;
             return Task.FromResult(42);
@@ -373,7 +373,7 @@ public class ActivitySourceWrapperTests : IDisposable
 
         // Assert
         result.Should().Be(42);
-        capturedActivity!.GetTagItem("otel.status_code").Should().Be("OK");
+        capturedActivity!.GetTagItem(OtelStatusCodeTag).Should().Be("OK");
     }
 
     [Fact]
@@ -386,7 +386,7 @@ public class ActivitySourceWrapperTests : IDisposable
         // Act
         var act = async () =>
         {
-            await _wrapper.StartActivityAndRunAsync<int>("test-op", OperationType.Read, activity =>
+            await _wrapper.StartActivityAndRunAsync<int>(TestOperationName, OperationType.Read, activity =>
             {
                 capturedActivity = activity;
                 throw expectedException;
@@ -396,7 +396,7 @@ public class ActivitySourceWrapperTests : IDisposable
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*boom*");
-        capturedActivity!.GetTagItem("otel.status_code").Should().Be("ERROR");
+        capturedActivity!.GetTagItem(OtelStatusCodeTag).Should().Be("ERROR");
     }
 
     [Theory]
@@ -418,7 +418,7 @@ public class ActivitySourceWrapperTests : IDisposable
     {
         // Arrange
         // Act
-        var act = () => _wrapper.StartActivityAndRunAsync<int>("test-op", (OperationType)999, _ => Task.FromResult(1));
+        var act = () => _wrapper.StartActivityAndRunAsync<int>(TestOperationName, (OperationType)999, _ => Task.FromResult(1));
 
         // Assert
         await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
@@ -429,9 +429,58 @@ public class ActivitySourceWrapperTests : IDisposable
     {
         // Arrange
         // Act
-        var act = () => _wrapper.StartActivityAndRunAsync<int>("test-op", OperationType.Read, null!);
+        var act = () => _wrapper.StartActivityAndRunAsync<int>(TestOperationName, OperationType.Read, null!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
+    }
+
+    // --- ActivityCancelled ---
+
+    [Fact]
+    public void ActivityCancelled_WithActivity_SetsErrorStatusAndAddsEvent()
+    {
+        // Arrange
+        using var activity = _wrapper.StartActivity(TestOperationName, OperationType.Read);
+
+        // Act
+        _wrapper.ActivityCancelled(activity);
+
+        // Assert
+        activity!.GetTagItem(OtelStatusCodeTag).Should().Be("ERROR");
+        activity.GetTagItem("otel.status_description").Should().Be("Operation cancelled.");
+        activity.Events.Should().ContainSingle(e => e.Name == "cancelled");
+    }
+
+    [Fact]
+    public void ActivityCancelled_NullActivity_DoesNotThrow()
+    {
+        // Act
+        var act = () => _wrapper.ActivityCancelled(null);
+
+        // Assert
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public async Task StartActivityAndRunAsync_CancelledFunc_RethrowsAndSetsCancelledStatus()
+    {
+        // Arrange
+        Activity? capturedActivity = null;
+
+        // Act
+        var act = async () =>
+        {
+            await _wrapper.StartActivityAndRunAsync<int>(TestOperationName, OperationType.Read, activity =>
+            {
+                capturedActivity = activity;
+                throw new OperationCanceledException("cancelled");
+            });
+        };
+
+        // Assert
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        capturedActivity!.GetTagItem(OtelStatusCodeTag).Should().Be("ERROR");
+        capturedActivity.Events.Should().ContainSingle(e => e.Name == "cancelled");
     }
 }

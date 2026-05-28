@@ -1,4 +1,5 @@
 using emc.camus.application.Auth;
+using emc.camus.application.Exceptions;
 using emc.camus.application.Secrets;
 using emc.camus.domain.Auth;
 using emc.camus.persistence.inmemory.Configurations;
@@ -39,7 +40,11 @@ internal sealed class UserRepository : IUserRepository
     /// at application startup to populate the in-memory store before any authentication attempts.
     /// </summary>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when any username or password secret cannot be retrieved from the secret store.
+    /// Thrown when the repository has already been initialized, or when any username or password
+    /// secret cannot be retrieved from the secret store.
+    /// </exception>
+    /// <exception cref="DataConflictException">
+    /// Thrown when two or more user configurations resolve to the same username.
     /// </exception>
     public Task InitializeAsync(CancellationToken ct = default)
     {
@@ -82,6 +87,11 @@ internal sealed class UserRepository : IUserRepository
                 throw new InvalidOperationException($"Failed to retrieve password from secret '{userConfig.PasswordSecretName}'. Ensure the secret exists in the secret store.");
             }
 
+            if (_usersByUsername.ContainsKey(username))
+            {
+                throw new DataConflictException($"Duplicate resolved username '{username}'. Two or more user configurations resolve to the same username.");
+            }
+
             var user = new User(
                 username,
                 userRoles,
@@ -104,11 +114,14 @@ internal sealed class UserRepository : IUserRepository
     /// <param name="password">The password to validate.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The authenticated user with roles.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="username"/> or <paramref name="password"/> is null or whitespace.
+    /// </exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the repository has not been initialized.
     /// </exception>
     /// <exception cref="UnauthorizedAccessException">
-    /// Thrown when credentials are invalid (empty, user not found, or wrong password).
+    /// Thrown when user is not found or the password does not match.
     /// </exception>
     public Task<User> ValidateCredentialsAsync(string username, string password, CancellationToken ct = default)
     {
@@ -142,6 +155,7 @@ internal sealed class UserRepository : IUserRepository
     /// <param name="userId">The unique identifier of the user to retrieve.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>The User with roles.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="userId"/> is <see cref="Guid.Empty"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the repository has not been initialized.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when the user is not found.</exception>
     public Task<User> GetByIdAsync(Guid userId, CancellationToken ct = default)
@@ -164,6 +178,7 @@ internal sealed class UserRepository : IUserRepository
     /// <param name="userId">The ID of the user to update.</param>
     /// <param name="ct">Cancellation token for cooperative cancellation.</param>
     /// <returns>Task representing the asynchronous operation.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="userId"/> is <see cref="Guid.Empty"/>.</exception>
     public Task UpdateLastLoginAsync(Guid userId, CancellationToken ct = default)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(userId, Guid.Empty);

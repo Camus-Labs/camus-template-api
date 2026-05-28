@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace emc.camus.api.Models.Responses.V2;
 
 /// <summary>
 /// Response model containing authentication token information.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class AuthenticateUserResponse
 {
     /// <summary>

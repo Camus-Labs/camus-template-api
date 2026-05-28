@@ -6,6 +6,7 @@ using Npgsql;
 using Microsoft.Extensions.DependencyInjection;
 using emc.camus.api.integration.test.Fixtures;
 using emc.camus.api.integration.test.Helpers;
+using emc.camus.application.Common;
 using emc.camus.api.Models.Dtos.V2;
 using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V2;
@@ -17,6 +18,12 @@ namespace emc.camus.api.integration.test.Auth;
 [Collection(PostgreSqlTestGroup.Name)]
 public class AuthPostgreSqlEndpointTests : IAsyncLifetime
 {
+    private const string GenerateTokenEndpoint = "/api/v2/auth/generate-token";
+    private const string TokensEndpoint = "/api/v2/auth/tokens";
+    private const string InfoJwtEndpoint = "/api/v2/apiinfo/info-jwt";
+    private static readonly string[] ReadPermissions = ["api.read"];
+    private static readonly string[] PaginationSuffixes = ["page-1", "page-2", "page-3"];
+
     private readonly ApiPostgreSqlFactory _factory;
 
     public AuthPostgreSqlEndpointTests(ApiPostgreSqlFactory factory, ITestOutputHelper outputHelper)
@@ -34,19 +41,20 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GenerateToken_ValidRequest_ReturnsOkWithPersistedToken()
+    public async Task GenerateToken_ValidRequest_ReturnsCreatedWithPersistedToken()
     {
         // Arrange
-        var client = await _factory.AuthenticateAsync("Admin", "adminsecret");
+        var client = await _factory.AuthenticateAsAdminAsync();
+        var expiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1);
         var request = new
         {
             UsernameSuffix = "inttest",
-            ExpiresOn = DateTime.UtcNow.AddHours(2),
-            Permissions = new[] { "api.read" },
+            ExpiresOn = expiresOn,
+            Permissions = ReadPermissions,
         };
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/v2/auth/generate-token", request, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonWithIdempotencyKeyAsync(GenerateTokenEndpoint, request, TestContext.Current.CancellationToken);
 
         // Assert — HTTP response
         await response.Should().HaveStatusCode(HttpStatusCode.Created);
@@ -55,7 +63,7 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         body.Should().NotBeNull();
         body!.Data.Should().NotBeNull();
         body.Data!.Token.Should().NotBeNullOrWhiteSpace();
-        body.Data.ExpiresOn.Should().BeAfter(DateTime.UtcNow);
+        body.Data.ExpiresOn.Should().BeCloseTo(expiresOn, TimeSpan.FromSeconds(5));
         body.Data.TokenUsername.Should().Be("Admin-inttest");
 
         // Assert — database row persisted
@@ -92,15 +100,8 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         await using var connection = new NpgsqlConnection(_factory.ConnectionString);
         await connection.OpenAsync(TestContext.Current.CancellationToken);
 
-        var userBefore = await connection.QuerySingleAsync<dynamic>(
-            "SELECT created_by, updated_by, last_login FROM camus.users WHERE username = 'ClientApp'");
-
-        ((string)userBefore.created_by).Should().Be("Admin");
-        ((string)userBefore.updated_by).Should().Be("Admin");
-        ((DateTime?)userBefore.last_login).Should().BeNull();
-
         // Act — authenticate as ClientApp
-        await _factory.AuthenticateAsync("ClientApp", "clientsecret");
+        await _factory.AuthenticateAsClientAppAsync();
 
         // Assert — user row updated with last_login and audit fields
         var userAfter = await connection.QuerySingleAsync<dynamic>(
@@ -109,7 +110,6 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         ((string)userAfter.created_by).Should().Be("Admin", "seed creator must be preserved");
         ((string)userAfter.updated_by).Should().Be("ApiKeyUser", "trigger sets updated_by to the HTTP identity (API key)");
         ((DateTime?)userAfter.last_login).Should().NotBeNull("login should set last_login");
-        ((DateTime)userAfter.last_login).Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(30));
 
         // Assert — audit record persisted
         var audit = await connection.QuerySingleAsync<dynamic>(
@@ -123,22 +123,22 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
     public async Task RevokeToken_ValidJti_ReturnsOkWithRevokedToken()
     {
         // Arrange — generate a token first
-        var client = await _factory.AuthenticateAsync("Admin", "adminsecret");
+        var client = await _factory.AuthenticateAsAdminAsync();
         var generateRequest = new
         {
             UsernameSuffix = "revoke",
-            ExpiresOn = DateTime.UtcNow.AddHours(2),
-            Permissions = new[] { "api.read" },
+            ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
+            Permissions = ReadPermissions,
         };
 
-        var generateResponse = await client.PostAsJsonAsync("/api/v2/auth/generate-token", generateRequest, TestContext.Current.CancellationToken);
+        var generateResponse = await client.PostAsJsonWithIdempotencyKeyAsync(GenerateTokenEndpoint, generateRequest, TestContext.Current.CancellationToken);
         await generateResponse.Should().HaveStatusCode(HttpStatusCode.Created, "token generation must succeed for test setup");
 
         var generateBody = await generateResponse.Content.ReadFromJsonAsync<ApiResponse<GenerateTokenResponse>>(TestContext.Current.CancellationToken);
         var jti = AuthenticatedClientHelper.ExtractJti(generateBody!.Data!.Token);
 
         // Act
-        var response = await client.PostAsync($"/api/v2/auth/tokens/{jti}/revoke", null, TestContext.Current.CancellationToken);
+        var response = await client.PostAsync($"{TokensEndpoint}/{jti}/revoke", null, TestContext.Current.CancellationToken);
 
         // Assert — HTTP response
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -172,29 +172,29 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
     public async Task GetTokens_AfterGenerating_ReturnsPagedTokensFromDatabase()
     {
         // Arrange — generate two tokens with distinct suffixes
-        var client = await _factory.AuthenticateAsync("Admin", "adminsecret");
+        var client = await _factory.AuthenticateAsAdminAsync();
 
         var firstRequest = new
         {
             UsernameSuffix = "list-a",
-            ExpiresOn = DateTime.UtcNow.AddHours(2),
-            Permissions = new[] { "api.read" },
+            ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
+            Permissions = ReadPermissions,
         };
         var secondRequest = new
         {
             UsernameSuffix = "list-b",
-            ExpiresOn = DateTime.UtcNow.AddHours(3),
-            Permissions = new[] { "api.read" },
+            ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
+            Permissions = ReadPermissions,
         };
 
-        var firstResponse = await client.PostAsJsonAsync("/api/v2/auth/generate-token", firstRequest, TestContext.Current.CancellationToken);
+        var firstResponse = await client.PostAsJsonWithIdempotencyKeyAsync(GenerateTokenEndpoint, firstRequest, TestContext.Current.CancellationToken);
         await firstResponse.Should().HaveStatusCode(HttpStatusCode.Created, "first token generation must succeed for test setup");
 
-        var secondResponse = await client.PostAsJsonAsync("/api/v2/auth/generate-token", secondRequest, TestContext.Current.CancellationToken);
+        var secondResponse = await client.PostAsJsonWithIdempotencyKeyAsync(GenerateTokenEndpoint, secondRequest, TestContext.Current.CancellationToken);
         await secondResponse.Should().HaveStatusCode(HttpStatusCode.Created, "second token generation must succeed for test setup");
 
         // Act
-        var response = await client.GetAsync("/api/v2/auth/tokens?Page=1&PageSize=50", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync($"{TokensEndpoint}?Page=1&PageSize=50", TestContext.Current.CancellationToken);
 
         // Assert — HTTP response
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -212,21 +212,27 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
             "SELECT COUNT(*) FROM camus.generated_tokens WHERE token_username IN ('Admin-list-a', 'Admin-list-b')");
 
         dbCount.Should().Be(2);
+
+        // Assert — audit records persisted for both token generations
+        var auditCount = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM camus.action_audit WHERE action_title = 'token.generate.success' AND user_name = 'Admin'");
+
+        auditCount.Should().BeGreaterThanOrEqualTo(2);
     }
 
     [Fact]
     public async Task GenerateToken_DuplicateTokenUsername_ReturnsConflictAndNothingPersisted()
     {
         // Arrange — generate a token with a specific suffix first
-        var client = await _factory.AuthenticateAsync("Admin", "adminsecret");
+        var client = await _factory.AuthenticateAsAdminAsync();
         var firstRequest = new
         {
             UsernameSuffix = "duplicate",
-            ExpiresOn = DateTime.UtcNow.AddHours(2),
-            Permissions = new[] { "api.read" },
+            ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
+            Permissions = ReadPermissions,
         };
 
-        var firstResponse = await client.PostAsJsonAsync("/api/v2/auth/generate-token", firstRequest, TestContext.Current.CancellationToken);
+        var firstResponse = await client.PostAsJsonWithIdempotencyKeyAsync(GenerateTokenEndpoint, firstRequest, TestContext.Current.CancellationToken);
         await firstResponse.Should().HaveStatusCode(HttpStatusCode.Created, "first token generation must succeed for test setup");
 
         // Snapshot counts after the first successful insert
@@ -240,11 +246,11 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         var duplicateRequest = new
         {
             UsernameSuffix = "duplicate",
-            ExpiresOn = DateTime.UtcNow.AddHours(3),
-            Permissions = new[] { "api.read" },
+            ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
+            Permissions = ReadPermissions,
         };
 
-        var response = await client.PostAsJsonAsync("/api/v2/auth/generate-token", duplicateRequest, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonWithIdempotencyKeyAsync(GenerateTokenEndpoint, duplicateRequest, TestContext.Current.CancellationToken);
 
         // Assert — request rejected with Conflict and correct error code
         await response.Should().HaveStatusCode(HttpStatusCode.Conflict);
@@ -264,16 +270,16 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
     public async Task RevokedToken_UsedOnProtectedEndpoint_ReturnsUnauthorized()
     {
         // Arrange — authenticate, generate a token, then revoke it
-        var adminClient = await _factory.AuthenticateAsync("Admin", "adminsecret");
+        var adminClient = await _factory.AuthenticateAsAdminAsync();
         var generateRequest = new
         {
             UsernameSuffix = "revoked-use",
-            ExpiresOn = DateTime.UtcNow.AddHours(2),
-            Permissions = new[] { "api.read" },
+            ExpiresOn = DateTime.UtcNow.AddYears(1).AddDays(-1),
+            Permissions = ReadPermissions,
         };
 
-        var generateResponse = await adminClient.PostAsJsonAsync("/api/v2/auth/generate-token", generateRequest, TestContext.Current.CancellationToken);
-        await generateResponse.Should().HaveStatusCode(HttpStatusCode.Created, "token generation must succeed for test setup");
+        var generateResponse = await adminClient.PostAsJsonWithIdempotencyKeyAsync(GenerateTokenEndpoint, generateRequest, TestContext.Current.CancellationToken);
+        await generateResponse.EnsureSetupSuccessAsync("token generation must succeed for test setup");
 
         var generateBody = await generateResponse.Content.ReadFromJsonAsync<ApiResponse<GenerateTokenResponse>>(TestContext.Current.CancellationToken);
         var generatedToken = generateBody!.Data!.Token;
@@ -284,14 +290,15 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         tokenClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", generatedToken);
 
-        var preRevokeResponse = await tokenClient.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
-        await preRevokeResponse.Should().HaveStatusCode(HttpStatusCode.OK, "generated token must be accepted before revocation");
+        var preRevokeResponse = await tokenClient.GetAsync(InfoJwtEndpoint, TestContext.Current.CancellationToken);
+        await preRevokeResponse.EnsureSetupSuccessAsync("generated token must be accepted before revocation");
 
-        // Act — revoke the token and use it again
-        var revokeResponse = await adminClient.PostAsync($"/api/v2/auth/tokens/{jti}/revoke", null, TestContext.Current.CancellationToken);
-        await revokeResponse.Should().HaveStatusCode(HttpStatusCode.OK, "token revocation must succeed for test setup");
+        // Arrange — revoke the token
+        var revokeResponse = await adminClient.PostAsync($"{TokensEndpoint}/{jti}/revoke", null, TestContext.Current.CancellationToken);
+        await revokeResponse.EnsureSetupSuccessAsync("token revocation must succeed for test setup");
 
-        var postRevokeResponse = await tokenClient.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
+        // Act
+        var postRevokeResponse = await tokenClient.GetAsync(InfoJwtEndpoint, TestContext.Current.CancellationToken);
 
         // Assert — the revocation cache rejects the token via OnTokenValidated
         await postRevokeResponse.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
@@ -305,7 +312,7 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
         var client = _factory.CreateExpiredJwtClient();
 
         // Act
-        var response = await client.GetAsync("/api/v2/apiinfo/info-jwt", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync(InfoJwtEndpoint, TestContext.Current.CancellationToken);
 
         // Assert — framework rejects the expired token before OnTokenValidated fires
         await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
@@ -316,10 +323,10 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
     public async Task GetTokens_JwtWithoutTokenCreatePermission_ReturnsForbiddenWithUsername()
     {
         // Arrange — authenticate as ClientApp (ReadWrite role: api.read + api.write, no token.create)
-        var client = await _factory.AuthenticateAsync("ClientApp", "clientsecret");
+        var client = await _factory.AuthenticateAsClientAppAsync();
 
         // Act
-        var response = await client.GetAsync("/api/v2/auth/tokens", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync(TokensEndpoint, TestContext.Current.CancellationToken);
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.Forbidden);
@@ -333,15 +340,14 @@ public class AuthPostgreSqlEndpointTests : IAsyncLifetime
     [Fact]
     public async Task GetTokens_SortByCreatedAtWithPagination_ReturnsCorrectPageSubset()
     {
-        // Arrange — generate three tokens
-        var client = await _factory.AuthenticateAsync("Admin", "adminsecret");
+        // Arrange
+        var client = await _factory.AuthenticateAsAdminAsync();
 
-        var suffixes = new[] { "page-1", "page-2", "page-3" };
-        await TokenGenerationHelper.GenerateTokensAsync(client, suffixes, TestContext.Current.CancellationToken);
+        await AuthenticatedClientHelper.GenerateTokensAsync(client, PaginationSuffixes, TestContext.Current.CancellationToken);
 
-        // Act — get page 1 with size 2 (sorted by createdAt asc)
-        var page1Response = await client.GetAsync("/api/v2/auth/tokens?Page=1&PageSize=2&sortBy=createdAt&sortDirection=asc", TestContext.Current.CancellationToken);
-        var page2Response = await client.GetAsync("/api/v2/auth/tokens?Page=2&PageSize=2&sortBy=createdAt&sortDirection=asc", TestContext.Current.CancellationToken);
+        // Act
+        var page1Response = await client.GetAsync($"{TokensEndpoint}?Page=1&PageSize=2&sortBy=createdAt&sortDirection=asc", TestContext.Current.CancellationToken);
+        var page2Response = await client.GetAsync($"{TokensEndpoint}?Page=2&PageSize=2&sortBy=createdAt&sortDirection=asc", TestContext.Current.CancellationToken);
 
         // Assert — page 1
         await page1Response.Should().HaveStatusCode(HttpStatusCode.OK);

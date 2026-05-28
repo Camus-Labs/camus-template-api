@@ -8,16 +8,27 @@ namespace emc.camus.persistence.postgresql.test.Services;
 
 public class ConnectionFactoryTests
 {
-    private readonly Mock<IUserContext> _mockUserContext = new();
-    private readonly Mock<ISecretProvider> _mockSecretProvider = new();
+    private const string UserSecretName = "db-user";
+    private const string PasswordSecretName = "db-password";
+    private const string ValidUser = "validuser";
+    private const string ValidPass = "validpass";
+
+    private readonly Mock<IUserContext> _mockUserContext;
+    private readonly Mock<ISecretProvider> _mockSecretProvider;
+
+    public ConnectionFactoryTests()
+    {
+        _mockUserContext = new Mock<IUserContext>();
+        _mockSecretProvider = new Mock<ISecretProvider>();
+    }
 
     private static DatabaseSettings CreateValidSettings() => new()
     {
         Host = "localhost",
         Port = 5432,
         Database = "testdb",
-        UserSecretName = "db-user",
-        PasswordSecretName = "db-password"
+        UserSecretName = UserSecretName,
+        PasswordSecretName = PasswordSecretName
     };
 
     // --- Constructor ---
@@ -25,11 +36,8 @@ public class ConnectionFactoryTests
     [Fact]
     public void Constructor_NullSettings_ThrowsArgumentNullException()
     {
-        // Arrange
-        DatabaseSettings? settings = null;
-
         // Act
-        var act = () => new ConnectionFactory(settings!, _mockUserContext.Object, _mockSecretProvider.Object);
+        var act = () => new ConnectionFactory(null!, _mockUserContext.Object, _mockSecretProvider.Object);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -69,7 +77,7 @@ public class ConnectionFactoryTests
     {
         // Arrange
         var settings = CreateValidSettings();
-        _mockSecretProvider.Setup(s => s.GetSecret("db-user")).Returns(string.Empty);
+        _mockSecretProvider.Setup(s => s.GetSecret(UserSecretName)).Returns(string.Empty);
 
         // Act
         var act = () => new ConnectionFactory(settings, _mockUserContext.Object, _mockSecretProvider.Object);
@@ -84,8 +92,8 @@ public class ConnectionFactoryTests
     {
         // Arrange
         var settings = CreateValidSettings();
-        _mockSecretProvider.Setup(s => s.GetSecret("db-user")).Returns("validuser");
-        _mockSecretProvider.Setup(s => s.GetSecret("db-password")).Returns(string.Empty);
+        _mockSecretProvider.Setup(s => s.GetSecret(UserSecretName)).Returns(ValidUser);
+        _mockSecretProvider.Setup(s => s.GetSecret(PasswordSecretName)).Returns(string.Empty);
 
         // Act
         var act = () => new ConnectionFactory(settings, _mockUserContext.Object, _mockSecretProvider.Object);
@@ -100,8 +108,8 @@ public class ConnectionFactoryTests
     {
         // Arrange
         var settings = CreateValidSettings();
-        _mockSecretProvider.Setup(s => s.GetSecret("db-user")).Returns("validuser");
-        _mockSecretProvider.Setup(s => s.GetSecret("db-password")).Returns("validpass");
+        _mockSecretProvider.Setup(s => s.GetSecret(UserSecretName)).Returns(ValidUser);
+        _mockSecretProvider.Setup(s => s.GetSecret(PasswordSecretName)).Returns(ValidPass);
 
         // Act
         var act = () => new ConnectionFactory(settings, _mockUserContext.Object, _mockSecretProvider.Object);
@@ -116,8 +124,8 @@ public class ConnectionFactoryTests
         // Arrange
         var settings = CreateValidSettings();
         settings.AdditionalParameters = "SslMode=Require;Pooling=true";
-        _mockSecretProvider.Setup(s => s.GetSecret("db-user")).Returns("validuser");
-        _mockSecretProvider.Setup(s => s.GetSecret("db-password")).Returns("validpass");
+        _mockSecretProvider.Setup(s => s.GetSecret(UserSecretName)).Returns(ValidUser);
+        _mockSecretProvider.Setup(s => s.GetSecret(PasswordSecretName)).Returns(ValidPass);
 
         // Act
         var act = () => new ConnectionFactory(settings, _mockUserContext.Object, _mockSecretProvider.Object);

@@ -23,10 +23,9 @@ namespace emc.camus.observability.otel.Logging
         /// <summary>
         /// Flushes and closes Serilog on application stop to ensure all logs are written.
         /// </summary>
-        public Task StopAsync(CancellationToken ct)
+        public async Task StopAsync(CancellationToken ct)
         {
-            Log.CloseAndFlush();
-            return Task.CompletedTask;
+            await Log.CloseAndFlushAsync();
         }
     }
 }

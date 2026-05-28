@@ -26,9 +26,9 @@ public class AuthenticateUserResponseExample
             Data = new AuthenticateUserResponse
             {
                 Token = "{{JWT_TOKEN_HERE}}",
-                ExpiresOn = DateTime.UtcNow.AddMinutes(60)
+                ExpiresOn = new DateTime(2026, 2, 14, 13, 0, 0, DateTimeKind.Utc)
             },
-            Timestamp = DateTime.UtcNow
+            Timestamp = new DateTime(2026, 2, 14, 12, 0, 0, DateTimeKind.Utc)
         };
     }
 }
