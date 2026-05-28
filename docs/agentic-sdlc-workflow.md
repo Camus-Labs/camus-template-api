@@ -49,6 +49,7 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 │  │  Gate:   Human reviews documentation updates                          │
 │  ▼                                                                       │
 │  Phase 7: QA TESTER ──────── @qa.tester                                  │
+│  │  ⚠ Only invoke with the LAST story of the feature                    │
 │  │  Input:  Story file with Technical Writer Handoff Gate complete       │
 │  │  Step 1: Full test suite + coverage gap analysis                      │
 │  │  Step 2: Write coverage tests (user-approved) + code review           │
@@ -56,6 +57,7 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 │  │  Gate:   Human confirms local validation passed                       │
 │  ▼                                                                       │
 │  Phase 8: RELEASE MANAGER ── @release_manager                            │
+│  │  ⚠ Only invoke with the LAST story of the feature                    │
 │  │  Input:  Story file with QA Tester Handoff Gate complete             │
 │  │  Step 1: Commit and push branch                                       │
 │  │  Step 2: Create PR to main                                            │
@@ -253,7 +255,11 @@ Approve before finalizing.
 
 ### Phase 7: QA Tester — `@qa.tester`
 
-**Invoke:** `@qa.tester` → provide the path to a story file after the Technical Writer phase completes.
+> **⚠ Feature-level gate:** Only invoke this phase with the **last user story** of the feature being released.
+> All preceding stories must have completed through Phase 6 (Technical Writer) before running QA on the final
+> story. This ensures the full test suite, coverage analysis, and local validation reflect the complete feature.
+
+**Invoke:** `@qa.tester` → provide the path to the **last** story file after the Technical Writer phase completes.
 
 Example: `@qa.tester #file:docs/stories/todo/user-profiles/US-01-create-profile.md`
 
@@ -282,7 +288,11 @@ stories moved to `done/`, QA Tester Handoff Report.
 
 ### Phase 8: Release Manager — `@release_manager`
 
-**Invoke:** `@release_manager` → provide the path to a story file after the QA Tester phase completes.
+> **⚠ Feature-level gate:** Only invoke this phase with the **last user story** of the feature being released.
+> The release encompasses all stories in the feature branch — the final story's QA gate confirms the entire
+> feature is validated and ready for PR, release, and deployment.
+
+**Invoke:** `@release_manager` → provide the path to the **last** story file after the QA Tester phase completes.
 
 Example: `@release_manager #file:docs/stories/todo/user-profiles/US-01-create-profile.md`
 
@@ -348,6 +358,9 @@ Handoff Report (Status: DONE | BLOCKED).
 - **Stories live in `todo/` during development** — agents create and update stories under `docs/stories/todo/`.
 - **Move stories to `done/` via `@qa.tester`** — the QA tester moves stories after local validation passes,
   before handing off to the release manager.
+- **QA and Release run only on the last story** — when a feature has multiple stories, run Phases 0–6 for each
+  story individually, then invoke Phase 7 (`@qa.tester`) and Phase 8 (`@release_manager`) only with the final
+  story. This ensures full-feature validation and a single cohesive release.
 - **The story file is the single source of truth** — all agents reference and update it.
 - **Any agent can run standalone** — useful for reviewing existing code outside the full workflow.
 - **`@concurrent.reviewer.copilot.customization`** maintains SDLC quality — run it when modifying agents,

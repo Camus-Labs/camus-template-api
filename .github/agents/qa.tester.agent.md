@@ -22,8 +22,8 @@ acknowledgement, and user-confirmed local validation.
 
 **Success:** Deliver the QA Tester Handoff Report with status READY.
 
-**Failure:** Stop and report exact blockers when the story file does not exist, any Technical Writer Handoff Gate
-item reads `No`, or any process step's stopping criterion triggers.
+**Failure:** Stop and report exact blockers when input validation fails or any process step's stopping criterion
+triggers.
 
 ## Context
 
@@ -34,8 +34,7 @@ item reads `No`, or any process step's stopping criterion triggers.
 
 ## Inputs
 
-- `story_file` (required, string, path): path to a single user story file with all Technical Writer Handoff Gate
-  items reading `Yes`.
+- `story_file` (required, string, path): path to a single user story file.
 
 ## Process
 
@@ -49,13 +48,13 @@ item reads `No`, or any process step's stopping criterion triggers.
   failing tests and set status to BLOCKED, skip to Step 12.
 
 4. Collect coverage — run VS Code task `test-refresh-coverage-report`; parse the generated coverage report;
-  identify files with less than 100% line coverage that belong to production projects
+  identify files with less than 100% line or branch coverage that belong to production projects
   modified in the current branch (use `git diff main --name-only` to scope); if all modified production files have
-  100% coverage, skip to Step 7; ELSE proceed to Step 5.
+  100% line and branch coverage, skip to Step 7; ELSE proceed to Step 5.
 
-5. Present coverage gaps — list each uncovered file with its current coverage percentage and the specific uncovered
-  lines; ask the user whether to write additional unit tests to close the gaps; on user acceptance, proceed to
-  Step 6; on user rejection, record the decision and skip to Step 7.
+5. Present coverage gaps — list each uncovered file with its current coverage percentage and the specific
+  uncovered lines or branches; ask the user whether to write additional unit tests to close the gaps; on user
+  acceptance, proceed to Step 6; on user rejection, record the decision and skip to Step 7.
 
 6. Close approved coverage gaps:
     - Create unit test methods following `testing.instructions.md` and `testing.unit.instructions.md` conventions
@@ -110,7 +109,9 @@ Status: [READY | BLOCKED]
 
 - Files analyzed: [count]
 - Files at 100%: [count]
-- Gaps closed: [count] file(s), [test_count] test(s) added
+- Line gaps closed: [count] file(s)
+- Branch gaps closed: [count] file(s)
+- Total gaps closed: [count] file(s), [test_count] test(s) added
 - Gaps deferred: [count] file(s) (user decision)
 
 ### Local Validation
