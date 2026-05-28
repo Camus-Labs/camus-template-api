@@ -170,70 +170,114 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 
 ### Test Traceability
 
-| AC    | Test Class      | Test Method                          | Layer                               | Change          |
-| ----- | --------------- | ------------------------------------ | ----------------------------------- | --------------- |
-| AC-01 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
-| AC-02 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
-| AC-03 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
+| AC    | Test Class                | Test Method                                           | Layer | Change |
+| ----- | ------------------------- | ----------------------------------------------------- | ----- | ------ |
+| AC-01 | RateLimitAttributeTests   | Constructor_ValidPolicyName_SetsProperty              | Api   | New    |
+| AC-01 | RateLimitAttributeTests   | Class_ResolvesFromApiFiltersNamespace                 | Api   | New    |
+| AC-02 | RateLimitAttributeTests   | Class_ResolvesFromApiFiltersNamespace                 | Api   | New    |
+| AC-03 | —                         | (verified by deletion — no test needed)               | —     | —      |
+| AC-04 | RateLimitAttributeTests   | Class_HasAttributeUsage_AllowsClassAndMethodTargets   | Api   | New    |
+| AC-04 | RateLimitAttributeTests   | Class_HasAttributeUsage_DisallowsMultiple             | Api   | New    |
+| AC-04 | RateLimitAttributeTests   | Class_HasAttributeUsage_IsInherited                   | Api   | New    |
+| AC-04 | RateLimitAttributeTests   | Constructor_InvalidPolicyName_ThrowsArgumentException | Api   | New    |
+| AC-05 | RateLimitingSettingsTests | (existing — uses RateLimitPolicies constants)         | Api   | —      |
 
 ### Skeleton Inventory
 
-| Layer                               | Stub File             | Change          | Types                      | Members                         |
-| ----------------------------------- | --------------------- | --------------- | -------------------------- | ------------------------------- |
-| [Domain, Application, Api, Adapter] | [src/.../FileName.cs] | [New, Modified] | [class, interface, record] | [method signatures, properties] |
+| Layer | Stub File                                                       | Change   | Types                          | Members                                                               |
+| ----- | --------------------------------------------------------------- | -------- | ------------------------------ | --------------------------------------------------------------------- |
+| Api   | src/Api/emc.camus.api/Filters/RateLimitAttribute.cs             | New      | class RateLimitAttribute       | `string PolicyName { get; }`, `RateLimitAttribute(string policyName)` |
+| Api   | src/Api/emc.camus.api/Configurations/RateLimitPolicies.cs       | New      | static class RateLimitPolicies | `const Default`, `const Strict`, `const Relaxed`, `string[] GetAll()` |
+| Api   | src/Api/emc.camus.api/Controllers/AuthController.cs             | Modified | —                              | Updated `using` → `emc.camus.api.Filters`                             |
+| Api   | src/Api/emc.camus.api/Controllers/ApiInfoController.cs          | Modified | —                              | Updated `using` → `emc.camus.api.Filters`                             |
+| Api   | src/Api/emc.camus.api/Extensions/RateLimitingSetupExtensions.cs | Modified | —                              | Added `using emc.camus.api.Filters`                                   |
+| Api   | src/Api/emc.camus.api/Configurations/RateLimitingSettings.cs    | Modified | —                              | Removed `using emc.camus.application.RateLimiting`                    |
 
 ### Tester Handoff Gate
 
-- Every acceptance criterion has at least one test method: `[Yes | No]`
-- Skeleton inventory complete and user-approved: `[Yes | No]`
-- Tests compile and fail for the right reason (TDD red): `[Yes | No]`
-- Ready for implementation: `[Yes | No]`
-- Tester sign-off: `[Name, Date]`
+- Every acceptance criterion has at least one test method: `Yes`
+- Skeleton inventory complete and user-approved: `Yes`
+- Tests compile and fail for the right reason (TDD red): `Yes`
+- Ready for implementation: `Yes`
+- Tester sign-off: `Unit Tester (Copilot), 2026-05-28`
 
 ### Regression Fixes Log
 
-| #   | Test File        | Test Method   | Change Made          | Reason                                  |
-| --- | ---------------- | ------------- | -------------------- | --------------------------------------- |
-| [n] | [test file path] | [method name] | [description of fix] | [contract change that caused the break] |
+| #   | Test File                                                                        | Test Method | Change Made                                                                               | Reason                                                                                        |
+| --- | -------------------------------------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| 1   | src/Test/emc.camus.api.test/Configurations/RateLimitingSettingsTests.cs          | (all)       | Removed `using emc.camus.application.RateLimiting`                                        | Ambiguous reference with new `emc.camus.api.Configurations.RateLimitPolicies`                 |
+| 2   | src/Test/emc.camus.api.integration.test/Common/MiddlewareHeadersInMemoryTests.cs | (all)       | Changed `using emc.camus.application.RateLimiting` → `using emc.camus.api.Configurations` | Namespace no longer exists after type relocation                                              |
+| 3   | src/Test/emc.camus.api.integration.test/Common/RateLimitingIpPartitionTests.cs   | (all)       | Changed `using emc.camus.application.RateLimiting` → `using emc.camus.api.Configurations` | Namespace no longer exists after type relocation                                              |
+| 4   | src/Test/emc.camus.application.test/RateLimiting/RateLimitAttributeTests.cs      | (all)       | Deleted file and folder                                                                   | Tests orphaned type that was relocated to API layer (new tests exist in `emc.camus.api.test`) |
 
 ### Developer Handoff Gate
 
-- All unit tests pass (TDD green): `[Yes | No]`
-- All existing integration tests pass: `[Yes | No]`
-- Regression fixes documented (if any): `[Yes | N/A]`
-- Build succeeds with zero warnings: `[Yes | No]`
-- Ready for code review: `[Yes | No]`
-- Developer sign-off: `[Name, Date]`
+- All unit tests pass (TDD green): `Yes`
+- All existing integration tests pass: `Yes`
+- Regression fixes documented (if any): `Yes`
+- Build succeeds with zero warnings: `Yes`
+- Ready for code review: `Yes`
+- Developer sign-off: `3M0R4C, 2026-05-28`
 
 ## Section D - Integration Testing
 
 ### Integration Test Traceability
 
-| Boundary               | Factory              | Test Class      | Test Method                          | Change                    |
-| ---------------------- | -------------------- | --------------- | ------------------------------------ | ------------------------- |
-| [cross-layer boundary] | [factory class name] | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [New, Modified, Existing] |
+| Boundary                                                   | Factory                | Test Class                     | Test Method                                                                                   | Change   |
+| ---------------------------------------------------------- | ---------------------- | ------------------------------ | --------------------------------------------------------------------------------------------- | -------- |
+| HTTP → Controller `[RateLimit]` → Rate Limiting Middleware | ApiRateLimitingFactory | RateLimitingIpPartitionTests   | SameIp_ExceedsPermitLimit_Returns429WithErrorCodeAndHeaders                                   | Existing |
+| HTTP → Controller `[RateLimit]` → Rate Limiting Middleware | ApiRateLimitingFactory | RateLimitingIpPartitionTests   | DifferentIps_SameEndpoint_HaveIndependentRateLimitBuckets                                     | Existing |
+| HTTP → Controller `[RateLimit]` → Rate Limiting Middleware | ApiRateLimitingFactory | RateLimitingIpPartitionTests   | ExhaustedIp_SameEndpoint_RemainsThrottled                                                     | Existing |
+| HTTP → Middleware pipeline → RateLimitPolicies constants   | ApiInMemoryFactory     | MiddlewareHeadersInMemoryTests | AnonymousRequest_ResponseHeaders_ContainSecurityTraceRateLimitAndAnonymousUsername            | Existing |
+| HTTP → Middleware pipeline → RateLimitPolicies constants   | ApiInMemoryFactory     | MiddlewareHeadersInMemoryTests | AuthenticatedJwtRequest_ResponseHeaders_ContainSecurityTraceRateLimitAndAuthenticatedUsername | Existing |
 
 ### Integration Test Findings
 
-| #   | Test          | Failure               | Root Cause Analysis | Affected File          |
-| --- | ------------- | --------------------- | ------------------- | ---------------------- |
-| [n] | [test method] | [failure description] | [analysis]          | [production file path] |
+| #   | Test | Failure | Root Cause Analysis | Affected File |
+| --- | ---- | ------- | ------------------- | ------------- |
+| —   | —    | —       | No failures         | —             |
 
 ### Integration Tester Handoff Gate
 
-- All cross-layer boundaries identified and covered: `[Yes | No]`
-- All integration tests pass: `[Yes | No]`
-- No unresolved production code findings: `[Yes | No]`
-- Ready for review: `[Yes | No]`
-- Integration Tester sign-off: `[Name, Date]`
+- All cross-layer boundaries identified and covered: `Yes`
+- All integration tests pass: `Yes`
+- No unresolved production code findings: `Yes`
+- Ready for review: `Yes`
+- Integration Tester sign-off: `Integration Tester (Copilot), 2026-05-28`
 
 ## Section E - Technical Writer
 
 ### Version Update
 
-- Previous version: `[X.X.X]`
-- New version: `[X.X.X]`
-- Bump type: `[MAJOR | MINOR | PATCH | APPEND]`
-- Reason: `[one-sentence justification]`
+- Previous version: `1.0.1`
+- New version: `1.0.1`
+- Bump type: `APPEND`
+- Reason: `Appended to existing 1.0.1 release — internal contract relocation with no API surface change`
 
 ### CHANGELOG Entry
+
+```markdown
+### Changed
+
+- Relocate rate-limiting contracts (`RateLimitAttribute`, `RateLimitPolicies`) from Application layer to API layer
+```
+
+### Documentation Updates
+
+- Swagger annotations updated: 0 endpoint(s)
+- Postman requests updated: 0 request(s)
+- Files modified: `CHANGELOG.md`
+
+### Technical Writer Handoff Gate
+
+- Version in Directory.Build.props matches confirmed decision: `Yes`
+- CHANGELOG entry matches new version and date: `Yes`
+- Swagger examples reflect new/changed endpoints: `N/A`
+- Postman collection reflects new/changed requests: `N/A`
+- Markdown linting passes with zero errors: `Yes`
+- Build succeeds with zero errors and warnings: `Yes`
+- Technical Writer sign-off: `Technical Writer (Copilot), 2026-05-28`
+
+### Status
+
+`DOCUMENTED`

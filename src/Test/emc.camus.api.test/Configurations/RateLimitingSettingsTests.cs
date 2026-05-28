@@ -1,6 +1,5 @@
 using FluentAssertions;
 using emc.camus.api.Configurations;
-using emc.camus.application.RateLimiting;
 
 namespace emc.camus.api.test.Configurations;
 

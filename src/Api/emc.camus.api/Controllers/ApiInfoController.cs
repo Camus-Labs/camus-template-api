@@ -5,7 +5,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using emc.camus.application.Observability;
 using emc.camus.application.ApiInfo;
 using Microsoft.AspNetCore.Authorization;
-using emc.camus.application.RateLimiting;
+using emc.camus.api.Filters;
 using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V1;
 using emc.camus.api.Mapping.V1;

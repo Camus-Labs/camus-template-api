@@ -4,9 +4,10 @@ using emc.camus.api.Configurations;
 using emc.camus.api.Infrastructure;
 using emc.camus.api.Metrics;
 using emc.camus.api.Middleware;
+using emc.camus.api.Filters;
 using emc.camus.application.Common;
 using emc.camus.application.Exceptions;
-using emc.camus.application.RateLimiting;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration;

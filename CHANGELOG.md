@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Relocate rate-limiting feature from Adapters layer into the API layer to clarify architectural boundaries
 - Rename `InMemoryRateLimitingSettings` configuration section to `RateLimitingSettings`
+- Relocate rate-limiting contracts (`RateLimitAttribute`, `RateLimitPolicies`) from Application layer to API layer
 
 ### Removed
 

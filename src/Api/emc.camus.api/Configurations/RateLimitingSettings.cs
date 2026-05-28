@@ -1,5 +1,3 @@
-using emc.camus.application.RateLimiting;
-
 namespace emc.camus.api.Configurations;
 
 /// <summary>
