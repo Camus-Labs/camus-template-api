@@ -239,6 +239,25 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
             .Which.StatusCode.Should().Be(201);
     }
 
+    [Fact]
+    public async Task OnResourceExecutionAsync_CacheHitWithNullBody_ReturnsObjectResultWithNullValue()
+    {
+        // Arrange — cache returns response with null body (e.g., original 204 No Content)
+        var cachedResponse = new CachedResponse(204, null, ComputeHash(TestRequestBody));
+        _mockCache.Setup(c => c.TryGet(It.IsAny<string>())).Returns(cachedResponse);
+
+        var httpContext = CreateHttpContextWithIdempotencyKey(TestIdempotencyKey);
+        var context = CreateResourceExecutingContext(httpContext);
+
+        // Act
+        await _filter.OnResourceExecutionAsync(context, ResourceExecutionDelegateFactory.CreateNextDelegate());
+
+        // Assert
+        var objectResult = context.Result.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(204);
+        objectResult.Value.Should().BeNull();
+    }
+
     // --- AC-03: Same key, same user, different body returns 409 ---
 
     [Fact]

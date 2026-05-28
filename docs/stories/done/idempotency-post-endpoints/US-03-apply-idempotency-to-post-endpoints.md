@@ -292,3 +292,37 @@ validation and response caching as defined by the idempotency infrastructure`.
 - Build succeeds with zero errors and warnings: `Yes`
 - Ready for review: `Yes`
 - Technical Writer sign-off: `Technical Writer, 2026-05-17`
+
+## Section F - QA Tester
+
+### Test Suite
+
+- Unit tests: `1084` passed, `0` failed
+- Integration tests: `61` passed, `0` failed
+- Full suite: `PASS`
+
+### Coverage
+
+- Files analyzed: `12`
+- Files at 100%: `12`
+- Gaps closed: `12` file(s), `28` test(s) added
+- Gaps deferred: `0` file(s) (user decision)
+
+### Local Validation
+
+- User confirmed: `Yes`
+- Issues reported: `None`
+
+### Stories Moved
+
+- `US-03-apply-idempotency-to-post-endpoints.md` → `docs/stories/done/idempotency-post-endpoints/`
+
+### QA Tester Handoff Gate
+
+- All handoff gates (A through E) pass: `Yes`
+- Full test suite passes: `Yes`
+- Coverage gaps addressed or acknowledged: `Yes`
+- Local validation confirmed by user: `Yes`
+- Stories moved to done: `Yes`
+- Ready for release: `Yes`
+- QA Tester sign-off: `QA Tester, 2026-05-27`

@@ -119,4 +119,33 @@ public class GenerateTokenCommandTests
         { InvalidPermissionOnly, "invalid.permission" },
         { MixedWithInvalidPermission, "nonexistent.perm" }
     };
+
+    [Theory]
+    [InlineData("with.dot")]
+    [InlineData("with-dash")]
+    [InlineData("with_underscore")]
+    [InlineData("all.3-types_ok")]
+    public void Constructor_SuffixWithAllowedSpecialCharacters_SetsProperty(string suffix)
+    {
+        // Act
+        var command = new GenerateTokenCommand(suffix, ValidExpiration, ValidPermissions.ToList());
+
+        // Assert
+        command.UsernameSuffix.Should().Be(suffix);
+    }
+
+    [Theory]
+    [InlineData("has space")]
+    [InlineData("has@symbol")]
+    [InlineData("has/slash")]
+    public void Constructor_SuffixWithInvalidCharacters_ThrowsArgumentException(string suffix)
+    {
+        // Act
+        var act = () => new GenerateTokenCommand(suffix, ValidExpiration, ValidPermissions.ToList());
+
+        // Assert
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*invalid characters*")
+            .And.ParamName.Should().Be("UsernameSuffix");
+    }
 }

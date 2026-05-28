@@ -434,4 +434,53 @@ public class ActivitySourceWrapperTests : IDisposable
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
     }
+
+    // --- ActivityCancelled ---
+
+    [Fact]
+    public void ActivityCancelled_WithActivity_SetsErrorStatusAndAddsEvent()
+    {
+        // Arrange
+        using var activity = _wrapper.StartActivity(TestOperationName, OperationType.Read);
+
+        // Act
+        _wrapper.ActivityCancelled(activity);
+
+        // Assert
+        activity!.GetTagItem(OtelStatusCodeTag).Should().Be("ERROR");
+        activity.GetTagItem("otel.status_description").Should().Be("Operation cancelled.");
+        activity.Events.Should().ContainSingle(e => e.Name == "cancelled");
+    }
+
+    [Fact]
+    public void ActivityCancelled_NullActivity_DoesNotThrow()
+    {
+        // Act
+        var act = () => _wrapper.ActivityCancelled(null);
+
+        // Assert
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public async Task StartActivityAndRunAsync_CancelledFunc_RethrowsAndSetsCancelledStatus()
+    {
+        // Arrange
+        Activity? capturedActivity = null;
+
+        // Act
+        var act = async () =>
+        {
+            await _wrapper.StartActivityAndRunAsync<int>(TestOperationName, OperationType.Read, activity =>
+            {
+                capturedActivity = activity;
+                throw new OperationCanceledException("cancelled");
+            });
+        };
+
+        // Assert
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        capturedActivity!.GetTagItem(OtelStatusCodeTag).Should().Be("ERROR");
+        capturedActivity.Events.Should().ContainSingle(e => e.Name == "cancelled");
+    }
 }

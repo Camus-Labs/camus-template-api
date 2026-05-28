@@ -90,7 +90,7 @@ internal sealed partial class TokenRevocationSyncService : BackgroundService
         {
             await RunSyncCycleAsync(stoppingToken);
 
-            while (!stoppingToken.IsCancellationRequested)
+            while (true)
             {
                 await Task.Delay(interval, _timeProvider, stoppingToken);
                 await RunSyncCycleAsync(stoppingToken);

@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Time.Testing;
 using Microsoft.IdentityModel.Tokens;
 using emc.camus.security.jwt.Configurations;
+using emc.camus.security.jwt.Exceptions;
 using emc.camus.security.jwt.Services;
 
 namespace emc.camus.security.jwt.test.Services;
@@ -277,5 +278,23 @@ public class JwtTokenGeneratorTests
 
         // Assert
         act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void GenerateToken_SigningFailure_ThrowsJwtTokenGenerationException()
+    {
+        // Arrange — symmetric key paired with RSA algorithm causes signing failure
+        var shortKey = new SymmetricSecurityKey(new byte[16]);
+        var invalidCredentials = new SigningCredentials(shortKey, SecurityAlgorithms.RsaSha256);
+
+        var generator = new JwtTokenGenerator(_jwtSettings, invalidCredentials, _timeProvider);
+
+        // Act
+        var act = () => generator.GenerateToken(ValidUserId, ValidUsername, ValidJti, ValidExpiresOn);
+
+        // Assert
+        act.Should().Throw<JwtTokenGenerationException>()
+            .WithMessage("Failed to generate JWT token.")
+            .Which.InnerException.Should().NotBeNull();
     }
 }

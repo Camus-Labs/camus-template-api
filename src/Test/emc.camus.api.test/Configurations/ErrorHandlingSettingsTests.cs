@@ -82,4 +82,21 @@ public class ErrorHandlingSettingsTests
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*ErrorCode*null*empty*");
     }
+
+    [Fact]
+    public void Validate_NullElementInAdditionalRules_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var settings = new ErrorHandlingSettings
+        {
+            AdditionalRules = [new() { Type = "SomeType", ErrorCode = "valid" }, null!]
+        };
+
+        // Act
+        var act = () => settings.Validate();
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*AdditionalRules*null*");
+    }
 }

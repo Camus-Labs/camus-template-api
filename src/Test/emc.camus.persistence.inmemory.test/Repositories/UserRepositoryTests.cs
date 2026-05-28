@@ -1,5 +1,6 @@
 using FluentAssertions;
 using emc.camus.application.Auth;
+using emc.camus.application.Exceptions;
 using emc.camus.application.Secrets;
 using emc.camus.persistence.inmemory.Configurations;
 using emc.camus.persistence.inmemory.Repositories;
@@ -156,6 +157,35 @@ public class UserRepositoryTests
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage(expectedMessage);
+    }
+
+    [Fact]
+    public async Task InitializeAsync_DuplicateResolvedUsername_ThrowsDataConflictException()
+    {
+        // Arrange
+        var duplicateUsers = new List<UserSettings>
+        {
+            new() { UsernameSecretName = AdminUsernameSecret, PasswordSecretName = AdminPasswordSecret, Roles = AdminRoleNames },
+            new() { UsernameSecretName = ReaderUsernameSecret, PasswordSecretName = ReaderPasswordSecret, Roles = AdminRoleNames }
+        };
+        var settings = new InMemoryModelSettings
+        {
+            Roles = AdminAndReaderRoles,
+            Users = duplicateUsers,
+            ApiInfos = EmptyApiInfos
+        };
+        SetupSecretProvider(AdminUsernameSecret, TestUsername);
+        SetupSecretProvider(AdminPasswordSecret, TestPassword);
+        SetupSecretProvider(ReaderUsernameSecret, TestUsername);
+        SetupSecretProvider(ReaderPasswordSecret, ReaderPassword);
+        var repository = new UserRepository(settings, _mockSecretProvider.Object);
+
+        // Act
+        var act = () => repository.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await act.Should().ThrowAsync<DataConflictException>()
+            .WithMessage("*Duplicate*username*");
     }
 
     // --- ValidateCredentialsAsync ---

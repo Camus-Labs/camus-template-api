@@ -71,7 +71,7 @@ internal sealed class UserRepository : IUserRepository
 
         string[] requiredTables = ["users", "roles", "user_roles", "role_permissions"];
         var missingTables = requiredTables
-            .Where(table => !tableStatus.TryGetValue(table, out var exists) || !exists)
+            .Where(table => !tableStatus[table])
             .ToList();
 
         if (missingTables.Count > 0)

@@ -39,9 +39,9 @@ public class HttpUserContextTests
     private static HttpUserContext CreateContextWithNullUser()
     {
         var mockAccessor = new Mock<IHttpContextAccessor>();
-        var httpContext = new DefaultHttpContext();
-        httpContext.User = null!;
-        mockAccessor.Setup(x => x.HttpContext).Returns(httpContext);
+        var mockHttpContext = new Mock<HttpContext>();
+        mockHttpContext.Setup(x => x.User).Returns((ClaimsPrincipal)null!);
+        mockAccessor.Setup(x => x.HttpContext).Returns(mockHttpContext.Object);
         return new HttpUserContext(mockAccessor.Object);
     }
 
@@ -100,6 +100,7 @@ public class HttpUserContextTests
         CreateContext(hasHttpContext: false),
         CreateContextWithNullUser(),
         CreateContext(new ClaimsPrincipal()),
+        CreateContext(new ClaimsPrincipal(new ClaimsIdentity())),
         CreateContext(new ClaimsPrincipal(
             new ClaimsIdentity(NotAGuidIdentifierClaims, "TestAuth"))),
         CreateContext(new ClaimsPrincipal(
@@ -139,7 +140,8 @@ public class HttpUserContextTests
         CreateContext(),
         CreateContext(hasHttpContext: false),
         CreateContextWithNullUser(),
-        CreateContext(new ClaimsPrincipal())
+        CreateContext(new ClaimsPrincipal()),
+        CreateContext(new ClaimsPrincipal(new ClaimsIdentity()))
     };
 
     [Theory]
@@ -177,7 +179,8 @@ public class HttpUserContextTests
         CreateContext(),
         CreateContext(hasHttpContext: false),
         CreateContextWithNullUser(),
-        CreateContext(new ClaimsPrincipal())
+        CreateContext(new ClaimsPrincipal()),
+        CreateContext(new ClaimsPrincipal(new ClaimsIdentity()))
     };
 
     [Theory]

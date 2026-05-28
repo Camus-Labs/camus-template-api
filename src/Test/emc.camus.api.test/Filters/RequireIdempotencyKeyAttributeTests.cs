@@ -34,4 +34,18 @@ public class RequireIdempotencyKeyAttributeTests
         act.Should().Throw<ArgumentException>()
             .And.ParamName.Should().Be("policyName");
     }
+
+    [Theory]
+    [InlineData("unknown")]
+    [InlineData("custom-policy")]
+    public void Constructor_UnrecognizedPolicyName_ThrowsArgumentException(string policyName)
+    {
+        // Act
+        var act = () => new RequireIdempotencyKeyAttribute(policyName);
+
+        // Assert
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*not a recognized idempotency policy*")
+            .And.ParamName.Should().Be("policyName");
+    }
 }

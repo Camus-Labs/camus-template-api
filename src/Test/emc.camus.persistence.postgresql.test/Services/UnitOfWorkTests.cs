@@ -2,6 +2,7 @@ using System.Data;
 using System.Data.Common;
 using FluentAssertions;
 using Moq.Protected;
+using emc.camus.persistence.postgresql.Exceptions;
 using emc.camus.persistence.postgresql.Services;
 
 namespace emc.camus.persistence.postgresql.test.Services;
@@ -209,5 +210,69 @@ public class UnitOfWorkTests : IDisposable
         // Assert
         _mockTransaction.Verify(t => t.DisposeAsync(), Times.Once);
         _mockConnection.Verify(c => c.DisposeAsync(), Times.Once);
+    }
+
+    // --- Exception Wrapping ---
+
+    [Fact]
+    public async Task BeginTransactionAsync_ConnectionThrows_ThrowsDatabaseQueryException()
+    {
+        // Arrange
+        _mockConnection.Protected()
+            .Setup<ValueTask<DbTransaction>>(BeginDbTransactionAsyncMethod,
+                ItExpr.IsAny<IsolationLevel>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("connection broken"));
+
+        // Act
+        var act = () => _unitOfWork.BeginTransactionAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await act.Should().ThrowAsync<DatabaseQueryException>()
+            .WithMessage("*begin*transaction*");
+    }
+
+    [Fact]
+    public async Task CommitAsync_TransactionThrows_ThrowsDatabaseQueryException()
+    {
+        // Arrange
+        _mockConnection.Protected()
+            .Setup<ValueTask<DbTransaction>>(BeginDbTransactionAsyncMethod,
+                ItExpr.IsAny<IsolationLevel>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns(new ValueTask<DbTransaction>(_mockTransaction.Object));
+        await _unitOfWork.BeginTransactionAsync(TestContext.Current.CancellationToken);
+        _mockTransaction
+            .Setup(t => t.CommitAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("commit failed"));
+
+        // Act
+        var act = () => _unitOfWork.CommitAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await act.Should().ThrowAsync<DatabaseQueryException>()
+            .WithMessage("*commit*transaction*");
+    }
+
+    [Fact]
+    public async Task RollbackAsync_TransactionThrows_ThrowsDatabaseQueryException()
+    {
+        // Arrange
+        _mockConnection.Protected()
+            .Setup<ValueTask<DbTransaction>>(BeginDbTransactionAsyncMethod,
+                ItExpr.IsAny<IsolationLevel>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns(new ValueTask<DbTransaction>(_mockTransaction.Object));
+        await _unitOfWork.BeginTransactionAsync(TestContext.Current.CancellationToken);
+        _mockTransaction
+            .Setup(t => t.RollbackAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("rollback failed"));
+
+        // Act
+        var act = () => _unitOfWork.RollbackAsync();
+
+        // Assert
+        await act.Should().ThrowAsync<DatabaseQueryException>()
+            .WithMessage("*roll back*transaction*");
     }
 }

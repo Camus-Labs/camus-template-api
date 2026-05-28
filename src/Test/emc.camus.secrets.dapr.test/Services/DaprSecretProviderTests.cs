@@ -260,6 +260,21 @@ public class DaprSecretProviderTests
             .WithMessage("*not found*response*dictionary*");
     }
 
+    [Fact]
+    public async Task LoadSecretsAsync_InvalidJsonResponse_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, "not valid json {{");
+        var provider = CreateProvider(handler: handler);
+
+        // Act
+        var act = () => provider.LoadSecretsAsync(SingleValidSecretName, TestContext.Current.CancellationToken);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*not valid JSON*");
+    }
+
     [Theory]
     [InlineData(EmptyString)]
     [InlineData(WhitespaceOnly)]
@@ -354,6 +369,37 @@ public class DaprSecretProviderTests
 
         // Assert
         await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task CheckConnectivityAsync_ClientErrorStatusCode_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var handler = new FakeHttpMessageHandler(HttpStatusCode.Forbidden, "");
+        var provider = CreateProvider(handler: handler);
+
+        // Act
+        var act = () => provider.CheckConnectivityAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Failed*check*connectivity*403*");
+    }
+
+    [Fact]
+    public async Task CheckConnectivityAsync_ServerErrorStatusCode_ThrowsDaprSecretStoreException()
+    {
+        // Arrange
+        var handler = new FakeHttpMessageHandler(HttpStatusCode.InternalServerError, "");
+        var provider = CreateProvider(handler: handler);
+
+        // Act
+        var act = () => provider.CheckConnectivityAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        (await act.Should().ThrowAsync<DaprSecretStoreException>()
+            .WithMessage("*Failed*check*connectivity*"))
+            .And.InnerException.Should().BeOfType<HttpRequestException>();
     }
 
     [Fact]
