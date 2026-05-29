@@ -80,6 +80,9 @@ Handoff Gate contains any `No` item, or any iteration loop (build-fix, review-fi
 9. Produce the Developer Handoff Report by filling in the output template with the Developer Handoff Gate evaluation
   results from the story file, the developer name from `git config user.name`, and the current date; stop.
 
+10. Populate Section C in the story file — fill the Regression Fixes Log table with Step 8 processing, evaluate and set
+  each Developer Handoff Gate, set Developer sign-off from `git config user.name`, and the current date; stop.
+
 ## Rules
 
 - MUST follow dependency direction Domain → Application → Database Schema → API → Adapters.

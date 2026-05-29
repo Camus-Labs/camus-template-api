@@ -5,6 +5,7 @@
 - Story ID: `US-04`
 - Feature Slug: `api-feature-boundary-refactor`
 - Story Slug: `relocate-swagger-documentation`
+- Status: `DOCUMENTED`
 - Request Date: `2026-05-27`
 - Requested By: `Tech Lead`
 
@@ -91,7 +92,7 @@ feature, not a swappable infrastructure adapter behind an Application port`.
 - Dependencies and constraints identified: `Yes`
 - Risks and open questions documented: `Yes`
 - Ready for architecture handoff: `Yes`
-- Product Owner sign-off: `Tech Lead, 2026-05-27`
+- Product Owner sign-off: `3M0R4C, 2026-05-27`
 
 ## Section B - Architect Definition
 
@@ -159,31 +160,44 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Cross-cutting concern decisions addressed: `Yes`
 - Rollout and rollback strategies defined: `Yes`
 - Ready for implementation: `Yes`
-- Architect sign-off: `Copilot Architect, 2026-05-27`
+- Architect sign-off: `3M0R4C, 2026-05-27`
 
 ## Section C - Implementation Tracking
 
 ### Test Traceability
 
-| AC    | Test Class      | Test Method                          | Layer                               | Change          |
-| ----- | --------------- | ------------------------------------ | ----------------------------------- | --------------- |
-| AC-01 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
-| AC-02 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
-| AC-03 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
+| AC    | Test Class              | Test Method                                                                    | Layer | Change |
+| ----- | ----------------------- | ------------------------------------------------------------------------------ | ----- | ------ |
+| AC-01 | SwaggerSettingsTests    | Validate_ValidSettings_DoesNotThrow                                            | Api   | New    |
+| AC-01 | ApiVersionSettingsTests | Validate_AllPropertiesValid_DoesNotThrow                                       | Api   | New    |
+| AC-02 | SwaggerSettingsTests    | Validate_NullVersions_ThrowsInvalidOperationException                          | Api   | New    |
+| AC-02 | ApiVersionSettingsTests | Validate_InvalidVersion_ThrowsInvalidOperationException                        | Api   | New    |
+| AC-03 | SwaggerSettingsTests    | Validate_EnabledWithEmptyVersions_ThrowsInvalidOperationException              | Api   | New    |
+| AC-03 | SwaggerSettingsTests    | Validate_EnabledWithNullVersionEntry_ThrowsInvalidOperationException           | Api   | New    |
+| AC-03 | SwaggerSettingsTests    | Validate_EnabledWithInvalidVersionEntry_ThrowsInvalidOperationException        | Api   | New    |
+| AC-03 | SwaggerSettingsTests    | Validate_NullSecuritySchemes_ThrowsInvalidOperationException                   | Api   | New    |
+| AC-03 | SwaggerSettingsTests    | Validate_EnabledWithEmptyOrNullSchemeEntry_ThrowsInvalidOperationException     | Api   | New    |
+| AC-03 | SwaggerSettingsTests    | Validate_EnabledWithInvalidScheme_ThrowsInvalidOperationException              | Api   | New    |
+| AC-03 | SwaggerSettingsTests    | Validate_EnabledWithValidScheme_DoesNotThrow                                   | Api   | New    |
+| AC-04 | ApiVersionSettingsTests | Validate_InvalidTitle_ThrowsInvalidOperationException                          | Api   | New    |
+| AC-04 | ApiVersionSettingsTests | Validate_InvalidDescription_ThrowsInvalidOperationException                    | Api   | New    |
 
 ### Skeleton Inventory
 
-| Layer                               | Stub File             | Change          | Types                      | Members                         |
-| ----------------------------------- | --------------------- | --------------- | -------------------------- | ------------------------------- |
-| [Domain, Application, Api, Adapter] | [src/.../FileName.cs] | [New, Modified] | [class, interface, record] | [method signatures, properties] |
+| Layer | Stub File                                                           | Change | Types                                                                       | Members                                              |
+| ----- | ------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Api   | src/Api/emc.camus.api/Configurations/SwaggerSettings.cs             | New    | public sealed class SwaggerSettings                                         | Enabled, Versions, SecuritySchemes, Validate()       |
+| Api   | src/Api/emc.camus.api/Configurations/ApiVersionSettings.cs          | New    | public sealed class ApiVersionSettings                                      | Version, Title, Description, Validate()              |
+| Api   | src/Api/emc.camus.api/Extensions/SwaggerSetupExtensions.cs          | New    | internal static class SwaggerDocumentationSetupExtensions                   | AddSwaggerDocumentation(), UseSwaggerDocumentation() |
+| Api   | src/Api/emc.camus.api/Filters/DefaultApiResponsesOperationFilter.cs | New    | internal sealed class DefaultApiResponsesOperationFilter : IOperationFilter | Apply()                                              |
 
 ### Tester Handoff Gate
 
-- Every acceptance criterion has at least one test method: `[Yes | No]`
-- Skeleton inventory complete and user-approved: `[Yes | No]`
-- Tests compile and fail for the right reason (TDD red): `[Yes | No]`
-- Ready for implementation: `[Yes | No]`
-- Tester sign-off: `[Name, Date]`
+- Every acceptance criterion has at least one test method: `Yes`
+- Skeleton inventory complete and user-approved: `Yes`
+- Tests compile and fail for the right reason (TDD red): `Yes`
+- Ready for implementation: `Yes`
+- Tester sign-off: `3M0R4C, 2026-05-29`
 
 ### Regression Fixes Log
 
@@ -193,42 +207,75 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 
 ### Developer Handoff Gate
 
-- All unit tests pass (TDD green): `[Yes | No]`
-- All existing integration tests pass: `[Yes | No]`
-- Regression fixes documented (if any): `[Yes | N/A]`
-- Build succeeds with zero warnings: `[Yes | No]`
-- Ready for code review: `[Yes | No]`
-- Developer sign-off: `[Name, Date]`
+- All unit tests pass (TDD green): `Yes`
+- All existing integration tests pass: `Yes`
+- Regression fixes documented (if any): `N/A`
+- Build succeeds with zero warnings: `Yes`
+- Ready for code review: `Yes`
+- Developer sign-off: `3M0R4C, 2026-05-29`
 
 ## Section D - Integration Testing
 
 ### Integration Test Traceability
 
-| Boundary               | Factory              | Test Class      | Test Method                          | Change                    |
-| ---------------------- | -------------------- | --------------- | ------------------------------------ | ------------------------- |
-| [cross-layer boundary] | [factory class name] | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [New, Modified, Existing] |
+| Boundary                                          | Factory           | Test Class                        | Test Method                                             | Change |
+| ------------------------------------------------- | ----------------- | --------------------------------- | ------------------------------------------------------- | ------ |
+| HTTP → Swagger pipeline → OpenAPI JSON generation | ApiSwaggerFactory | SwaggerDocumentationInMemoryTests | GetSwaggerJson_V1Enabled_ReturnsValidOpenApiDocument    | New    |
 
 ### Integration Test Findings
 
-| #   | Test          | Failure               | Root Cause Analysis | Affected File          |
-| --- | ------------- | --------------------- | ------------------- | ---------------------- |
-| [n] | [test method] | [failure description] | [analysis]          | [production file path] |
+| #   | Test | Failure | Root Cause Analysis | Affected File |
+| --- | ---- | ------- | ------------------- | ------------- |
+| —   | —    | —       | No failures         | —             |
 
 ### Integration Tester Handoff Gate
 
-- All cross-layer boundaries identified and covered: `[Yes | No]`
-- All integration tests pass: `[Yes | No]`
-- No unresolved production code findings: `[Yes | No]`
-- Ready for review: `[Yes | No]`
-- Integration Tester sign-off: `[Name, Date]`
+- All cross-layer boundaries identified and covered: `Yes`
+- All integration tests pass: `Yes`
+- No unresolved production code findings: `Yes`
+- Ready for review: `Yes`
+- Integration Tester sign-off: `3M0R4C, 2026-05-29`
 
 ## Section E - Technical Writer
 
 ### Version Update
 
-- Previous version: `[X.X.X]`
-- New version: `[X.X.X]`
-- Bump type: `[MAJOR | MINOR | PATCH | APPEND]`
-- Reason: `[one-sentence justification]`
+- Previous version: `1.0.1`
+- New version: `1.0.1`
+- Bump type: `APPEND`
+- Reason: `Appended to existing 1.0.1 section as part of the same api-feature-boundary-refactor release`
 
 ### CHANGELOG Entry
+
+```markdown
+## [1.0.1] - 2026-05-28
+
+### Changed
+
+- Relocate Swagger/OpenAPI documentation feature from Adapters layer into the API layer to clarify architectural boundaries
+
+### Removed
+
+- Remove `emc.camus.documentation.swagger` adapter project from the solution
+```
+
+### Documentation Updates
+
+- Swagger annotations updated: `0` endpoint(s)
+- Postman requests updated: `0` request(s)
+- XML documentation added: `0` public API(s)
+- Files modified:
+  - `CHANGELOG.md`
+  - `docs/stories/todo/api-feature-boundary-refactor/US-04-relocate-swagger-documentation.md`
+
+### Technical Writer Handoff Gate
+
+- Version in Directory.Build.props matches confirmed decision: `Yes`
+- CHANGELOG entry matches new version and date: `Yes`
+- Swagger examples reflect new/changed endpoints: `N/A`
+- Postman collection reflects new/changed requests: `N/A`
+- XML documentation covers new public APIs: `N/A`
+- Markdown linting passes with zero errors: `Yes`
+- Build succeeds with zero errors and warnings: `Yes`
+- Ready for review: `Yes`
+- Technical Writer sign-off: `3M0R4C, 2026-05-29`

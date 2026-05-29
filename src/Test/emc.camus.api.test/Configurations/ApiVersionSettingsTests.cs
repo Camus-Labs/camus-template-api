@@ -1,0 +1,92 @@
+using FluentAssertions;
+using emc.camus.api.Configurations;
+
+namespace emc.camus.api.test.Configurations;
+
+public class ApiVersionSettingsTests
+{
+    // --- AC-04: Version configuration validates correctly for OpenAPI spec output ---
+
+    [Fact]
+    public void Validate_AllPropertiesValid_DoesNotThrow()
+    {
+        // Arrange
+        var settings = CreateValidSettings();
+
+        // Act
+        var act = () => settings.Validate();
+
+        // Assert
+        act.Should().NotThrow();
+    }
+
+    // --- Version validation ---
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Validate_InvalidVersion_ThrowsInvalidOperationException(string? version)
+    {
+        // Arrange
+        var settings = CreateValidSettings();
+        settings.Version = version!;
+
+        // Act
+        var act = () => settings.Validate();
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Version*null*empty*");
+    }
+
+    // --- Title validation ---
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Validate_InvalidTitle_ThrowsInvalidOperationException(string? title)
+    {
+        // Arrange
+        var settings = CreateValidSettings();
+        settings.Title = title!;
+
+        // Act
+        var act = () => settings.Validate();
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Title*null*empty*");
+    }
+
+    // --- Description validation ---
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Validate_InvalidDescription_ThrowsInvalidOperationException(string? description)
+    {
+        // Arrange
+        var settings = CreateValidSettings();
+        settings.Description = description!;
+
+        // Act
+        var act = () => settings.Validate();
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Description*null*empty*");
+    }
+
+    private static ApiVersionSettings CreateValidSettings()
+    {
+        return new ApiVersionSettings
+        {
+            Version = "v1",
+            Title = "Test API",
+            Description = "Test API Description"
+        };
+    }
+}

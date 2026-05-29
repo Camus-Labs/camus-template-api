@@ -1,9 +1,9 @@
-namespace emc.camus.documentation.swagger.Configurations
+namespace emc.camus.api.Configurations
 {
     /// <summary>
     /// Represents an API version to be documented in Swagger.
     /// </summary>
-    internal sealed class ApiVersionSettings
+    public sealed class ApiVersionSettings
     {
         /// <summary>
         /// Gets or sets the version identifier (e.g., "v1", "v2").

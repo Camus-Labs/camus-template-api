@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using emc.camus.api.Configurations;
+using emc.camus.api.Filters;
 using emc.camus.application.Auth;
 using emc.camus.application.Common;
-using emc.camus.documentation.swagger.Configurations;
-using emc.camus.documentation.swagger.Filters;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,16 +12,14 @@ using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 
-namespace emc.camus.documentation.swagger
+namespace emc.camus.api.Extensions
 {
     /// <summary>
     /// Provides extension methods for configuring Swagger/OpenAPI documentation.
     /// </summary>
     [ExcludeFromCodeCoverage(Justification = "DI wiring tightly coupled to ASP.NET Core builder and Swashbuckle pipeline; branching logic impractical to unit-test in isolation")]
-    public static class SwaggerSetupExtensions
+    internal static class SwaggerDocumentationSetupExtensions
     {
         /// <summary>
         /// Adds Swagger/OpenAPI documentation with configured security schemes and versioning.
@@ -31,7 +31,6 @@ namespace emc.camus.documentation.swagger
             this WebApplicationBuilder builder,
             Assembly? apiAssembly = null)
         {
-            // Load, validate, and register Swagger Settings
             var settings = builder.Configuration.GetSection(SwaggerSettings.ConfigurationSectionName).Get<SwaggerSettings>() ?? new SwaggerSettings();
             settings.Validate();
             builder.Services.AddSingleton(settings);
@@ -41,7 +40,6 @@ namespace emc.camus.documentation.swagger
                 return builder;
             }
 
-            // Use provided assembly or fall back to calling assembly
             var targetAssembly = apiAssembly ?? Assembly.GetCallingAssembly();
 
             builder.Services.AddSwaggerGen(options =>
@@ -80,9 +78,6 @@ namespace emc.camus.documentation.swagger
             return app;
         }
 
-        /// <summary>
-        /// Configures API version documentation.
-        /// </summary>
         private static void ConfigureApiVersions(SwaggerGenOptions options, SwaggerSettings settings)
         {
             foreach (var versionInfo in settings.Versions)
@@ -96,9 +91,6 @@ namespace emc.camus.documentation.swagger
             }
         }
 
-        /// <summary>
-        /// Configures security definitions based on configured schemes.
-        /// </summary>
         private static void ConfigureSecurityDefinitions(SwaggerGenOptions options, SwaggerSettings settings)
         {
             foreach (var scheme in settings.SecuritySchemes)
@@ -115,9 +107,6 @@ namespace emc.camus.documentation.swagger
             }
         }
 
-        /// <summary>
-        /// Creates an OpenAPI security scheme based on the scheme type.
-        /// </summary>
         private static OpenApiSecurityScheme? CreateSecurityScheme(string scheme)
         {
             if (scheme.Equals(AuthenticationSchemes.JwtBearer, StringComparison.OrdinalIgnoreCase))
@@ -147,9 +136,6 @@ namespace emc.camus.documentation.swagger
             return null;
         }
 
-        /// <summary>
-        /// Gets the security scheme key for the given scheme type.
-        /// </summary>
         private static string? GetSecuritySchemeKey(string scheme)
         {
             if (scheme.Equals(AuthenticationSchemes.JwtBearer, StringComparison.OrdinalIgnoreCase))
@@ -165,9 +151,6 @@ namespace emc.camus.documentation.swagger
             return null;
         }
 
-        /// <summary>
-        /// Configures security requirements for all operations.
-        /// </summary>
         private static void ConfigureSecurityRequirements(SwaggerGenOptions options, SwaggerSettings settings)
         {
             if (settings.SecuritySchemes.Count == 0)
@@ -197,9 +180,6 @@ namespace emc.camus.documentation.swagger
             options.AddSecurityRequirement(securityRequirements);
         }
 
-        /// <summary>
-        /// Configures XML comment documentation.
-        /// </summary>
         private static void ConfigureXmlComments(SwaggerGenOptions options, Assembly targetAssembly)
         {
             var xmlFile = $"{targetAssembly.GetName().Name}.xml";
@@ -210,18 +190,12 @@ namespace emc.camus.documentation.swagger
             }
         }
 
-        /// <summary>
-        /// Configures Swagger filters.
-        /// </summary>
         private static void ConfigureFilters(SwaggerGenOptions options)
         {
             options.OperationFilter<DefaultApiResponsesOperationFilter>();
             options.ExampleFilters();
         }
 
-        /// <summary>
-        /// Configures Swagger UI endpoints.
-        /// </summary>
         private static void ConfigureSwaggerUI(WebApplication app, SwaggerSettings settings)
         {
             app.UseSwaggerUI(options =>
@@ -233,9 +207,6 @@ namespace emc.camus.documentation.swagger
             });
         }
 
-        /// <summary>
-        /// Configures root path redirect to Swagger UI.
-        /// </summary>
         private static void ConfigureRootRedirect(WebApplication app)
         {
             app.Use(async (context, next) =>

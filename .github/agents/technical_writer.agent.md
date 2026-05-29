@@ -64,7 +64,8 @@ with zero errors and warnings.
   fails after retries, stop and report the remaining errors; otherwise proceed to Step 8.
 
 8. Update the story file — populate and evaluate each Technical Writer Handoff Gate item; set Status to DOCUMENTED
-  if all gate items pass, otherwise set Status to BLOCKED; set the technical writer sign-off; proceed to Step 9.
+  if all gate items pass, otherwise set Status to BLOCKED; set Technical Writer sign-off from `git config user.name`,
+  and the current date; proceed to Step 9.
 
 9. Commit changes locally — stage all modifications with `git add -A`, present the diff to the user for approval,
   and on approval run `git commit -m "feat: [feature_slug]/[story_id] — story completed"`; if the user declines,

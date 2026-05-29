@@ -67,7 +67,8 @@ reads `No`, or any process step's stopping criterion triggers.
 
 8. Set status to DONE; proceed to Step 9.
 
-9. Return the Release Manager Handoff Report using the output template and stop.
+9. Return the Release Manager Handoff Report using the output template, set Release Manager sign-off from
+  `git config user.name`, and the current date; stop.
 
 ## Rules
 

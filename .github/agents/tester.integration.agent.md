@@ -64,7 +64,8 @@ reads `No`, or integration tests fail to compile after the fix iteration limit.
     - Fill the Integration Test Traceability table; if `all_covered` was false, use boundaries from the skill
       output and the approved test plan from Step 3; ELSE use skill output boundaries only.
     - Fill the Integration Test Findings table with test results from Step 6.
-    - Complete the Integration Tester Handoff Gate — set each gate item and record sign-off.
+    - Complete the Integration Tester Handoff Gate — set each gate item and set Integration Tester sign-off from
+    `git config user.name`, and the current date.
 
 8. Return the Integration Tester Handoff Report — format per the output template — and stop.
 

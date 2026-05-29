@@ -16,12 +16,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Add startup validation for rate-limit policy names against a closed set
 - Relocate JWT security feature from Adapters layer into the API layer to clarify architectural boundaries
 - Relocate API Key security feature from Adapters layer into the API layer to clarify architectural boundaries
+- Relocate Swagger/OpenAPI documentation feature from Adapters layer into the API layer to clarify architectural boundaries
 
 ### Removed
 
 - Remove `emc.camus.ratelimiting.inmemory` adapter project from the solution
 - Remove `emc.camus.security.jwt` adapter project from the solution
 - Remove `emc.camus.security.apikey` adapter project from the solution
+- Remove `emc.camus.documentation.swagger` adapter project from the solution
 
 ## [1.0.0] - 2026-05-01
 

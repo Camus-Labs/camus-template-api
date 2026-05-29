@@ -45,8 +45,8 @@ gate item `Yes`.
 4. Populate Section B prose fields (Layer Impact Matrix, Cross-Cutting Concern Decisions, Delivery and Rollout Notes) in
   the story file.
 5. Update the story file: (a) mark each Architect Handoff Readiness gate item `Yes` when the corresponding Section B
-  field is complete and unambiguous, `No` otherwise; (b) set architect sign-off; (c) set story `Status` to
-  `READY_FOR_IMPLEMENTATION` if all gate items are `Yes`, else `BLOCKED`.
+  field is complete and unambiguous, `No` otherwise; (b) set Architect sign-off from `git config user.name`, and the current
+  date; (c) set story `Status` to `READY_FOR_IMPLEMENTATION` if all gate items are `Yes`, else `BLOCKED`.
 6. Report handoff status using the output template.
 
 ## Rules

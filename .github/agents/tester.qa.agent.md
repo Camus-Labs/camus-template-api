@@ -75,7 +75,8 @@ triggers.
       to describe the issue, record it, and set status to BLOCKED, skip to Step 12.
 
 9. Populate Section F of the story file using the structure from `_user_story_template.md` — fill the QA Tester
-  Handoff Gate items and sign-off; set status to READY; proceed to Step 10.
+  Handoff Gate items and set QA Tester sign-off from `git config user.name`, and the current date; set status to
+  READY; proceed to Step 10.
 
 10. Confirm readiness — present the QA Tester Handoff Report to the user and ask if everything is ready to move
   stories to done; on user confirmation, proceed to Step 11; on user rejection, record the reason and set status

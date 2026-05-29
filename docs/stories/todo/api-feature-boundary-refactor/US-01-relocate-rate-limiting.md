@@ -113,7 +113,7 @@ multi-instance rate limiting`.
 - Dependencies and constraints identified: `Yes`
 - Risks and open questions documented: `Yes`
 - Ready for architecture handoff: `Yes`
-- Product Owner sign-off: `Tech Lead, 2026-05-27`
+- Product Owner sign-off: `3M0R4C, 2026-05-27`
 
 ## Section B - Architect Definition
 
@@ -184,7 +184,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Cross-cutting concern decisions addressed: `Yes`
 - Rollout and rollback strategies defined: `Yes`
 - Ready for implementation: `Yes`
-- Architect sign-off: `Architect (Copilot), 2026-05-27`
+- Architect sign-off: `3M0R4C, 2026-05-27`
 
 ## Section C - Implementation Tracking
 
@@ -298,7 +298,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - All integration tests pass: `Yes`
 - No unresolved production code findings: `Yes`
 - Ready for review: `Yes`
-- Integration Tester sign-off: `Integration Tester (Copilot), 2026-05-28`
+- Integration Tester sign-off: `3M0R4C, 2026-05-28`
 
 ## Section E - Technical Writer
 
@@ -342,6 +342,6 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Postman collection reflects new/changed requests: `N/A`
 - Markdown linting passes with zero errors: `Yes`
 - Build succeeds with zero errors and warnings: `Yes`
-- Technical Writer sign-off: `Technical Writer (Copilot), 2026-05-28`
+- Technical Writer sign-off: `3M0R4C, 2026-05-28`
 
 Unresolved Blockers: None

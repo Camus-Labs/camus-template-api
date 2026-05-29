@@ -6,7 +6,6 @@ using emc.camus.cache.inmemory;
 using emc.camus.security.jwt;
 using emc.camus.security.apikey;
 using emc.camus.secrets.dapr;
-using emc.camus.documentation.swagger;
 using emc.camus.migrations.dbup;
 
 // Step 0: Define WebApplicationBuilder and settings

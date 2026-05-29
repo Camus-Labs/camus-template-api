@@ -97,7 +97,7 @@ Core pipeline feature, not a swappable infrastructure adapter behind an Applicat
 - Dependencies and constraints identified: `Yes`
 - Risks and open questions documented: `Yes`
 - Ready for architecture handoff: `Yes`
-- Product Owner sign-off: `Tech Lead, 2026-05-27`
+- Product Owner sign-off: `3M0R4C, 2026-05-27`
 
 ## Section B - Architect Definition
 
@@ -170,7 +170,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Cross-cutting concern decisions addressed: `Yes`
 - Rollout and rollback strategies defined: `Yes`
 - Ready for implementation: `Yes`
-- Architect sign-off: `Architect, 2026-05-27`
+- Architect sign-off: `3M0R4C, 2026-05-27`
 
 ## Section C - Implementation Tracking
 
@@ -226,7 +226,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Skeleton inventory complete and user-approved: `Yes`
 - Tests compile and fail for the right reason (TDD red): `Yes`
 - Ready for implementation: `Yes`
-- Tester sign-off: `Unit Test Engineer, 2026-05-28`
+- Tester sign-off: `3M0R4C, 2026-05-28`
 
 ### Regression Fixes Log
 
@@ -269,7 +269,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - All integration tests pass: `Yes`
 - No unresolved production code findings: `Yes`
 - Ready for review: `Yes`
-- Integration Tester sign-off: `Integration Test Engineer, 2026-05-28`
+- Integration Tester sign-off: `3M0R4C, 2026-05-28`
 
 ## Section E - Technical Writer
 

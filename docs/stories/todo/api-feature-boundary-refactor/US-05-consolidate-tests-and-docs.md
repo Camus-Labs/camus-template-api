@@ -108,7 +108,7 @@ architectural boundary between API features and adapters`.
 - Dependencies and constraints identified: `Yes`
 - Risks and open questions documented: `Yes`
 - Ready for architecture handoff: `Yes`
-- Product Owner sign-off: `Tech Lead, 2026-05-27`
+- Product Owner sign-off: `3M0R4C, 2026-05-27`
 
 ## Section B - Architect Definition
 
@@ -174,7 +174,7 @@ architectural boundary between API features and adapters`.
 - Cross-cutting concern decisions addressed: `Yes`
 - Rollout and rollback strategies defined: `Yes`
 - Ready for implementation: `Yes`
-- Architect sign-off: `Architect, 2026-05-27`
+- Architect sign-off: `3M0R4C, 2026-05-27`
 
 ## Section C - Implementation Tracking
 

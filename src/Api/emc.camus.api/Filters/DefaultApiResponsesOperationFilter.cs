@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
@@ -8,9 +9,8 @@ using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using emc.camus.application.Common;
-using System.Diagnostics.CodeAnalysis;
 
-namespace emc.camus.documentation.swagger.Filters
+namespace emc.camus.api.Filters
 {
     /// <summary>
     /// Operation filter that adds default error responses using ProblemDetails.

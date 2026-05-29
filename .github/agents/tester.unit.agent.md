@@ -79,8 +79,9 @@ any Architect Handoff Readiness gate item is `No`, or stubs/tests fail to compil
 
 8. Populate Section C in the story file — fill the Skeleton Inventory table with every stub file created in Step 2
   (layer, file path, types, members), fill the Test Traceability table with every test method created in Step 5
-  (AC, test class, test method, layer), evaluate and set each Tester Handoff Gate item, set tester sign-off — include
-  the Tester Handoff Report block from the Output Format section as the final section of the populated output; stop.
+  (AC, test class, test method, layer), evaluate and set each Tester Handoff Gate item, set Tester sign-off from
+  `git config user.name`, and the current date — include the Tester Handoff Report block from the Output Format section
+  as the final section of the populated output; stop.
 
 ## Rules
 

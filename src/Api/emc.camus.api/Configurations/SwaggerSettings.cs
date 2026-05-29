@@ -1,11 +1,11 @@
 using emc.camus.application.Auth;
 
-namespace emc.camus.documentation.swagger.Configurations
+namespace emc.camus.api.Configurations
 {
     /// <summary>
     /// Configuration settings for Swagger/OpenAPI documentation.
     /// </summary>
-    internal sealed class SwaggerSettings
+    public sealed class SwaggerSettings
     {
         /// <summary>
         /// The configuration section name for Swagger settings.
