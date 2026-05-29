@@ -3,7 +3,7 @@ using System.Security.Claims;
 using emc.camus.application.Auth;
 using emc.camus.application.Common;
 
-namespace emc.camus.api.Infrastructure;
+namespace emc.camus.api.Utilities;
 
 /// <summary>
 /// HTTP-based implementation of <see cref="IUserContext"/> that extracts user information

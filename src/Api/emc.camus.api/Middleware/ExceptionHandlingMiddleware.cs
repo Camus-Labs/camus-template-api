@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using emc.camus.api.Configurations;
 using emc.camus.api.Metrics;
 using emc.camus.application.Common;
+using emc.camus.api.Exceptions;
 using emc.camus.application.Exceptions;
 using emc.camus.domain.Exceptions;
 

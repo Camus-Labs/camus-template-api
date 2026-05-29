@@ -5,7 +5,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using emc.camus.api.Configurations;
-using emc.camus.api.Infrastructure;
+using emc.camus.api.Exceptions;
+using emc.camus.api.Utilities;
 using emc.camus.application.Auth;
 using emc.camus.application.Secrets;
 

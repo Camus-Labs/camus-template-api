@@ -5,9 +5,10 @@ using FluentAssertions;
 using Microsoft.Extensions.Time.Testing;
 using Microsoft.IdentityModel.Tokens;
 using emc.camus.api.Configurations;
-using emc.camus.api.Infrastructure;
+using emc.camus.api.Exceptions;
+using emc.camus.api.Utilities;
 
-namespace emc.camus.api.test.Infrastructure;
+namespace emc.camus.api.test.Utilities;
 
 public class JwtTokenGeneratorTests
 {

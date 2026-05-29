@@ -13,6 +13,7 @@ using emc.camus.api.Configurations;
 using emc.camus.api.Metrics;
 using emc.camus.api.Middleware;
 using emc.camus.api.test.Helpers;
+using emc.camus.api.Exceptions;
 using emc.camus.application.Common;
 using emc.camus.application.Exceptions;
 using emc.camus.domain.Exceptions;

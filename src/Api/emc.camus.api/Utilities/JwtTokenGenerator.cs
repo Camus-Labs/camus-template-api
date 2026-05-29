@@ -5,8 +5,9 @@ using emc.camus.application.Auth;
 using emc.camus.domain.Auth;
 using Microsoft.IdentityModel.Tokens;
 using emc.camus.api.Configurations;
+using emc.camus.api.Exceptions;
 
-namespace emc.camus.api.Infrastructure;
+namespace emc.camus.api.Utilities;
 
 /// <summary>
 /// Provides JWT token generation functionality using RSA signing.

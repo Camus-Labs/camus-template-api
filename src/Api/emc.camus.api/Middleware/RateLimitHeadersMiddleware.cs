@@ -1,5 +1,5 @@
 using System.Globalization;
-using emc.camus.api.Infrastructure;
+using emc.camus.api.Utilities;
 using emc.camus.application.Common;
 using Microsoft.AspNetCore.Http;
 

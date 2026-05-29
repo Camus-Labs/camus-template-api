@@ -1,12 +1,12 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using emc.camus.api.Configurations;
-using emc.camus.api.Infrastructure;
+using emc.camus.api.Exceptions;
 using emc.camus.api.Metrics;
 using emc.camus.api.Middleware;
 using emc.camus.api.Filters;
+using emc.camus.api.Utilities;
 using emc.camus.application.Common;
-using emc.camus.application.Exceptions;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;

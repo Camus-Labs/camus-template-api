@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace emc.camus.api.Infrastructure;
+namespace emc.camus.api.Utilities;
 
 /// <summary>
 /// Constants for rate limit context keys stored in HttpContext.Items.

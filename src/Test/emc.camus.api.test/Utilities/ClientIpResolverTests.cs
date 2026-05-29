@@ -1,10 +1,10 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
-using emc.camus.api.Infrastructure;
+using emc.camus.api.Utilities;
 using System.Net;
 
-namespace emc.camus.api.test.Infrastructure;
+namespace emc.camus.api.test.Utilities;
 
 public class ClientIpResolverTests
 {

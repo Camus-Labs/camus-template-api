@@ -2,10 +2,10 @@ using System.Diagnostics;
 using System.Security.Claims;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
-using emc.camus.api.Infrastructure;
+using emc.camus.api.Utilities;
 using emc.camus.application.Auth;
 
-namespace emc.camus.api.test.Infrastructure;
+namespace emc.camus.api.test.Utilities;
 
 public class HttpUserContextTests
 {

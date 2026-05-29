@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
-namespace emc.camus.api.Infrastructure;
+namespace emc.camus.api.Utilities;
 
 /// <summary>
 /// Provides IP address resolution for rate limiting, accounting for proxies and load balancers.

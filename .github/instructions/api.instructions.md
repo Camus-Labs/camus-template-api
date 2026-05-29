@@ -18,8 +18,10 @@ applyTo: "src/Api/**/*.cs"
     - [ ] Controller parameters use model binding attributes only (`[FromBody]`, `[FromQuery]`, `[FromRoute]`)
     - [ ] DI registration lives in `Extensions/` folder as one `*SetupExtensions.cs` file per feature area
           (e.g., `AuthSetupExtensions`, `SwaggerSetupExtensions`, `ObservabilitySetupExtensions`)
-    - [ ] `Infrastructure/` folder for framework-dependent service implementations (e.g., `HttpUserContext`
+    - [ ] `Utilities/` folder for framework-dependent service implementations (e.g., `HttpUserContext`
           implementing `IUserContext`) — distinct from `Models/` (data shapes) and `Mapping/` (converters)
+    - [ ] `Exceptions/` folder for API-layer exceptions (e.g., `RateLimitExceededException`,
+          `JwtKeyLoadException`) — never in Application unless shared across adapters
     - [ ] Controller actions accept `CancellationToken ct` — ASP.NET Core binds it to `HttpContext.RequestAborted`
           automatically
 

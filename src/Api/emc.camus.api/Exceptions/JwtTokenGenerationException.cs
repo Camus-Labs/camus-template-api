@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace emc.camus.api.Infrastructure;
+namespace emc.camus.api.Exceptions;
 
 /// <summary>
 /// Thrown when the JWT feature fails to generate a signed token.

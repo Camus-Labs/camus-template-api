@@ -2,7 +2,7 @@ using System.Globalization;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Time.Testing;
-using emc.camus.api.Infrastructure;
+using emc.camus.api.Utilities;
 using emc.camus.api.Middleware;
 using emc.camus.api.test.Helpers;
 using emc.camus.application.Common;
