@@ -166,70 +166,112 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 
 ### Test Traceability
 
-| AC    | Test Class      | Test Method                          | Layer                               | Change          |
-| ----- | --------------- | ------------------------------------ | ----------------------------------- | --------------- |
-| AC-01 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
-| AC-02 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
-| AC-03 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
+| AC | Test Class | Test Method | Layer | Change |
+| --- | --- | --- | --- | --- |
+| AC-01 | ApiKeySettingsTests | Validate_ValidApiKeySecretName_DoesNotThrow | Api | New |
+| AC-01 | ApiKeySettingsTests | Validate_InvalidApiKeySecretName_ThrowsInvalidOperationException | Api | New |
+| AC-02 | ApiKeyAuthenticationHandlerTests | Constructor_NullSecretProvider_ThrowsArgumentNullException | Api | New |
+| AC-02 | ApiKeyAuthenticationHandlerTests | Constructor_NullSettings_ThrowsArgumentNullException | Api | New |
+| AC-03 | ApiKeyAuthenticationHandlerTests | AuthenticateAsync_ValidApiKey_ReturnsSuccessWithCorrectPrincipal | Api | New |
+| AC-03 | ApiKeyAuthenticationHandlerTests | AuthenticateAsync_CustomSecretName_UsesConfiguredSecretName | Api | New |
+| AC-03 | ApiKeyAuthenticationHandlerTests | AuthenticateAsync_ValidApiKey_SetsNameIdentifierClaim | Api | New |
+| AC-04 | ApiKeyAuthenticationHandlerTests | AuthenticateAsync_MissingApiKeyHeader_ThrowsUnauthorizedAccessException | Api | New |
+| AC-04 | ApiKeyAuthenticationHandlerTests | AuthenticateAsync_InvalidCredentials_ThrowsUnauthorizedAccessException | Api | New |
 
 ### Skeleton Inventory
 
-| Layer                               | Stub File             | Change          | Types                      | Members                         |
-| ----------------------------------- | --------------------- | --------------- | -------------------------- | ------------------------------- |
-| [Domain, Application, Api, Adapter] | [src/.../FileName.cs] | [New, Modified] | [class, interface, record] | [method signatures, properties] |
+| Layer | Stub File | Change | Types | Members |
+| --- | --- | --- | --- | --- |
+| Api | src/Api/emc.camus.api/Configurations/ApiKeySettings.cs | New | public sealed class ApiKeySettings | ConfigurationSectionName, DefaultUsername, DefaultUserId (consts), ApiKeySecretName (prop), Validate() |
+| Api | src/Api/emc.camus.api/Utilities/ApiKeyAuthenticationHandler.cs | New | public sealed class ApiKeyAuthenticationHandler | ctor(IOptionsMonitor, ILoggerFactory, UrlEncoder, ISecretProvider, ApiKeySettings), HandleAuthenticateAsync() |
+| Api | src/Api/emc.camus.api/Extensions/ApiKeySetupExtensions.cs | New | public static class ApiKeyAuthSetupExtensions | AddApiKeyAuth(WebApplicationBuilder) |
 
 ### Tester Handoff Gate
 
-- Every acceptance criterion has at least one test method: `[Yes | No]`
-- Skeleton inventory complete and user-approved: `[Yes | No]`
-- Tests compile and fail for the right reason (TDD red): `[Yes | No]`
-- Ready for implementation: `[Yes | No]`
-- Tester sign-off: `[Name, Date]`
+- Every acceptance criterion has at least one test method: `Yes`
+- Skeleton inventory complete and user-approved: `Yes`
+- Tests compile and fail for the right reason (TDD red): `Yes`
+- Ready for implementation: `Yes`
+- Tester sign-off: `Unit Test Engineer, 2026-05-29`
 
 ### Regression Fixes Log
 
-| #   | Test File        | Test Method   | Change Made          | Reason                                  |
-| --- | ---------------- | ------------- | -------------------- | --------------------------------------- |
+| # | Test File | Test Method | Change Made | Reason |
+| --- | --- | --- | --- | --- |
 | [n] | [test file path] | [method name] | [description of fix] | [contract change that caused the break] |
 
 ### Developer Handoff Gate
 
-- All unit tests pass (TDD green): `[Yes | No]`
-- All existing integration tests pass: `[Yes | No]`
-- Regression fixes documented (if any): `[Yes | N/A]`
-- Build succeeds with zero warnings: `[Yes | No]`
-- Ready for code review: `[Yes | No]`
-- Developer sign-off: `[Name, Date]`
+- All unit tests pass (TDD green): `Yes`
+- All existing integration tests pass: `Yes`
+- Regression fixes documented (if any): `N/A`
+- Build succeeds with zero warnings: `Yes`
+- Ready for code review: `Yes`
+- Developer sign-off: `3M0R4C, 2026-05-29`
 
 ## Section D - Integration Testing
 
 ### Integration Test Traceability
 
-| Boundary               | Factory              | Test Class      | Test Method                          | Change                    |
-| ---------------------- | -------------------- | --------------- | ------------------------------------ | ------------------------- |
-| [cross-layer boundary] | [factory class name] | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [New, Modified, Existing] |
+| Boundary | Factory | Test Class | Test Method | Change |
+| --- | --- | --- | --- | --- |
+| HTTP → ApiKeyAuthHandler → ISecretProvider (valid key) | ApiInMemoryFactory | ApiInfoInMemoryEndpointTests | GetInfoApiKey_ValidApiKey_ReturnsOk | Existing |
+| HTTP → ApiKeyAuthHandler (missing key → 401) | ApiInMemoryFactory | AuthInMemoryEndpointTests | Authenticate_NoApiKey_ReturnsUnauthorized | Existing |
+| HTTP → ApiKeyAuthHandler → ISecretProvider (invalid key → 401) | ApiInMemoryFactory | ApiInfoInMemoryEndpointTests | GetInfoApiKey_InvalidApiKey_ReturnsUnauthorized | New |
 
 ### Integration Test Findings
 
-| #   | Test          | Failure               | Root Cause Analysis | Affected File          |
-| --- | ------------- | --------------------- | ------------------- | ---------------------- |
-| [n] | [test method] | [failure description] | [analysis]          | [production file path] |
+| # | Test | Failure | Root Cause Analysis | Affected File |
+| --- | --- | --- | --- | --- |
+| — | — | No failures | — | — |
 
 ### Integration Tester Handoff Gate
 
-- All cross-layer boundaries identified and covered: `[Yes | No]`
-- All integration tests pass: `[Yes | No]`
-- No unresolved production code findings: `[Yes | No]`
-- Ready for review: `[Yes | No]`
-- Integration Tester sign-off: `[Name, Date]`
+- All cross-layer boundaries identified and covered: `Yes`
+- All integration tests pass: `Yes`
+- No unresolved production code findings: `Yes`
+- Ready for review: `Yes`
+- Integration Tester sign-off: `Integration Test Engineer, 2026-05-29`
 
 ## Section E - Technical Writer
 
+### Status
+
+`DOCUMENTED`
+
 ### Version Update
 
-- Previous version: `[X.X.X]`
-- New version: `[X.X.X]`
-- Bump type: `[MAJOR | MINOR | PATCH | APPEND]`
-- Reason: `[one-sentence justification]`
+- Previous version: `1.0.1`
+- New version: `1.0.1`
+- Bump type: `APPEND`
+- Reason: `Part of the same api-feature-boundary-refactor release already tracked in 1.0.1`
 
 ### CHANGELOG Entry
+
+Appended to `## [1.0.1] - 2026-05-28`:
+
+#### Changed
+
+- Relocate API Key security feature from Adapters layer into the API layer to clarify architectural boundaries
+
+#### Removed
+
+- Remove `emc.camus.security.apikey` adapter project from the solution
+
+### Documentation Updates
+
+- Swagger annotations updated: 0 endpoint(s) (no new/changed HTTP endpoints)
+- Postman requests updated: 0 request(s) (no new/changed HTTP endpoints)
+- Files modified: `CHANGELOG.md`, `docs/stories/todo/api-feature-boundary-refactor/US-03-relocate-apikey-security.md`
+
+### Technical Writer Handoff Gate
+
+- Version in Directory.Build.props matches confirmed decision: `Yes`
+- CHANGELOG entry matches new version and date: `Yes`
+- Swagger examples reflect new/changed endpoints: `N/A`
+- Postman collection reflects new/changed requests: `N/A`
+- Markdown linting passes with zero errors: `Yes`
+- Build succeeds with zero errors and warnings: `Yes`
+- Technical Writer sign-off: `3M0R4C, 2026-05-29`
+
+Unresolved Blockers: None
