@@ -5,10 +5,12 @@ namespace emc.camus.api.test.Configurations;
 
 public class RateLimitingSettingsTests
 {
-    private const int DefaultPermitLimit = 100;
-    private const int StrictPermitLimit = 10;
-    private const int RelaxedPermitLimit = 500;
+    private const int DefaultPermitLimit = 250;
     private const int DefaultWindowSeconds = 60;
+    private const int DefaultStrictPermitLimit = 50;
+    private const int DefaultStrictWindowSeconds = 60;
+    private const int DefaultRelaxedPermitLimit = 500;
+    private const int DefaultRelaxedWindowSeconds = 60;
     private const string HealthPath = "/health";
 
     private static readonly string[] DefaultExemptPaths = new[] { HealthPath, "/ready" };
@@ -23,70 +25,63 @@ public class RateLimitingSettingsTests
 
     private static readonly string[] EmptyExemptPaths = Array.Empty<string>();
 
-    private static readonly Dictionary<string, RateLimitPolicySettings> EmptyPolicies = new();
-
-    private static readonly Dictionary<string, RateLimitPolicySettings> PoliciesWithoutDefault = new()
-    {
-        { RateLimitPolicies.Strict, new RateLimitPolicySettings { PermitLimit = StrictPermitLimit, WindowSeconds = DefaultWindowSeconds } },
-        { RateLimitPolicies.Relaxed, new RateLimitPolicySettings { PermitLimit = RelaxedPermitLimit, WindowSeconds = DefaultWindowSeconds } }
-    };
-
-    private static readonly Dictionary<string, RateLimitPolicySettings> PoliciesWithNullValue = new()
-    {
-        { RateLimitPolicies.Default, new RateLimitPolicySettings { PermitLimit = DefaultPermitLimit, WindowSeconds = DefaultWindowSeconds } },
-        { RateLimitPolicies.Strict, null! }
-    };
-
-    private static readonly Dictionary<string, RateLimitPolicySettings> PoliciesWithInvalidPermitLimit = new()
-    {
-        { RateLimitPolicies.Default, new RateLimitPolicySettings { PermitLimit = 0, WindowSeconds = DefaultWindowSeconds } },
-        { RateLimitPolicies.Strict, new RateLimitPolicySettings { PermitLimit = StrictPermitLimit, WindowSeconds = DefaultWindowSeconds } },
-        { RateLimitPolicies.Relaxed, new RateLimitPolicySettings { PermitLimit = RelaxedPermitLimit, WindowSeconds = DefaultWindowSeconds } }
-    };
-
-    private static readonly Dictionary<string, RateLimitPolicySettings> PoliciesWithEmptyName = new()
-    {
-        { RateLimitPolicies.Default, new RateLimitPolicySettings { PermitLimit = DefaultPermitLimit, WindowSeconds = DefaultWindowSeconds } },
-        { "", new RateLimitPolicySettings { PermitLimit = StrictPermitLimit, WindowSeconds = DefaultWindowSeconds } }
-    };
-
-    private static readonly Dictionary<string, RateLimitPolicySettings> PoliciesWithWhitespaceName = new()
-    {
-        { RateLimitPolicies.Default, new RateLimitPolicySettings { PermitLimit = DefaultPermitLimit, WindowSeconds = DefaultWindowSeconds } },
-        { "   ", new RateLimitPolicySettings { PermitLimit = StrictPermitLimit, WindowSeconds = DefaultWindowSeconds } }
-    };
-
-    private static readonly Dictionary<string, RateLimitPolicySettings> PoliciesWithUnknownName = new()
-    {
-        { RateLimitPolicies.Default, new RateLimitPolicySettings { PermitLimit = DefaultPermitLimit, WindowSeconds = DefaultWindowSeconds } },
-        { "unknown-policy", new RateLimitPolicySettings { PermitLimit = StrictPermitLimit, WindowSeconds = DefaultWindowSeconds } }
-    };
-
-    private static readonly Dictionary<string, RateLimitPolicySettings> DefaultPolicies = new()
-    {
-        { RateLimitPolicies.Default, new RateLimitPolicySettings { PermitLimit = DefaultPermitLimit, WindowSeconds = DefaultWindowSeconds } },
-        { RateLimitPolicies.Strict, new RateLimitPolicySettings { PermitLimit = StrictPermitLimit, WindowSeconds = DefaultWindowSeconds } },
-        { RateLimitPolicies.Relaxed, new RateLimitPolicySettings { PermitLimit = RelaxedPermitLimit, WindowSeconds = DefaultWindowSeconds } }
-    };
-
     private static RateLimitingSettings CreateValidSettings(
         int segmentsPerWindow = 5,
-        Dictionary<string, RateLimitPolicySettings>? policies = null,
+        int defaultPermitLimit = 100,
+        int defaultWindowSeconds = 60,
+        int strictPermitLimit = 10,
+        int strictWindowSeconds = 60,
+        int relaxedPermitLimit = 500,
+        int relaxedWindowSeconds = 60,
         string[]? exemptPaths = null) =>
         new()
         {
             SegmentsPerWindow = segmentsPerWindow,
-            Policies = policies ?? DefaultPolicies,
+            DefaultPermitLimit = defaultPermitLimit,
+            DefaultWindowSeconds = defaultWindowSeconds,
+            StrictPermitLimit = strictPermitLimit,
+            StrictWindowSeconds = strictWindowSeconds,
+            RelaxedPermitLimit = relaxedPermitLimit,
+            RelaxedWindowSeconds = relaxedWindowSeconds,
             ExemptPaths = exemptPaths ?? DefaultExemptPaths
         };
 
-    // --- AC-06: Validate with correct section keys (Policies, ExemptPaths) ---
+    // --- AC-01: RateLimitingSettings has no Policies dictionary property ---
 
     [Fact]
-    public void Validate_DefaultSettings_DoesNotThrow()
+    public void RateLimitingSettings_DoesNotHavePoliciesDictionaryProperty()
+    {
+        // Act
+        var properties = typeof(RateLimitingSettings).GetProperties();
+
+        // Assert
+        properties.Should().NotContain(p => p.Name == "Policies");
+    }
+
+    // --- AC-02: Flat keys exist with correct default values ---
+
+    [Fact]
+    public void DefaultSettings_HasExpectedFlatPropertyDefaults()
     {
         // Arrange
         var settings = new RateLimitingSettings();
+
+        // Assert
+        settings.DefaultPermitLimit.Should().Be(DefaultPermitLimit);
+        settings.DefaultWindowSeconds.Should().Be(DefaultWindowSeconds);
+        settings.StrictPermitLimit.Should().Be(DefaultStrictPermitLimit);
+        settings.StrictWindowSeconds.Should().Be(DefaultStrictWindowSeconds);
+        settings.RelaxedPermitLimit.Should().Be(DefaultRelaxedPermitLimit);
+        settings.RelaxedWindowSeconds.Should().Be(DefaultRelaxedWindowSeconds);
+    }
+
+    // --- Validate: SegmentsPerWindow ---
+
+    [Fact]
+    public void Validate_ValidSettings_DoesNotThrow()
+    {
+        // Arrange
+        var settings = CreateValidSettings();
 
         // Act
         var act = () => settings.Validate();
@@ -94,8 +89,6 @@ public class RateLimitingSettingsTests
         // Assert
         act.Should().NotThrow();
     }
-
-    // --- Validate: SegmentsPerWindow ---
 
     [Theory]
     [InlineData(1)]
@@ -130,114 +123,104 @@ public class RateLimitingSettingsTests
             .WithMessage("*SegmentsPerWindow*");
     }
 
-    // --- Validate: Policies ---
+    // --- Validate: Permit Limits ---
 
-    [Fact]
-    public void Validate_NullPolicies_ThrowsInvalidOperationException()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Validate_DefaultPermitLimitInvalid_ThrowsInvalidOperationException(int permitLimit)
     {
         // Arrange
-        var settings = CreateValidSettings();
-        settings.Policies = null!;
+        var settings = CreateValidSettings(defaultPermitLimit: permitLimit);
 
         // Act
         var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*policy*");
-    }
-
-    [Fact]
-    public void Validate_EmptyPolicies_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var settings = CreateValidSettings(policies: EmptyPolicies);
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*policy*");
-    }
-
-    [Fact]
-    public void Validate_MissingDefaultPolicy_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var settings = CreateValidSettings(policies: PoliciesWithoutDefault);
-
-        // Act
-        var act = () => settings.Validate();
-
-        // Assert
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage($"*{RateLimitPolicies.Default}*");
-    }
-
-    public static IEnumerable<object[]> InvalidPolicyNameCases()
-    {
-        yield return new object[] { PoliciesWithEmptyName };
-        yield return new object[] { PoliciesWithWhitespaceName };
+            .WithMessage("*DefaultPermitLimit*");
     }
 
     [Theory]
-    [MemberData(nameof(InvalidPolicyNameCases))]
-    public void Validate_EmptyOrWhitespacePolicyName_ThrowsInvalidOperationException(
-        object policiesObj)
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Validate_StrictPermitLimitInvalid_ThrowsInvalidOperationException(int permitLimit)
     {
         // Arrange
-        var policies = (Dictionary<string, RateLimitPolicySettings>)policiesObj;
-        var settings = CreateValidSettings(policies: policies);
+        var settings = CreateValidSettings(strictPermitLimit: permitLimit);
 
         // Act
         var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*Policy name*null*empty*");
+            .WithMessage("*StrictPermitLimit*");
     }
 
-    [Fact]
-    public void Validate_UnknownPolicyName_ThrowsInvalidOperationException()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Validate_RelaxedPermitLimitInvalid_ThrowsInvalidOperationException(int permitLimit)
     {
         // Arrange
-        var settings = CreateValidSettings(policies: PoliciesWithUnknownName);
+        var settings = CreateValidSettings(relaxedPermitLimit: permitLimit);
 
         // Act
         var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*Invalid policy name*unknown-policy*");
+            .WithMessage("*RelaxedPermitLimit*");
     }
 
-    [Fact]
-    public void Validate_NullPolicyValue_ThrowsInvalidOperationException()
+    // --- Validate: Window Seconds ---
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Validate_DefaultWindowSecondsInvalid_ThrowsInvalidOperationException(int windowSeconds)
     {
         // Arrange
-        var settings = CreateValidSettings(policies: PoliciesWithNullValue);
+        var settings = CreateValidSettings(defaultWindowSeconds: windowSeconds);
 
         // Act
         var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*cannot be null*");
+            .WithMessage("*DefaultWindowSeconds*");
     }
 
-    [Fact]
-    public void Validate_PolicyWithInvalidPermitLimit_ThrowsInvalidOperationException()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Validate_StrictWindowSecondsInvalid_ThrowsInvalidOperationException(int windowSeconds)
     {
         // Arrange
-        var settings = CreateValidSettings(policies: PoliciesWithInvalidPermitLimit);
+        var settings = CreateValidSettings(strictWindowSeconds: windowSeconds);
 
         // Act
         var act = () => settings.Validate();
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*PermitLimit*");
+            .WithMessage("*StrictWindowSeconds*");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Validate_RelaxedWindowSecondsInvalid_ThrowsInvalidOperationException(int windowSeconds)
+    {
+        // Arrange
+        var settings = CreateValidSettings(relaxedWindowSeconds: windowSeconds);
+
+        // Act
+        var act = () => settings.Validate();
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*RelaxedWindowSeconds*");
     }
 
     // --- Validate: ExemptPaths ---

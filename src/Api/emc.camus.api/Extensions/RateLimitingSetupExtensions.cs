@@ -61,7 +61,7 @@ public static class RateLimitingSetupExtensions
                 }
 
                 // Determine which policy to apply based on endpoint attribute
-                var policyName = GetPolicyNameFromEndpoint(context, settings);
+                var policyName = GetPolicyNameFromEndpoint(context);
 
                 // Apply IP-based rate limiting with the selected policy
                 return CreateIpBasedPartition(context, settings, policyName);
@@ -116,7 +116,7 @@ public static class RateLimitingSetupExtensions
     /// Looks for [RateLimit("policyName")] attribute on action or controller.
     /// Falls back to "default" policy if no attribute is present.
     /// </summary>
-    private static string GetPolicyNameFromEndpoint(HttpContext context, RateLimitingSettings settings)
+    private static string GetPolicyNameFromEndpoint(HttpContext context)
     {
         var endpoint = context.GetEndpoint();
         if (endpoint != null)
@@ -125,20 +125,7 @@ public static class RateLimitingSetupExtensions
 
             if (rateLimitAttribute != null)
             {
-                var policyName = rateLimitAttribute.PolicyName;
-
-                if (!string.IsNullOrWhiteSpace(policyName))
-                {
-                    if (settings.Policies.ContainsKey(policyName))
-                    {
-                        return policyName;
-                    }
-
-                    var availablePolicies = string.Join(", ", settings.Policies.Keys);
-                    throw new InvalidOperationException(
-                        $"Rate limit policy '{policyName}' referenced by endpoint [{context.Request.Method}] {context.Request.Path} " +
-                        $"is not defined in configuration. Available policies: {availablePolicies}");
-                }
+                return rateLimitAttribute.PolicyName;
             }
         }
 
@@ -157,19 +144,20 @@ public static class RateLimitingSetupExtensions
     {
         var ipResolver = context.RequestServices.GetRequiredService<ClientIpResolver>();
         var ipAddress = ipResolver.GetClientIpAddress(context);
-        var policy = settings.Policies[policyName];
+        var permitLimit = ResolvePermitLimit(settings, policyName);
+        var windowSeconds = ResolveWindowSeconds(settings, policyName);
 
         // Store partition info for response headers
         context.Items[RateLimitContextKeys.Policy] = policyName;
-        context.Items[RateLimitContextKeys.Limit] = policy.PermitLimit;
-        context.Items[RateLimitContextKeys.Window] = policy.WindowSeconds;
+        context.Items[RateLimitContextKeys.Limit] = permitLimit;
+        context.Items[RateLimitContextKeys.Window] = windowSeconds;
 
         return RateLimitPartition.GetSlidingWindowLimiter(
             partitionKey: $"{policyName}-ip-{ipAddress}",
             factory: _ => new SlidingWindowRateLimiterOptions
             {
-                PermitLimit = policy.PermitLimit,
-                Window = TimeSpan.FromSeconds(policy.WindowSeconds),
+                PermitLimit = permitLimit,
+                Window = TimeSpan.FromSeconds(windowSeconds),
                 SegmentsPerWindow = settings.SegmentsPerWindow,
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0
@@ -192,26 +180,26 @@ public static class RateLimitingSetupExtensions
 
         // Get policy name from context (set during partition creation)
         var policyName = context.HttpContext.Items[RateLimitContextKeys.Policy]?.ToString() ?? "unknown";
-        if (!settings.Policies.TryGetValue(policyName, out var policy))
-        {
-            policy = settings.Policies[RateLimitPolicies.Default];
-        }
+        var validPolicies = RateLimitPolicies.GetAll();
+        var resolvedPolicy = validPolicies.Contains(policyName) ? policyName : RateLimitPolicies.Default;
+        var permitLimit = ResolvePermitLimit(settings, resolvedPolicy);
+        var windowSeconds = ResolveWindowSeconds(settings, resolvedPolicy);
 
         // Calculate retry and reset times
-        var retryAfterSeconds = policy.WindowSeconds;
+        var retryAfterSeconds = windowSeconds;
         var resetTimestamp = timeProvider.GetUtcNow().AddSeconds(retryAfterSeconds).ToUnixTimeSeconds();
 
         // Add rate limiting headers before throwing exception
         // These will be preserved when ExceptionHandlingMiddleware catches the exception
 
         // RFC-compliant IETF Draft headers
-        context.HttpContext.Response.Headers[Headers.RateLimitLimit] = policy.PermitLimit.ToString(CultureInfo.InvariantCulture);
+        context.HttpContext.Response.Headers[Headers.RateLimitLimit] = permitLimit.ToString(CultureInfo.InvariantCulture);
         context.HttpContext.Response.Headers[Headers.RateLimitReset] = resetTimestamp.ToString(CultureInfo.InvariantCulture);
         context.HttpContext.Response.Headers[HeaderNames.RetryAfter] = retryAfterSeconds.ToString(CultureInfo.InvariantCulture);
 
         // Custom headers for additional context (backward compatibility)
         context.HttpContext.Response.Headers[Headers.RateLimitPolicy] = policyName;
-        context.HttpContext.Response.Headers[Headers.RateLimitWindow] = policy.WindowSeconds.ToString(CultureInfo.InvariantCulture);
+        context.HttpContext.Response.Headers[Headers.RateLimitWindow] = windowSeconds.ToString(CultureInfo.InvariantCulture);
 
         metrics.RecordRejection(policyName, method);
 
@@ -219,9 +207,29 @@ public static class RateLimitingSetupExtensions
         // Headers are already set above, exception carries context for response body
         throw new RateLimitExceededException(
             policyName,
-            policy.PermitLimit,
-            policy.WindowSeconds,
+            permitLimit,
+            windowSeconds,
             retryAfterSeconds,
             resetTimestamp);
+    }
+
+    private static int ResolvePermitLimit(RateLimitingSettings settings, string policyName)
+    {
+        return policyName switch
+        {
+            RateLimitPolicies.Strict => settings.StrictPermitLimit,
+            RateLimitPolicies.Relaxed => settings.RelaxedPermitLimit,
+            _ => settings.DefaultPermitLimit
+        };
+    }
+
+    private static int ResolveWindowSeconds(RateLimitingSettings settings, string policyName)
+    {
+        return policyName switch
+        {
+            RateLimitPolicies.Strict => settings.StrictWindowSeconds,
+            RateLimitPolicies.Relaxed => settings.RelaxedWindowSeconds,
+            _ => settings.DefaultWindowSeconds
+        };
     }
 }

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using emc.camus.api.Configurations;
 using emc.camus.api.Filters;
 
 namespace emc.camus.api.test.Filters;
@@ -32,6 +33,36 @@ public class RateLimitAttributeTests
         // Assert
         act.Should().Throw<ArgumentException>()
             .And.ParamName.Should().Be("policyName");
+    }
+
+    // --- AC-04: Unknown policy name causes failure at attribute construction ---
+
+    [Theory]
+    [InlineData("unknown")]
+    [InlineData("Unknown")]
+    [InlineData("custom-policy")]
+    public void Constructor_UnrecognizedPolicyName_ThrowsArgumentException(string policyName)
+    {
+        // Act
+        var act = () => new RateLimitAttribute(policyName);
+
+        // Assert
+        act.Should().Throw<ArgumentException>()
+            .WithMessage($"*'{policyName}'*not a recognized*")
+            .And.ParamName.Should().Be("policyName");
+    }
+
+    [Theory]
+    [InlineData(RateLimitPolicies.Default)]
+    [InlineData(RateLimitPolicies.Strict)]
+    [InlineData(RateLimitPolicies.Relaxed)]
+    public void Constructor_RecognizedPolicyName_SetsProperty(string policyName)
+    {
+        // Act
+        var attribute = new RateLimitAttribute(policyName);
+
+        // Assert
+        attribute.PolicyName.Should().Be(policyName);
     }
 
     // --- AttributeUsage ---

@@ -1,7 +1,7 @@
 namespace emc.camus.api.Configurations;
 
 /// <summary>
-/// Configuration settings for API rate limiting policies.
+/// Configuration settings for API rate limiting policies using a flat, fixed-keys layout.
 /// Rate limiting is always enabled for security. Adjust limits per environment.
 ///
 /// Implementation Details:
@@ -9,7 +9,7 @@ namespace emc.camus.api.Configurations;
 /// - IP-based rate limiting for ALL requests (runs before authentication)
 /// - Returns 429 with RetryAfter header when limit exceeded
 /// - No queueing (QueueLimit=0) - requests rejected immediately
-/// - Policy-based approach allows different limits per endpoint
+/// - Three fixed policies: default, strict, relaxed (defined in <see cref="RateLimitPolicies"/>)
 /// </summary>
 public sealed class RateLimitingSettings
 {
@@ -20,33 +20,50 @@ public sealed class RateLimitingSettings
 
     private const int MinSegmentsPerWindow = 1;
     private const int MaxSegmentsPerWindow = 20;
-    private const int DefaultSegmentsPerWindow = 5;
-    private const int DefaultPermitLimitDefault = 250;
-    private const int DefaultPermitLimitStrict = 50;
-    private const int DefaultPermitLimitRelaxed = 500;
-    private const int DefaultWindowSeconds = 60;
+    private const int DefaultSegmentsPerWindowValue = 5;
+    private const int MinPermitLimit = 1;
+    private const int MaxPermitLimit = 100000;
+    private const int MinWindowSeconds = 1;
+    private const int MaxWindowSeconds = 3600;
 
     private static readonly string[] DefaultExemptPaths = new[] { "/health", "/ready", "/alive", "/swagger" };
-
-    private static readonly Dictionary<string, RateLimitPolicySettings> DefaultPolicies = new()
-    {
-        { RateLimitPolicies.Default, new RateLimitPolicySettings { PermitLimit = DefaultPermitLimitDefault, WindowSeconds = DefaultWindowSeconds } },
-        { RateLimitPolicies.Strict, new RateLimitPolicySettings { PermitLimit = DefaultPermitLimitStrict, WindowSeconds = DefaultWindowSeconds } },
-        { RateLimitPolicies.Relaxed, new RateLimitPolicySettings { PermitLimit = DefaultPermitLimitRelaxed, WindowSeconds = DefaultWindowSeconds } }
-    };
 
     /// <summary>
     /// Number of segments per window for sliding window algorithm.
     /// Higher values provide smoother rate limiting but use more memory.
     /// Default: 5 segments (recommended: 3-10)
     /// </summary>
-    public int SegmentsPerWindow { get; set; } = DefaultSegmentsPerWindow;
+    public int SegmentsPerWindow { get; set; } = DefaultSegmentsPerWindowValue;
 
     /// <summary>
-    /// Named rate limit policies. Each policy defines permit limit and window.
-    /// A "default" policy is required and will be used for endpoints without explicit policy.
+    /// Permit limit for the default rate limit policy.
     /// </summary>
-    public Dictionary<string, RateLimitPolicySettings> Policies { get; set; } = DefaultPolicies;
+    public int DefaultPermitLimit { get; set; } = 250;
+
+    /// <summary>
+    /// Window duration in seconds for the default rate limit policy.
+    /// </summary>
+    public int DefaultWindowSeconds { get; set; } = 60;
+
+    /// <summary>
+    /// Permit limit for the strict rate limit policy (sensitive endpoints).
+    /// </summary>
+    public int StrictPermitLimit { get; set; } = 50;
+
+    /// <summary>
+    /// Window duration in seconds for the strict rate limit policy.
+    /// </summary>
+    public int StrictWindowSeconds { get; set; } = 60;
+
+    /// <summary>
+    /// Permit limit for the relaxed rate limit policy (high-throughput endpoints).
+    /// </summary>
+    public int RelaxedPermitLimit { get; set; } = 500;
+
+    /// <summary>
+    /// Window duration in seconds for the relaxed rate limit policy.
+    /// </summary>
+    public int RelaxedWindowSeconds { get; set; } = 60;
 
     /// <summary>
     /// List of path prefixes that are exempt from rate limiting.
@@ -60,62 +77,98 @@ public sealed class RateLimitingSettings
     public void Validate()
     {
         ValidateSegmentsPerWindow();
-        ValidatePolicies();
+        ValidateDefaultPermitLimit();
+        ValidateStrictPermitLimit();
+        ValidateRelaxedPermitLimit();
+        ValidateDefaultWindowSeconds();
+        ValidateStrictWindowSeconds();
+        ValidateRelaxedWindowSeconds();
         ValidateExemptPaths();
     }
 
     private void ValidateSegmentsPerWindow()
     {
         if (SegmentsPerWindow < MinSegmentsPerWindow || SegmentsPerWindow > MaxSegmentsPerWindow)
-            throw new InvalidOperationException($"SegmentsPerWindow must be between {MinSegmentsPerWindow} and {MaxSegmentsPerWindow}. Current value: {SegmentsPerWindow}");
-    }
-
-    private void ValidatePolicies()
-    {
-        if (Policies == null || Policies.Count == 0)
-            throw new InvalidOperationException("At least one rate limit policy must be defined");
-
-        if (!Policies.ContainsKey(RateLimitPolicies.Default))
-            throw new InvalidOperationException($"A '{RateLimitPolicies.Default}' rate limit policy must be defined");
-
-        foreach (var (policyName, policy) in Policies)
         {
-            ValidatePolicy(policyName, policy);
-        }
-    }
-
-    private static void ValidatePolicy(string policyName, RateLimitPolicySettings policy)
-    {
-        if (string.IsNullOrWhiteSpace(policyName))
-            throw new InvalidOperationException("Policy name cannot be null or empty");
-
-        var validPolicyNames = RateLimitPolicies.GetAll();
-        if (!validPolicyNames.Contains(policyName))
-        {
-            var allowedNames = string.Join(", ", validPolicyNames);
             throw new InvalidOperationException(
-                $"Invalid policy name '{policyName}'. Valid policy names are: {allowedNames} (case-sensitive)");
+                $"SegmentsPerWindow must be between {MinSegmentsPerWindow} and {MaxSegmentsPerWindow}, but was {SegmentsPerWindow}.");
         }
+    }
 
-        if (policy == null)
-            throw new InvalidOperationException($"Policy '{policyName}' cannot be null");
+    private void ValidateDefaultPermitLimit()
+    {
+        if (DefaultPermitLimit < MinPermitLimit || DefaultPermitLimit > MaxPermitLimit)
+        {
+            throw new InvalidOperationException(
+                $"DefaultPermitLimit must be between {MinPermitLimit} and {MaxPermitLimit}, but was {DefaultPermitLimit}.");
+        }
+    }
 
-        policy.PolicyName = policyName;
-        policy.Validate();
+    private void ValidateStrictPermitLimit()
+    {
+        if (StrictPermitLimit < MinPermitLimit || StrictPermitLimit > MaxPermitLimit)
+        {
+            throw new InvalidOperationException(
+                $"StrictPermitLimit must be between {MinPermitLimit} and {MaxPermitLimit}, but was {StrictPermitLimit}.");
+        }
+    }
+
+    private void ValidateRelaxedPermitLimit()
+    {
+        if (RelaxedPermitLimit < MinPermitLimit || RelaxedPermitLimit > MaxPermitLimit)
+        {
+            throw new InvalidOperationException(
+                $"RelaxedPermitLimit must be between {MinPermitLimit} and {MaxPermitLimit}, but was {RelaxedPermitLimit}.");
+        }
+    }
+
+    private void ValidateDefaultWindowSeconds()
+    {
+        if (DefaultWindowSeconds < MinWindowSeconds || DefaultWindowSeconds > MaxWindowSeconds)
+        {
+            throw new InvalidOperationException(
+                $"DefaultWindowSeconds must be between {MinWindowSeconds} and {MaxWindowSeconds}, but was {DefaultWindowSeconds}.");
+        }
+    }
+
+    private void ValidateStrictWindowSeconds()
+    {
+        if (StrictWindowSeconds < MinWindowSeconds || StrictWindowSeconds > MaxWindowSeconds)
+        {
+            throw new InvalidOperationException(
+                $"StrictWindowSeconds must be between {MinWindowSeconds} and {MaxWindowSeconds}, but was {StrictWindowSeconds}.");
+        }
+    }
+
+    private void ValidateRelaxedWindowSeconds()
+    {
+        if (RelaxedWindowSeconds < MinWindowSeconds || RelaxedWindowSeconds > MaxWindowSeconds)
+        {
+            throw new InvalidOperationException(
+                $"RelaxedWindowSeconds must be between {MinWindowSeconds} and {MaxWindowSeconds}, but was {RelaxedWindowSeconds}.");
+        }
     }
 
     private void ValidateExemptPaths()
     {
-        if (ExemptPaths == null)
-            throw new InvalidOperationException("ExemptPaths cannot be null");
-
-        foreach (var path in ExemptPaths)
+        if (ExemptPaths is null)
         {
-            if (string.IsNullOrWhiteSpace(path))
-                throw new InvalidOperationException("ExemptPaths cannot contain null or empty values");
+            throw new InvalidOperationException("ExemptPaths must not be null.");
+        }
 
-            if (!path.StartsWith('/'))
-                throw new InvalidOperationException($"ExemptPath '{path}' must start with '/' (e.g., '/health')");
+        for (var i = 0; i < ExemptPaths.Length; i++)
+        {
+            if (string.IsNullOrWhiteSpace(ExemptPaths[i]))
+            {
+                throw new InvalidOperationException(
+                    $"ExemptPaths contains a null or empty entry at index {i}.");
+            }
+
+            if (!ExemptPaths[i].StartsWith('/'))
+            {
+                throw new InvalidOperationException(
+                    $"ExemptPaths entry '{ExemptPaths[i]}' must start with '/'.");
+            }
         }
     }
 }
