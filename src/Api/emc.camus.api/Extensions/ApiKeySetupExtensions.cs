@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using emc.camus.api.Configurations;
 using emc.camus.api.Utilities;
-using emc.camus.application.Auth;
 using Microsoft.AspNetCore.Authentication;
 
 namespace emc.camus.api.Extensions;

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Net.Mime;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -88,7 +89,7 @@ public class IdempotencyResponseCachingFilterTests : IDisposable
         httpContext.Request.Method = HttpMethodPost;
         httpContext.Request.Headers[Headers.IdempotencyKey] = idempotencyKey;
         httpContext.Request.Body = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(body));
-        httpContext.Request.ContentType = "application/json";
+        httpContext.Request.ContentType = MediaTypeNames.Application.Json;
         return httpContext;
     }
 

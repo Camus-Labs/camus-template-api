@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Mime;
 using System.Text.Json;
 using emc.camus.api.Models.Responses;
 using emc.camus.application.Common;
@@ -90,7 +91,7 @@ namespace emc.camus.api.Extensions
         /// </summary>
         private static async Task WriteDetailedJsonResponse(HttpContext context, HealthReport report)
         {
-            context.Response.ContentType = "application/json";
+            context.Response.ContentType = MediaTypeNames.Application.Json;
 
             var response = new HealthCheckDetailedResponse
             {

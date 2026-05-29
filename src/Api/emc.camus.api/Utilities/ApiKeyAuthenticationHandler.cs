@@ -6,7 +6,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
 using emc.camus.api.Configurations;
-using emc.camus.application.Auth;
 using emc.camus.application.Common;
 using emc.camus.application.Secrets;
 

@@ -9,7 +9,6 @@ using emc.camus.api.Filters;
 using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V1;
 using emc.camus.api.Mapping.V1;
-using emc.camus.application.Auth;
 using Microsoft.AspNetCore.Http.Timeouts;
 using emc.camus.api.Configurations;
 

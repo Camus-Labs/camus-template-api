@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Mime;
 using System.Text.Json;
 using emc.camus.api.integration.test.Fixtures;
 using emc.camus.api.integration.test.Helpers;
@@ -42,7 +43,7 @@ public class HealthCheckInMemoryHealthyTests
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.OK);
-        response.Content.Headers.ContentType!.MediaType.Should().Be("application/json");
+        response.Content.Headers.ContentType!.MediaType.Should().Be(MediaTypeNames.Application.Json);
 
         var json = await JsonDocument.ParseAsync(
             await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken),

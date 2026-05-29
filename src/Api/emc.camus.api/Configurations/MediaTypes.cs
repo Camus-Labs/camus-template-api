@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace emc.camus.application.Common;
+namespace emc.camus.api.Configurations;
 
 /// <summary>
 /// Defines custom media type (Content-Type) values for the application.

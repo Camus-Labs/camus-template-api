@@ -1,5 +1,3 @@
-using emc.camus.application.Auth;
-
 namespace emc.camus.api.Configurations
 {
     /// <summary>

@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using emc.camus.api.Configurations;
 using emc.camus.api.Filters;
-using emc.camus.application.Auth;
 using emc.camus.application.Common;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;

@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace emc.camus.application.Auth;
+namespace emc.camus.api.Configurations;
 
 /// <summary>
 /// Defines authentication scheme names for the application.
