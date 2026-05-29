@@ -15,6 +15,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="9.0.6" />
     <PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="9.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.13" />
+    <!-- JWT AUTHENTICATION -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.14" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.17.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.17.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,11 +26,9 @@
     <ProjectReference Include="../../Adapters/emc.camus.persistence.postgresql/emc.camus.persistence.postgresql.csproj" />
     <ProjectReference Include="../../Adapters/emc.camus.persistence.inmemory/emc.camus.persistence.inmemory.csproj" />
     <ProjectReference Include="../../Adapters/emc.camus.secrets.dapr/emc.camus.secrets.dapr.csproj" />
-    <ProjectReference Include="../../Adapters/emc.camus.security.jwt/emc.camus.security.jwt.csproj" />
-    <ProjectReference Include="../../Adapters/emc.camus.security.apikey/emc.camus.security.apikey.csproj" />
     <ProjectReference Include="../../Application/emc.camus.application/emc.camus.application.csproj" />
     <ProjectReference Include="../../Adapters/emc.camus.observability.otel/emc.camus.observability.otel.csproj" />
-    <ProjectReference Include="..\..\Adapters\emc.camus.cache.inmemory\emc.camus.cache.inmemory.csproj" />
+    <ProjectReference Include="../../Adapters/emc.camus.cache.inmemory/emc.camus.cache.inmemory.csproj" />
   </ItemGroup>
 
 </Project>

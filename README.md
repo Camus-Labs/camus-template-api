@@ -11,15 +11,26 @@ architecture, authentication, deployment, and debugging.
 
 ## 🎯 What This Template Provides
 
+**Built-in API Features:**
+
+- 🔐 Authentication (JWT) — JWT Bearer Token
+- 🔑 Authentication (API Key) — Header-based Service-to-Service
+- 🛡️ Rate Limiting — Sliding Window Algorithm
+- 📚 API Documentation — Swagger/OpenAPI
+- 🔁 Idempotency — Key validation and response caching
+- ⏱️ Request Timeouts — Configurable timeout policies to prevent cascading failures
+- 🌐 CORS — Configurable cross-origin resource sharing
+- 🛑 Error Handling — Global exception-to-error-code resolution with metrics
+- 🔒 Security Headers — X-Content-Type-Options, X-Frame-Options, CSP, Referrer-Policy
+- 🔀 API Versioning — URL-segment versioning
+- 🏥 Health Checks — Readiness and liveness endpoints
+- 🚀 Transport Security — Forwarded headers, HSTS, HTTPS redirection
+
 **Ready-to-use Infrastructure Adapters:**
 
-- 🔐 [Authentication (JWT)](src/Adapters/emc.camus.security.jwt/README.md) — JWT Bearer Token
-- 🔑 [Authentication (API Key)](src/Adapters/emc.camus.security.apikey/README.md) — Header-based Service-to-Service
-- 🛡️ [Rate Limiting](src/Adapters/emc.camus.ratelimiting.inmemory/README.md) — Sliding Window Algorithm
 - 📊 [Observability](src/Adapters/emc.camus.observability.otel/README.md) — OpenTelemetry + Serilog
 - 🗄️ [Data Persistence](src/Adapters/emc.camus.persistence.postgresql/README.md) — PostgreSQL + Dapper
 - 🔒 [Secrets Management](src/Adapters/emc.camus.secrets.dapr/README.md) — Dapr
-- 📚 [API Documentation](src/Adapters/emc.camus.documentation.swagger/README.md) — Swagger/OpenAPI
 - 🔄 [Caching](src/Adapters/emc.camus.cache.inmemory/README.md) — In-memory token revocation and idempotency response caching
 
 **Architectural Foundation:**
@@ -67,15 +78,11 @@ src/
 │
 ├── Adapters/                              # 🔌 Infrastructure
 │   ├── emc.camus.cache.inmemory/          # Token revocation & idempotency response cache
-│   ├── emc.camus.documentation.swagger/   # Swagger/OpenAPI
 │   ├── emc.camus.migrations.dbup/         # Database migrations
 │   ├── emc.camus.observability.otel/      # OpenTelemetry
 │   ├── emc.camus.persistence.inmemory/    # In-memory repositories
 │   ├── emc.camus.persistence.postgresql/  # Database adapter
-│   ├── emc.camus.ratelimiting.inmemory/   # Rate limiting
-│   ├── emc.camus.secrets.dapr/            # Dapr secrets
-│   ├── emc.camus.security.apikey/         # API Key authentication
-│   └── emc.camus.security.jwt/            # JWT authentication
+│   └── emc.camus.secrets.dapr/            # Dapr secrets
 │
 ├── Infrastructure/                        # 🏗️ Infrastructure Config
 │   ├── dapr/                             # Dapr configurations
@@ -83,19 +90,15 @@ src/
 │
 └── Test/                                  # 🧪 Testing Projects
     ├── emc.camus.api.integration.test/    # Integration tests (Testcontainers)
-    ├── emc.camus.api.test/
+    ├── emc.camus.api.test/                # API layer unit tests
     ├── emc.camus.application.test/
     ├── emc.camus.cache.inmemory.test/
-    ├── emc.camus.documentation.swagger.test/
     ├── emc.camus.domain.test/
     ├── emc.camus.migrations.dbup.test/
     ├── emc.camus.observability.otel.test/
     ├── emc.camus.persistence.inmemory.test/
     ├── emc.camus.persistence.postgresql.test/
-    ├── emc.camus.ratelimiting.inmemory.test/
-    ├── emc.camus.secrets.dapr.test/
-    ├── emc.camus.security.apikey.test/
-    └── emc.camus.security.jwt.test/
+    └── emc.camus.secrets.dapr.test/
 ```
 
 > **📖 Learn More:** See [Architecture Guide](docs/architecture.md) for detailed layer responsibilities
@@ -202,11 +205,6 @@ for the full pipeline, agent roles, and approval gates.
 
 - [Observability (OpenTelemetry)](src/Adapters/emc.camus.observability.otel/README.md) — Distributed tracing,
   metrics, and structured logging via OpenTelemetry and Serilog
-- [Rate Limiting (Memory)](src/Adapters/emc.camus.ratelimiting.inmemory/README.md) — IP-based sliding-window
-  rate limiting with policy-based configuration
-- [Security (JWT)](src/Adapters/emc.camus.security.jwt/README.md) — RSA-signed JWT token issue and validation
-- [Security (API Key)](src/Adapters/emc.camus.security.apikey/README.md) — Header-based API Key authentication
-  for service-to-service communication
 - [Secrets (Dapr)](src/Adapters/emc.camus.secrets.dapr/README.md) — Dapr-based secret retrieval with
   local and cloud store support
 - [Persistence (PostgreSQL)](src/Adapters/emc.camus.persistence.postgresql/README.md) — Dapper-based repository
@@ -217,8 +215,6 @@ for the full pipeline, agent roles, and approval gates.
   response caching
 - [Persistence (Memory)](src/Adapters/emc.camus.persistence.inmemory/README.md) — In-memory repositories for
   development and testing
-- [Documentation (Swagger)](src/Adapters/emc.camus.documentation.swagger/README.md) — OpenAPI 3.0 documentation with
-  multi-version support and Swagger UI
 
 ---
 

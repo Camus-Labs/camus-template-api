@@ -20,7 +20,7 @@ public static class ApiKeyAuthSetupExtensions
     /// Requires an <see cref="emc.camus.application.Secrets.ISecretProvider"/> to be registered
     /// in the service collection before calling this method.
     /// </remarks>
-    public static WebApplicationBuilder AddApiKeyAuth(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder AddApiKeyAuthentication(this WebApplicationBuilder builder)
     {
         var settings = builder.Configuration
             .GetSection(ApiKeySettings.ConfigurationSectionName)

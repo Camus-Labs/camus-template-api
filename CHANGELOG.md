@@ -17,6 +17,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Relocate JWT security feature from Adapters layer into the API layer to clarify architectural boundaries
 - Relocate API Key security feature from Adapters layer into the API layer to clarify architectural boundaries
 - Relocate Swagger/OpenAPI documentation feature from Adapters layer into the API layer to clarify architectural boundaries
+- Consolidate unit tests from 4 relocated adapter test projects into `emc.camus.api.test`
+- Update solution filters to reference only existing projects
+- Update README project structure to reflect new layout
+- Update architecture documentation to distinguish API-layer features from true adapters
 
 ### Removed
 
@@ -24,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Remove `emc.camus.security.jwt` adapter project from the solution
 - Remove `emc.camus.security.apikey` adapter project from the solution
 - Remove `emc.camus.documentation.swagger` adapter project from the solution
+- Remove orphaned test projects for relocated adapter features
 
 ## [1.0.0] - 2026-05-01
 

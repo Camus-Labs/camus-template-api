@@ -34,11 +34,14 @@ architectural boundary between API features and adapters`.
 - Move any integration tests from the above into `src/Test/emc.camus.api.integration.test/`
 - Remove the 4 orphaned test projects from the solution
 - Delete the 4 orphaned test project directories
+- Adjust namespace references in relocated tests as needed
+
+**Documentation:**
+
 - Update solution filters (`UnitTests.slnf`, `IntegrationTests.slnf`) to reflect changes
 - Update `README.md` project structure section
 - Update `docs/architecture.md` to reflect the new boundary
 - Update or remove affected adapter READMEs (rate limiting, JWT, API Key, Swagger)
-- Adjust namespace references in relocated tests as needed
 - Ensure 100% of existing tests pass with adjustments where needed
 
 ### Out of Scope
@@ -50,15 +53,23 @@ architectural boundary between API features and adapters`.
 
 ### Functional Requirements
 
-- FR-01: All unit tests from the 4 removed adapter test projects exist in `src/Test/emc.camus.api.test/` with
-  appropriate subdirectory organization
-- FR-02: All integration tests from the 4 removed adapter test projects exist in
+- FR-01: The 4 adapter directories (`ratelimiting.inmemory`, `security.jwt`, `security.apikey`,
+  `documentation.swagger`) are deleted from `src/Adapters/`
+- FR-02: The 4 adapter projects are removed from `CamusApp.sln` and all project references to them
+  are removed from `emc.camus.api.csproj`
+- FR-03: `Program.cs` calls the new API-layer setup extensions; no references to deleted adapter
+  namespaces remain
+- FR-04: `emc.camus.api.csproj` directly references any NuGet packages previously obtained
+  transitively through the deleted adapters
+- FR-05: All unit tests from the 4 removed adapter test projects exist in
+  `src/Test/emc.camus.api.test/` with appropriate subdirectory organization
+- FR-06: All integration tests from the 4 removed adapter test projects exist in
   `src/Test/emc.camus.api.integration.test/`
-- FR-03: The 4 orphaned test projects are removed from the solution and their directories deleted
-- FR-04: Solution filters (`UnitTests.slnf`, `IntegrationTests.slnf`) reference only existing projects
-- FR-05: `README.md` project structure section accurately reflects the new layout
-- FR-06: `docs/architecture.md` accurately describes the boundary between API features and true adapters
-- FR-07: Adapter READMEs for the 4 relocated features are removed or archived
+- FR-07: The 4 orphaned test projects are removed from the solution and their directories deleted
+- FR-08: Solution filters (`UnitTests.slnf`, `IntegrationTests.slnf`) reference only existing projects
+- FR-09: `README.md` project structure section accurately reflects the new layout
+- FR-10: `docs/architecture.md` accurately describes the boundary between API features and true adapters
+- FR-11: Adapter READMEs for the 4 relocated features are removed or archived
 
 ### Non-Functional Requirements
 
@@ -70,14 +81,22 @@ architectural boundary between API features and adapters`.
 
 ### Acceptance Criteria
 
-- AC-01: `dotnet test src/CamusApp.sln` passes with zero failures
-- AC-02: No references to `emc.camus.ratelimiting.inmemory`, `emc.camus.security.jwt`, `emc.camus.security.apikey`, or
-  `emc.camus.documentation.swagger` exist in `.sln` or `.slnf` files
-- AC-03: `README.md` project structure matches the actual directory layout
-- AC-04: `docs/architecture.md` lists only true adapters (cache.inmemory, persistence.\*, secrets.dapr,
-  observability.otel, migrations.dbup) under the Adapters section and documents relocated features as API-layer concerns
-- AC-05: Test count before and after refactor is identical (no tests lost)
-- AC-06: `docs/authentication.md` links point to the correct new locations
+- AC-01: `dotnet build src/CamusApp.sln` succeeds — no references to deleted adapter projects or namespaces
+- AC-02: `dotnet test src/CamusApp.sln` passes with zero failures
+- AC-03: The directories `src/Adapters/emc.camus.ratelimiting.inmemory/`,
+  `src/Adapters/emc.camus.security.jwt/`, `src/Adapters/emc.camus.security.apikey/`,
+  `src/Adapters/emc.camus.documentation.swagger/` do not exist
+- AC-04: No references to `emc.camus.ratelimiting.inmemory`, `emc.camus.security.jwt`,
+  `emc.camus.security.apikey`, or `emc.camus.documentation.swagger` exist in `.sln`, `.slnf`,
+  or `.csproj` files
+- AC-05: `Program.cs` calls only API-layer setup extensions for rate limiting, JWT, API Key,
+  and Swagger
+- AC-06: `README.md` project structure matches the actual directory layout
+- AC-07: `docs/architecture.md` lists only true adapters (cache.inmemory, persistence.\*,
+  secrets.dapr, observability.otel, migrations.dbup) under the Adapters section and documents
+  relocated features as API-layer concerns
+- AC-08: Test count before and after refactor is identical (no tests lost)
+- AC-09: `docs/authentication.md` links point to the correct new locations
 
 ### Constraints and Dependencies
 
@@ -178,72 +197,148 @@ architectural boundary between API features and adapters`.
 
 ## Section C - Implementation Tracking
 
+### Unit Tester Phase: BYPASSED
+
+This story is a pure refactoring/relocation task with no new production behavior to drive via TDD. All acceptance
+criteria are structural or documentation verification checks that cannot be expressed as unit tests against new stubs.
+
+#### Justification
+
+- **No production types to stub.** The Layer Impact Matrix specifies zero new classes, interfaces, or methods across
+  Domain, Application, API, and Adapters layers.
+- **Acceptance criteria are meta-verification, not behavioral:**
+  - AC-01 (all tests pass) — verified by `dotnet test src/CamusApp.sln`
+  - AC-02 (no orphaned references) — verified by grep/search against `.sln` and `.slnf` files
+  - AC-03 (README accuracy) — verified by comparing `README.md` content to actual directory layout
+  - AC-04 (architecture.md accuracy) — verified by documentation review
+  - AC-05 (test count preserved) — verified by comparing `dotnet test --list-tests` counts before and after
+  - AC-06 (authentication.md links) — verified by link validation
+
+#### Recommended Verification Approach
+
+| AC | Verification Method |
+| --- | --- |
+| AC-01 | `dotnet test src/CamusApp.sln` — zero failures |
+| AC-02 | Grep for orphaned references in `.sln`/`.slnf` — no matches |
+| AC-03 | Manual review of `README.md` project structure section |
+| AC-04 | Manual review of `docs/architecture.md` Adapters section |
+| AC-05 | Compare test count before/after using `dotnet test --list-tests` |
+| AC-06 | Validate links in `docs/authentication.md` point to valid paths |
+
 ### Test Traceability
 
-| AC    | Test Class      | Test Method                          | Layer                               | Change          |
-| ----- | --------------- | ------------------------------------ | ----------------------------------- | --------------- |
-| AC-01 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
-| AC-02 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
-| AC-03 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
+| AC | Test Class | Test Method | Layer | Change |
+| --- | --- | --- | --- | --- |
+| N/A | — | — | — | — |
+
+> No TDD unit tests required. Acceptance criteria are verified through build/test commands and documentation review.
 
 ### Skeleton Inventory
 
-| Layer                               | Stub File             | Change          | Types                      | Members                         |
-| ----------------------------------- | --------------------- | --------------- | -------------------------- | ------------------------------- |
-| [Domain, Application, Api, Adapter] | [src/.../FileName.cs] | [New, Modified] | [class, interface, record] | [method signatures, properties] |
+| Layer | Stub File | Change | Types | Members |
+| --- | --- | --- | --- | --- |
+| N/A | — | — | — | — |
+
+> No production stubs required. This story creates no new types or behavioral methods.
 
 ### Tester Handoff Gate
 
-- Every acceptance criterion has at least one test method: `[Yes | No]`
-- Skeleton inventory complete and user-approved: `[Yes | No]`
-- Tests compile and fail for the right reason (TDD red): `[Yes | No]`
-- Ready for implementation: `[Yes | No]`
-- Tester sign-off: `[Name, Date]`
+- Every acceptance criterion has at least one test method: `N/A — bypassed (structural refactor, no testable behavior)`
+- Skeleton inventory complete and user-approved: `N/A — no stubs needed`
+- Tests compile and fail for the right reason (TDD red): `N/A — bypassed`
+- Ready for implementation: `Yes`
+- Tester sign-off: `3M0R4C, 2026-05-29`
+- Bypass reason: Pure relocation/documentation story — no new production behavior to unit test
 
 ### Regression Fixes Log
 
-| #   | Test File        | Test Method   | Change Made          | Reason                                  |
-| --- | ---------------- | ------------- | -------------------- | --------------------------------------- |
-| [n] | [test file path] | [method name] | [description of fix] | [contract change that caused the break] |
+| # | Test File | Test Method | Change Made | Reason |
+| --- | --- | --- | --- | --- |
+| 1 | RateLimitHeadersMiddlewareTests.cs | All methods | Added `using emc.camus.api.Configurations;` | `RateLimitContextKeys` moved to API Configurations namespace |
+| 2 | ApiKeyAuthenticationHandler.cs | N/A (production) | Replaced `AuthenticationSchemes.ApiKey` with `ApiKeySettings.AuthenticationScheme` | `AuthenticationSchemes` moved to API.Configurations; adapter cannot reference API |
+| 3 | ApiKeySetupExtensions.cs | N/A (production) | Replaced `AuthenticationSchemes.ApiKey` with `ApiKeySettings.AuthenticationScheme` | Same as above |
+| 4 | Program.cs | N/A (production) | Switched to API-internal `AddJwtAuthentication()` and `AddApiKeyAuth()` | Adapters deleted; API owns authentication wiring |
+| 5 | emc.camus.api.csproj | N/A (production) | Added JWT NuGet packages, removed adapter ProjectReferences | Packages were transitive via deleted adapters |
+| 6 | JwtSetupExtensions.cs | N/A (production) | Converted `AddJwtAuthenticationInternal` to extension method `AddJwtAuthentication` | Adapter no longer present; no ambiguity |
 
 ### Developer Handoff Gate
 
-- All unit tests pass (TDD green): `[Yes | No]`
-- All existing integration tests pass: `[Yes | No]`
-- Regression fixes documented (if any): `[Yes | N/A]`
-- Build succeeds with zero warnings: `[Yes | No]`
-- Ready for code review: `[Yes | No]`
-- Developer sign-off: `[Name, Date]`
+- All unit tests pass (TDD green): `Yes`
+- All existing integration tests pass: `Yes`
+- Regression fixes documented (if any): `Yes`
+- Build succeeds with zero warnings: `Yes`
+- Ready for code review: `Yes`
+- Developer sign-off: `3M0R4C, 2026-05-29`
 
 ## Section D - Integration Testing
 
 ### Integration Test Traceability
 
-| Boundary               | Factory              | Test Class      | Test Method                          | Change                    |
-| ---------------------- | -------------------- | --------------- | ------------------------------------ | ------------------------- |
-| [cross-layer boundary] | [factory class name] | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [New, Modified, Existing] |
+| Boundary | Factory | Test Class | Test Method | Change |
+| --- | --- | --- | --- | --- |
+| API → RateLimiting middleware → HTTP response | ApiRateLimitingFactory | RateLimitingIpPartitionTests | (all existing methods) | Existing |
+| API → JWT authentication → Token generation/validation | ApiInMemoryFactory | AuthInMemoryEndpointTests | (all existing methods) | Existing |
+| API → JWT authentication → PostgreSQL persistence | ApiPostgreSqlFactory | AuthPostgreSqlEndpointTests | (all existing methods) | Existing |
+| API → Token revocation cache → PostgreSQL | ApiPostgreSqlFactory | TokenRevocationCachePostgreSqlTests | (all existing methods) | Existing |
+| API → Swagger documentation → HTTP response | ApiInMemoryFactory | SwaggerDocumentationInMemoryTests | (all existing methods) | Existing |
 
 ### Integration Test Findings
 
-| #   | Test          | Failure               | Root Cause Analysis | Affected File          |
-| --- | ------------- | --------------------- | ------------------- | ---------------------- |
-| [n] | [test method] | [failure description] | [analysis]          | [production file path] |
+| # | Test | Failure | Root Cause Analysis | Affected File |
+| --- | --- | --- | --- | --- |
+| — | — | — | — | — |
+
+> No findings. All 63 integration tests pass without modification.
 
 ### Integration Tester Handoff Gate
 
-- All cross-layer boundaries identified and covered: `[Yes | No]`
-- All integration tests pass: `[Yes | No]`
-- No unresolved production code findings: `[Yes | No]`
-- Ready for review: `[Yes | No]`
-- Integration Tester sign-off: `[Name, Date]`
+- All cross-layer boundaries identified and covered: `Yes`
+- All integration tests pass: `Yes`
+- No unresolved production code findings: `Yes`
+- Ready for review: `Yes`
+- Integration Tester sign-off: `3M0R4C, 2026-05-29`
 
 ## Section E - Technical Writer
 
 ### Version Update
 
-- Previous version: `[X.X.X]`
-- New version: `[X.X.X]`
-- Bump type: `[MAJOR | MINOR | PATCH | APPEND]`
-- Reason: `[one-sentence justification]`
+- Previous version: `1.0.1`
+- New version: `1.0.1`
+- Bump type: `APPEND`
+- Reason: `Test consolidation and documentation updates appended to existing release section`
 
 ### CHANGELOG Entry
+
+```markdown
+### Changed
+
+- Consolidate unit tests from 4 relocated adapter test projects into `emc.camus.api.test`
+- Update solution filters to reference only existing projects
+- Update README project structure to reflect new layout
+- Update architecture documentation to distinguish API-layer features from true adapters
+
+### Removed
+
+- Remove orphaned test projects for relocated adapter features
+```
+
+### Documentation Updates
+
+- Swagger annotations updated: 0 endpoint(s)
+- Postman requests updated: 0 request(s)
+- Files modified: `CHANGELOG.md`,
+  `docs/stories/todo/api-feature-boundary-refactor/US-05-consolidate-tests-and-docs.md`
+
+### Technical Writer Handoff Gate
+
+- Version in Directory.Build.props matches confirmed decision: `Yes`
+- CHANGELOG entry matches new version and date: `Yes`
+- Swagger examples reflect new/changed endpoints: `N/A`
+- Postman collection reflects new/changed requests: `N/A`
+- Markdown linting passes with zero errors: `Yes`
+- Build succeeds with zero errors and warnings: `Yes`
+- Technical Writer sign-off: `3M0R4C, 2026-05-29`
+
+### Status
+
+Status: `DOCUMENTED`

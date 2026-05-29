@@ -15,10 +15,6 @@ namespace emc.camus.api.Extensions;
 /// <summary>
 /// Provides extension methods for configuring JWT authentication services.
 /// </summary>
-/// <remarks>
-/// This class will replace <c>emc.camus.security.jwt.JwtSetupExtensions</c> once the adapter is removed.
-/// During TDD scaffolding the method is non-extension to avoid ambiguity with the still-present adapter.
-/// </remarks>
 [ExcludeFromCodeCoverage]
 public static class JwtSetupExtensions
 {
@@ -27,7 +23,7 @@ public static class JwtSetupExtensions
     /// </summary>
     /// <param name="builder">The web application builder.</param>
     /// <returns>The web application builder for fluent configuration.</returns>
-    public static WebApplicationBuilder AddJwtAuthenticationInternal(WebApplicationBuilder builder)
+    public static WebApplicationBuilder AddJwtAuthentication(this WebApplicationBuilder builder)
     {
         // Load, validate, and register JWT Settings
         var settings = builder.Configuration.GetSection(JwtSettings.ConfigurationSectionName).Get<JwtSettings>() ?? new JwtSettings();

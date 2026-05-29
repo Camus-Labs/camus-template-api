@@ -42,17 +42,22 @@ complete contracts documentation and namespace structure.
 Infrastructure implementations that fulfill Application-layer port interfaces. Each adapter is independently
 swappable:
 
-- **API** (`emc.camus.api`) — REST endpoints, middleware, and composition root
 - **Persistence** (`emc.camus.persistence.postgresql`) — PostgreSQL database access with Dapper
 - **Observability** (`emc.camus.observability.otel`) — OpenTelemetry tracing, metrics, and structured logging
-- **Rate Limiting** (`emc.camus.ratelimiting.inmemory`) — IP-based sliding window rate limiter
 - **Secrets** (`emc.camus.secrets.dapr`) — Dapr secret management
-- **Security JWT** (`emc.camus.security.jwt`) — JWT Bearer authentication
-- **Security API Key** (`emc.camus.security.apikey`) — API Key authentication
-- **Documentation** (`emc.camus.documentation.swagger`) — Swagger/OpenAPI documentation
 - **Cache** (`emc.camus.cache.inmemory`) — In-memory token revocation and idempotency response caching
 - **Migrations** (`emc.camus.migrations.dbup`) — Database schema versioning with DbUp
 - **Persistence In-Memory** (`emc.camus.persistence.inmemory`) — In-memory repositories for development and testing
+
+### API (`emc.camus.api`)
+
+Outermost layer hosting the HTTP pipeline, controllers, middleware, and cross-cutting features tightly coupled
+to the hosting infrastructure. Implements authentication, rate limiting, idempotency, error handling, security
+headers, API versioning, request timeouts, health checks, and API documentation directly — since these are
+HTTP-pipeline concerns rather than swappable infrastructure adapters.
+
+> **📖 Full Reference:** See [API Layer README](../src/Api/emc.camus.api/README.md) for configuration,
+middleware pipeline, and extension documentation.
 
 Each adapter README contains configuration, integration, and troubleshooting details.
 
@@ -65,25 +70,3 @@ Adapters  → Application
 
 **Rule:** Dependencies point inward. Domain has zero external dependencies. Adapters depend on Application
 interfaces but never on each other.
-
-## Cross-Cutting Concerns
-
-Observability, security, rate limiting, request timeouts, and idempotency are implemented as cross-cutting
-concerns wired through the API composition root. See the following guides for architectural and configuration details:
-
-- **Authentication** — [Authentication Guide](authentication.md) covers JWT and API Key mechanisms
-- **Observability** — [Observability Adapter](../src/Adapters/emc.camus.observability.otel/README.md) and
-  [Infrastructure Configuration](../src/Infrastructure/observability/README.md) cover the telemetry pipeline
-- **Rate Limiting** — [Rate Limiting Adapter](../src/Adapters/emc.camus.ratelimiting.inmemory/README.md)
-  covers IP-based sliding window rate limiting with policy-based configuration
-- **Request Timeouts** — Configured in the API layer via ASP.NET Core built-in request timeouts with named
-  policies (default, tight, extended) and appsettings-driven durations
-- **Caching** — [Cache Adapter](../src/Adapters/emc.camus.cache.inmemory/README.md) provides in-memory
-  token revocation caching with background sync from persistence, and idempotency response caching with
-  TTL-based expiration
-- **Idempotency** — Header-enforced per-endpoint idempotency key validation and response caching with
-  configurable TTL policies; on cache hit with matching body hash, replays the cached response; on body
-  mismatch, returns HTTP 409; see [API Layer README](../src/Api/emc.camus.api/README.md) for configuration
-  details
-- **Database Migrations** — [Migrations Adapter](../src/Adapters/emc.camus.migrations.dbup/README.md)
-  applies ordered SQL scripts at startup via DbUp

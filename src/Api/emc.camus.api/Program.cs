@@ -3,8 +3,6 @@ using System.Reflection;
 using System.Diagnostics.CodeAnalysis;
 using emc.camus.api.Extensions;
 using emc.camus.cache.inmemory;
-using emc.camus.security.jwt;
-using emc.camus.security.apikey;
 using emc.camus.secrets.dapr;
 using emc.camus.migrations.dbup;
 
@@ -69,7 +67,7 @@ builder.AddDatabaseMigrations();
 // Step 12: Configure in-memory cache (token revocation denylist)
 builder.AddInMemoryCache();
 
-// Step 13: Configure Authentication using Security Adapters (depends on secrets)
+// Step 13: Configure Authentication using API-layer extensions (depends on secrets)
 builder.AddJwtAuthentication();
 builder.AddApiKeyAuthentication();
 
