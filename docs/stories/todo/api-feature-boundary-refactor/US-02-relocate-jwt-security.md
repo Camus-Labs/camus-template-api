@@ -176,70 +176,138 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 
 ### Test Traceability
 
-| AC    | Test Class      | Test Method                          | Layer                               | Change          |
-| ----- | --------------- | ------------------------------------ | ----------------------------------- | --------------- |
-| AC-01 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
-| AC-02 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
-| AC-03 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
+| AC    | Test Class             | Test Method                                                                         | Layer | Change |
+| ----- | ---------------------- | ----------------------------------------------------------------------------------- | ----- | ------ |
+| AC-01 | JwtSettingsTests       | Constructor_Defaults_HasExpectedValues                                              | Api   | New    |
+| AC-02 | JwtSettingsTests       | Validate_IssuerAtMaxLength_DoesNotThrow                                             | Api   | New    |
+| AC-02 | JwtSettingsTests       | Validate_AudienceAtMaxLength_DoesNotThrow                                           | Api   | New    |
+| AC-02 | JwtSettingsTests       | Validate_ExpirationMinutesAtBoundary_DoesNotThrow                                   | Api   | New    |
+| AC-02 | JwtSettingsTests       | Validate_RsaPrivateKeySecretNameAtMaxLength_DoesNotThrow                            | Api   | New    |
+| AC-03 | JwtSettingsTests       | Validate_NullOrEmptyIssuer_ThrowsInvalidOperationException                          | Api   | New    |
+| AC-03 | JwtSettingsTests       | Validate_IssuerExceedingMaxLength_ThrowsInvalidOperationException                   | Api   | New    |
+| AC-03 | JwtSettingsTests       | Validate_IssuerNotValidUrl_ThrowsInvalidOperationException                          | Api   | New    |
+| AC-03 | JwtSettingsTests       | Validate_NullOrEmptyAudience_ThrowsInvalidOperationException                        | Api   | New    |
+| AC-03 | JwtSettingsTests       | Validate_AudienceExceedingMaxLength_ThrowsInvalidOperationException                 | Api   | New    |
+| AC-03 | JwtSettingsTests       | Validate_AudienceNotValidUrl_ThrowsInvalidOperationException                        | Api   | New    |
+| AC-03 | JwtSettingsTests       | Validate_ExpirationMinutesOutOfRange_ThrowsInvalidOperationException                | Api   | New    |
+| AC-03 | JwtSettingsTests       | Validate_NullOrEmptyRsaPrivateKeySecretName_ThrowsInvalidOperationException         | Api   | New    |
+| AC-03 | JwtSettingsTests       | Validate_RsaPrivateKeySecretNameExceedingMaxLength_ThrowsInvalidOperationException  | Api   | New    |
+| AC-03 | JwtTokenGeneratorTests | Constructor_NullJwtSettings_ThrowsArgumentNullException                             | Api   | New    |
+| AC-03 | JwtTokenGeneratorTests | Constructor_NullSigningCredentials_ThrowsArgumentNullException                      | Api   | New    |
+| AC-03 | JwtTokenGeneratorTests | Constructor_NullTimeProvider_ThrowsArgumentNullException                            | Api   | New    |
+| AC-03 | JwtTokenGeneratorTests | GenerateToken_EmptyUserId_ThrowsArgumentOutOfRangeException                         | Api   | New    |
+| AC-03 | JwtTokenGeneratorTests | GenerateToken_NullOrWhiteSpaceUsername_ThrowsArgumentException                      | Api   | New    |
+| AC-03 | JwtTokenGeneratorTests | GenerateToken_ValidInputs_ReturnsTokenWithExpectedProperties                        | Api   | New    |
+| AC-03 | JwtTokenGeneratorTests | GenerateToken_WithAdditionalClaims_TokenContainsAdditionalClaims                    | Api   | New    |
+| AC-03 | JwtTokenGeneratorTests | GenerateToken_WithNullAdditionalClaims_DoesNotThrow                                 | Api   | New    |
+| AC-03 | JwtTokenGeneratorTests | GenerateToken_WithJti_EmptyUserId_ThrowsArgumentOutOfRangeException                 | Api   | New    |
+| AC-03 | JwtTokenGeneratorTests | GenerateToken_WithJti_NullOrWhiteSpaceUsername_ThrowsArgumentException              | Api   | New    |
+| AC-03 | JwtTokenGeneratorTests | GenerateToken_WithJti_EmptyJti_ThrowsArgumentOutOfRangeException                    | Api   | New    |
+| AC-03 | JwtTokenGeneratorTests | GenerateToken_WithJti_DefaultExpiresOn_ThrowsArgumentOutOfRangeException            | Api   | New    |
+| AC-03 | JwtTokenGeneratorTests | GenerateToken_WithJti_ValidInputs_ReturnsTokenWithExpectedProperties                | Api   | New    |
+| AC-03 | JwtTokenGeneratorTests | GenerateToken_WithJti_WithAdditionalClaims_TokenContainsAdditionalClaims            | Api   | New    |
+| AC-03 | JwtTokenGeneratorTests | GenerateToken_WithJti_NullAdditionalClaims_DoesNotThrow                             | Api   | New    |
+| AC-04 | JwtTokenGeneratorTests | GenerateToken_ValidInputs_ReturnsTokenWithExpectedProperties                        | Api   | New    |
+| AC-05 | JwtTokenGeneratorTests | GenerateToken_SigningFailure_ThrowsJwtTokenGenerationException                      | Api   | New    |
 
 ### Skeleton Inventory
 
-| Layer                               | Stub File             | Change          | Types                      | Members                         |
-| ----------------------------------- | --------------------- | --------------- | -------------------------- | ------------------------------- |
-| [Domain, Application, Api, Adapter] | [src/.../FileName.cs] | [New, Modified] | [class, interface, record] | [method signatures, properties] |
+| Layer | Stub File                                                                 | Change | Types                                            | Members                                                                                              |
+| ----- | ------------------------------------------------------------------------- | ------ | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Api   | src/Api/emc.camus.api/Configurations/JwtSettings.cs                       | New    | public sealed class JwtSettings                  | Issuer, Audience, ExpirationMinutes, RsaPrivateKeySecretName, Validate()                             |
+| Api   | src/Api/emc.camus.api/Infrastructure/JwtTokenGenerator.cs                 | New    | public sealed class JwtTokenGenerator            | GenerateToken(Guid, string, IEnumerable?), GenerateToken(Guid, string, Guid, DateTime, IEnumerable?) |
+| Api   | src/Api/emc.camus.api/Infrastructure/JwtKeyLoadException.cs               | New    | public sealed class JwtKeyLoadException          | ctor(string, Exception)                                                                              |
+| Api   | src/Api/emc.camus.api/Infrastructure/JwtTokenGenerationException.cs       | New    | public sealed class JwtTokenGenerationException  | ctor(string, Exception)                                                                              |
+| Api   | src/Api/emc.camus.api/Extensions/JwtSetupExtensions.cs                    | New    | public static class JwtSetupExtensions           | AddJwtAuthenticationInternal(WebApplicationBuilder)                                                  |
 
 ### Tester Handoff Gate
 
-- Every acceptance criterion has at least one test method: `[Yes | No]`
-- Skeleton inventory complete and user-approved: `[Yes | No]`
-- Tests compile and fail for the right reason (TDD red): `[Yes | No]`
-- Ready for implementation: `[Yes | No]`
-- Tester sign-off: `[Name, Date]`
+- Every acceptance criterion has at least one test method: `Yes`
+- Skeleton inventory complete and user-approved: `Yes`
+- Tests compile and fail for the right reason (TDD red): `Yes`
+- Ready for implementation: `Yes`
+- Tester sign-off: `Unit Test Engineer, 2026-05-28`
 
 ### Regression Fixes Log
 
 | #   | Test File        | Test Method   | Change Made          | Reason                                  |
 | --- | ---------------- | ------------- | -------------------- | --------------------------------------- |
-| [n] | [test file path] | [method name] | [description of fix] | [contract change that caused the break] |
+| —   | —                | —             | —                    | No regressions                          |
 
 ### Developer Handoff Gate
 
-- All unit tests pass (TDD green): `[Yes | No]`
-- All existing integration tests pass: `[Yes | No]`
-- Regression fixes documented (if any): `[Yes | N/A]`
-- Build succeeds with zero warnings: `[Yes | No]`
-- Ready for code review: `[Yes | No]`
-- Developer sign-off: `[Name, Date]`
+- All unit tests pass (TDD green): `Yes`
+- All existing integration tests pass: `Yes`
+- Regression fixes documented (if any): `N/A`
+- Build succeeds with zero warnings: `Yes`
+- Ready for code review: `Yes`
+- Developer sign-off: `3M0R4C, 2026-05-28`
 
 ## Section D - Integration Testing
 
 ### Integration Test Traceability
 
-| Boundary               | Factory              | Test Class      | Test Method                          | Change                    |
-| ---------------------- | -------------------- | --------------- | ------------------------------------ | ------------------------- |
-| [cross-layer boundary] | [factory class name] | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [New, Modified, Existing] |
+| Boundary | Factory | Test Class | Test Method | Change |
+| --- | --- | --- | --- | --- |
+| API→Application (JWT token generation via ITokenGenerator) | ApiInMemoryFactory | AuthInMemoryEndpointTests | Authenticate_ValidAdminCredentials_ReturnsOkWithToken | Existing |
+| API→Application (JWT token generation with persistence) | ApiPostgreSqlFactory | AuthPostgreSqlEndpointTests | GenerateToken_ValidRequest_ReturnsCreatedWithPersistedToken | Existing |
+| API→Application (JWT token validation pipeline — invalid credentials) | ApiInMemoryFactory | AuthInMemoryEndpointTests | Authenticate_InvalidPassword_ReturnsUnauthorized | Existing |
+| API→Application (JWT token validation pipeline — missing API key) | ApiInMemoryFactory | AuthInMemoryEndpointTests | Authenticate_NoApiKey_ReturnsUnauthorized | Existing |
+| API→Cache (Token revocation check in JWT validation) | ApiPostgreSqlFactory | TokenRevocationCachePostgreSqlTests | BackgroundSync_RevokedTokenInDatabase_CacheRejectsTokenAfterSyncCycle | Existing |
+| API→Secrets (RSA key loading via ISecretProvider) | ApiInMemoryFactory | AuthInMemoryEndpointTests | Authenticate_ValidAdminCredentials_ReturnsOkWithToken | Existing |
+| API→Persistence (Token revocation with DB update) | ApiPostgreSqlFactory | AuthPostgreSqlEndpointTests | RevokeToken_ValidJti_ReturnsOkWithRevokedToken | Existing |
 
 ### Integration Test Findings
 
-| #   | Test          | Failure               | Root Cause Analysis | Affected File          |
-| --- | ------------- | --------------------- | ------------------- | ---------------------- |
-| [n] | [test method] | [failure description] | [analysis]          | [production file path] |
+| # | Test | Failure | Root Cause Analysis | Affected File |
+| --- | --- | --- | --- | --- |
+| — | — | — | — | No findings — all 61 integration tests pass |
 
 ### Integration Tester Handoff Gate
 
-- All cross-layer boundaries identified and covered: `[Yes | No]`
-- All integration tests pass: `[Yes | No]`
-- No unresolved production code findings: `[Yes | No]`
-- Ready for review: `[Yes | No]`
-- Integration Tester sign-off: `[Name, Date]`
+- All cross-layer boundaries identified and covered: `Yes`
+- All integration tests pass: `Yes`
+- No unresolved production code findings: `Yes`
+- Ready for review: `Yes`
+- Integration Tester sign-off: `Integration Test Engineer, 2026-05-28`
 
 ## Section E - Technical Writer
 
+### Status
+
+`DOCUMENTED`
+
 ### Version Update
 
-- Previous version: `[X.X.X]`
-- New version: `[X.X.X]`
-- Bump type: `[MAJOR | MINOR | PATCH | APPEND]`
-- Reason: `[one-sentence justification]`
+- Previous version: `1.0.1`
+- New version: `1.0.1`
+- Bump type: `APPEND`
+- Reason: `Appending to existing 1.0.1 release as part of same api-feature-boundary-refactor feature delivery`
 
 ### CHANGELOG Entry
+
+```markdown
+### Changed
+
+- Relocate JWT security feature from Adapters layer into the API layer to clarify architectural boundaries
+
+### Removed
+
+- Remove `emc.camus.security.jwt` adapter project from the solution
+```
+
+### Documentation Updates
+
+- Swagger annotations updated: 0 endpoint(s)
+- Postman requests updated: 0 request(s)
+- Files modified: `CHANGELOG.md`, `docs/stories/todo/api-feature-boundary-refactor/US-02-relocate-jwt-security.md`
+
+### Technical Writer Handoff Gate
+
+- Version in Directory.Build.props matches confirmed decision: `Yes`
+- CHANGELOG entry matches new version and date: `Yes`
+- Swagger examples reflect new/changed endpoints: `N/A`
+- Postman collection reflects new/changed requests: `N/A`
+- Markdown linting passes with zero errors: `Yes`
+- Build succeeds with zero errors and warnings: `Yes`
+- Technical Writer sign-off: `3M0R4C, 2026-05-28`
