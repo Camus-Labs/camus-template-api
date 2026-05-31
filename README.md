@@ -51,7 +51,7 @@ src/
 │       ├── Configurations/                 # App settings bindings
 │       ├── Controllers/                    # API endpoints
 │       ├── Extensions/                     # Service configuration
-│       ├── Infrastructure/                 # Cross-cutting infra
+│       ├── Utilities/                      # Framework-dependent helpers
 │       ├── Mapping/                        # DTO mapping
 │       ├── Metrics/                        # Custom metrics
 │       ├── Middleware/                     # HTTP pipeline components
@@ -68,7 +68,6 @@ src/
 │       ├── Exceptions/                    # Application exceptions
 │       ├── Idempotency/                   # Idempotency contracts
 │       ├── Observability/                 # Tracing interfaces
-│       ├── RateLimiting/                  # Rate limiting contracts
 │       └── Secrets/                       # Secret provider interfaces
 │
 ├── Domain/                                 # 💼 Business Core
@@ -146,8 +145,11 @@ Camus follows **Hexagonal Architecture** (Ports & Adapters):
 
 ```text
 ┌─────────────────────────────────────────────┐
-│           Adapters (External)               │
-│  API | PostgreSQL | Dapr | OpenTelemetry   │
+│         API Layer (Outermost)               │
+│  Controllers | Middleware | Auth | Swagger  │
+├─────────────────────────────────────────────┤
+│         Adapters (External)                 │
+│  PostgreSQL | Dapr | OpenTelemetry          │
 ├─────────────────────────────────────────────┤
 │         Application Layer                   │
 │  Use Cases | Port Interfaces                │

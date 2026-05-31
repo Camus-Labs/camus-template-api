@@ -14,7 +14,6 @@ consumed by the API layer and infrastructure adapters. It also contains concrete
 The Application layer serves as the **contracts layer** between API/Adapters and Domain:
 
 - ✅ **Interfaces** consumed by API layer or multiple adapters
-- ✅ **Attributes** for declarative behavior (e.g., `[RateLimit]`)
 - ✅ **Exceptions** for standardized error handling
 - ✅ **Constants** for application-wide values (error codes, headers, policies)
 
@@ -44,7 +43,7 @@ Authentication-related contracts and services:
 
 - **`IAuthService`** - Interface for the authentication application service
 - **`AuthService`** - Orchestrates user authentication, token generation, listing, and revocation
-- **`ITokenGenerator`** - Interface for JWT token generation (implemented by `emc.camus.security.jwt`)
+- **`ITokenGenerator`** - Interface for JWT token generation (implemented by `emc.camus.api`)
 - **`IUserRepository`** - Repository contract for user credential validation and retrieval
 - **`IGeneratedTokenRepository`** - Repository contract for managing generated tokens
 - **`AuthenticateUserCommand`** - Command record for user authentication requests
@@ -55,7 +54,6 @@ Authentication-related contracts and services:
 - **`GeneratedTokenSummaryView`** - Summary view record for generated token listings
 - **`GeneratedTokenFilter`** - Filter criteria record for generated token queries
 - **`GeneratedTokenSortField`** - Enum for sortable fields (TokenUsername, ExpiresOn, CreatedAt, RevokedAt)
-- **`AuthenticationSchemes`** - Authentication scheme name constants (`Bearer`, `ApiKey`)
 - **`Permissions`** - Permission name constants for authorization
 - **`AuthMappingExtensions`** - Extension methods mapping domain entities to application-layer views
 - **`ITokenRevocationCache`** - Interface for token revocation cache (implemented by `emc.camus.cache.inmemory`)
@@ -67,13 +65,6 @@ Telemetry and monitoring contracts:
 - **`IActivitySourceWrapper`** - Interface for distributed tracing (implemented by `emc.camus.observability.otel`)
 - **`OperationType`** - Enum for operation types in telemetry (Read, Auth, Create, etc.)
 - **`MeterNames`** - OpenTelemetry meter name suffix constants (Application, Business, Security, Infrastructure, ErrorHandling)
-
-### `RateLimiting/`
-
-Rate limiting contracts:
-
-- **`RateLimitAttribute`** - Attribute for applying rate limit policies to controllers/actions
-- **`RateLimitPolicies`** - Policy name constants (`Default`, `Strict`, `Relaxed`)
 
 ### `Secrets/`
 
@@ -123,7 +114,6 @@ Configuration types used by persistence and infrastructure:
 Custom exceptions:
 
 - **`DataConflictException`** - Exception thrown when a data conflict is detected (HTTP 409)
-- **`RateLimitExceededException`** - Exception thrown when rate limits are exceeded
 
 ---
 
@@ -141,7 +131,7 @@ Application interfaces are implemented in the following adapters:
 
 | Interface | Implementation | Adapter Project |
 | --------- | -------------- | --------------- |
-| `ITokenGenerator` | `JwtTokenGenerator` | `emc.camus.security.jwt` |
+| `ITokenGenerator` | `JwtTokenGenerator` | `emc.camus.api` |
 | `ISecretProvider` | `DaprSecretProvider` | `emc.camus.secrets.dapr` |
 | `IActivitySourceWrapper` | `ActivitySourceWrapper` | `emc.camus.observability.otel` |
 | `IUserRepository` | `UserRepository`, `UserRepository` | `emc.camus.persistence.postgresql`, `emc.camus.persistence.inmemory` |
@@ -154,7 +144,6 @@ Application interfaces are implemented in the following adapters:
 
 See individual adapter READMEs for implementation details:
 
-- [JWT Authentication](../../Adapters/emc.camus.security.jwt/README.md)
 - [Dapr Secrets](../../Adapters/emc.camus.secrets.dapr/README.md)
 - [OpenTelemetry Observability](../../Adapters/emc.camus.observability.otel/README.md)
 - [PostgreSQL Persistence](../../Adapters/emc.camus.persistence.postgresql/README.md)
@@ -164,8 +153,9 @@ See individual adapter READMEs for implementation details:
 
 ## 📖 Usage Examples
 
-See `RateLimitAttribute` and `RateLimitPolicies` in the `RateLimiting` namespace for rate limit attribute
-usage. See `AuthenticationSchemes` in the `Auth` namespace for available authentication scheme constants.
+See `AuthenticationSchemes` in `emc.camus.api` `Configurations` namespace for available authentication
+scheme constants. See `RateLimitAttribute` and `RateLimitPolicies` in the API layer `Filters/` and
+`Configurations/` namespaces for rate limit attribute usage.
 
 ---
 
@@ -196,7 +186,7 @@ usage. See `AuthenticationSchemes` in the `Auth` namespace for available authent
 
 ### Rate Limit Policies
 
-See [RateLimitPolicies.cs](RateLimiting/RateLimitPolicies.cs) for complete policy definitions:
+Policy definitions are in the API layer at `src/Api/emc.camus.api/Configurations/RateLimitPolicies.cs`:
 
 - `default` - Standard rate limit
 - `strict` - For sensitive endpoints
@@ -267,7 +257,6 @@ Application layer components are tested in `src/Test/emc.camus.application.test/
 
 Tests focus on:
 
-- Attribute behavior (e.g., `RateLimitAttribute` validation)
 - Exception properties and messages
 - Constant value correctness
 - *(Note: Interfaces are tested via their adapter implementations)*
@@ -278,6 +267,5 @@ Tests focus on:
 
 - [Architecture Overview](../../../docs/architecture.md) - Layer responsibilities and dependency flow
 - [Main README](../../../README.md) - Project overview and quick start
-- [Rate Limiting Adapter](../../Adapters/emc.camus.ratelimiting.inmemory/README.md) - Rate limiting implementation
-- [JWT Security Adapter](../../Adapters/emc.camus.security.jwt/README.md) - JWT authentication implementation
+- [API Layer](../../Api/emc.camus.api/README.md) - Rate limiting, JWT, and API Key implementations
 - [OpenTelemetry Adapter](../../Adapters/emc.camus.observability.otel/README.md) - Observability implementation

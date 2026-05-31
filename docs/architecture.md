@@ -9,8 +9,11 @@ point inward: outer layers depend on inner layers, never the reverse.
 
 ```text
 ┌─────────────────────────────────────────────┐
-│           Adapters (External)               │
-│  API Controllers | PostgreSQL | Dapr        │
+│         API Layer (Outermost)               │
+│  Controllers | Middleware | Auth | Swagger  │
+├─────────────────────────────────────────────┤
+│         Adapters (External)                 │
+│  PostgreSQL | Dapr | OpenTelemetry          │
 ├─────────────────────────────────────────────┤
 │         Application Layer                   │
 │  Use Cases | Service Interfaces             │
@@ -59,7 +62,9 @@ HTTP-pipeline concerns rather than swappable infrastructure adapters.
 > **📖 Full Reference:** See [API Layer README](../src/Api/emc.camus.api/README.md) for configuration,
 middleware pipeline, and extension documentation.
 
-Each adapter README contains configuration, integration, and troubleshooting details.
+Each adapter README contains configuration, integration, and troubleshooting details. The
+[API Layer README](../src/Api/emc.camus.api/README.md) covers the HTTP-pipeline features (authentication,
+rate limiting, Swagger, etc.) that live directly in the API project.
 
 ## Dependency Flow
 

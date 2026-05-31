@@ -165,7 +165,7 @@ The adapter registers the Dapr secret provider via three extension methods in `D
    tagged with `HealthCheckTags.Ready` that delegates to `ISecretProvider.CheckConnectivityAsync()` to verify
    Dapr secret store availability.
 
-Call `AddDaprSecrets()` before any adapter that depends on `ISecretProvider` (e.g., JWT, API Key, migrations).
+Call `AddDaprSecrets()` before any feature that depends on `ISecretProvider` (e.g., authentication, migrations).
 
 ---
 

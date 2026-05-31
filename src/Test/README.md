@@ -40,14 +40,10 @@ Each unit test project mirrors a production project with a `.test` suffix:
 | `emc.camus.application.test` | `Application/emc.camus.application` |
 | `emc.camus.domain.test` | `Domain/emc.camus.domain` |
 | `emc.camus.cache.inmemory.test` | `Adapters/emc.camus.cache.inmemory` |
-| `emc.camus.documentation.swagger.test` | `Adapters/emc.camus.documentation.swagger` |
 | `emc.camus.observability.otel.test` | `Adapters/emc.camus.observability.otel` |
 | `emc.camus.persistence.inmemory.test` | `Adapters/emc.camus.persistence.inmemory` |
 | `emc.camus.persistence.postgresql.test` | `Adapters/emc.camus.persistence.postgresql` |
-| `emc.camus.ratelimiting.inmemory.test` | `Adapters/emc.camus.ratelimiting.inmemory` |
 | `emc.camus.secrets.dapr.test` | `Adapters/emc.camus.secrets.dapr` |
-| `emc.camus.security.apikey.test` | `Adapters/emc.camus.security.apikey` |
-| `emc.camus.security.jwt.test` | `Adapters/emc.camus.security.jwt` |
 | `emc.camus.migrations.dbup.test` | `Adapters/emc.camus.migrations.dbup` |
 
 ### Integration Test Project
@@ -67,18 +63,9 @@ variants, database reset strategy, and integration-specific troubleshooting.
 
 Solution filters scope test runs to the correct projects:
 
-```text
-# Unit tests only
-dotnet test src/UnitTests.slnf
-
-# Integration tests only (requires Docker)
-dotnet test src/IntegrationTests.slnf
-
-# All tests
-dotnet test src/CamusApp.sln
-```
-
-Or use the VS Code tasks: **test-unit**, **test-integration**, **test-all**.
+Use the VS Code tasks **test-unit**, **test-integration**, or **test-all** to run the corresponding
+test scope. These tasks execute the appropriate solution filter (`UnitTests.slnf`, `IntegrationTests.slnf`,
+or the full `CamusApp.sln`).
 
 ### Coverage Reports
 
