@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] - 2026-05-28
+## [1.0.1] - 2026-05-
+
+### Fixed
+
+- Adjusted `tester.qa.agent` step 8 to use `docker-compose-up-dev-build` instead of `docker-compose-up-dev-no-api`
 
 ### Changed
 
@@ -21,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Update solution filters to reference only existing projects
 - Update README project structure to reflect new layout
 - Update architecture documentation to distinguish API-layer features from true adapters
+- Guide local validation
 
 ### Removed
 
