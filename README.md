@@ -215,12 +215,7 @@ for the full pipeline, agent roles, and approval gates.
   PostgreSQL schema versioning
 - [Cache (Memory)](src/Adapters/emc.camus.cache.inmemory/README.md) — In-memory token revocation and idempotency
   response caching
-- [Persistence (Memory)](src/Adapters/emc.camus.persistence.inmemory/README.md) — In-memory repositories for
-  development and testing
-
----
-
-## 💡 When to Use This Template
+- [Persistence (Memory)](src/Adapters/emc.camus.persistence.inmemory/README.md) \u2014 In-memory repositories for\n  development and testing\n\n---\n\n## \ud83d\udca1 When to Use This Template
 
 **✅ Ideal For:**
 

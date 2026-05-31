@@ -44,7 +44,7 @@ in `Extensions/`.
 | `Extensions/` | One `*SetupExtensions.cs` file per cross-cutting concern for DI registration |
 | `Utilities/` | Framework-dependent service implementations (`HttpUserContext`, `ClientIpResolver`, `ApiKeyAuthenticationHandler`, `JwtTokenGenerator`) |
 | `Mapping/` | Request → Command and Result → Response mappers, versioned per API version |
-| `Metrics/` | Custom OpenTelemetry meter and counter definitions (`ErrorMetrics`, `IdempotencyMetrics`) |
+| `Metrics/` | Custom OpenTelemetry meter and counter definitions (`ErrorMetrics`, `IdempotencyMetrics`, `RateLimitMetrics`) |
 | `Middleware/` | Pipeline middleware (`ExceptionHandlingMiddleware`, `RateLimitHeadersMiddleware`, `SecurityHeadersMiddleware`, `UsernameHeaderMiddleware`) |
 | `Models/Dtos/` | Data-transfer objects returned inside response envelopes |
 | `Models/Requests/` | Input models bound from `[FromBody]` or `[FromQuery]` |
@@ -128,6 +128,23 @@ Additional fallback error-code mapping rules appended after the built-in platfor
     "DefaultTimeoutSeconds": 30,
     "TightTimeoutSeconds": 10,
     "ExtendedTimeoutSeconds": 60
+  }
+}
+```
+
+### RateLimitingSettings
+
+```json
+{
+  "RateLimitingSettings": {
+    "SegmentsPerWindow": 5,
+    "DefaultPermitLimit": 250,
+    "DefaultWindowSeconds": 60,
+    "StrictPermitLimit": 50,
+    "StrictWindowSeconds": 60,
+    "RelaxedPermitLimit": 500,
+    "RelaxedWindowSeconds": 60,
+    "ExemptPaths": ["/health", "/ready", "/alive", "/swagger"]
   }
 }
 ```

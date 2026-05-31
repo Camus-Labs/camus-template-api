@@ -109,13 +109,13 @@ ASP.NET Core pipeline feature, not a swappable infrastructure adapter behind an 
   - Potential files/folders to touch: `None`
 - API
   - Change summary: Absorb all API Key authentication source files from the adapter into the API project. Add
-    `Configurations/ApiKeySettings.cs`, `Handlers/ApiKeyAuthenticationHandler.cs`, and
+    `Configurations/ApiKeySettings.cs`, `Utilities/ApiKeyAuthenticationHandler.cs`, and
     `Extensions/ApiKeySetupExtensions.cs`. Update `Program.cs` to resolve the setup extension from the local namespace
     instead of the adapter namespace. Remove the project reference to `emc.camus.security.apikey` from
     `emc.camus.api.csproj`
   - Backward compatibility: `Backward compatible`
   - Potential files/folders to touch: `src/Api/emc.camus.api/Configurations/ApiKeySettings.cs`,
-    `src/Api/emc.camus.api/Handlers/ApiKeyAuthenticationHandler.cs`,
+    `src/Api/emc.camus.api/Utilities/ApiKeyAuthenticationHandler.cs`,
     `src/Api/emc.camus.api/Extensions/ApiKeySetupExtensions.cs`, `src/Api/emc.camus.api/emc.camus.api.csproj`,
     `src/Api/emc.camus.api/Program.cs`
 - Adapters

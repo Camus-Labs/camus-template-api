@@ -40,14 +40,16 @@ multi-instance rate limiting`.
 - Update all `appsettings*.json` files to use the new `RateLimitingSettings` section name
 - Update `Program.cs` composition root to wire rate limiting from the API project directly
 - Maintain identical HTTP behavior: same response headers, same 429 responses, same policies
-- Maintain identical configuration schema within the section (Policies, ExemptPaths keys unchanged)
+- Flatten configuration schema: replace nested `Policies` dictionary with fixed per-policy properties
+  (`DefaultPermitLimit`, `DefaultWindowSeconds`, `StrictPermitLimit`, `StrictWindowSeconds`, `RelaxedPermitLimit`,
+  `RelaxedWindowSeconds`) while preserving `SegmentsPerWindow` and `ExemptPaths` keys
 
 ### Out of Scope
 
 - Implementing a distributed cache adapter (Redis, etc.)
 - Changing rate-limiting algorithms (sliding window stays)
-- Modifying rate-limiting policies, exempt paths, or the internal configuration schema (Policies, ExemptPaths keys stay
-  the same)
+- Modifying rate-limiting policies, exempt paths, or the number of supported policy tiers
+  (default/strict/relaxed stay the same)
 - Changing the Application-layer `RateLimiting/` contracts (port interfaces, attributes)
 - Test relocation (covered in US-05)
 
@@ -62,7 +64,8 @@ multi-instance rate limiting`.
 - FR-05: Rate-limiting DI registration occurs via an extension method in `src/Api/emc.camus.api/Extensions/`
 - FR-06: The settings class is renamed from `InMemoryRateLimitingSettings` to `RateLimitingSettings`
 - FR-07: The `appsettings*.json` configuration section is renamed from `InMemoryRateLimitingSettings` to
-  `RateLimitingSettings` with identical internal schema (Policies, ExemptPaths)
+  `RateLimitingSettings` with flat per-policy properties (`DefaultPermitLimit`, `DefaultWindowSeconds`,
+  `StrictPermitLimit`, `StrictWindowSeconds`, `RelaxedPermitLimit`, `RelaxedWindowSeconds`, `ExemptPaths`)
 
 ### Non-Functional Requirements
 
@@ -81,8 +84,9 @@ multi-instance rate limiting`.
 - AC-04: HTTP responses for rate-limited requests return identical headers (`RateLimit-Limit`, `RateLimit-Reset`,
   `RateLimit-Policy`, `RateLimit-Window`, `Retry-After`) and status code 429
 - AC-05: Existing rate-limiting metrics continue emitting with the same metric names and dimensions
-- AC-06: The `appsettings*.json` files use `RateLimitingSettings` as the section name with the same internal keys
-  (Policies, ExemptPaths)
+- AC-06: The `appsettings*.json` files use `RateLimitingSettings` as the section name with flat per-policy keys
+  (`DefaultPermitLimit`, `DefaultWindowSeconds`, `StrictPermitLimit`, `StrictWindowSeconds`, `RelaxedPermitLimit`,
+  `RelaxedWindowSeconds`, `ExemptPaths`)
 - AC-07: The settings class bound via DI is named `RateLimitingSettings` (no `InMemory` prefix)
 
 ### Constraints and Dependencies
@@ -141,7 +145,7 @@ multi-instance rate limiting`.
     composition root.
   - Backward compatibility: `Backward compatible`
   - Potential files/folders to touch: `src/Api/emc.camus.api/Configurations/`, `src/Api/emc.camus.api/Middleware/`,
-    `src/Api/emc.camus.api/Extensions/`, `src/Api/emc.camus.api/Metrics/`, `src/Api/emc.camus.api/Infrastructure/`,
+    `src/Api/emc.camus.api/Extensions/`, `src/Api/emc.camus.api/Metrics/`, `src/Api/emc.camus.api/Utilities/`,
     `src/Api/emc.camus.api/emc.camus.api.csproj`, `src/Api/emc.camus.api/Program.cs`
 - Adapters
   - Change summary: Remove the entire `emc.camus.ratelimiting.inmemory` project from the solution and delete its
@@ -232,16 +236,16 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 
 ### Skeleton Inventory
 
-| Layer | Stub File                                                       | Change   | Types                                    | Members                                                                         |
-| ----- | --------------------------------------------------------------- | -------- | ---------------------------------------- | ------------------------------------------------------------------------------- |
-| Api   | src/Api/emc.camus.api/Configurations/RateLimitingSettings.cs    | New      | class RateLimitingSettings               | SegmentsPerWindow, Policies, ExemptPaths, Validate()                            |
-| Api   | src/Api/emc.camus.api/Configurations/RateLimitPolicySettings.cs | New      | class RateLimitPolicySettings            | PolicyName, PermitLimit, WindowSeconds, Validate()                              |
-| Api   | src/Api/emc.camus.api/Middleware/RateLimitHeadersMiddleware.cs  | New      | class RateLimitHeadersMiddleware         | InvokeAsync(HttpContext)                                                        |
-| Api   | src/Api/emc.camus.api/Extensions/RateLimitingSetupExtensions.cs | New      | static class RateLimitingSetupExtensions | AddRateLimiting(WebApplicationBuilder, string), UseRateLimiting(WebApplication) |
-| Api   | src/Api/emc.camus.api/Metrics/RateLimitMetrics.cs               | New      | class RateLimitMetrics                   | RecordRejection(string, string), Dispose()                                      |
-| Api   | src/Api/emc.camus.api/Infrastructure/ClientIpResolver.cs        | New      | class ClientIpResolver                   | GetClientIpAddress(HttpContext)                                                 |
-| Api   | src/Api/emc.camus.api/Infrastructure/RateLimitContextKeys.cs    | New      | static class RateLimitContextKeys        | Policy, Limit, Window                                                           |
-| Api   | src/Api/emc.camus.api/emc.camus.api.csproj                      | Modified | —                                        | Added InternalsVisibleTo for emc.camus.api.test                                 |
+| Layer | Stub File                                                       | Change   | Types                                    | Members                                                                                                                                                                |
+| ----- | --------------------------------------------------------------- | -------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Api   | src/Api/emc.camus.api/Configurations/RateLimitingSettings.cs    | New      | class RateLimitingSettings               | SegmentsPerWindow, DefaultPermitLimit, DefaultWindowSeconds, StrictPermitLimit, StrictWindowSeconds, RelaxedPermitLimit, RelaxedWindowSeconds, ExemptPaths, Validate() |
+| Api   | src/Api/emc.camus.api/Configurations/RateLimitPolicySettings.cs | New      | class RateLimitPolicySettings            | PolicyName, PermitLimit, WindowSeconds, Validate()                                                                                                                     |
+| Api   | src/Api/emc.camus.api/Middleware/RateLimitHeadersMiddleware.cs  | New      | class RateLimitHeadersMiddleware         | InvokeAsync(HttpContext)                                                                                                                                               |
+| Api   | src/Api/emc.camus.api/Extensions/RateLimitingSetupExtensions.cs | New      | static class RateLimitingSetupExtensions | AddRateLimiting(WebApplicationBuilder, string), UseRateLimiting(WebApplication)                                                                                        |
+| Api   | src/Api/emc.camus.api/Metrics/RateLimitMetrics.cs               | New      | class RateLimitMetrics                   | RecordRejection(string, string), Dispose()                                                                                                                             |
+| Api   | src/Api/emc.camus.api/Utilities/ClientIpResolver.cs             | New      | class ClientIpResolver                   | GetClientIpAddress(HttpContext)                                                                                                                                        |
+| Api   | src/Api/emc.camus.api/Configurations/RateLimitContextKeys.cs    | New      | static class RateLimitContextKeys        | Policy, Limit, Window                                                                                                                                                  |
+| Api   | src/Api/emc.camus.api/emc.camus.api.csproj                      | Modified | —                                        | Added InternalsVisibleTo for emc.camus.api.test                                                                                                                        |
 
 ### Tester Handoff Gate
 

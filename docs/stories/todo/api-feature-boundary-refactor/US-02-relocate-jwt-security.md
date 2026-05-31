@@ -122,9 +122,9 @@ Core pipeline feature, not a swappable infrastructure adapter behind an Applicat
     - `src/Api/emc.camus.api/emc.camus.api.csproj` — add JWT NuGet packages, remove adapter project reference
     - `src/Api/emc.camus.api/Extensions/JwtSetupExtensions.cs` — relocated setup extension
     - `src/Api/emc.camus.api/Configurations/JwtSettings.cs` — relocated settings class
-    - `src/Api/emc.camus.api/Infrastructure/JwtTokenGenerator.cs` — relocated token generator service
-    - `src/Api/emc.camus.api/Infrastructure/JwtKeyLoadException.cs` — relocated exception
-    - `src/Api/emc.camus.api/Infrastructure/JwtTokenGenerationException.cs` — relocated exception
+    - `src/Api/emc.camus.api/Utilities/JwtTokenGenerator.cs` — relocated token generator service
+    - `src/Api/emc.camus.api/Exceptions/JwtKeyLoadException.cs` — relocated exception
+    - `src/Api/emc.camus.api/Exceptions/JwtTokenGenerationException.cs` — relocated exception
     - `src/Api/emc.camus.api/Program.cs` — update composition root call-site namespace
 - Adapters
   - Change summary: Remove the `emc.camus.security.jwt` project entirely from the solution and delete its directory; no
