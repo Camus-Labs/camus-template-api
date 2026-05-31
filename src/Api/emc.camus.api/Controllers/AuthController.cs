@@ -4,8 +4,9 @@ using Asp.Versioning;
 using Swashbuckle.AspNetCore.Annotations;
 using emc.camus.application.Observability;
 using emc.camus.application.Auth;
+using emc.camus.api.Configurations;
 using Microsoft.AspNetCore.Authorization;
-using emc.camus.application.RateLimiting;
+using emc.camus.api.Filters;
 using emc.camus.api.Models.Requests.V2;
 using emc.camus.api.Models.Responses;
 using emc.camus.api.Models.Responses.V2;
@@ -13,8 +14,6 @@ using emc.camus.api.Models.Dtos.V2;
 using emc.camus.api.Mapping;
 using emc.camus.api.Mapping.V2;
 using Microsoft.AspNetCore.Http.Timeouts;
-using emc.camus.api.Configurations;
-using emc.camus.api.Filters;
 
 namespace emc.camus.api.Controllers
 {

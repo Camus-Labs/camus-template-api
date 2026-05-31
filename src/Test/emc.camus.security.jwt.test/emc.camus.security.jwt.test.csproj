@@ -1,7 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\Adapters\emc.camus.security.jwt\emc.camus.security.jwt.csproj" />
-  </ItemGroup>
-
-</Project>

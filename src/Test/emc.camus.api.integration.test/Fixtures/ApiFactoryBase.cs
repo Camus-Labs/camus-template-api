@@ -54,12 +54,12 @@ public abstract class ApiFactoryBase : WebApplicationFactory<Program>, IAsyncLif
         builder.UseSetting("DaprSecretProviderSettings:HttpPort", "3500");
         builder.UseSetting("DaprSecretProviderSettings:SecretStoreName", "test-store");
         builder.UseSetting("AllowedHosts", "*");
-        builder.UseSetting("InMemoryRateLimitingSettings:Policies:default:PermitLimit", "10000");
-        builder.UseSetting("InMemoryRateLimitingSettings:Policies:default:WindowSeconds", "60");
-        builder.UseSetting("InMemoryRateLimitingSettings:Policies:strict:PermitLimit", "10000");
-        builder.UseSetting("InMemoryRateLimitingSettings:Policies:strict:WindowSeconds", "60");
-        builder.UseSetting("InMemoryRateLimitingSettings:Policies:relaxed:PermitLimit", "10000");
-        builder.UseSetting("InMemoryRateLimitingSettings:Policies:relaxed:WindowSeconds", "60");
+        builder.UseSetting("RateLimitingSettings:DefaultPermitLimit", "10000");
+        builder.UseSetting("RateLimitingSettings:DefaultWindowSeconds", "60");
+        builder.UseSetting("RateLimitingSettings:StrictPermitLimit", "10000");
+        builder.UseSetting("RateLimitingSettings:StrictWindowSeconds", "60");
+        builder.UseSetting("RateLimitingSettings:RelaxedPermitLimit", "10000");
+        builder.UseSetting("RateLimitingSettings:RelaxedWindowSeconds", "60");
 
         // Variant-specific settings
         ConfigureVariantHostSettings(builder);

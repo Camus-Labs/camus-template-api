@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using emc.camus.api.Infrastructure;
+using emc.camus.api.Utilities;
 using emc.camus.api.Middleware;
 using emc.camus.application.Auth;
 using emc.camus.application.ApiInfo;

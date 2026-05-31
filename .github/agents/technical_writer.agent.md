@@ -41,8 +41,9 @@ with zero errors and warnings.
 1. Validate `story_file` exists and all `Integration Tester Handoff Gate` items are `Yes`; stop with the exact list
   of blockers if validation fails; otherwise proceed to Step 2.
 
-2. Read all Context files and the story file, extracting the functional requirements, the Layer Impact Matrix
-  endpoints, and all new or modified production files from the Skeleton Inventory; proceed to Step 3.
+2. Read all Context files and the story file, extracting the Layer Impact Matrix endpoints, all new or modified
+  production files from the Skeleton Inventory, and the `feature_slug` and `story_id` from the story file
+  frontmatter; proceed to Step 3.
 
 3. Run the `update-changelog` skill with `story_file` as the story path; if the skill returns `FAIL`, stop and
   report the failure reason as a blocker; otherwise proceed to Step 4.
@@ -58,20 +59,26 @@ with zero errors and warnings.
 6. Validate compilation — run the `build` task, fixing errors and re-running up to 3 times; if the build still fails
   after retries, stop and report the remaining errors; otherwise proceed to Step 7.
 
-7. Validate Markdown — run the `markdown-lint` skill with `all`, fixing errors and re-running up to 3 times; if
-  linting still fails after retries, stop and report the remaining errors; otherwise proceed to Step 8.
+7. Validate Markdown — run the `markdown-lint` skill with `all`, fixing all errors across the workspace (including
+  pre-existing violations in story files and other documentation) and re-running up to 3 times; if linting still
+  fails after retries, stop and report the remaining errors; otherwise proceed to Step 8.
 
 8. Update the story file — populate and evaluate each Technical Writer Handoff Gate item; set Status to DOCUMENTED
-  if all gate items pass, otherwise set Status to BLOCKED; set the technical writer sign-off; proceed to Step 9.
+  if all gate items pass, otherwise set Status to BLOCKED; set Technical Writer sign-off from `git config user.name`,
+  and the current date; proceed to Step 9.
 
-9. Return the Technical Writer Handoff Report — produce the output report using the output template; stop.
+9. Commit changes locally — stage all modifications with `git add -A`, present the diff to the user for approval,
+  and on approval run `git commit -m "feat: [feature_slug]/[story_id] — story completed"`; if the user declines,
+  set Status to BLOCKED; proceed to Step 10.
+
+10. Return the Technical Writer Handoff Report — produce the output report using the output template; stop.
 
 ## Rules
 
 - MUST ensure the version in `Directory.Build.props` and the CHANGELOG section header are identical.
 - MUST use today's date in ISO 8601 format (YYYY-MM-DD) for the CHANGELOG section header.
 - MUST write CHANGELOG entries as imperative statements describing what changed.
-- MUST NOT modify production logic, test files, or story Sections A through D.
+- MUST NOT modify production logic or test files.
 - MUST NOT add CHANGELOG entries for changes not traceable to the story's functional requirements.
 - MUST NOT remove or reorder existing CHANGELOG entries.
 - MUST NOT modify Swagger annotations or Postman requests for endpoints unchanged by the story.

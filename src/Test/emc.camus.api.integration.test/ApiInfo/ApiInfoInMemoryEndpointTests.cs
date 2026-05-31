@@ -80,6 +80,21 @@ public class ApiInfoInMemoryEndpointTests
     }
 
     [Fact]
+    public async Task GetInfoApiKey_InvalidApiKey_ReturnsUnauthorized()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add("Api-Key", "invalid-api-key-value");
+
+        // Act
+        var response = await client.GetAsync("/api/v2/apiinfo/info-apikey", TestContext.Current.CancellationToken);
+
+        // Assert
+        await response.Should().HaveStatusCode(HttpStatusCode.Unauthorized);
+        await response.Should().HaveErrorCode("apikey_invalid_credentials");
+    }
+
+    [Fact]
     public async Task GetInfoJwt_NoToken_ReturnsUnauthorized()
     {
         // Arrange

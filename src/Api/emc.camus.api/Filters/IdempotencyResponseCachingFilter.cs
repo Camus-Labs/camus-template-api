@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using System.Security.Cryptography;
 using System.Text.Json;
 using emc.camus.api.Configurations;
@@ -161,7 +162,7 @@ public partial class IdempotencyResponseCachingFilter : IAsyncResourceFilter
         context.Result = new ObjectResult(body)
         {
             StatusCode = cached.StatusCode,
-            ContentTypes = { "application/json" }
+            ContentTypes = { MediaTypeNames.Application.Json }
         };
     }
 

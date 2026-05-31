@@ -36,7 +36,7 @@ When deploying this template, please follow these security best practices:
 ### JWT Token Security
 
 - Tokens are signed with RSA256 (asymmetric signing)
-- Token expiration is configurable (default: 120 minutes)
+- Token expiration is configurable (default: 60 minutes)
 - Consider implementing token refresh mechanism for long-lived sessions
 - Store signing keys securely, never in application settings
 
@@ -48,12 +48,30 @@ When deploying this template, please follow these security best practices:
 
 ### Rate Limiting
 
-- Default: 250 requests per minute per client (configurable per policy)
-- Customize based on your requirements
-- Consider implementing per-user rate limiting for authenticated endpoints
+- IP-based sliding window algorithm with configurable segments for smooth distribution
+- Three fixed policies: `default` (250/min), `strict` (50/min), `relaxed` (500/min)
+- Runs before authentication — all requests are rate-limited
+- Returns 429 with `Retry-After` header when limit exceeded
+- Health, readiness, and Swagger paths are exempt by default
+- Customize per environment via `RateLimitingSettings` in `appsettings.json`:
 
-> **📖 Full Guide:** See [Rate Limiting Adapter README](src/Adapters/emc.camus.ratelimiting.inmemory/README.md)
-for configuration and policy definitions.
+```json
+{
+  "RateLimitingSettings": {
+    "SegmentsPerWindow": 5,
+    "DefaultPermitLimit": 250,
+    "DefaultWindowSeconds": 60,
+    "StrictPermitLimit": 50,
+    "StrictWindowSeconds": 60,
+    "RelaxedPermitLimit": 500,
+    "RelaxedWindowSeconds": 60,
+    "ExemptPaths": ["/health", "/ready", "/alive", "/swagger"]
+  }
+}
+```
+
+Apply policies to endpoints using the `[RateLimit]` attribute with policy name constants
+from `RateLimitPolicies` (`Default`, `Strict`, `Relaxed`).
 
 ## Security Updates
 

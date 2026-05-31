@@ -3,11 +3,7 @@ using System.Reflection;
 using System.Diagnostics.CodeAnalysis;
 using emc.camus.api.Extensions;
 using emc.camus.cache.inmemory;
-using emc.camus.security.jwt;
-using emc.camus.security.apikey;
 using emc.camus.secrets.dapr;
-using emc.camus.documentation.swagger;
-using emc.camus.ratelimiting.inmemory;
 using emc.camus.migrations.dbup;
 
 // Step 0: Define WebApplicationBuilder and settings
@@ -57,7 +53,7 @@ builder.AddSwaggerDocumentation();
 builder.AddCorsPolicy();
 
 // Step 8: Configure rate limiting (always enabled for security)
-builder.AddInMemoryRateLimiting(SERVICE_NAME);
+builder.AddRateLimiting(SERVICE_NAME);
 
 // Step 9: Configure Secrets Provider using Dapr Adapter
 builder.AddDaprSecrets();
@@ -71,7 +67,7 @@ builder.AddDatabaseMigrations();
 // Step 12: Configure in-memory cache (token revocation denylist)
 builder.AddInMemoryCache();
 
-// Step 13: Configure Authentication using Security Adapters (depends on secrets)
+// Step 13: Configure Authentication using API-layer extensions (depends on secrets)
 builder.AddJwtAuthentication();
 builder.AddApiKeyAuthentication();
 
@@ -117,7 +113,7 @@ app.UseSwaggerDocumentation();
 app.UseCorsPolicy();
 
 // Step 26: Apply rate limiting (MUST be before authentication to prevent auth bypass attacks)
-app.UseInMemoryRateLimiting();
+app.UseRateLimiting();
 
 // Step 27: Initialize Dapr secrets provider (fail-fast if secrets can't be loaded)
 app.UseDaprSecrets();

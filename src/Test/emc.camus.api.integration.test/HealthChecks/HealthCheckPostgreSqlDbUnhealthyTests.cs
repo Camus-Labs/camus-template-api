@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Mime;
 using System.Text.Json;
 using emc.camus.api.integration.test.Fixtures;
 using emc.camus.api.integration.test.Helpers;
@@ -49,7 +50,7 @@ public class HealthCheckPostgreSqlDbUnhealthyTests : IDisposable
 
         // Assert
         await response.Should().HaveStatusCode(HttpStatusCode.ServiceUnavailable);
-        response.Content.Headers.ContentType!.MediaType.Should().Be("application/json");
+        response.Content.Headers.ContentType!.MediaType.Should().Be(MediaTypeNames.Application.Json);
 
         var json = await JsonDocument.ParseAsync(
             await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken),

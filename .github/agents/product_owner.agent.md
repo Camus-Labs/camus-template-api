@@ -58,8 +58,8 @@ critical ambiguities within the clarification limit.
 7. Populate `Section A - Product Owner Definition` in each story file.
 8. Record the `Product Owner Handoff Gate` in each story file by marking each gate item `Yes` when the corresponding
   Section A field is complete and unambiguous or `No` otherwise, deriving overall status as `BLOCKED` if any gate
-  item equals `No` or any field carries the `[UNRESOLVED]` label or `READY` otherwise, and writing the status and
-  sign-off line into the file.
+  item equals `No` or any field carries the `[UNRESOLVED]` label or `READY` otherwise, writing the status, Product Owner
+  sign-off from `git config user.name`, and the current date line into the file.
 9. Report handoff status using the output template. If the overall status is `BLOCKED`, list the unresolved fields
   and failed gate items under `Unresolved Blockers`; otherwise, set Unresolved Blockers to None.
 

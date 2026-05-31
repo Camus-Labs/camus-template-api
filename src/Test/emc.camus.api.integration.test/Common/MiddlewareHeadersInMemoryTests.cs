@@ -2,7 +2,7 @@ using System.Net;
 using emc.camus.api.integration.test.Fixtures;
 using emc.camus.api.integration.test.Helpers;
 using emc.camus.application.Common;
-using emc.camus.application.RateLimiting;
+using emc.camus.api.Configurations;
 using FluentAssertions;
 using Microsoft.Net.Http.Headers;
 

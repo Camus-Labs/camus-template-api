@@ -21,7 +21,7 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 │  │  Output: Section B populated (architecture + implementation plan)     │
 │  │  Gate:   Human reviews & approves architecture                        │
 │  ▼                                                                       │
-│  Phase 2: TESTER ─────────── @unit.tester                                │
+│  Phase 2: TESTER ─────────── @tester.unit                                │
 │  │  Input:  Story file with completed Sections A + B                     │
 │  │  Output: Stubs + test files (TDD red) + Section C                     │
 │  │  Gate:   Human reviews test design + production skeleton              │
@@ -32,7 +32,7 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 │  │  Sub:    review.code.prompt.md (invoked automatically)                │
 │  │  Gate:   Human reviews implementation                                 │
 │  ▼                                                                       │
-│  Phase 4: INTEGRATION ────── @integration.tester                         │
+│  Phase 4: INTEGRATION ────── @tester.integration                         │
 │  │  Input:  Story file with Developer Handoff Gate complete              │
 │  │  Output: Integration tests + Section D + status report                │
 │  │  Gate:   Human reviews findings, approves integration status          │
@@ -48,7 +48,7 @@ the next, with human approval gates between phases. Agents are invoked with `@na
 │  │  Output: Version + CHANGELOG + Swagger + Postman + XML docs + lint    │
 │  │  Gate:   Human reviews documentation updates                          │
 │  ▼                                                                       │
-│  Phase 7: QA TESTER ──────── @qa.tester                                  │
+│  Phase 7: QA TESTER ──────── @tester.qa                                  │
 │  │  ⚠ Only invoke with the LAST story of the feature                    │
 │  │  Input:  Story file with Technical Writer Handoff Gate complete       │
 │  │  Step 1: Full test suite + coverage gap analysis                      │
@@ -118,11 +118,11 @@ decisions. Approve before proceeding to testing.
 
 ---
 
-### Phase 2: Tester — `@unit.tester`
+### Phase 2: Tester — `@tester.unit`
 
-**Invoke:** `@unit.tester` → provide the path to a story file with completed Sections A and B.
+**Invoke:** `@tester.unit` → provide the path to a story file with completed Sections A and B.
 
-Example: `@unit.tester #file:docs/stories/user-profiles/US-01-create-profile.md`
+Example: `@tester.unit #file:docs/stories/user-profiles/US-01-create-profile.md`
 
 **What the agent does:**
 
@@ -170,11 +170,11 @@ moving to final review.
 
 ---
 
-### Phase 4: Integration Testing — `@integration.tester`
+### Phase 4: Integration Testing — `@tester.integration`
 
-**Invoke:** `@integration.tester` → provide the path to a story file with completed Developer Handoff Gate.
+**Invoke:** `@tester.integration` → provide the path to a story file with completed Developer Handoff Gate.
 
-Example: `@integration.tester #file:docs/stories/user-profiles/US-01-create-profile.md`
+Example: `@tester.integration #file:docs/stories/user-profiles/US-01-create-profile.md`
 
 **What the agent does:**
 
@@ -194,7 +194,7 @@ Example: `@integration.tester #file:docs/stories/user-profiles/US-01-create-prof
 **Deliverable:** Integration test files, Section D populated (Traceability + Findings), Integration Test Report.
 
 **Your role:** Review the integration test report. If findings exist, decide whether to fix production code
-(using `@code.fix` or `@developer`) and re-run `@integration.tester`, or accept the findings and proceed.
+(using `@code.fix` or `@developer`) and re-run `@tester.integration`, or accept the findings and proceed.
 Approve before moving to review.
 
 ---
@@ -244,6 +244,7 @@ Example: `@technical_writer #file:docs/stories/todo/user-profiles/US-01-create-p
 6. Builds to verify changes compile, fixing errors up to 3 times
 7. Runs Markdown linting via the `markdown-lint` skill and fixes any errors up to 3 times
 8. Populates Section E — evaluates the Technical Writer Handoff Gate and sets status to DOCUMENTED
+9. Commits changes locally (`git add -A && git commit`) and confirms staged changes with the user
 
 **Deliverable:** Updated `Directory.Build.props`, `CHANGELOG.md`, Swagger annotations, Postman collection,
 Markdown lint passing, Section E populated, Technical Writer Handoff Report.
@@ -253,15 +254,15 @@ Approve before finalizing.
 
 ---
 
-### Phase 7: QA Tester — `@qa.tester`
+### Phase 7: QA Tester — `@tester.qa`
 
 > **⚠ Feature-level gate:** Only invoke this phase with the **last user story** of the feature being released.
 > All preceding stories must have completed through Phase 6 (Technical Writer) before running QA on the final
 > story. This ensures the full test suite, coverage analysis, and local validation reflect the complete feature.
 
-**Invoke:** `@qa.tester` → provide the path to the **last** story file after the Technical Writer phase completes.
+**Invoke:** `@tester.qa` → provide the path to the **last** story file after the Technical Writer phase completes.
 
-Example: `@qa.tester #file:docs/stories/todo/user-profiles/US-01-create-profile.md`
+Example: `@tester.qa #file:docs/stories/todo/user-profiles/US-01-create-profile.md`
 
 **What the agent does:**
 
@@ -319,13 +320,13 @@ Handoff Report (Status: DONE | BLOCKED).
 | ----- | ----- | ----- | ------ |
 | 0 | `@product_owner` | Feature request (free text) | `feat_` branch + story files in `todo/` with Section A |
 | 1 | `@architect` | Story file (Section A complete) | Section B populated |
-| 2 | `@unit.tester` | Story file (Sections A + B complete) | Stub files + test files + Section C |
+| 2 | `@tester.unit` | Story file (Sections A + B complete) | Stub files + test files + Section C |
 | 3 | `@developer` | Story file (Section C tests in RED) | Implementation + code review approved |
-| 4 | `@integration.tester` | Story file (Developer Handoff Gate complete) | Integration tests + Section D + status report |
+| 4 | `@tester.integration` | Story file (Developer Handoff Gate complete) | Integration tests + Section D + status report |
 | 5a | `@concurrent.reviewer.code` | branch name | Consolidated code compliance report (multi-model) |
 | 5b | `@concurrent.reviewer.documentation` | branch name | Consolidated documentation compliance report (multi-model) |
 | 6 | `@technical_writer` | Story file (Review phase PASS) | Version bump + CHANGELOG + Swagger + Postman + XML docs + Section E |
-| 7 | `@qa.tester` | Story file (Technical Writer Gate PASS) | Coverage closed + local validation + stories moved + Section F |
+| 7 | `@tester.qa` | Story file (Technical Writer Gate PASS) | Coverage closed + local validation + stories moved + Section F |
 | 8 | `@release_manager` | Story file (QA Tester Gate PASS) | Main PR + release + deploy PRs (Status: DONE \| BLOCKED) |
 
 ## Tips
@@ -356,10 +357,10 @@ Handoff Report (Status: DONE | BLOCKED).
 - **Create the `feat_` branch first** — `@product_owner` creates the branch automatically from latest `main`
   and confirms the name with you before proceeding.
 - **Stories live in `todo/` during development** — agents create and update stories under `docs/stories/todo/`.
-- **Move stories to `done/` via `@qa.tester`** — the QA tester moves stories after local validation passes,
+- **Move stories to `done/` via `@tester.qa`** — the QA tester moves stories after local validation passes,
   before handing off to the release manager.
 - **QA and Release run only on the last story** — when a feature has multiple stories, run Phases 0–6 for each
-  story individually, then invoke Phase 7 (`@qa.tester`) and Phase 8 (`@release_manager`) only with the final
+  story individually, then invoke Phase 7 (`@tester.qa`) and Phase 8 (`@release_manager`) only with the final
   story. This ensures full-feature validation and a single cohesive release.
 - **The story file is the single source of truth** — all agents reference and update it.
 - **Any agent can run standalone** — useful for reviewing existing code outside the full workflow.

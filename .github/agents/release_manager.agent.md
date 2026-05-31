@@ -43,7 +43,7 @@ reads `No`, or any process step's stopping criterion triggers.
   related to the feature; if untracked files not matching the feature slug exist, present them to the user
   for confirmation; if the user declines, set status to BLOCKED and skip to Step 9; proceed to Step 3.
 
-3. Publish the feature branch — run `git add -A && git commit -m "feat: [feature_slug]/[story_id] — story completed"`;
+3. Publish the feature branch — run `git add -A && git commit -m "feat: [feature_slug] — feature completed"`;
   confirm with the user the staged changes; if the user declines, set status to BLOCKED and skip to Step 9;
   run `git push -u origin HEAD`; proceed to Step 4.
 
@@ -67,7 +67,8 @@ reads `No`, or any process step's stopping criterion triggers.
 
 8. Set status to DONE; proceed to Step 9.
 
-9. Return the Release Manager Handoff Report using the output template and stop.
+9. Return the Release Manager Handoff Report using the output template, set Release Manager sign-off from
+  `git config user.name`, and the current date; stop.
 
 ## Rules
 

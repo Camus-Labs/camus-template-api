@@ -129,7 +129,6 @@ startup. Without sync or persistence, previously revoked tokens will be accepted
 
 ## Related Documentation
 
-- **[JWT Authentication Adapter](../emc.camus.security.jwt/README.md)** — Token generation and validation
 - **[Authentication Guide](../../../docs/authentication.md)** — Complete authentication overview
 - **[Architecture Guide](../../../docs/architecture.md)** — Cache architecture
 

@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-05-
+
+### Fixed
+
+- Adjusted `tester.qa.agent` step 8 to use `docker-compose-up-dev-build` instead of `docker-compose-up-dev-no-api`
+
+### Changed
+
+- Relocate rate-limiting feature from Adapters layer into the API layer to clarify architectural boundaries
+- Rename `InMemoryRateLimitingSettings` configuration section to `RateLimitingSettings`
+- Relocate rate-limiting contracts (`RateLimitAttribute`, `RateLimitPolicies`) from Application layer to API layer
+- Restructure rate-limiting configuration from dictionary-based policies to flat properties
+- Add startup validation for rate-limit policy names against a closed set
+- Relocate JWT security feature from Adapters layer into the API layer to clarify architectural boundaries
+- Relocate API Key security feature from Adapters layer into the API layer to clarify architectural boundaries
+- Relocate Swagger/OpenAPI documentation feature from Adapters layer into the API layer to clarify architectural boundaries
+- Consolidate unit tests from 4 relocated adapter test projects into `emc.camus.api.test`
+- Update solution filters to reference only existing projects
+- Update README project structure to reflect new layout
+- Update architecture documentation to distinguish API-layer features from true adapters
+- Guide local validation
+
+### Removed
+
+- Remove `emc.camus.ratelimiting.inmemory` adapter project from the solution
+- Remove `emc.camus.security.jwt` adapter project from the solution
+- Remove `emc.camus.security.apikey` adapter project from the solution
+- Remove `emc.camus.documentation.swagger` adapter project from the solution
+- Remove orphaned test projects for relocated adapter features
+
 ## [1.0.0] - 2026-05-01
 
 ### Added

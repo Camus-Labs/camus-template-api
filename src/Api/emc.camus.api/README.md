@@ -40,16 +40,16 @@ in `Extensions/`.
 | Folder / File | Purpose |
 | --- | --- |
 | `Controllers/` | Versioned API controllers inheriting `ApiControllerBase` |
-| `Configurations/` | Strongly-typed settings classes (`CorsSettings`, `ErrorCodeMappingRuleSettings`, `ErrorHandlingSettings`, `IdempotencySettings`, `IdempotencyPolicies`, `RequestTimeoutSettings`, `RequestTimeoutPolicies`) |
+| `Configurations/` | Strongly-typed settings classes (`ApiKeySettings`, `ApiVersionSettings`, `AuthenticationSchemes`, `CorsSettings`, `ErrorCodeMappingRuleSettings`, `ErrorHandlingSettings`, `IdempotencySettings`, `IdempotencyPolicies`, `JwtSettings`, `MediaTypes`, `RateLimitContextKeys`, `RateLimitPolicies`, `RateLimitPolicySettings`, `RateLimitingSettings`, `RequestTimeoutSettings`, `RequestTimeoutPolicies`, `SwaggerSettings`) |
 | `Extensions/` | One `*SetupExtensions.cs` file per cross-cutting concern for DI registration |
-| `Infrastructure/` | Framework-dependent service implementations (e.g., `HttpUserContext`) |
+| `Utilities/` | Framework-dependent service implementations (`HttpUserContext`, `ClientIpResolver`, `ApiKeyAuthenticationHandler`, `JwtTokenGenerator`) |
 | `Mapping/` | Request → Command and Result → Response mappers, versioned per API version |
-| `Metrics/` | Custom OpenTelemetry meter and counter definitions (`ErrorMetrics`, `IdempotencyMetrics`) |
-| `Middleware/` | Pipeline middleware (`ExceptionHandlingMiddleware`, `SecurityHeadersMiddleware`, `UsernameHeaderMiddleware`) |
+| `Metrics/` | Custom OpenTelemetry meter and counter definitions (`ErrorMetrics`, `IdempotencyMetrics`, `RateLimitMetrics`) |
+| `Middleware/` | Pipeline middleware (`ExceptionHandlingMiddleware`, `RateLimitHeadersMiddleware`, `SecurityHeadersMiddleware`, `UsernameHeaderMiddleware`) |
 | `Models/Dtos/` | Data-transfer objects returned inside response envelopes |
 | `Models/Requests/` | Input models bound from `[FromBody]` or `[FromQuery]` |
 | `Models/Responses/` | Response envelopes (`ApiResponse<T>`, `PagedResponse<T>`) |
-| `Filters/` | Action filters and marker attributes (`IdempotencyKeyValidationFilter`, `IdempotencyResponseCachingFilter`, `RequireIdempotencyKeyAttribute`) |
+| `Filters/` | Action filters and marker attributes (`DefaultApiResponsesOperationFilter`, `IdempotencyKeyValidationFilter`, `IdempotencyResponseCachingFilter`, `RateLimitAttribute`, `RequireIdempotencyKeyAttribute`) |
 | `SwaggerExamples/` | `IExamplesProvider<T>` classes per API version |
 | `Program.cs` | Composition root — ordered adapter registration and middleware pipeline |
 
@@ -132,7 +132,24 @@ Additional fallback error-code mapping rules appended after the built-in platfor
 }
 ```
 
-> **📖 Other Sections:** JWT, API Key, Rate Limiting, Swagger, Observability, Persistence, and Secret settings
+### RateLimitingSettings
+
+```json
+{
+  "RateLimitingSettings": {
+    "SegmentsPerWindow": 5,
+    "DefaultPermitLimit": 250,
+    "DefaultWindowSeconds": 60,
+    "StrictPermitLimit": 50,
+    "StrictWindowSeconds": 60,
+    "RelaxedPermitLimit": 500,
+    "RelaxedWindowSeconds": 60,
+    "ExemptPaths": ["/health", "/ready", "/alive", "/swagger"]
+  }
+}
+```
+
+> **📖 Other Sections:** Observability, Persistence, and Secret settings
 are owned by their respective adapter READMEs. See [Documentation Hub](../../../docs/README.md) for links.
 
 ---
@@ -152,7 +169,7 @@ registration method, some only an app middleware method, and others both:
 | API Versioning | `AddApiVersioning()` | — |
 | Swagger | `AddSwaggerDocumentation()` | `UseSwaggerDocumentation()` |
 | CORS | `AddCorsPolicy()` | `UseCorsPolicy()` |
-| Rate Limiting | `AddInMemoryRateLimiting()` | `UseInMemoryRateLimiting()` |
+| Rate Limiting | `AddRateLimiting(serviceName)` | `UseRateLimiting()` |
 | Dapr Secrets | `AddDaprSecrets()` | `UseDaprSecrets()` |
 | DB Migrations | `AddDatabaseMigrations()` | `UseDatabaseMigrations()` |
 | Cache | `AddInMemoryCache()` | — |
@@ -211,6 +228,15 @@ The API layer exports:
 **Unit:** errors
 **Description:** Total number of idempotency cache infrastructure errors (fail-open)
 
+#### `rate_limit_rejections_total`
+
+**Type:** Counter
+**Unit:** requests
+**Description:** Total number of requests rejected due to rate limiting
+
+- `policy` — Rate limit policy that was exceeded (`default`, `strict`, `relaxed`)
+- `method` — HTTP method of the rejected request
+
 ---
 
 ## 🧪 Troubleshooting
@@ -218,7 +244,7 @@ The API layer exports:
 | Symptom | Likely Cause |
 | --- | --- |
 | `403 Forbidden` on an endpoint that should be public | Missing `[AllowAnonymous]` attribute or CORS policy blocking the origin |
-| `429 Too Many Requests` in development | Rate limit policy too strict — check `InMemoryRateLimitingSettings.Policies` in `appsettings.Development.json` |
+| `429 Too Many Requests` in development | Rate limit policy too strict — check `RateLimitingSettings` in `appsettings.Development.json` |
 | Swagger UI not loading | `SwaggerSettings.Enabled` is `false` or the application is not running in the Development environment |
 | `500` with "secret" or "configuration" in logs | Dapr sidecar not running or secret store misconfigured — see [Dapr Secrets Adapter](../../Adapters/emc.camus.secrets.dapr/README.md) |
 | CORS preflight failures | `AllowedOrigins` does not include the requesting origin — update `CorsSettings` |

@@ -43,7 +43,7 @@ applyTo: "src/Test/**"
 
 2. Organization
 
-    - [ ] Unit test projects use `.test` suffix (e.g., `emc.camus.security.jwt` → `emc.camus.security.jwt.test`)
+    - [ ] Unit test projects use `.test` suffix
     - [ ] Integration test projects use `.integration.test` suffix
     - [ ] Shared test builders reside in `Helpers/` folder
     - [ ] Test doubles (fakes, stubs, custom handlers) reside in dedicated classes — even when used by a single
