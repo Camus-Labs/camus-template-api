@@ -67,8 +67,7 @@ triggers.
   the failing tests and set status to BLOCKED, skip to Step 12.
 
 8. Guide local validation — present the user with step-by-step instructions for local testing:
-    - Start infrastructure: run VS Code task `docker-compose-up-dev-no-api`
-    - Run the API: run VS Code task `run-api`
+    - Start app: run VS Code task `docker-compose-up-dev-build`
     - Import and run the Postman collection against `localhost`
     - Stop infrastructure: run VS Code task `docker-compose-down`
     - Ask the user to confirm local validation passed; on confirmation, proceed to Step 9; on failure, ask the user
