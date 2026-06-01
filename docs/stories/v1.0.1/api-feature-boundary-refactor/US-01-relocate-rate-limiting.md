@@ -3,10 +3,8 @@
 ## Metadata
 
 - Story ID: `US-01`
-- Feature Slug: `api-feature-boundary-refactor`
-- Story Slug: `relocate-rate-limiting`
-- Request Date: `2026-05-27`
-- Requested By: `Tech Lead`
+- Owner: `3M0R4C`
+- Status: `Done`
 
 ## Section A - Product Owner Definition
 
@@ -102,7 +100,7 @@ multi-instance rate limiting`.
 
 - Risks:
   - Cache port interface may need a new method for sliding-window partition semantics — mitigation: review existing
-    `IRateLimitCounterStore` or equivalent and map to cache port; owner: Tech Lead
+    `IRateLimitCounterStore` or equivalent and map to cache port; owner: 3M0R4C
 - Open questions:
   - None
 

@@ -3,10 +3,8 @@
 ## Metadata
 
 - Story ID: `US-02`
-- Feature Slug: `idempotency-post-endpoints`
-- Story Slug: `idempotent-response-caching`
-- Request Date: `2026-05-02`
-- Requested By: `Internal Service Team`
+- Owner: `3M0R4C`
+- Status: `Done`
 
 ## Section A - Product Owner Definition
 

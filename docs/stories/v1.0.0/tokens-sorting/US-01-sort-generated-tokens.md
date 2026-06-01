@@ -3,10 +3,8 @@
 ## Metadata
 
 - Story ID: `US-01`
-- Feature Slug: `tokens-sorting`
-- Story Slug: `sort-generated-tokens`
-- Request Date: `2026-04-28`
-- Requested By: `Product Owner`
+- Owner: `3M0R4C`
+- Status: `Done`
 
 ## Section A - Product Owner Definition
 

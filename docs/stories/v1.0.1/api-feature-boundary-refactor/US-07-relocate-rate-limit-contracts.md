@@ -3,10 +3,8 @@
 ## Metadata
 
 - Story ID: `US-07`
-- Feature Slug: `api-feature-boundary-refactor`
-- Story Slug: `relocate-rate-limit-contracts`
-- Request Date: `2026-05-27`
-- Requested By: `Tech Lead`
+- Owner: `3M0R4C`
+- Status: `Done`
 
 ## Section A - Product Owner Definition
 
@@ -84,7 +82,7 @@ middleware) and no orphaned cross-layer contracts remain after US-01`.
 
 - Risks:
   - If other Application-layer types reference `RateLimitPolicies` or `RateLimitAttribute`, those references must be
-    updated or removed — mitigation: search for usages before moving; owner: Tech Lead
+    updated or removed — mitigation: search for usages before moving; owner: 3M0R4C
 - Open questions:
   - None
 

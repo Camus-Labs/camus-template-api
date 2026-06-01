@@ -3,10 +3,8 @@
 ## Metadata
 
 - Story ID: `US-02`
-- Feature Slug: `api-feature-boundary-refactor`
-- Story Slug: `relocate-jwt-security`
-- Request Date: `2026-05-27`
-- Requested By: `Tech Lead`
+- Owner: `3M0R4C`
+- Status: `Done`
 
 ## Section A - Product Owner Definition
 
@@ -82,7 +80,7 @@ Core pipeline feature, not a swappable infrastructure adapter behind an Applicat
 
 - Risks:
   - JWT handler may have NuGet dependencies that inflate the API project — mitigation: review package references before
-    move; owner: Tech Lead
+    move; owner: 3M0R4C
 - Open questions:
   - None
 

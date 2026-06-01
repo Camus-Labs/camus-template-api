@@ -3,11 +3,8 @@
 ## Metadata
 
 - Story ID: `US-04`
-- Feature Slug: `api-feature-boundary-refactor`
-- Story Slug: `relocate-swagger-documentation`
-- Status: `DOCUMENTED`
-- Request Date: `2026-05-27`
-- Requested By: `Tech Lead`
+- Owner: `3M0R4C`
+- Status: `Done`
 
 ## Section A - Product Owner Definition
 
@@ -77,7 +74,7 @@ feature, not a swappable infrastructure adapter behind an Application port`.
 ### Risks and Open Questions
 
 - Risks:
-  - Minimal risk — Swagger adapter is typically configuration-only with no complex logic; owner: Tech Lead
+  - Minimal risk — Swagger adapter is typically configuration-only with no complex logic; owner: 3M0R4C
 - Open questions:
   - None
 

@@ -5,14 +5,14 @@
 - Release Version: `v1.0.1`
 - Release Type: `PATCH`
 - Target Date: `2026-05-31`
-- Release Manager: `Tech Lead`
+- Release Manager: `3M0R4C`
 - Status: `Released`
 
 ## Features Included
 
 | Feature Slug | Title | Status | Stories | Owner |
 | --- | --- | --- | --- | --- |
-| `api-feature-boundary-refactor` | API Feature Boundary Refactor | `Done` | 7 | Tech Lead |
+| `api-feature-boundary-refactor` | API Feature Boundary Refactor | `Done` | 7 | 3M0R4C |
 
 ## Notes
 
@@ -53,7 +53,7 @@ See [CHANGELOG.md](../../../CHANGELOG.md#101---2026-05-31).
 - XML documentation covers all new public APIs across stories: `N/A`
 - Markdown linting passes with zero errors: `Yes`
 - Build succeeds with zero errors and warnings: `Yes`
-- Technical Writer sign-off: `Tech Lead, 2026-05-31`
+- Technical Writer sign-off: `3M0R4C, 2026-05-31`
 
 ## QA
 
@@ -78,7 +78,7 @@ See [CHANGELOG.md](../../../CHANGELOG.md#101---2026-05-31).
 - Full test suite passes: `Yes`
 - Coverage gaps addressed or acknowledged: `Yes`
 - Local validation confirmed: `Yes`
-- QA sign-off: `Tech Lead, 2026-05-31`
+- QA sign-off: `3M0R4C, 2026-05-31`
 
 ## Release Manager Handoff Gate
 
@@ -88,4 +88,4 @@ See [CHANGELOG.md](../../../CHANGELOG.md#101---2026-05-31).
 - Breaking changes captured in CHANGELOG: `N/A`
 - Tag `v1.0.1` created on `release/v1.0.1`: `Yes`
 - PR `release/v1.0.1 → main` opened: `Yes`
-- Release Manager sign-off: `Tech Lead, 2026-05-31`
+- Release Manager sign-off: `3M0R4C, 2026-05-31`

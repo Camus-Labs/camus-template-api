@@ -3,10 +3,8 @@
 ## Metadata
 
 - Story ID: `US-01`
-- Feature Slug: `idempotency-post-endpoints`
-- Story Slug: `idempotency-key-enforcement`
-- Request Date: `2026-05-02`
-- Requested By: `Internal Service Team`
+- Owner: `3M0R4C`
+- Status: `Done`
 
 ## Section A - Product Owner Definition
 

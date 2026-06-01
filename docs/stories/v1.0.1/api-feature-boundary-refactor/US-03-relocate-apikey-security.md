@@ -3,10 +3,8 @@
 ## Metadata
 
 - Story ID: `US-03`
-- Feature Slug: `api-feature-boundary-refactor`
-- Story Slug: `relocate-apikey-security`
-- Request Date: `2026-05-27`
-- Requested By: `Tech Lead`
+- Owner: `3M0R4C`
+- Status: `Done`
 
 ## Section A - Product Owner Definition
 
@@ -76,7 +74,7 @@ ASP.NET Core pipeline feature, not a swappable infrastructure adapter behind an 
 ### Risks and Open Questions
 
 - Risks:
-  - Minimal risk — API Key handler is typically a simple authentication handler with few dependencies; owner: Tech Lead
+  - Minimal risk — API Key handler is typically a simple authentication handler with few dependencies; owner: 3M0R4C
 - Open questions:
   - None
 

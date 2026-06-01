@@ -3,10 +3,8 @@
 ## Metadata
 
 - Story ID: `US-05`
-- Feature Slug: `api-feature-boundary-refactor`
-- Story Slug: `consolidate-tests-and-docs`
-- Request Date: `2026-05-27`
-- Requested By: `Tech Lead`
+- Owner: `3M0R4C`
+- Status: `Done`
 
 ## Section A - Product Owner Definition
 
@@ -110,9 +108,9 @@ architectural boundary between API features and adapters`.
 
 - Risks:
   - Namespace changes may cause test compilation failures — mitigation: bulk find-and-replace with build verification;
-    owner: Tech Lead
+    owner: 3M0R4C
   - Solution filter files may have undocumented dependencies — mitigation: validate with `dotnet build` on each filter;
-    owner: Tech Lead
+    owner: 3M0R4C
 - Open questions:
   - None
 

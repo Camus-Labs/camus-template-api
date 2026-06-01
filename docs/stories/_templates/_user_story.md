@@ -3,8 +3,8 @@
 ## Metadata
 
 - Story ID: `US-[###]`
-- Request Date: `YYYY-MM-DD`
-- Requested By: `[name or role]`
+- Owner: `[name]`
+- Status: `[Todo | In Progress | Done]`
 
 ## Section A - Product Owner Definition
 

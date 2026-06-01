@@ -3,10 +3,8 @@
 ## Metadata
 
 - Story ID: `US-06`
-- Feature Slug: `api-feature-boundary-refactor`
-- Story Slug: `flatten-rate-limiting-settings`
-- Request Date: `2026-05-27`
-- Requested By: `Tech Lead`
+- Owner: `3M0R4C`
+- Status: `Done`
 
 ## Section A - Product Owner Definition
 
@@ -98,7 +96,7 @@ eliminates dictionary validation, and enforces a closed set of policy names at c
 
 - Risks:
   - The `[RateLimit]` attribute lives in the Application layer — referencing an API-layer enum may require introducing a
-    shared constant or moving the policy names to the Application layer; owner: Tech Lead
+    shared constant or moving the policy names to the Application layer; owner: 3M0R4C
 - Open questions:
   - None
 
