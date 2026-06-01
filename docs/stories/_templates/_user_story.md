@@ -3,8 +3,6 @@
 ## Metadata
 
 - Story ID: `US-[###]`
-- Feature Slug: `[feature-slug]`
-- Story Slug: `[story-slug]`
 - Request Date: `YYYY-MM-DD`
 - Requested By: `[name or role]`
 
@@ -13,21 +11,6 @@
 ### Story Statement
 
 As a `[persona]`, I want `[capability]`, so that `[outcome]`.
-
-### Business Value
-
-- [Value statement 1]
-- [Value statement 2]
-
-### In Scope
-
-- [Scope item 1]
-- [Scope item 2]
-
-### Out of Scope
-
-- [Out-of-scope item 1]
-- [Out-of-scope item 2]
 
 ### Functional Requirements
 
@@ -49,34 +32,17 @@ As a `[persona]`, I want `[capability]`, so that `[outcome]`.
 - AC-02: [Verifiable behavior tied to one or more FRs]
 - AC-03: [Verifiable behavior tied to one or more FRs]
 
-### Constraints and Dependencies
+### Notes
 
-- Business constraints:
-  - [Constraint 1]
-  - [Constraint 2]
-- Dependencies:
-  - [Team | system | dependency 1]
-  - [Team | system | dependency 2]
-
-### Risks and Open Questions
-
-- Risks:
-  - [Risk 1 and mitigation owner]
-  - [Risk 2 and mitigation owner]
-- Open questions:
-  - [Question 1]
-  - [Question 2]
+- [Optional: constraint, dependency, risk, or open question — only when non-obvious]
 
 ### Product Owner Handoff Gate
 
 - Metadata set and follows naming conventions: `[Yes | No]`
 - Story statement complete and outcome-focused: `[Yes | No]`
-- Scope boundaries clear (in | out): `[Yes | No]`
 - FRs atomic and testable: `[Yes | No]`
 - NFRs specified across required categories: `[Yes | No]`
 - Acceptance criteria measurable and complete: `[Yes | No]`
-- Dependencies and constraints identified: `[Yes | No]`
-- Risks and open questions documented: `[Yes | No]`
 - Ready for architecture handoff: `[Yes | No]`
 - Product Owner sign-off: `[Name, Date]`
 
@@ -110,19 +76,12 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 
 - [NFR category]: [Design decision and implementation approach]
 
-### Delivery and Rollout Notes
-
-- Rollout strategy: [Phased | flagged | full rollout approach]
-- Rollback strategy: [How to revert safely and quickly]
-- Operational readiness checks: [Monitoring, alerts, runbook updates]
-
 ### Architect Handoff Readiness
 
 - Layer impacts are fully mapped: `[Yes | No]`
 - Port | contract impacts assessed: `[Yes | No]`
 - Backward compatibility decision documented: `[Yes | No]`
 - Cross-cutting concern decisions addressed: `[Yes | No]`
-- Rollout and rollback strategies defined: `[Yes | No]`
 - Ready for implementation: `[Yes | No]`
 - Architect sign-off: `[Name, Date]`
 
@@ -186,80 +145,3 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - No unresolved production code findings: `[Yes | No]`
 - Ready for review: `[Yes | No]`
 - Integration Tester sign-off: `[Name, Date]`
-
-## Section E - Technical Writer
-
-### Version Update
-
-- Previous version: `[X.X.X]`
-- New version: `[X.X.X]`
-- Bump type: `[MAJOR | MINOR | PATCH | APPEND]`
-- Reason: `[one-sentence justification]`
-
-### CHANGELOG Entry
-
-```markdown
-## [X.X.X] - YYYY-MM-DD
-
-### `[Added | Changed | Deprecated | Removed | Fixed | Security]`
-
-- [entry 1]
-- [entry 2]
-```
-
-### Documentation Updates
-
-- Swagger annotations updated: `[count]` endpoint(s)
-- Postman requests updated: `[count]` request(s)
-- XML documentation added: `[count]` public API(s)
-- Files modified:
-  - `[file path 1]`
-  - `[file path 2]`
-
-### Technical Writer Handoff Gate
-
-- Version in Directory.Build.props matches confirmed decision: `[Yes | No | N/A]`
-- CHANGELOG entry matches new version and date: `[Yes | No | N/A]`
-- Swagger examples reflect new/changed endpoints: `[Yes | No | N/A]`
-- Postman collection reflects new/changed requests: `[Yes | No | N/A]`
-- XML documentation covers new public APIs: `[Yes | No | N/A]`
-- Markdown linting passes with zero errors: `[Yes | No]`
-- Build succeeds with zero errors and warnings: `[Yes | No]`
-- Ready for review: `[Yes | No]`
-- Technical Writer sign-off: `[Name, Date]`
-
----
-
-## Section F - QA Tester
-
-### Test Suite
-
-- Unit tests: `[pass_count]` passed, `[fail_count]` failed
-- Integration tests: `[pass_count]` passed, `[fail_count]` failed
-- Full suite: `[PASS | FAIL]`
-
-### Coverage
-
-- Files analyzed: `[count]`
-- Files at 100%: `[count]`
-- Gaps closed: `[count]` file(s), `[test_count]` test(s) added
-- Gaps deferred: `[count]` file(s) (user decision)
-
-### Local Validation
-
-- User confirmed: `[Yes | No | Skipped]`
-- Issues reported: `[description or "None"]`
-
-### Stories Moved
-
-- `[story-file]` → `docs/stories/done/[request-slug]/`
-
-### QA Tester Handoff Gate
-
-- All handoff gates (A through E) pass: `[Yes | No]`
-- Full test suite passes: `[Yes | No]`
-- Coverage gaps addressed or acknowledged: `[Yes | No]`
-- Local validation confirmed by user: `[Yes | No]`
-- Stories moved to done: `[Yes | No]`
-- Ready for release: `[Yes | No]`
-- QA Tester sign-off: `[Name, Date]`
