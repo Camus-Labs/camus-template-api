@@ -28,7 +28,7 @@ any Architect Handoff Readiness gate item is `No`, or stubs/tests fail to compil
 
 ## Context
 
-- #file:../../docs/stories/_user_story_template.md (Section C structure)
+- #file:../../docs/stories/_templates/_user_story.md (Section C structure)
 - #file:../../docs/architecture.md
 - #file:../instructions/testing.instructions.md
 - #file:../instructions/testing.unit.instructions.md
@@ -38,50 +38,61 @@ any Architect Handoff Readiness gate item is `No`, or stubs/tests fail to compil
 
 ## Inputs
 
-- `story_file` (required, string, path): path to a single user story file with completed Sections A and B.
+- `story_file` (required, string, path): path to a single user story file with completed Sections A and B. MUST be
+  under `docs/stories/v<X.Y.Z>/<feature-slug>/US-*.md`.
 
 ## Process
 
 1. Validate `story_file` — verify the file exists and all `Architect Handoff Readiness` gate items are `Yes`,
   extracting Acceptance Criteria from Section A, Layer Impact Matrix from Section B, and the Traceability table; stop
-  with the exact list of blockers if the file is missing or any gate item is `No`; otherwise proceed to Step 2.
+  with the exact list of blockers if the file is missing or any gate item is `No`; otherwise extract `feature_slug`
+  as the path segment immediately above the `US-*.md` filename and proceed to Step 2.
 
-2. Scaffold the production skeleton from the Layer Impact Matrix — read architecture, C# conventions, and layer README Context
+2. Invoke skill `ensure-on-feature-branch` with the extracted `feature_slug` to position the working tree on
+  `feat/<feature_slug>`; on `FAIL`, stop and surface the skill reason; on `SUCCESS`, adopt the returned
+  `feature_branch` and `feature_folder` for subsequent file operations; proceed to Step 3.
+
+3. Scaffold the production skeleton from the Layer Impact Matrix — read architecture, C# conventions, and layer README Context
   files; for every file each layer (Domain, Application, API, Adapters) lists in Section B, create production types:
     - Create interfaces with method signatures matching the change summary.
     - Create model objects with property declarations only.
     - Place each stub in the exact production project and path the Layer Impact Matrix specifies.
-  Proceed to Step 3.
+  Proceed to Step 4.
 
-3. Run the `build` task to verify the production skeleton compiles — if the build fails, fix compilation
+4. Run the `build` task to verify the production skeleton compiles — if the build fails, fix compilation
   errors in stub files and re-run up to 5 times; if the build still fails after 5 attempts, stop and report the
-  compilation errors; otherwise proceed to Step 4.
+  compilation errors; otherwise proceed to Step 5.
 
-4. Present the production skeleton to the user for review — list every stub file you created, its layer, and a summary
+5. Present the production skeleton to the user for review — list every stub file you created, its layer, and a summary
   of types and members; if the user requests changes, apply them, rebuild, and re-present up to 5 cycles; if the user
-  does not approve after 5 cycles, stop and report outstanding objections; proceed to Step 5 only after explicit user
+  does not approve after 5 cycles, stop and report outstanding objections; proceed to Step 6 only after explicit user
   approval.
 
-5. Create test files that map each acceptance criterion to one or more test methods — read testing conventions, test
+6. Create test files that map each acceptance criterion to one or more test methods — read testing conventions, test
   project README, and story template Context files; determine the target test project per the test-placement rule;
-  derive test class names mirroring the stubs from Step 2 and test method names per the naming-conventions rule; write
-  each test following the naming-conventions rule and reference the production types from Step 2 to assert the behavior
-  each AC describes; proceed to Step 6.
+  derive test class names mirroring the stubs from Step 3 and test method names per the naming-conventions rule; write
+  each test following the naming-conventions rule and reference the production types from Step 3 to assert the behavior
+  each AC describes; proceed to Step 7.
 
-6. Verify tests compile — run the `build` task; if the build fails, fix compilation errors in test files
+7. Verify tests compile — run the `build` task; if the build fails, fix compilation errors in test files
   and re-run up to 5 times; if the build still fails after 5 attempts, stop and report the compilation errors; otherwise
-  proceed to Step 7.
+  proceed to Step 8.
 
-7. Confirm tests fail for the right reason — run the `test-all` task; if all new tests fail
-  as expected, proceed to Step 8; if any new test passes (stub accidentally satisfies it), redesign that test to
+8. Confirm tests fail for the right reason — run the `test-all` task; if all new tests fail
+  as expected, proceed to Step 9; if any new test passes (stub accidentally satisfies it), redesign that test to
   assert a meaningful behavior the stub cannot satisfy, rebuild, re-run, and repeat up to 5 times; if the test still
-  passes after 5 redesign attempts, stop and report the test as unresolvable; otherwise proceed to Step 8.
+  passes after 5 redesign attempts, stop and report the test as unresolvable; otherwise proceed to Step 9.
 
-8. Populate Section C in the story file — fill the Skeleton Inventory table with every stub file created in Step 2
-  (layer, file path, types, members), fill the Test Traceability table with every test method created in Step 5
+9. Populate Section C in the story file — fill the Skeleton Inventory table with every stub file created in Step 3
+  (layer, file path, types, members), fill the Test Traceability table with every test method created in Step 6
   (AC, test class, test method, layer), evaluate and set each Tester Handoff Gate item, set Tester sign-off from
   `git config user.name`, and the current date — include the Tester Handoff Report block from the Output Format section
-  as the final section of the populated output; stop.
+  as the final section of the populated output; proceed to Step 10.
+
+10. Commit and push the story update plus new stub and test files to the feature branch — run
+  `git add "$story_file" src/ && git commit -m "test($feature_slug): unit scaffold $(basename \"$story_file\" .md)"
+  && git push origin "$feature_branch"`; on git failure, stop and report the git error; otherwise stop with the
+  handoff report.
 
 ## Rules
 

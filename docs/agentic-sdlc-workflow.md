@@ -1,73 +1,162 @@
-# Feature Development Workflow
+# Agentic SDLC Workflow
 
-Agent-driven workflow for implementing features in the Camus API. Each phase produces a deliverable that feeds
-the next, with human approval gates between phases. Agents are invoked with `@name` in Copilot Chat.
+Release-centric, branch-aware workflow for implementing features in the Camus API. Each phase produces a
+deliverable that feeds the next, with human approval gates between phases. Agents are invoked with `@name` in
+Copilot Chat; user-invocable skills are invoked with `/skill-name`.
+
+## Branch model
+
+```text
+main
+ └── release/v<X.Y.Z>     (one per release; created by @product_owner on first feature)
+      └── feat/<slug>     (one per feature; created by ensure-on-feature-branch)
+```
+
+- `release/next` is the alias used while the release version is still the placeholder `vX.Y.Z`; the technical
+  writer renames the folder and branch to the concrete `vN.N.N` at release time.
+- `feat/<slug>` is merged into `release/v<X.Y.Z>` via **squash + delete branch** (`/complete-feature`).
+- `release/v<X.Y.Z>` is merged into `main` via **rebase + keep branch** (`@release_manager`), then tagged on
+  `main`.
+
+## Artifact layout
+
+```text
+docs/stories/v<X.Y.Z>/
+ ├── _release.md                       (release metadata, features table, release-level gates)
+ └── <feature-slug>/
+      ├── _feature.md                  (feature metadata, stories table, feature-level gate)
+      └── US-NN-<story-slug>.md        (per-story: Sections A–D + 4 handoff gates)
+```
+
+## Gate model
+
+Per story (in `US-NN-*.md`):
+
+| Gate | Section | Owner |
+| ---- | ------- | ----- |
+| A — Product Owner | Section A | `@product_owner` |
+| B — Architect | Section B | `@architect` |
+| C — Tester | Section C | `@tester.unit` / `@developer` |
+| D — Integration Tester | Section D | `@tester.integration` |
+
+Per release (in `_release.md`):
+
+| Gate | Owner |
+| ---- | ----- |
+| QA | `@tester.qa` |
+| Technical Writer | `@technical_writer` |
+| Release Manager | `@release_manager` |
+
+Per feature (in `_feature.md`): single feature-level gate signed by `/complete-feature` once every story is
+Done and gates A–D are Yes/N/A.
 
 ## Workflow Overview
 
-``` text
-┌──────────────────────────────────────────────────────────────────────────┐
-│                        FEATURE DEVELOPMENT PIPELINE                      │
-├──────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  Phase 0: PRODUCT OWNER ──── @product_owner                              │
-│  │  Input:  Feature request (free text)                                  │
-│  │  Action: Create feat_ branch from latest main                         │
-│  │  Output: docs/stories/todo/{slug}/US-*.md (Section A)                 │
-│  │  Gate:   Human reviews & approves stories                             │
-│  ▼                                                                       │
-│  Phase 1: ARCHITECT ──────── @architect                                  │
-│  │  Input:  Story file with completed Section A                          │
-│  │  Output: Section B populated (architecture + implementation plan)     │
-│  │  Gate:   Human reviews & approves architecture                        │
-│  ▼                                                                       │
-│  Phase 2: TESTER ─────────── @tester.unit                                │
-│  │  Input:  Story file with completed Sections A + B                     │
-│  │  Output: Stubs + test files (TDD red) + Section C                     │
-│  │  Gate:   Human reviews test design + production skeleton              │
-│  ▼                                                                       │
-│  Phase 3: DEVELOPER ──────── @developer                                  │
-│  │  Input:  Story file with Section C tests in RED                       │
-│  │  Output: Implementation (TDD green) + code review approved            │
-│  │  Sub:    review.code.prompt.md (invoked automatically)                │
-│  │  Gate:   Human reviews implementation                                 │
-│  ▼                                                                       │
-│  Phase 4: INTEGRATION ────── @tester.integration                         │
-│  │  Input:  Story file with Developer Handoff Gate complete              │
-│  │  Output: Integration tests + Section D + status report                │
-│  │  Gate:   Human reviews findings, approves integration status          │
-│  ▼                                                                       │
-│  Phase 5: REVIEW ─────────── @concurrent.reviewer.code + docs            │
-│  │  Input:  Uncommitted files from previous phases                       │
-│  │  Step 1: @concurrent.reviewer.code branch (multi-model review)        │
-│  │  Step 2: @concurrent.reviewer.documentation branch (docs review)      │
-│  │  Gate:   Human reviews reports, approves final quality                │
-│  ▼                                                                       │
-│  Phase 6: TECHNICAL WRITER ─ @technical_writer                           │
-│  │  Input:  Story file with Review phase complete (both PASS)            │
-│  │  Output: Version + CHANGELOG + Swagger + Postman + XML docs + lint    │
-│  │  Gate:   Human reviews documentation updates                          │
-│  ▼                                                                       │
-│  Phase 7: QA TESTER ──────── @tester.qa                                  │
-│  │  ⚠ Only invoke with the LAST story of the feature                    │
-│  │  Input:  Story file with Technical Writer Handoff Gate complete       │
-│  │  Step 1: Full test suite + coverage gap analysis                      │
-│  │  Step 2: Write coverage tests (user-approved) + code review           │
-│  │  Step 3: Guide local validation (Docker + Postman) — human step       │
-│  │  Gate:   Human confirms local validation passed                       │
-│  ▼                                                                       │
-│  Phase 8: RELEASE MANAGER ── @release_manager                            │
-│  │  ⚠ Only invoke with the LAST story of the feature                    │
-│  │  Input:  Story file with QA Tester Handoff Gate complete             │
-│  │  Step 1: Commit and push branch                                       │
-│  │  Step 2: Create PR to main                                            │
-│  │  Step 3: Create release (if version ≠ tag + user confirms)            │
-│  │  Step 4: Create deploy/dev + deploy/prod PRs                          │
-│  │  Gate:   All PRs created and ready                                    │
-│  ▼                                                                       │
-│  DONE ✓                                                                  │
-│                                                                          │
-└──────────────────────────────────────────────────────────────────────────┘
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                    RELEASE-CENTRIC AGENTIC SDLC PIPELINE                     │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ── Per release: PO scaffolds release + features (on release/v<X.Y.Z>) ──    │
+│                                                                              │
+│  Phase 0: PRODUCT OWNER ────── @product_owner                                │
+│  │  Skill:  ensure-on-release-branch (creates release/v<X.Y.Z> if missing)   │
+│  │  Output: _release.md, <slug>/_feature.md, US-NN-*.md (Section A)          │
+│  │  Commit + push on release branch                                          │
+│  ▼                                                                           │
+│  ── Per story: workers run on feat/<slug> ─────────────────────────────      │
+│                                                                              │
+│  Phase 1: ARCHITECT ────────── @architect                                    │
+│  │  Skill: ensure-on-feature-branch                                          │
+│  │  Output: Section B; commit + push                                         │
+│  ▼                                                                           │
+│  Phase 2: TESTER (UNIT) ────── @tester.unit                                  │
+│  │  Output: stubs + RED tests + Section C; commit + push                     │
+│  ▼                                                                           │
+│  Phase 3: DEVELOPER ────────── @developer                                    │
+│  │  Output: implementation (TDD green); commit + push                        │
+│  ▼                                                                           │
+│  Phase 4: INTEGRATION TESTER ─ @tester.integration                           │
+│  │  Output: integration tests + Section D; commit + push                     │
+│  ▼                                                                           │
+│  Phase 5: CODE REVIEW ──────── @concurrent.reviewer.code                     │
+│  │  Report → on FAIL ask to apply fixes → re-validate in new session         │
+│  │  Re-invoke until PASS, then sign Gate D and mark Status: Done             │
+│  ▼                                                                           │
+│  ── Close feature: squash PR feat → release ──────────────────────────────   │
+│                                                                              │
+│  /complete-feature                                                           │
+│  │  Verifies every story Done + gates A–D; signs feature gate                │
+│  │  gh pr create --base release --head feat --title "feat: <slug>"           │
+│  │  gh pr merge --squash --delete-branch                                     │
+│  ▼                                                                           │
+│  ── Per release: release-level validation (on release branch) ────────────   │
+│                                                                              │
+│  Phase 6: RELEASE CODE REVIEW @concurrent.reviewer.code                      │
+│  │  Scope: release/v<X.Y.Z> (diff vs main)                                   │
+│  │  Report → on FAIL ask to apply fixes → re-validate in new session         │
+│  ▼                                                                           │
+│  Phase 7: QA ────────────────── @tester.qa                                   │
+│  │  Skill: ensure-on-release-branch                                          │
+│  │  Output: full suite + coverage + local validation; sign QA gate           │
+│  ▼                                                                           │
+│  Phase 8: TECHNICAL WRITER ─── @technical_writer                             │
+│  │  CHANGELOG entry, Swagger/Postman/READMEs, rename vX.Y.Z → vN.N.N         │
+│  │  Sign Technical Writer gate                                               │
+│  ▼                                                                           │
+│  Phase 9: DOCUMENTATION REVIEW @concurrent.reviewer.documentation            │
+│  │  Report → on FAIL ask to apply fixes → re-validate in new session         │
+│  ▼                                                                           │
+│  Phase 10: RELEASE MANAGER ─── @release_manager                              │
+│  │  Sign RM gate; gh pr create --base main --head release                    │
+│  │  gh pr merge --rebase --delete-branch=false                               │
+│  │  Tag on main; push tag                                                    │
+│  ▼                                                                           │
+│  RELEASED ✓                                                                  │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+The same flow rendered as a Mermaid diagram (GitHub renders this natively). Laid out top-to-bottom,
+the diagram shows the nested cycles: the inner **per-story** cycle (Phases 1–5) repeats for every story
+inside a feature — Phase 5 delivers a report and, on FAIL, optionally applies fixes; you re-validate by
+re-invoking the reviewer in a new chat session until PASS. The outer **per-feature** cycle wraps the story
+cycle and is closed by `/complete-feature`; the **per-release** phases (6–10) run once on the release branch
+and produce the tag on `main`. Phases 6 and 9 follow the same report-then-optionally-fix-then-revalidate loop.
+
+```mermaid
+flowchart TD
+    FR([Feature Request]) --> PO["Phase 0: product_owner<br/>release/v&lt;X.Y.Z&gt;"]
+
+    subgraph RELEASE["Release cycle &mdash; release/v&lt;X.Y.Z&gt;"]
+        direction TB
+        subgraph FEATURE["Feature cycle &mdash; feat/&lt;slug&gt; (repeat for each feature)"]
+            direction TB
+            subgraph STORY["Story cycle &mdash; US-NN-*.md (repeat for each story)"]
+                direction TB
+                AR["Phase 1: architect<br/>Section B"]
+                AR --> TU["Phase 2: tester.unit<br/>RED tests + Section C"]
+                TU --> DEV["Phase 3: developer<br/>TDD green"]
+                DEV --> TI["Phase 4: tester.integration<br/>Section D"]
+                TI --> CRC{"Phase 5:<br/>concurrent.reviewer.code<br/><i>per-story scope</i>"}
+                CRC -- fail --> CRC
+                CRC -- pass --> SDONE(["Story Status: Done<br/>Gate D signed"])
+            end
+            SDONE -. next story .-> AR
+            SDONE --> CF[["/complete-feature<br/>squash PR feat &rarr; release"]]
+        end
+        CF -. next feature .-> AR
+        CF --> CRR{"Phase 6:<br/>concurrent.reviewer.code<br/><i>release scope &mdash; release/v&lt;X.Y.Z&gt; vs main</i>"}
+        CRR -- fail --> CRR
+        CRR -- pass --> QA["Phase 7: tester.qa<br/>(release branch)"]
+        QA --> TW["Phase 8: technical_writer<br/>CHANGELOG + Swagger/Postman"]
+        TW --> CRD{"Phase 9:<br/>concurrent.reviewer.documentation<br/><i>release scope</i>"}
+        CRD -- fail --> CRD
+        CRD -- pass --> RM["Phase 10: release_manager<br/>rebase PR release &rarr; main"]
+    end
+
+    PO --> AR
+    RM --> TAG([tag vX.Y.Z on main])
 ```
 
 ## Phases in Detail
@@ -80,18 +169,21 @@ Example: `@product_owner I need CRUD operations for managing user profiles with 
 
 **What the agent does:**
 
-1. Creates a feature branch from the latest `main` (`feat_{request-slug}`), confirming the branch name with you
-2. Decomposes the feature request into atomic user stories
-3. Creates story files under `docs/stories/todo/{request-slug}/` using the
-   [story template](stories/_user_story_template.md)
-4. Populates Section A (Product Owner Definition) — story statement, scope, FRs, NFRs, ACs
-5. Asks up to 5 rounds of clarification questions for ambiguous requirements
-6. Evaluates the Product Owner Handoff Gate per story
+1. Invokes the `ensure-on-release-branch` skill. With no version provided, the skill resolves to the
+   placeholder `vX.Y.Z` mapped to `release/next`, creates the branch off `main` if missing, and scaffolds
+   `docs/stories/vX.Y.Z/_release.md` from the template.
+2. Derives `feature-slug` from the request, confirms it with you, and scaffolds
+   `docs/stories/<release>/<feature-slug>/_feature.md` if it does not exist.
+3. Decomposes the feature into atomic stories and scaffolds each
+   `docs/stories/<release>/<feature-slug>/US-NN-<story-slug>.md` from the template.
+4. Populates Section A on every story (story statement, scope, FRs, NFRs, ACs), batching clarifications up to
+   five rounds.
+5. Updates the feature's Stories table and the release's Features table; signs Gate A on every story and the
+   Product Owner gate on the feature.
+6. Commits and pushes all scaffolded artifacts to the release branch.
 
-**Deliverable:** Feature branch created, story files with completed Section A, handoff gate evaluated, status set.
-
-**Your role:** Confirm the branch name. Review stories. Verify scope boundaries, acceptance criteria completeness,
-and NFR coverage. Approve or request changes before handing to the architect.
+**Deliverable:** Release branch with `_release.md`, `_feature.md`, and Section A complete on every story.
+**Your role:** Confirm the slug. Review stories for scope and acceptance criteria. Approve before architect.
 
 ---
 
@@ -99,270 +191,308 @@ and NFR coverage. Approve or request changes before handing to the architect.
 
 **Invoke:** `@architect` → provide the path to a story file with completed Section A.
 
-Example: `@architect #file:docs/stories/user-profiles/US-01-create-profile.md`
+Example: `@architect #file:docs/stories/vX.Y.Z/user-profiles/US-01-create-profile.md`
 
 **What the agent does:**
 
-1. Validates the Product Owner Handoff Gate is fully passing
-2. Maps functional requirements to layers (Domain, Application, API, Adapters)
-3. Populates Section B — Layer Impact Matrix, Cross-Cutting Concern Decisions,
-   Layer-Based Implementation Plan, Traceability table
-4. Asks up to 5 rounds of clarification for architectural ambiguities
-5. Evaluates the Architect Handoff Readiness gate
+1. Validates Gate A.
+2. Invokes `ensure-on-feature-branch` with the feature slug derived from the story path. The skill positions
+   the working tree on `feat/<slug>` (creating it from the release branch if missing). If the release branch
+   does not exist, the skill FAILs — Product Owner must scaffold first.
+3. Populates Section B (Layer Impact Matrix, Cross-Cutting Concerns, Delivery and Rollout) following
+   hexagonal boundaries.
+4. Signs Gate B and sets `Status: READY_FOR_IMPLEMENTATION` when every gate item is `Yes`.
+5. Commits and pushes the story update to the feature branch.
 
-**Deliverable:** Story file with completed Section B, implementation plan ordered by dependency direction,
-and status set to `READY_FOR_IMPLEMENTATION`.
-
-**Your role:** Review architecture. Verify layer boundaries, implementation plan order, and cross-cutting
-decisions. Approve before proceeding to testing.
+**Your role:** Verify layer mapping and NFR coverage. Approve before tester.unit.
 
 ---
 
-### Phase 2: Tester — `@tester.unit`
+### Phase 2: Tester (Unit) — `@tester.unit`
 
-**Invoke:** `@tester.unit` → provide the path to a story file with completed Sections A and B.
-
-Example: `@tester.unit #file:docs/stories/user-profiles/US-01-create-profile.md`
+**Invoke:** `@tester.unit` → story file with Sections A and B complete.
 
 **What the agent does:**
 
-1. Validates the Architect Handoff Readiness gate is fully passing
-2. Reads context files and extracts Acceptance Criteria (Section A) and Layer Impact Matrix (Section B)
-3. Scaffolds production stubs from the Layer Impact Matrix (interfaces, models, empty bodies)
-4. Builds to verify stubs compile, fixing compilation errors up to 5 times
-5. Presents the production skeleton for user review (up to 5 review cycles)
-6. Creates test classes mapping each AC to test methods (xUnit + FluentAssertions + Moq, AAA pattern)
-7. Verifies tests compile and fail for the right reason (TDD red), redesigning tests up to 5 times if a stub
-   accidentally satisfies one
-8. Populates Section C — Skeleton Inventory table, Test Traceability table, and evaluates the Tester Handoff Gate
+1. Validates Gate B and invokes `ensure-on-feature-branch`.
+2. Scaffolds production stubs from the Layer Impact Matrix; builds until stubs compile (up to 5 cycles).
+3. Presents the production skeleton for your review (up to 5 review cycles).
+4. Writes test classes mapping each AC to test methods (xUnit + FluentAssertions + Moq, AAA pattern).
+5. Verifies tests fail for the right reason (TDD red), redesigning when a stub accidentally satisfies a test.
+6. Populates Section C (Skeleton Inventory + Test Traceability), signs Gate C, commits and pushes.
 
-**Deliverable:** Stub files, test files, Section C populated (Skeleton Inventory + Test Traceability),
-Tester Handoff Report.
-
-**Your role:** Review the production skeleton and test design. Verify coverage of every AC, proper naming,
-behavioral assertions. Approve before handing to the developer.
+**Your role:** Review skeleton and test design. Approve before developer.
 
 ---
 
 ### Phase 3: Developer — `@developer`
 
-**Invoke:** `@developer` → provide the path to a story file with Section C tests in RED.
-
-Example: `@developer #file:docs/stories/user-profiles/US-01-create-profile.md`
+**Invoke:** `@developer` → story file with Section C tests in RED.
 
 **What the agent does:**
 
-1. Validates the Tester Handoff Gate is fully passing
-2. Reads the Skeleton Inventory and Test Traceability from Section C, plus all stub and test files
-3. Implements production code following dependency order (Domain → Application → Database Schema → API → Adapters)
-4. Builds, fixing compilation errors up to 5 times
-5. Invokes `review.code.prompt.md` on implemented files — fixes violations up to 5 iterations; if violations
-   remain, presents to user for up to 5 user-guided iterations
-6. Runs unit tests up to 5 iterations, fixing production code until all unit tests pass (TDD green phase)
-7. Runs integration tests up to 5 iterations — fixes production code or updates affected integration tests to
-   reflect new contracts, recording each adjustment in the Regression Fixes Log
-8. Populates the Developer Handoff Gate in the story file and produces the Developer Handoff Report
+1. Validates Gate C and invokes `ensure-on-feature-branch`.
+2. Implements production code in dependency order (Domain → Application → Database Schema → API → Adapters).
+3. Builds, fixing compilation errors up to 5 times.
+4. Runs unit tests up to 5 iterations until all pass (TDD green).
+5. Runs integration tests up to 5 iterations; fixes production code or updates affected integration tests to
+   reflect new contracts, recording each adjustment in the Regression Fixes Log.
+6. Updates Section C status, signs the Developer Handoff Gate, commits and pushes.
 
-**Deliverable:** Implementation files, Section C updated, code review approved, Developer Handoff Report.
+**Note:** Code review is handled in Phase 5, not by the developer.
 
-**Your role:** Review implementation quality, architecture compliance, and test results. Approve before
-moving to final review.
+**Your role:** Review implementation. Approve before integration tester.
 
 ---
 
-### Phase 4: Integration Testing — `@tester.integration`
+### Phase 4: Integration Tester — `@tester.integration`
 
-**Invoke:** `@tester.integration` → provide the path to a story file with completed Developer Handoff Gate.
-
-Example: `@tester.integration #file:docs/stories/user-profiles/US-01-create-profile.md`
+**Invoke:** `@tester.integration` → story file with Developer Handoff Gate complete.
 
 **What the agent does:**
 
-1. Validates the Developer Handoff Gate is fully passing
-2. Invokes the `derive-integration-plan` skill to identify cross-layer boundaries, classify existing coverage,
-   and detect gaps
-3. If all boundaries are already covered, skips to step 5; otherwise presents coverage gaps with a proposed test
-   plan — waits for approval before writing tests (up to 3 revision cycles)
-4. Creates or modifies integration test files in the `emc.camus.api.integration.test` project following
-   `testing.instructions.md` and `testing.integration.instructions.md`
-5. Builds integration tests, fixing compilation errors up to 5 iterations
-6. Runs integration tests — distinguishes test defects (fixes them up to 5 iterations) from production code
-   defects (records as findings with root cause analysis)
-7. Populates Section D — Integration Test Traceability, Integration Test Findings, and evaluates the
-   Integration Tester Handoff Gate (Status: READY | FAIL | BLOCKED)
+1. Validates the Developer Handoff Gate and invokes `ensure-on-feature-branch`.
+2. Invokes the `derive-integration-plan` skill to identify cross-layer boundaries and classify existing
+   coverage.
+3. If gaps exist, presents the proposed test plan and waits for approval (up to 3 revision cycles).
+4. Creates or modifies integration tests in `emc.camus.api.integration.test`; builds and runs them,
+   distinguishing test defects (fixes them) from production defects (records as findings).
+5. Populates Section D (Integration Test Traceability + Findings), commits and pushes.
 
-**Deliverable:** Integration test files, Section D populated (Traceability + Findings), Integration Test Report.
-
-**Your role:** Review the integration test report. If findings exist, decide whether to fix production code
-(using `@code.fix` or `@developer`) and re-run `@tester.integration`, or accept the findings and proceed.
-Approve before moving to review.
+**Your role:** Review findings. Decide whether to re-invoke `@developer` to fix production code or accept
+findings. Approve before code review.
 
 ---
 
-### Phase 5: Review — `@concurrent.reviewer.code` + `@concurrent.reviewer.documentation`
+### Phase 5: Code Review — `@concurrent.reviewer.code`
 
-Both steps are **required** before commit. Code changes frequently affect documentation — new adapters need READMEs,
-API endpoint changes require architecture and authentication doc updates, and new configuration keys must appear in the
-relevant adapter README. Skipping Step 2 causes documentation drift.
+**Invoke:** `@concurrent.reviewer.code uncommitted` (or scope path / `feat/<slug>` branch).
 
-**Step 1 — Code review:** `@concurrent.reviewer.code` → check `[branch_name]`.
+`@concurrent.reviewer.code` resolves the scope, dispatches three sub-agents (GPT, Opus, Sonnet) against the
+matching instruction checklists, and produces a consolidated compliance report. On a FAIL verdict the agent
+asks whether to apply the reported fixes in the current session; re-validation is always done in a new session
+to avoid confirmation bias.
 
-Example: `@concurrent.reviewer.code check [branch_name]`
-
-`@concurrent.reviewer.code` resolves all branch `.cs` files via `git diff`, matches each file to its instruction
-checklists, dispatches three sub-agents (GPT, Opus, Sonnet), and produces a consolidated compliance report.
-
-**Step 2 — Documentation review:** `@concurrent.reviewer.documentation` → check `[branch_name]`.
-
-Example: `@concurrent.reviewer.documentation check [branch_name]`
-
-`@concurrent.reviewer.documentation` resolves all branch `.md` files via `git diff`, evaluates them against the
-documentation conventions checklist using three sub-agents, and produces a consolidated compliance report.
-
-**Your role:** Review both reports. For the code review, fix any FAIL findings using `@code.fix` and re-run.
-For documentation, fix any FAIL findings using `@documentation.fix` and re-run. Do not proceed until both steps
-produce a PASS verdict.
+**Your role:** On FAIL, decide whether to let the agent apply the fixes (or fix manually). Then start a new
+chat session and re-invoke `@concurrent.reviewer.code` with the same scope until the verdict is PASS. Then
+mark the story `Status: Done` and sign Gate D.
 
 ---
 
-### Phase 6: Technical Writer — `@technical_writer`
+### Closing the feature — `/complete-feature`
 
-**Invoke:** `@technical_writer` → provide the path to a story file after both concurrent reviews pass.
+**Invoke:** `/complete-feature <feature-slug>` once every story in the feature folder has `Status: Done` and
+gates A–D marked `Yes` or `N/A`.
 
-Example: `@technical_writer #file:docs/stories/todo/user-profiles/US-01-create-profile.md`
+The skill:
+
+1. Invokes `ensure-on-feature-branch` to position you on `feat/<slug>`.
+2. Verifies every `US-*.md` has `Status: Done` and gates A–D signed.
+3. Marks `_feature.md` `Status: Done`, signs the feature gate, commits and pushes.
+4. Runs `gh pr create --base release/v<X.Y.Z> --head feat/<slug> --title "feat: <slug>"`.
+5. Waits for your confirmation, then `gh pr merge --squash --delete-branch`.
+6. Checks out the release branch and pulls.
+
+**Your role:** Confirm the PR merge.
+
+---
+
+### Phase 6: Release Code Review — `@concurrent.reviewer.code`
+
+**Invoke:** `@concurrent.reviewer.code release/v<X.Y.Z>` once every in-scope feature has been closed via
+`/complete-feature`. The scope resolves to the diff between the release branch and `main`, covering every
+squashed commit across all features in the release.
+
+The agent produces a consolidated compliance report against the entire release scope. On a FAIL verdict the
+agent asks whether to apply the reported fixes in the current session; re-validation is always done in a new
+session.
+
+**Your role:** On FAIL, decide whether to let the agent apply the fixes (or fix manually). Then start a new
+chat session and re-invoke `@concurrent.reviewer.code` with the release branch scope until the verdict is
+PASS. Per-story Phase 5 reviews validate isolated implementations; this release-level review catches
+cross-story regressions, conflicting decisions across features, and scope drift introduced by squash merges.
+
+---
+
+### Phase 7: QA — `@tester.qa`
+
+**Invoke:** `@tester.qa` → path to `docs/stories/v<X.Y.Z>/_release.md`. Run only after every in-scope feature
+has been closed via `/complete-feature` and the Phase 6 release code review verdict is PASS.
 
 **What the agent does:**
 
-1. Validates the Integration Tester Handoff Gate is fully passing
-2. Reads all context files and the story file — extracts functional requirements, Layer Impact Matrix endpoints,
-   and all new or modified production files from the Skeleton Inventory
-3. Invokes the `update-changelog` skill with the story file — the skill handles version bump determination
-   (MAJOR, MINOR, PATCH, or APPEND), user confirmation, `Directory.Build.props` update, and CHANGELOG entry
-   creation grouped under Keep a Changelog subsections (Added, Changed, Fixed, Removed, Security, Deprecated)
-4. Updates Swagger/OpenAPI XML annotations for new or modified controller actions (up to 20 endpoints)
-5. Updates the Postman collection with new or modified requests
-6. Builds to verify changes compile, fixing errors up to 3 times
-7. Runs Markdown linting via the `markdown-lint` skill and fixes any errors up to 3 times
-8. Populates Section E — evaluates the Technical Writer Handoff Gate and sets status to DOCUMENTED
-9. Commits changes locally (`git add -A && git commit`) and confirms staged changes with the user
+1. Validates every in-scope story `Status: Done` and gates A–D signed, and that the release code review (Phase 6)
+   reached PASS. On BLOCKED, recommends running `/complete-feature` for the affected features or re-running
+   the release code review.
+2. Invokes `ensure-on-release-branch`.
+3. Runs the full test suite (`test-all`).
+4. Collects coverage (`test-refresh-coverage-report`) and presents gaps below 100%; writes approved coverage
+   tests, then re-runs `test-unit` until green (up to 3 iterations).
+5. Runs integration tests.
+6. Guides you through local validation (Docker Compose + Postman collection + teardown).
+7. Signs the QA gate on `_release.md`; commits and pushes the release branch.
 
-**Deliverable:** Updated `Directory.Build.props`, `CHANGELOG.md`, Swagger annotations, Postman collection,
-Markdown lint passing, Section E populated, Technical Writer Handoff Report.
-
-**Your role:** Review the version bump rationale, CHANGELOG entry accuracy, and Swagger/XML documentation quality.
-Approve before finalizing.
+**Your role:** Approve coverage test writing for each gap. Execute local validation. Confirm.
 
 ---
 
-### Phase 7: QA Tester — `@tester.qa`
+### Phase 8: Technical Writer — `@technical_writer`
 
-> **⚠ Feature-level gate:** Only invoke this phase with the **last user story** of the feature being released.
-> All preceding stories must have completed through Phase 6 (Technical Writer) before running QA on the final
-> story. This ensures the full test suite, coverage analysis, and local validation reflect the complete feature.
-
-**Invoke:** `@tester.qa` → provide the path to the **last** story file after the Technical Writer phase completes.
-
-Example: `@tester.qa #file:docs/stories/todo/user-profiles/US-01-create-profile.md`
+**Invoke:** `@technical_writer` → path to `_release.md` with the QA gate signed.
 
 **What the agent does:**
 
-1. Validates the Technical Writer Handoff Gate and all previous handoff gates (Sections A through E) pass
-2. Runs the full test suite (`test-all` task) as a sanity gate
-3. Collects code coverage (`test-refresh-coverage-report` task) for branch-modified files and identifies gaps
-   below 100%
-4. Presents coverage gaps with file paths, percentages, and uncovered line numbers — asks you whether to write
-   additional unit tests for each
-5. Writes approved coverage tests, runs `test-unit`, invokes `@code.fix` on any failures (up to 3 iterations)
-6. Runs integration tests (`test-integration` task) as a separate verification step
-7. Guides you through local validation: Docker Compose startup (`docker-compose-up-dev-no-api`), API run
-   (`run-api`), Postman collection execution, infrastructure teardown (`docker-compose-down`)
-8. Populates Section F and the QA Tester Handoff Gate
-9. Asks you to confirm everything is ready — on confirmation, moves stories from `todo/` to `done/` via `git mv`
+1. Validates the QA gate. On BLOCKED, recommends running `/complete-feature` for any feature missing a closure.
+2. Invokes `ensure-on-release-branch`.
+3. Walks every story under the release and collects production deltas (modified files, new HTTP endpoints).
+4. Invokes the `update-changelog` skill — determines version bump (MAJOR | MINOR | PATCH), updates
+   `Directory.Build.props`, and writes the release entry to `CHANGELOG.md` grouped by Keep a Changelog
+   subsections.
+5. Updates Swagger/OpenAPI XML annotations, the Postman collection, and any affected adapter READMEs.
+6. Runs the `markdown-lint` skill and fixes any errors.
+7. If the release was still on the placeholder, renames the folder and branch from `vX.Y.Z`/`release/next` to
+   the concrete `vN.N.N`/`release/vN.N.N` (`git mv` + `git branch -m` + push old branch deleted).
+8. Signs the Technical Writer gate on `_release.md`; commits and pushes.
 
-**Deliverable:** Coverage gaps closed (or acknowledged), local validation confirmed, Section F populated,
-stories moved to `done/`, QA Tester Handoff Report.
-
-**Your role:** Approve or decline coverage test writing for each gap. Execute the local validation steps
-(Docker + Postman) and confirm results. Confirm readiness before stories are moved.
+**Your role:** Review the version bump rationale and CHANGELOG entry. Approve before doc review.
 
 ---
 
-### Phase 8: Release Manager — `@release_manager`
+### Phase 9: Documentation Review — `@concurrent.reviewer.documentation`
 
-> **⚠ Feature-level gate:** Only invoke this phase with the **last user story** of the feature being released.
-> The release encompasses all stories in the feature branch — the final story's QA gate confirms the entire
-> feature is validated and ready for PR, release, and deployment.
+**Invoke:** `@concurrent.reviewer.documentation uncommitted` (or scope path / release branch).
 
-**Invoke:** `@release_manager` → provide the path to the **last** story file after the QA Tester phase completes.
+Three sub-agents evaluate the released documentation against the documentation conventions checklist; the
+report is consolidated. On a FAIL verdict the agent asks whether to apply the reported fixes in the current
+session; re-validation is always done in a new session.
 
-Example: `@release_manager #file:docs/stories/todo/user-profiles/US-01-create-profile.md`
+**Your role:** On FAIL, decide whether to let the agent apply the fixes (or fix manually). Then start a new
+chat session and re-invoke `@concurrent.reviewer.documentation` with the same scope until PASS. Doc review runs
+**after** TW so the reviewer validates the final shipped documentation (CHANGELOG, Swagger, Postman, READMEs).
+
+---
+
+### Phase 10: Release Manager — `@release_manager`
+
+**Invoke:** `@release_manager` → path to `_release.md` with Technical Writer + QA gates signed and the
+documentation review PASS.
 
 **What the agent does:**
 
-1. Validates the QA Tester Handoff Gate is fully passing
-2. Checks for untracked files that may belong to the feature — presents them for confirmation
-3. Commits and pushes the branch (with your confirmation)
-4. Creates a PR to `main` via `gh pr create` with story-derived title and acceptance criteria in body
-5. Evaluates whether a release is needed (version in `Directory.Build.props` ≠ latest git tag)
-6. If release needed and you confirm: creates a GitHub release with CHANGELOG-derived notes
-7. Creates deployment PRs from `main` → `deploy/dev` and `main` → `deploy/prod`
+1. Validates release `Status: Ready for Deployment` and both prior gates.
+2. Invokes `ensure-on-release-branch`.
+3. Signs the Release Manager gate (CHANGELOG breaking-change entries confirmed). Commits and pushes.
+4. Runs `gh pr create --base main --head release/v<X.Y.Z>`.
+5. Waits for your confirmation, then `gh pr merge --rebase --delete-branch=false` (release branch is preserved
+   for hotfix follow-ups).
+6. Checks out `main`, pulls, `git tag -a v<X.Y.Z>`, pushes the tag, captures `tag_sha`, and produces the report.
 
-**Deliverable:** Main PR created, release created (if applicable), deployment PRs created, Release Manager
-Handoff Report (Status: DONE | BLOCKED).
-
-**Your role:** Confirm before each push, PR creation, and release creation.
+**Your role:** Confirm the PR merge. The tag is created on `main` after rebase so it points at the deployed
+commits.
 
 ---
 
 ## Quick Reference
 
-| Phase | Agent | Input | Output |
-| ----- | ----- | ----- | ------ |
-| 0 | `@product_owner` | Feature request (free text) | `feat_` branch + story files in `todo/` with Section A |
-| 1 | `@architect` | Story file (Section A complete) | Section B populated |
-| 2 | `@tester.unit` | Story file (Sections A + B complete) | Stub files + test files + Section C |
-| 3 | `@developer` | Story file (Section C tests in RED) | Implementation + code review approved |
-| 4 | `@tester.integration` | Story file (Developer Handoff Gate complete) | Integration tests + Section D + status report |
-| 5a | `@concurrent.reviewer.code` | branch name | Consolidated code compliance report (multi-model) |
-| 5b | `@concurrent.reviewer.documentation` | branch name | Consolidated documentation compliance report (multi-model) |
-| 6 | `@technical_writer` | Story file (Review phase PASS) | Version bump + CHANGELOG + Swagger + Postman + XML docs + Section E |
-| 7 | `@tester.qa` | Story file (Technical Writer Gate PASS) | Coverage closed + local validation + stories moved + Section F |
-| 8 | `@release_manager` | Story file (QA Tester Gate PASS) | Main PR + release + deploy PRs (Status: DONE \| BLOCKED) |
+| Phase | Agent / Skill | Branch | Input | Output |
+| ----- | ------------- | ------ | ----- | ------ |
+| 0 | `@product_owner` | release | feature request (free text) | `_release.md` + `_feature.md` + Section A |
+| 1 | `@architect` | feat | story file (Section A) | Section B |
+| 2 | `@tester.unit` | feat | story file (Sections A + B) | stubs + RED tests + Section C |
+| 3 | `@developer` | feat | story file (Section C RED) | implementation (TDD green) |
+| 4 | `@tester.integration` | feat | story file (Developer Gate) | integration tests + Section D |
+| 5 | `@concurrent.reviewer.code` | feat | scope or branch (per-story) | code review PASS |
+| close | `/complete-feature` | feat → release | `<feature-slug>` | squash PR merged; release pulled |
+| 6 | `@concurrent.reviewer.code` | release | `release/v<X.Y.Z>` (vs main) | release code review PASS |
+| 7 | `@tester.qa` | release | `_release.md` | QA gate signed |
+| 8 | `@technical_writer` | release | `_release.md` (QA signed) | CHANGELOG + Swagger + Postman + lint; TW gate |
+| 9 | `@concurrent.reviewer.documentation` | release | scope or branch | doc review PASS |
+| 10 | `@release_manager` | release → main | `_release.md` (TW + QA signed) | rebase PR + tag on `main` |
 
 ## Tips
 
 - **Start a new chat session** for each agent invocation to keep context clean.
-- **Reference files** with `#file:path` syntax in Copilot Chat for precise context.
-- **Section C is the TDD tracker** — the tester populates it (Skeleton Inventory + Test Traceability), the developer
-  updates it, the code reviewer verifies against it.
-- **Section D is the integration test tracker** — the integration tester populates it (Integration Test Traceability +
-  Findings), with human approval before writing any tests.
-- **Section E is the documentation tracker** — the technical writer populates it via the `update-changelog` skill
-  (Version Update, CHANGELOG Entry, Documentation Updates), delegating version bumps and changelog management.
-- **Section F is the QA tracker** — the QA tester populates it (Test Suite, Coverage, Local Validation, Stories
-  Moved), confirming quality and moving stories to done before release.
-- **`@release_manager` does not update the story file** — it only reports results (PRs, release, deployments)
-  in its handoff report output.
-- **Phase 5 is mandatory** — both `@concurrent.reviewer.code` and `@concurrent.reviewer.documentation` must
-  produce PASS before the technical writer can proceed. Run them sequentially: code review first, documentation
-  review second.
-- **`@documentation.fix` handles the fix loop automatically** — it invokes `review.documentation.prompt.md`
-  internally and iterates until the reviewer returns PASS or the iteration limit (5) is reached. Use it to fix any
-  documentation FAIL findings from Phase 5.
-- **Use `@code.fix`** for ad-hoc code fixes outside the story workflow (bugs, tech debt).
-- **Use `@documentation.fix`** standalone to fix any documentation scope — file, directory, layer, or `uncommitted`.
-- **Use `@concurrent.reviewer.code`** standalone to review any `.cs` scope — file, directory, layer, or `uncommitted`.
-- **Use `@concurrent.reviewer.documentation`** standalone to validate docs without fixing (read-only review).
-- **Use `@concurrent.reviewer.copilot.customization`** to review agent/prompt/instruction/skill files.
-- **Create the `feat_` branch first** — `@product_owner` creates the branch automatically from latest `main`
-  and confirms the name with you before proceeding.
-- **Stories live in `todo/` during development** — agents create and update stories under `docs/stories/todo/`.
-- **Move stories to `done/` via `@tester.qa`** — the QA tester moves stories after local validation passes,
-  before handing off to the release manager.
-- **QA and Release run only on the last story** — when a feature has multiple stories, run Phases 0–6 for each
-  story individually, then invoke Phase 7 (`@tester.qa`) and Phase 8 (`@release_manager`) only with the final
-  story. This ensures full-feature validation and a single cohesive release.
-- **The story file is the single source of truth** — all agents reference and update it.
-- **Any agent can run standalone** — useful for reviewing existing code outside the full workflow.
+- **Reference files** with `#file:path` in Copilot Chat for precise context.
+- **Branch creation is split by responsibility:** the Product Owner owns release branch creation
+  (`ensure-on-release-branch`); workers never create release branches and `ensure-on-feature-branch` FAILs if
+  the release branch is missing.
+- **Section C is the TDD tracker** — `@tester.unit` populates it (Skeleton Inventory + Test Traceability),
+  `@developer` updates it.
+- **Section D is the integration tracker** — `@tester.integration` populates it (Traceability + Findings).
+- **Per-story merges via `/complete-feature`** — never merge `feat/<slug>` manually; the skill enforces
+  Done/gates before opening the squash PR.
+- **Per-release merges via `@release_manager`** — rebase keeps the release branch alive for hotfixes; the tag
+  is created on `main` after the rebase lands.
+- **Code review runs twice:** per-story (Phase 5) on the feature branch against the implementation, and
+  per-release (Phase 6) on the release branch against the cumulative diff vs `main` — catching cross-story
+  regressions before QA.
+- **Documentation review runs per release (Phase 9)** — after Technical Writer, against the released docs.
+- **`@concurrent.reviewer.code` / `@concurrent.reviewer.documentation`** deliver the report first; on FAIL
+  they offer to apply the reported fixes in the current session. Re-validation always happens in a new chat
+  session to keep the verdict free of confirmation bias.
 - **`@concurrent.reviewer.copilot.customization`** maintains SDLC quality — run it when modifying agents,
-  prompts, instructions, or skills, not during feature development.
+  prompts, instructions, or skills (not during feature development).
+- **The story file is the single source of truth** for stories; `_feature.md` for features; `_release.md` for
+  releases.
+
+## GitHub UI Configuration
+
+The automated pipeline relies on repository-level settings that must be configured once via the GitHub UI.
+This section is a runbook — it names every required object but never lists secret values.
+
+### Branch rulesets
+
+Configure two rulesets under **Settings → Rules → Rulesets**:
+
+- **`main`**
+  - Target: branch `main`.
+  - Require a pull request before merging.
+  - Require status checks to pass: `build`, `test-unit`, `test-integration`.
+  - Require linear history.
+  - Block direct pushes and force pushes.
+  - Restrict deletions.
+  - Bypass list: empty (no human bypass; release manager merges via PR only).
+- **`release/*`**
+  - Target: branch pattern `release/*`.
+  - Require a pull request before merging (squash from `feat/*`, `fix/*`, `chore/*`, `docs/*`).
+  - Require status checks to pass: `build`, `test-unit`, `test-integration`.
+  - Restrict deletions.
+  - Allow force pushes: disabled.
+
+### Environments
+
+Configure two environments under **Settings → Environments**:
+
+- **`development`**
+  - Deployment branches: `release/*` only.
+  - Required reviewers: none (automated).
+  - Secrets: `AZURE_CLIENT_ID_DEV`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID_DEV` (OIDC; no client secret).
+  - Variables: `ENV_NAME=development`, `RESOURCE_GROUP=<dev-rg>`.
+- **`production`**
+  - Deployment branches: `main` only.
+  - Required reviewers: at least one repository admin.
+  - Wait timer: 0–30 minutes (operator preference).
+  - Secrets: `AZURE_CLIENT_ID_PROD`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID_PROD`.
+  - Variables: `ENV_NAME=production`, `RESOURCE_GROUP=<prod-rg>`.
+
+### OIDC federated credentials
+
+In Microsoft Entra ID, register a workload identity for each environment with **federated credential** subjects
+(no client secrets stored in GitHub):
+
+- Development credential subject: `repo:Camus-Labs/camus-template-api:environment:development`.
+- Production credential subject:  `repo:Camus-Labs/camus-template-api:environment:production`.
+- Audience: `api://AzureADTokenExchange`.
+- Assign the service principal the minimum Azure roles required by the deployment workflow on the target
+  resource group only.
+
+### Repository settings
+
+- **Settings → General → Pull Requests:** disable merge commits; enable squash merging and rebase merging
+  (squash is used `feat → release`; rebase is used `release → main`).
+- **Settings → Actions → General:** workflow permissions = read; allow `id-token: write` only at the workflow
+  level for OIDC steps.
+- **Settings → Code security:** enable secret scanning, push protection, and Dependabot security updates.
+
+No secret value is ever committed to the repository; all credentials flow through GitHub environment secrets
+and OIDC federated identity.

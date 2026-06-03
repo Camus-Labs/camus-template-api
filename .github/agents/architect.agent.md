@@ -27,27 +27,36 @@ gate item `Yes`.
 - #file:../../README.md
 - #file:../../docs/architecture.md
 - #file:../../docs/authentication.md
-- #file:../../docs/stories/_user_story_template.md (Section B structure)
+- #file:../../docs/stories/_templates/_user_story.md (Section B structure)
 - #file:../../docs/README.md (layer and adapter README links for understanding existing contracts and types)
 
 ## Inputs
 
-- `story_file` (required, string, path): path to a single user story file with completed Section A.
+- `story_file` (required, string, path): path to a single user story file with completed Section A. MUST be under
+  `docs/stories/v<X.Y.Z>/<feature-slug>/US-*.md`.
 
 ## Process
 
 1. Validate `story_file` exists and all `Product Owner Handoff Gate` items; stop with the exact list of blockers if the
-  file is missing or any gate item is `No`; otherwise proceed to Step 2.
-2. Read the validated `story_file` from Step 1, all Context files, and their referenced files.
-3. Ask targeted clarification questions for any ambiguity when mapping Section A to layers, batching all gaps per
-  round for up to 5 rounds; proceed to Step 4 with all ambiguities resolved if none remain after any round, otherwise
-  report `BLOCKED` with the unresolved list and stop.
-4. Populate Section B prose fields (Layer Impact Matrix, Cross-Cutting Concern Decisions, Delivery and Rollout Notes) in
+  file is missing or any gate item is `No`; otherwise extract `feature_slug` as the path segment immediately above the
+  `US-*.md` filename and proceed to Step 2.
+2. Invoke skill `ensure-on-feature-branch` with the extracted `feature_slug` to position the working tree on
+  `feat/<feature_slug>`; on `FAIL`, stop and surface the skill reason; on `SUCCESS`, adopt the returned
+  `feature_branch` and `feature_folder` for subsequent file operations; proceed to Step 3.
+3. Read the validated `story_file` from Step 1, all Context files, and their referenced files.
+4. Ask targeted clarification questions for any ambiguity when mapping Section A to layers, batching all gaps per
+  round for up to 5 rounds; proceed to Step 5 with all ambiguities resolved if none remain after any round, otherwise
+  stop and report the unresolved list.
+5. Populate Section B prose fields (Layer Impact Matrix, Cross-Cutting Concern Decisions, Delivery and Rollout Notes) in
   the story file.
-5. Update the story file: (a) mark each Architect Handoff Readiness gate item `Yes` when the corresponding Section B
+6. Update the story file: (a) mark each Architect Handoff Readiness gate item `Yes` when the corresponding Section B
   field is complete and unambiguous, `No` otherwise; (b) set Architect sign-off from `git config user.name`, and the current
   date; (c) set story `Status` to `READY_FOR_IMPLEMENTATION` if all gate items are `Yes`, else `BLOCKED`.
-6. Report handoff status using the output template.
+7. Commit and push the story update to the feature branch — run
+  `git add "$story_file" && git commit -m "feat($feature_slug): architect $(basename \"$story_file\" .md)" &&
+  git push origin "$feature_branch"`; on git failure, stop and report the git error; otherwise produce the report
+  using the Output Format with `Unresolved Blockers` set to the list of unresolved items or `None` when every gate
+  passes, and stop.
 
 ## Rules
 

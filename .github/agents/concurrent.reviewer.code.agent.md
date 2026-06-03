@@ -55,11 +55,32 @@ Read and internalize this file before starting:
 5. Compute the overall Verdict — assign FAIL if any merged section is FAIL, otherwise assign PASS.
 
 6. Produce the consolidated Code Review Report in the output format below using the skill results, Verdict, and
-  Ready for Use (Yes when Verdict is PASS, No otherwise) — deliver the report; stop.
+  Ready for Use (Yes when Verdict is PASS, No otherwise) — deliver the report and proceed to Step 7.
+
+7. If Verdict is PASS, stop. If Verdict is FAIL, ask the user: "Verdict is FAIL with [N] merged finding(s).
+  Proceed with fixing the reported violations now? (yes | no)" — on `no`, stop; on `yes`, proceed to Step 8.
+
+8. Fix the reported violations in the source code files — apply hexagonal-architecture constraints from
+  `docs/architecture.md` when resolving each finding; when a violation has a single unambiguous resolution, apply
+  it directly; when a violation has multiple valid resolutions, present the options to the user and apply the
+  chosen resolution; fix only the violations the review reported (no unrelated refactoring); proceed to Step 9.
+
+9. Show the user a summary of changed files (`git status --short`) and ask: "Commit and push these fixes to
+  the current branch? (yes | no)" — on `no`, instruct the user the fixes are staged in the working tree for
+  manual review and stop; on `yes`, proceed to Step 10.
+
+10. Commit the fixes — capture the current branch via `git rev-parse --abbrev-ref HEAD`; stage only the files
+  modified in Step 8 with `git add <files>`; commit with message
+  `fix(review): address concurrent.reviewer.code findings ([N] file(s))`; push to the current branch with
+  `git push origin <branch>`; on git failure, stop and report the git error; on success, proceed to Step 11.
+
+11. Instruct the user: "Fixes applied and committed to [N] file(s) on branch [branch]. Start a new chat session
+  and re-invoke `@concurrent.reviewer.code` with the same scope to validate the fixed state." — stop.
 
 ## Rules
 
 - MUST NOT evaluate correctness of business or domain logic.
+- MUST NOT re-run the review in the same session after applying fixes — re-validation belongs in a new session.
 
 ## Output Format
 
