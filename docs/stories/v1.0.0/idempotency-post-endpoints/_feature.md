@@ -21,11 +21,11 @@ rejected on body conflict, preventing double-processing of write operations.
 
 ## Stories
 
-| Story ID | Title | Status |
-| --- | --- | --- |
-| `US-01` | Idempotency Key Enforcement | `Done` |
-| `US-02` | Idempotent Response Caching | `Done` |
-| `US-03` | Apply Idempotency to POST Endpoints | `Done` |
+| Story ID | Title | Depends On | Status |
+| --- | --- | --- | --- |
+| `US-01` | Idempotency Key Enforcement | `-` | `Done` |
+| `US-02` | Idempotent Response Caching | `US-01` | `Done` |
+| `US-03` | Apply Idempotency to POST Endpoints | `US-01, US-02` | `Done` |
 
 ## In Scope
 
@@ -43,11 +43,6 @@ Scope at the capability level. Individual functional requirements live in storie
 - Idempotency for non-POST methods
 - Distributed cache backend (in-memory only in this release)
 
-## Cross-Story Dependencies
-
-- `US-01` must complete before `US-02` (filter requires the attribute)
-- `US-03` depends on both `US-01` and `US-02` (applies the infrastructure)
-
 ## Feature-Level Constraints
 
 - Cache must fail open: if the cache is unavailable, requests proceed normally
@@ -62,6 +57,6 @@ Scope at the capability level. Individual functional requirements live in storie
 - Metadata complete: `Yes`
 - Goal stated as outcome (not implementation): `Yes`
 - All stories created under this feature folder: `Yes`
-- Cross-story dependencies identified: `Yes`
+- Story `Depends On` column lists only direct prerequisites: `Yes`
 - Ready for development: `Yes`
 - Product Owner sign-off: `Internal Service Team, 2026-05-02`

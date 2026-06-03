@@ -15,40 +15,6 @@ As a `platform maintainer`, I want
 fixed-keys layout mirroring RequestTimeoutSettings`, so that `the configuration is self-documenting,
 eliminates dictionary validation, and enforces a closed set of policy names at compile time`.
 
-### Business Value
-
-- Configuration becomes self-documenting in `appsettings.json` — explicit property names instead of opaque dictionary
-  keys
-- Matches the established `RequestTimeoutSettings` convention already in the API project (consistent developer
-  experience)
-- Eliminates runtime dictionary-key validation — unknown policy names fail at startup via the fixed enum/constant set
-- Reduces misconfiguration risk: no more typos in policy names that silently create unused policies
-
-### In Scope
-
-- Replace `Policies` dictionary in `RateLimitingSettings` with flat properties: `DefaultPermitLimit`,
-  `DefaultWindowSeconds`, `StrictPermitLimit`, `StrictWindowSeconds`, `RelaxedPermitLimit`, `RelaxedWindowSeconds`
-- Retain the existing shared settings: `SegmentsPerWindow`, `ExemptPaths`
-- Define the three policy names (`default`, `strict`, `relaxed`) as a closed enum or constant set (not
-  configuration-defined)
-- Update the `[RateLimit("policyName")]` attribute resolution to resolve against the fixed policy set
-- Add startup validation: unknown or misspelled policy names in `[RateLimit(...)]` attributes fail at startup with a
-  clear error
-- Update all `appsettings*.json` files to the new flat structure
-- Update the rate-limiting setup extension to read the new flat properties and configure the sliding-window limiter
-  accordingly
-- Update affected unit tests in `emc.camus.api.test` (or the rate-limiting test project, whichever holds them
-  post-US-01) to cover the new settings shape and startup validation
-- Maintain identical runtime behavior: same permit limits, same windows, same 429 responses, same headers
-
-### Out of Scope
-
-- Adding new rate-limiting policies beyond the existing three (default, strict, relaxed)
-- Changing the sliding-window algorithm or partition logic
-- Changing HTTP response headers or status codes
-- Modifying the cache port integration (covered in US-01)
-- Test relocation (covered in US-05)
-
 ### Functional Requirements
 
 - FR-01: `RateLimitingSettings` class exposes `DefaultPermitLimit` (int), `DefaultWindowSeconds` (int),
@@ -83,33 +49,22 @@ eliminates dictionary validation, and enforces a closed set of policy names at c
 - AC-05: HTTP responses for rate-limited requests return identical headers and status code 429 as before the change
 - AC-06: The closed policy set is defined as an enum or constant class (not derived from configuration keys)
 
-### Constraints and Dependencies
+### Notes
 
-- Business constraints:
-  - Must be delivered after US-01 (depends on the renamed `RateLimitingSettings` class and API-layer location)
-  - Independently deployable after US-01; does not block or depend on US-02–US-05
-- Dependencies:
-  - US-01 completed (rate-limiting feature already relocated to API layer with `RateLimitingSettings` class)
-  - Application-layer `[RateLimit]` attribute contract may need adjustment to reference the closed policy set
-
-### Risks and Open Questions
-
-- Risks:
-  - The `[RateLimit]` attribute lives in the Application layer — referencing an API-layer enum may require introducing a
+- Must be delivered after US-01 (depends on the renamed `RateLimitingSettings` class and API-layer location)
+- Independently deployable after US-01; does not block or depend on US-02–US-05
+- US-01 completed (rate-limiting feature already relocated to API layer with `RateLimitingSettings` class)
+- Application-layer `[RateLimit]` attribute contract may need adjustment to reference the closed policy set
+- The `[RateLimit]` attribute lives in the Application layer — referencing an API-layer enum may require introducing a
     shared constant or moving the policy names to the Application layer; owner: 3M0R4C
-- Open questions:
-  - None
 
 ### Product Owner Handoff Gate
 
 - Metadata set and follows naming conventions: `Yes`
 - Story statement complete and outcome-focused: `Yes`
-- Scope boundaries clear (in | out): `Yes`
 - FRs atomic and testable: `Yes`
 - NFRs specified across required categories: `Yes`
 - Acceptance criteria measurable and complete: `Yes`
-- Dependencies and constraints identified: `Yes`
-- Risks and open questions documented: `Yes`
 - Ready for architecture handoff: `Yes`
 - Product Owner sign-off: `3M0R4C, 2026-05-27`
 
@@ -168,14 +123,11 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Reliability: Startup validation is strengthened by failing immediately when a `[RateLimit]` attribute references
   a policy name not present in the closed `RateLimitPolicies.GetAll()` set, catching misconfiguration before
   serving traffic
-
-### Delivery and Rollout Notes
-
-- Rollout strategy: Full rollout — this is an internal configuration restructure with identical runtime behavior;
+- Rollout: Full rollout — this is an internal configuration restructure with identical runtime behavior;
   deploy as a single commit after US-01 is merged
-- Rollback strategy: Revert the commit and restore the `Policies` dictionary shape in `appsettings*.json`; no data
+- Rollback: Revert the commit and restore the `Policies` dictionary shape in `appsettings*.json`; no data
   migration or state cleanup required
-- Operational readiness checks: Verify rate-limiting metrics emit after deployment; confirm 429 responses on load
+- Operational readiness: Verify rate-limiting metrics emit after deployment; confirm 429 responses on load
   test with same thresholds as before; no new alerts or runbook updates needed
 
 ### Architect Handoff Readiness
@@ -184,7 +136,6 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Port | contract impacts assessed: `Yes`
 - Backward compatibility decision documented: `Yes`
 - Cross-cutting concern decisions addressed: `Yes`
-- Rollout and rollback strategies defined: `Yes`
 - Ready for implementation: `Yes`
 - Architect sign-off: `3M0R4C, 2026-05-28`
 

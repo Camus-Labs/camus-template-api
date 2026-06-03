@@ -14,31 +14,6 @@ As a `platform maintainer`, I want `the API Key security feature relocated from 
 API layer`, so that `the architectural boundary correctly reflects that API Key authentication is an
 ASP.NET Core pipeline feature, not a swappable infrastructure adapter behind an Application port`.
 
-### Business Value
-
-- Enforces hexagonal architecture discipline: API Key handler is auth-scheme wiring, not an adapter implementing a
-  domain port
-- Consolidates all authentication pipeline configuration in the API project
-- Maintains secrets consumption through the true adapter (`emc.camus.secrets.dapr`)
-
-### In Scope
-
-- Move all source files from `src/Adapters/emc.camus.security.apikey/` into `src/Api/emc.camus.api/` following the
-  Configurations/ + Handlers/ + Extensions/\*SetupExtensions.cs + Metrics/ pattern
-- Update `emc.camus.api.csproj` to remove the project reference to `emc.camus.security.apikey`
-- Remove the `emc.camus.security.apikey` project from the solution
-- Delete the `src/Adapters/emc.camus.security.apikey/` directory
-- Preserve consumption of `emc.camus.secrets.dapr` for API key retrieval
-- Update `Program.cs` composition root to wire API Key auth from the API project directly
-- Maintain identical HTTP behavior: same 401 responses, same header validation
-
-### Out of Scope
-
-- Changing API Key validation logic or header name
-- Modifying the Application-layer contracts
-- Modifying `emc.camus.secrets.dapr` adapter
-- Test relocation (covered in US-05)
-
 ### Functional Requirements
 
 - FR-01: All API Key security source files are located under `src/Api/emc.camus.api/` in appropriate subdirectories
@@ -62,32 +37,21 @@ ASP.NET Core pipeline feature, not a swappable infrastructure adapter behind an 
 - AC-03: API Key authentication validates the `Api-Key` header identically against the secret provider
 - AC-04: HTTP responses for API Key auth failures return identical status codes (401) and response bodies
 
-### Constraints and Dependencies
+### Notes
 
-- Business constraints:
-  - Must be delivered after US-02 (sequential ordering)
-  - Single coordinated release with US-05
-- Dependencies:
-  - `emc.camus.secrets.dapr` adapter remains unchanged and available
-  - Application-layer contracts remain unchanged
-
-### Risks and Open Questions
-
-- Risks:
-  - Minimal risk — API Key handler is typically a simple authentication handler with few dependencies; owner: 3M0R4C
-- Open questions:
-  - None
+- Must be delivered after US-02 (sequential ordering)
+- Single coordinated release with US-05
+- `emc.camus.secrets.dapr` adapter remains unchanged and available
+- Application-layer contracts remain unchanged
+- Minimal risk — API Key handler is typically a simple authentication handler with few dependencies; owner: 3M0R4C
 
 ### Product Owner Handoff Gate
 
 - Metadata set and follows naming conventions: `Yes`
 - Story statement complete and outcome-focused: `Yes`
-- Scope boundaries clear (in | out): `Yes`
 - FRs atomic and testable: `Yes`
 - NFRs specified across required categories: `Yes`
 - Acceptance criteria measurable and complete: `Yes`
-- Dependencies and constraints identified: `Yes`
-- Risks and open questions documented: `Yes`
 - Ready for architecture handoff: `Yes`
 - Product Owner sign-off: `3M0R4C, 2026-05-27`
 
@@ -140,14 +104,11 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Reliability: Single coordinated commit relocating all files atomically. The solution must build and pass integration
   tests at every commit boundary. No intermediate state where the handler exists in both locations
 - Compliance: N/A
-
-### Delivery and Rollout Notes
-
-- Rollout strategy: Full rollout in a single coordinated release alongside US-05 (test relocation). No feature flag
+- Rollout: Full rollout in a single coordinated release alongside US-05 (test relocation). No feature flag
   needed — this is an internal structural change with zero behavioral difference
-- Rollback strategy: Revert the commit that removes the adapter project and restores the project reference in
+- Rollback: Revert the commit that removes the adapter project and restores the project reference in
   `emc.camus.api.csproj`. The solution file and adapter directory are restored from version control
-- Operational readiness checks: Verify integration tests pass post-merge (API Key header validation returns 401 on
+- Operational readiness: Verify integration tests pass post-merge (API Key header validation returns 401 on
   missing/invalid key and 200 on valid key). Confirm existing observability dashboards show no metric name gaps
 
 ### Architect Handoff Readiness
@@ -156,7 +117,6 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Port | contract impacts assessed: `Yes`
 - Backward compatibility decision documented: `Yes`
 - Cross-cutting concern decisions addressed: `Yes`
-- Rollout and rollback strategies defined: `Yes`
 - Ready for implementation: `Yes`
 - Architect sign-off: `3M0R4C, 2026-05-27`
 

@@ -2,17 +2,16 @@
 
 ## Metadata
 
+- Target Date: `2026-06-15`
 - Release Version: `v2.0.0`
 - Release Type: `MAJOR`
-- Target Date: `2026-06-15`
-- Release Manager: `3M0R4C`
 - Status: `In Progress`
 
 ## Features
 
-| Feature Slug | Title | Status | Stories | Owner |
-| --- | --- | --- | --- | --- |
-| `agentic-sdlc-overhaul` | Release-Centric Agentic SDLC Overhaul | `In Progress` | 8 | 3M0R4C |
+| Feature Slug | Title |
+| --- | --- |
+| `agentic-sdlc-overhaul` | Release-Centric Agentic SDLC Overhaul |
 
 ## Notes
 
@@ -24,6 +23,35 @@
   unchanged from `v1.0.1`.
 - GitHub UI configuration (rulesets, environments, OIDC) is captured in this
   release's documentation but performed manually by the Release Manager.
+
+## QA
+
+### Test Suite
+
+- Unit tests: `[pass_count]` passed, `[fail_count]` failed
+- Integration tests: `[pass_count]` passed, `[fail_count]` failed
+- Full suite: `[PASS | FAIL]`
+
+### Coverage
+
+- Files analyzed: `0`
+- Files line coverage at 100%: `0`
+- Files branch coverage at 100%: `0`
+- Gaps closed: `0` file(s), `0` test(s) added, `0` test(s) modified
+- Gaps deferred: `0` file(s) (user decision)
+
+### Local Validation
+
+- User confirmed: `[Yes | No | Skipped]`
+- Issues reported: `[description or "None"]`
+
+### QA Handoff Gate
+
+- All stories in scope have Sections A–D signed off and `Status: Done`: `[Yes | No]`
+- Full test suite passes: `[Yes | No]`
+- Coverage gaps addressed or acknowledged: `[Yes | No]`
+- Local validation confirmed: `[Yes | No]`
+- QA sign-off: `[Name, Date]`
 
 ## Technical Writer
 
@@ -67,28 +95,12 @@
 - Swagger annotations updated: `0` endpoint(s)
 - Postman requests updated: `0` request(s)
 - XML documentation added: `0` public API(s)
-- Markdown files updated:
-  - `docs/stories/_templates/_user_story.md`
-  - `docs/stories/_templates/_feature.md`
-  - `docs/stories/_templates/_release.md`
-  - `docs/stories/_templates/README.md`
-  - `docs/agentic-sdlc-workflow.md`
-  - `.github/agents/product_owner.agent.md`
-  - `.github/agents/architect.agent.md`
-  - `.github/agents/developer.agent.md`
-  - `.github/agents/tester.unit.agent.md`
-  - `.github/agents/tester.integration.agent.md`
-  - `.github/agents/tester.qa.agent.md`
-  - `.github/agents/technical_writer.agent.md`
-  - `.github/agents/release_manager.agent.md`
-  - `.github/skills/update-changelog/SKILL.md`
-  - `CHANGELOG.md`
 
 ### Technical Writer Handoff Gate
 
 - Version in `Directory.Build.props` matches `v2.0.0`: `[Yes | No]`
 - CHANGELOG entry consolidates all features in this release: `[Yes | No]`
-- Release `Features Included` table matches current feature folders: `[Yes | No]`
+- Release `Features` table matches current feature folders: `[Yes | No]`
 - Each `_feature.md` `Stories` table matches its `US-*.md` files and gate status: `[Yes | No]`
 - Swagger reflects all new/changed endpoints across stories: `N/A`
 - Postman reflects all new/changed requests across stories: `N/A`
@@ -97,37 +109,12 @@
 - Build succeeds with zero errors and warnings: `[Yes | No]`
 - Technical Writer sign-off: `[Name, Date]`
 
-## QA
-
-### Test Suite
-
-- Unit tests: `[pass_count]` passed, `[fail_count]` failed
-- Integration tests: `[pass_count]` passed, `[fail_count]` failed
-- Full suite: `[PASS | FAIL]`
-
-### Coverage
-
-- No production code changes in this release; coverage targets unchanged from `v1.0.1`
-
-### Local Validation
-
-- User confirmed: `[Yes | No | Skipped]`
-- Issues reported: `[description or "None"]`
-
-### QA Handoff Gate
-
-- All stories in scope have Sections A–D signed off: `[Yes | No]`
-- Full test suite passes: `[Yes | No]`
-- Coverage gaps addressed or acknowledged: `[Yes | No | N/A]`
-- Local validation confirmed: `[Yes | No]`
-- QA sign-off: `[Name, Date]`
-
 ## Release Manager Handoff Gate
 
 - All features in scope reached `Done` status: `[Yes | No]`
 - Technical Writer sign-off complete: `[Yes | No]`
 - QA sign-off complete: `[Yes | No]`
 - Breaking changes captured in CHANGELOG: `Yes`
-- Tag `v2.0.0` created on `release/v2.0.0`: `[Yes | No]`
-- PR `release/v2.0.0 → main` opened: `[Yes | No]`
+- PR `release/v2.0.0 → main` opened and merged: `[Yes | No]`
+- Tag `v2.0.0` created on `main`: `[Yes | No]`
 - Release Manager sign-off: `[Name, Date]`

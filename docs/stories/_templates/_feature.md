@@ -3,7 +3,7 @@
 ## Metadata
 
 - Request Date: `YYYY-MM-DD`
-- Requested By: `[name or role]`
+- Requested By: `[name]`
 - Owner: `[name]`
 - Status: `[Planning | In Progress | Done]`
 
@@ -19,9 +19,9 @@ delivers. Avoid implementation detail.]
 
 ## Stories
 
-| Story ID | Title | Status |
-| --- | --- | --- |
-| `US-XX` | [Story title] | `[Planning \| Red \| Green \| Integration \| Docs \| QA \| Done]` |
+| Story ID | Title | Depends On | Status |
+| --- | --- | --- | --- |
+| `US-XX` | [Story title] | `[US-YY, US-ZZ \| -]` | `[Planning \| Red \| Green \| Integration \| Docs \| QA \| Done]` |
 
 ## In Scope
 
@@ -32,11 +32,6 @@ delivers. Avoid implementation detail.]
 
 - [Capability explicitly deferred]
 - [Capability explicitly deferred]
-
-## Cross-Story Dependencies
-
-- [Story A must complete before Story B because ...]
-- [None]
 
 ## Feature-Level Constraints
 
@@ -53,6 +48,6 @@ delivers. Avoid implementation detail.]
 - Metadata complete: `[Yes | No]`
 - Goal stated as outcome (not implementation): `[Yes | No]`
 - All stories created under this feature folder: `[Yes | No]`
-- Cross-story dependencies identified: `[Yes | No]`
+- Story `Depends On` column lists only direct prerequisites: `[Yes | No]`
 - Ready for development: `[Yes | No]`
 - Product Owner sign-off: `[Name, Date]`

@@ -16,39 +16,6 @@ emc.camus.api.integration.test, and all affected documentation updated`, so that
 `the test structure mirrors the new project layout and documentation accurately reflects the
 architectural boundary between API features and adapters`.
 
-### Business Value
-
-- Test projects mirror production projects 1:1 — no orphaned test projects referencing deleted adapters
-- Documentation accurately guides developers and reduces onboarding confusion
-- Solution file is clean with no dangling references
-- 100% test coverage is preserved across the relocation
-
-### In Scope
-
-- Move tests from `src/Test/emc.camus.ratelimiting.inmemory.test/` into `src/Test/emc.camus.api.test/`
-- Move tests from `src/Test/emc.camus.security.jwt.test/` into `src/Test/emc.camus.api.test/`
-- Move tests from `src/Test/emc.camus.security.apikey.test/` into `src/Test/emc.camus.api.test/`
-- Move tests from `src/Test/emc.camus.documentation.swagger.test/` into `src/Test/emc.camus.api.test/`
-- Move any integration tests from the above into `src/Test/emc.camus.api.integration.test/`
-- Remove the 4 orphaned test projects from the solution
-- Delete the 4 orphaned test project directories
-- Adjust namespace references in relocated tests as needed
-
-**Documentation:**
-
-- Update solution filters (`UnitTests.slnf`, `IntegrationTests.slnf`) to reflect changes
-- Update `README.md` project structure section
-- Update `docs/architecture.md` to reflect the new boundary
-- Update or remove affected adapter READMEs (rate limiting, JWT, API Key, Swagger)
-- Ensure 100% of existing tests pass with adjustments where needed
-
-### Out of Scope
-
-- Writing new tests beyond what's needed to maintain coverage
-- Changing test assertions or test behavior
-- Modifying true adapter READMEs (cache.inmemory, persistence.\*, secrets.dapr, observability.otel, migrations.dbup)
-- Changing CI/CD pipeline configuration (if any)
-
 ### Functional Requirements
 
 - FR-01: The 4 adapter directories (`ratelimiting.inmemory`, `security.jwt`, `security.apikey`,
@@ -96,34 +63,23 @@ architectural boundary between API features and adapters`.
 - AC-08: Test count before and after refactor is identical (no tests lost)
 - AC-09: `docs/authentication.md` links point to the correct new locations
 
-### Constraints and Dependencies
+### Notes
 
-- Business constraints:
-  - Must be delivered last (after US-01 through US-04)
-  - This is the coordinated release point — all 5 stories ship together
-- Dependencies:
-  - US-01, US-02, US-03, US-04 completed (source files already relocated)
-
-### Risks and Open Questions
-
-- Risks:
-  - Namespace changes may cause test compilation failures — mitigation: bulk find-and-replace with build verification;
+- Must be delivered last (after US-01 through US-04)
+- This is the coordinated release point — all 5 stories ship together
+- US-01, US-02, US-03, US-04 completed (source files already relocated)
+- Namespace changes may cause test compilation failures — mitigation: bulk find-and-replace with build verification;
     owner: 3M0R4C
-  - Solution filter files may have undocumented dependencies — mitigation: validate with `dotnet build` on each filter;
+- Solution filter files may have undocumented dependencies — mitigation: validate with `dotnet build` on each filter;
     owner: 3M0R4C
-- Open questions:
-  - None
 
 ### Product Owner Handoff Gate
 
 - Metadata set and follows naming conventions: `Yes`
 - Story statement complete and outcome-focused: `Yes`
-- Scope boundaries clear (in | out): `Yes`
 - FRs atomic and testable: `Yes`
 - NFRs specified across required categories: `Yes`
 - Acceptance criteria measurable and complete: `Yes`
-- Dependencies and constraints identified: `Yes`
-- Risks and open questions documented: `Yes`
 - Ready for architecture handoff: `Yes`
 - Product Owner sign-off: `3M0R4C, 2026-05-27`
 
@@ -173,14 +129,11 @@ architectural boundary between API features and adapters`.
 - Reliability: Validate test count before and after relocation is identical using `dotnet test --list-tests` counts; run
   full solution test suite (`dotnet test src/CamusApp.sln`) as the final gate to confirm zero regressions; validate each
   solution filter compiles independently with `dotnet build`
-
-### Delivery and Rollout Notes
-
-- Rollout strategy: Single coordinated commit delivered after US-01 through US-04 are complete; all 5 stories ship
+- Rollout: Single coordinated commit delivered after US-01 through US-04 are complete; all 5 stories ship
   together as one atomic release
-- Rollback strategy: Revert the single commit — since this story only moves test files, updates documentation, and
+- Rollback: Revert the single commit — since this story only moves test files, updates documentation, and
   removes orphaned projects, a git revert fully restores the previous state with no data or runtime implications
-- Operational readiness checks: Not applicable — no runtime behavior changes; CI pipeline confirms all tests pass
+- Operational readiness: Not applicable — no runtime behavior changes; CI pipeline confirms all tests pass
   post-merge
 
 ### Architect Handoff Readiness
@@ -189,39 +142,16 @@ architectural boundary between API features and adapters`.
 - Port | contract impacts assessed: `Yes`
 - Backward compatibility decision documented: `Yes`
 - Cross-cutting concern decisions addressed: `Yes`
-- Rollout and rollback strategies defined: `Yes`
 - Ready for implementation: `Yes`
 - Architect sign-off: `3M0R4C, 2026-05-27`
 
 ## Section C - Implementation Tracking
 
-### Unit Tester Phase: BYPASSED
-
-This story is a pure refactoring/relocation task with no new production behavior to drive via TDD. All acceptance
-criteria are structural or documentation verification checks that cannot be expressed as unit tests against new stubs.
-
-#### Justification
-
-- **No production types to stub.** The Layer Impact Matrix specifies zero new classes, interfaces, or methods across
-  Domain, Application, API, and Adapters layers.
-- **Acceptance criteria are meta-verification, not behavioral:**
-  - AC-01 (all tests pass) — verified by `dotnet test src/CamusApp.sln`
-  - AC-02 (no orphaned references) — verified by grep/search against `.sln` and `.slnf` files
-  - AC-03 (README accuracy) — verified by comparing `README.md` content to actual directory layout
-  - AC-04 (architecture.md accuracy) — verified by documentation review
-  - AC-05 (test count preserved) — verified by comparing `dotnet test --list-tests` counts before and after
-  - AC-06 (authentication.md links) — verified by link validation
-
-#### Recommended Verification Approach
-
-| AC | Verification Method |
-| --- | --- |
-| AC-01 | `dotnet test src/CamusApp.sln` — zero failures |
-| AC-02 | Grep for orphaned references in `.sln`/`.slnf` — no matches |
-| AC-03 | Manual review of `README.md` project structure section |
-| AC-04 | Manual review of `docs/architecture.md` Adapters section |
-| AC-05 | Compare test count before/after using `dotnet test --list-tests` |
-| AC-06 | Validate links in `docs/authentication.md` point to valid paths |
+Unit-test phase bypassed: this story is a pure refactoring/relocation task with no new production behavior to drive
+via TDD. The Layer Impact Matrix specifies zero new classes, interfaces, or methods; acceptance criteria are
+structural or documentation checks verified through build/test commands and documentation review (AC-01 via
+`dotnet test src/CamusApp.sln`; AC-02 via grep against `.sln`/`.slnf`; AC-03/AC-04 via documentation review;
+AC-05 via `dotnet test --list-tests` count comparison; AC-06 via link validation).
 
 ### Test Traceability
 
@@ -246,7 +176,6 @@ criteria are structural or documentation verification checks that cannot be expr
 - Tests compile and fail for the right reason (TDD red): `N/A — bypassed`
 - Ready for implementation: `Yes`
 - Tester sign-off: `3M0R4C, 2026-05-29`
-- Bypass reason: Pure relocation/documentation story — no new production behavior to unit test
 
 ### Regression Fixes Log
 

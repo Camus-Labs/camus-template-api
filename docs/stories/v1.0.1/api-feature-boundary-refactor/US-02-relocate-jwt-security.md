@@ -14,33 +14,6 @@ As a `platform maintainer`, I want `the JWT security feature relocated from Adap
 layer`, so that `the architectural boundary correctly reflects that JWT authentication is an ASP.NET
 Core pipeline feature, not a swappable infrastructure adapter behind an Application port`.
 
-### Business Value
-
-- Clarifies hexagonal architecture: JWT handler is middleware/auth-scheme wiring, not an adapter implementing a domain
-  port
-- Consolidates all authentication pipeline configuration in one project for easier reasoning
-- Maintains secrets consumption through the true adapter (`emc.camus.secrets.dapr`) and cache consumption through
-  `emc.camus.cache.inmemory`
-
-### In Scope
-
-- Move all source files from `src/Adapters/emc.camus.security.jwt/` into `src/Api/emc.camus.api/` following the
-  Configurations/ + Middleware|Handlers/ + Extensions/\*SetupExtensions.cs + Metrics/ pattern
-- Update `emc.camus.api.csproj` to remove the project reference to `emc.camus.security.jwt`
-- Remove the `emc.camus.security.jwt` project from the solution
-- Delete the `src/Adapters/emc.camus.security.jwt/` directory
-- Preserve consumption of `emc.camus.secrets.dapr` for RSA key retrieval
-- Preserve consumption of `emc.camus.cache.inmemory` for token revocation cache
-- Update `Program.cs` composition root to wire JWT from the API project directly
-- Maintain identical HTTP behavior: same 401/403 responses, same claims, same token validation
-
-### Out of Scope
-
-- Changing JWT algorithms, claims structure, or token lifetime logic
-- Modifying the Application-layer `Auth/` contracts
-- Modifying `emc.camus.secrets.dapr` or `emc.camus.cache.inmemory` adapters
-- Test relocation (covered in US-05)
-
 ### Functional Requirements
 
 - FR-01: All JWT security source files are located under `src/Api/emc.camus.api/` in appropriate subdirectories
@@ -66,34 +39,23 @@ Core pipeline feature, not a swappable infrastructure adapter behind an Applicat
 - AC-04: Token revocation cache integration works identically (revoked tokens are rejected)
 - AC-05: HTTP responses for auth failures return identical status codes (401/403) and response bodies
 
-### Constraints and Dependencies
+### Notes
 
-- Business constraints:
-  - Must be delivered after US-01 (sequential ordering)
-  - Single coordinated release with US-05
-- Dependencies:
-  - `emc.camus.secrets.dapr` adapter remains unchanged and available
-  - `emc.camus.cache.inmemory` adapter remains unchanged and available
-  - Application-layer `Auth/` contracts remain unchanged
-
-### Risks and Open Questions
-
-- Risks:
-  - JWT handler may have NuGet dependencies that inflate the API project — mitigation: review package references before
+- Must be delivered after US-01 (sequential ordering)
+- Single coordinated release with US-05
+- `emc.camus.secrets.dapr` adapter remains unchanged and available
+- `emc.camus.cache.inmemory` adapter remains unchanged and available
+- Application-layer `Auth/` contracts remain unchanged
+- JWT handler may have NuGet dependencies that inflate the API project — mitigation: review package references before
     move; owner: 3M0R4C
-- Open questions:
-  - None
 
 ### Product Owner Handoff Gate
 
 - Metadata set and follows naming conventions: `Yes`
 - Story statement complete and outcome-focused: `Yes`
-- Scope boundaries clear (in | out): `Yes`
 - FRs atomic and testable: `Yes`
 - NFRs specified across required categories: `Yes`
 - Acceptance criteria measurable and complete: `Yes`
-- Dependencies and constraints identified: `Yes`
-- Risks and open questions documented: `Yes`
 - Ready for architecture handoff: `Yes`
 - Product Owner sign-off: `3M0R4C, 2026-05-27`
 
@@ -149,14 +111,11 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Reliability: Delivered as a single atomic commit; the solution must build and pass all tests at every commit boundary.
   Coordinated release with US-05 (test relocation) ensures no dangling project references.
 - Compliance: N/A — no data handling or regulatory changes.
-
-### Delivery and Rollout Notes
-
-- Rollout strategy: Full rollout in a single coordinated release alongside US-05 (test relocation). No feature flag
+- Rollout: Full rollout in a single coordinated release alongside US-05 (test relocation). No feature flag
   needed — this is a pure internal restructuring with no external behavior change.
-- Rollback strategy: Revert the merge commit to restore the `emc.camus.security.jwt` project reference and source files;
+- Rollback: Revert the merge commit to restore the `emc.camus.security.jwt` project reference and source files;
   the solution returns to its pre-refactor state with no data migration or state cleanup required.
-- Operational readiness checks: Verify solution builds without `emc.camus.security.jwt`; verify JWT authentication
+- Operational readiness: Verify solution builds without `emc.camus.security.jwt`; verify JWT authentication
   end-to-end (token generation, validation, revocation rejection, 401/403 responses); verify existing auth metric
   dashboards continue to populate.
 
@@ -166,7 +125,6 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Port | contract impacts assessed: `Yes`
 - Backward compatibility decision documented: `Yes`
 - Cross-cutting concern decisions addressed: `Yes`
-- Rollout and rollback strategies defined: `Yes`
 - Ready for implementation: `Yes`
 - Architect sign-off: `3M0R4C, 2026-05-27`
 

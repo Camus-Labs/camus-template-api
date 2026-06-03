@@ -16,41 +16,6 @@ through the existing cache port`, so that `the architectural boundary between AP
 true infrastructure adapters is clarified, and a future distributed cache adapter automatically enables
 multi-instance rate limiting`.
 
-### Business Value
-
-- Enforces hexagonal architecture discipline: only true port/adapter pairs live under Adapters
-- Enables future distributed rate limiting (Redis, etc.) by routing partition storage through the cache port without
-  touching the rate-limiting feature code
-- Reduces cognitive overhead when onboarding — developers know Adapters == swappable external tech
-
-### In Scope
-
-- Move all source files from `src/Adapters/emc.camus.ratelimiting.inmemory/` into `src/Api/emc.camus.api/` following the
-  Configurations/ + Middleware/ + Extensions/\*SetupExtensions.cs + Metrics/ pattern
-- Refactor the in-memory partition store to consume `emc.camus.cache.inmemory` through the Application-layer cache port
-  (mirroring IdempotencyResponseCache pattern)
-- Update the `emc.camus.api.csproj` to remove the project reference to `emc.camus.ratelimiting.inmemory`
-- Remove the `emc.camus.ratelimiting.inmemory` project from the solution
-- Delete the `src/Adapters/emc.camus.ratelimiting.inmemory/` directory
-- Rename settings class from `InMemoryRateLimitingSettings` to `RateLimitingSettings` and rename the `appsettings`
-  configuration section from `InMemoryRateLimitingSettings` to `RateLimitingSettings` (the "InMemory" qualifier was an
-  adapter implementation detail; the feature now routes partition storage through the cache port)
-- Update all `appsettings*.json` files to use the new `RateLimitingSettings` section name
-- Update `Program.cs` composition root to wire rate limiting from the API project directly
-- Maintain identical HTTP behavior: same response headers, same 429 responses, same policies
-- Flatten configuration schema: replace nested `Policies` dictionary with fixed per-policy properties
-  (`DefaultPermitLimit`, `DefaultWindowSeconds`, `StrictPermitLimit`, `StrictWindowSeconds`, `RelaxedPermitLimit`,
-  `RelaxedWindowSeconds`) while preserving `SegmentsPerWindow` and `ExemptPaths` keys
-
-### Out of Scope
-
-- Implementing a distributed cache adapter (Redis, etc.)
-- Changing rate-limiting algorithms (sliding window stays)
-- Modifying rate-limiting policies, exempt paths, or the number of supported policy tiers
-  (default/strict/relaxed stay the same)
-- Changing the Application-layer `RateLimiting/` contracts (port interfaces, attributes)
-- Test relocation (covered in US-05)
-
 ### Functional Requirements
 
 - FR-01: All rate-limiting source files are located under `src/Api/emc.camus.api/` in appropriate subdirectories
@@ -87,33 +52,22 @@ multi-instance rate limiting`.
   `RelaxedWindowSeconds`, `ExemptPaths`)
 - AC-07: The settings class bound via DI is named `RateLimitingSettings` (no `InMemory` prefix)
 
-### Constraints and Dependencies
+### Notes
 
-- Business constraints:
-  - Must be delivered before US-02, US-03, US-04 (sequential ordering)
-  - Single coordinated release with US-05
-- Dependencies:
-  - `emc.camus.cache.inmemory` adapter must expose (or already exposes) a cache port suitable for partition storage
-  - Application-layer `RateLimiting/` contracts remain unchanged
-
-### Risks and Open Questions
-
-- Risks:
-  - Cache port interface may need a new method for sliding-window partition semantics — mitigation: review existing
+- Must be delivered before US-02, US-03, US-04 (sequential ordering)
+- Single coordinated release with US-05
+- `emc.camus.cache.inmemory` adapter must expose (or already exposes) a cache port suitable for partition storage
+- Application-layer `RateLimiting/` contracts remain unchanged
+- Cache port interface may need a new method for sliding-window partition semantics — mitigation: review existing
     `IRateLimitCounterStore` or equivalent and map to cache port; owner: 3M0R4C
-- Open questions:
-  - None
 
 ### Product Owner Handoff Gate
 
 - Metadata set and follows naming conventions: `Yes`
 - Story statement complete and outcome-focused: `Yes`
-- Scope boundaries clear (in | out): `Yes`
 - FRs atomic and testable: `Yes`
 - NFRs specified across required categories: `Yes`
 - Acceptance criteria measurable and complete: `Yes`
-- Dependencies and constraints identified: `Yes`
-- Risks and open questions documented: `Yes`
 - Ready for architecture handoff: `Yes`
 - Product Owner sign-off: `3M0R4C, 2026-05-27`
 
@@ -167,14 +121,11 @@ Architectural decisions for satisfying the NFRs defined in Section A.
   dimensions. No metric rename or schema change. Existing dashboards and alerts remain valid.
 - Reliability: Single coordinated release — the adapter removal and API-layer addition happen in the same commit. No
   intermediate broken state. The solution must build and all existing tests must pass before merge.
-
-### Delivery and Rollout Notes
-
-- Rollout strategy: Full rollout in a single coordinated release alongside US-05 (test relocation). No feature flag
+- Rollout: Full rollout in a single coordinated release alongside US-05 (test relocation). No feature flag
   needed — this is a structural refactor with identical runtime behavior.
-- Rollback strategy: Revert the merge commit. The previous adapter project and its reference are restored by git
+- Rollback: Revert the merge commit. The previous adapter project and its reference are restored by git
   history. No data migration or state to reconcile.
-- Operational readiness checks: Verify rate-limiting metrics (`rate_limit_exceeded` counter, partition gauges) continue
+- Operational readiness: Verify rate-limiting metrics (`rate_limit_exceeded` counter, partition gauges) continue
   emitting post-deploy. Confirm 429 responses and response headers match baseline via existing integration or smoke
   tests.
 
@@ -184,7 +135,6 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Port | contract impacts assessed: `Yes`
 - Backward compatibility decision documented: `Yes`
 - Cross-cutting concern decisions addressed: `Yes`
-- Rollout and rollback strategies defined: `Yes`
 - Ready for implementation: `Yes`
 - Architect sign-off: `3M0R4C, 2026-05-27`
 
@@ -264,7 +214,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 
 - All unit tests pass (TDD green): `Yes`
 - All existing integration tests pass: `Yes`
-- Regression fixes documented (if any): `Yes`
+- Regression fixes documented (if any): `N/A`
 - Build succeeds with zero warnings: `Yes`
 - Ready for code review: `Yes`
 - Developer sign-off: `3M0R4C, 2026-05-28`

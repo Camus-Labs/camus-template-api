@@ -13,25 +13,6 @@
 As an `authenticated API consumer with token.create permission`, I want `to sort the list of generated tokens by a
 specified field and direction`, so that `I can organize token results according to my needs when reviewing them`.
 
-### Business Value
-
-- Enables users to quickly locate tokens by creation date, expiry, username, or revocation time
-- Improves usability of the tokens listing endpoint for users managing multiple tokens
-
-### In Scope
-
-- Adding optional `SortBy` query parameter accepting: `tokenUsername`, `expiresOn`, `createdAt`, `revokedAt`
-- Adding optional `SortDirection` query parameter accepting: `asc`, `desc`
-- When no sort parameters are provided, results return ordered by `created_at DESC`
-- Single-field sorting only
-
-### Out of Scope
-
-- Multi-field sorting (sorting by more than one field simultaneously)
-- Sorting on fields not listed above (e.g., `Jti`, `IsRevoked`, `IsValid`, `Permissions`)
-- Changes to pagination or filtering behavior
-- Backward compatibility guarantees with current default ordering
-
 ### Functional Requirements
 
 - FR-01: The `GET /api/v2/auth/tokens` endpoint accepts an optional `SortBy` query parameter with allowed values:
@@ -67,31 +48,18 @@ alphabetically by token username
 - AC-08: A request with `?sortDirection=asc` (missing sortBy) returns 400 Bad Request with a validation error
 - AC-09: Sorting is applied before pagination — page 2 of sorted results contains the correct subset
 
-### Constraints and Dependencies
+### Notes
 
-- Business constraints:
-  - None
-- Dependencies:
-  - None
-
-### Risks and Open Questions
-
-- Risks:
-  - Sorting by `revokedAt` involves nullable column — null-handling behavior (nulls last) must be consistent across
-  database engines
-- Open questions:
-  - None
+- Sorting by `revokedAt` involves nullable column — null-handling behavior (nulls last) must be consistent
+  across database engines
 
 ### Product Owner Handoff Gate
 
 - Metadata set and follows naming conventions: `Yes`
 - Story statement complete and outcome-focused: `Yes`
-- Scope boundaries clear (in | out): `Yes`
 - FRs atomic and testable: `Yes`
 - NFRs specified across required categories: `Yes`
 - Acceptance criteria measurable and complete: `Yes`
-- Dependencies and constraints identified: `Yes`
-- Risks and open questions documented: `Yes`
 - Ready for architecture handoff: `Yes`
 - Product Owner sign-off: `Product Owner, 2026-04-28`
 
@@ -170,14 +138,11 @@ alphabetically by token username
 - Reliability: No additional reliability measures needed. When sort parameters are absent, the endpoint falls back to
   database-default ordering (current behavior), ensuring no behavioral regression.
 - Compliance: No additional compliance requirements.
-
-### Delivery and Rollout Notes
-
-- Rollout strategy: Full rollout. Both query parameters are optional and additive; the endpoint is fully backward
+- Rollout: Full rollout. Both query parameters are optional and additive; the endpoint is fully backward
   compatible. No feature flag needed.
-- Rollback strategy: Revert the deployment to the prior version. No database migration is involved, so rollback is a
+- Rollback: Revert the deployment to the prior version. No database migration is involved, so rollback is a
   code-only redeployment with zero data impact.
-- Operational readiness checks: Verify `sort_by` and `sort_direction` tags appear in traces after deployment. Confirm
+- Operational readiness: Verify `sort_by` and `sort_direction` tags appear in traces after deployment. Confirm
   endpoint latency remains within existing baseline via existing Grafana dashboards.
 
 ### Architect Handoff Readiness
@@ -186,7 +151,6 @@ alphabetically by token username
 - Port | contract impacts assessed: `Yes`
 - Backward compatibility decision documented: `Yes`
 - Cross-cutting concern decisions addressed: `Yes`
-- Rollout and rollback strategies defined: `Yes`
 - Ready for implementation: `Yes`
 - Architect sign-off: `Architect, 2026-04-28`
 
@@ -233,9 +197,17 @@ complete
 - Ready for implementation: `Yes`
 - Tester sign-off: `Unit Tester, 2026-04-28`
 
+### Regression Fixes Log
+
+| # | Test File | Test Method | Change Made | Reason |
+| --- | --- | --- | --- | --- |
+| — | — | — | None | No regressions recorded |
+
 ### Developer Handoff Gate
 
-- All tests pass (TDD green): `Yes`
+- All unit tests pass (TDD green): `Yes`
+- All existing integration tests pass: `Yes`
+- Regression fixes documented (if any): `N/A`
 - Build succeeds with zero warnings: `Yes`
 - Ready for code review: `Yes`
 - Developer sign-off: `Developer, 2026-04-28`

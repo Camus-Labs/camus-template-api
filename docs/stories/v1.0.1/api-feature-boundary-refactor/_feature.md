@@ -23,15 +23,15 @@ contracts to match.
 
 ## Stories
 
-| Story ID | Title | Status |
-| --- | --- | --- |
-| `US-01` | Relocate Rate Limiting | `Done` |
-| `US-02` | Relocate JWT Security | `Done` |
-| `US-03` | Relocate API Key Security | `Done` |
-| `US-04` | Relocate Swagger Documentation | `Done` |
-| `US-05` | Consolidate Tests and Docs | `Done` |
-| `US-06` | Flatten Rate Limiting Settings | `Done` |
-| `US-07` | Relocate Rate Limit Contracts | `Done` |
+| Story ID | Title | Depends On | Status |
+| --- | --- | --- | --- |
+| `US-01` | Relocate Rate Limiting | `-` | `Done` |
+| `US-02` | Relocate JWT Security | `-` | `Done` |
+| `US-03` | Relocate API Key Security | `-` | `Done` |
+| `US-04` | Relocate Swagger Documentation | `-` | `Done` |
+| `US-05` | Consolidate Tests and Docs | `US-01, US-02, US-03, US-04` | `Done` |
+| `US-06` | Flatten Rate Limiting Settings | `US-01` | `Done` |
+| `US-07` | Relocate Rate Limit Contracts | `US-01` | `Done` |
 
 ## In Scope
 
@@ -48,11 +48,6 @@ Scope at the capability level. Individual functional requirements live in storie
 - Behavioral changes to rate limiting, authentication, or documentation
 - New rate-limit policies beyond default/strict/relaxed
 
-## Cross-Story Dependencies
-
-- `US-05` (test consolidation) follows `US-01`–`US-04` (relocations)
-- `US-06` and `US-07` follow `US-01` (rate limiting relocation)
-
 ## Feature-Level Constraints
 
 - No behavioral or HTTP-contract changes; only internal restructuring
@@ -67,6 +62,6 @@ Scope at the capability level. Individual functional requirements live in storie
 - Metadata complete: `Yes`
 - Goal stated as outcome (not implementation): `Yes`
 - All stories created under this feature folder: `Yes`
-- Cross-story dependencies identified: `Yes`
+- Story `Depends On` column lists only direct prerequisites: `Yes`
 - Ready for development: `Yes`
 - Product Owner sign-off: `3M0R4C, 2026-05-27`

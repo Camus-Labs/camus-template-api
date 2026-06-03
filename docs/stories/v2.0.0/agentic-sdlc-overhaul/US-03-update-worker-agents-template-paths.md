@@ -4,7 +4,7 @@
 
 - Story ID: `US-03`
 - Owner: `3M0R4C`
-- Status: `Todo`
+- Status: `Done`
 
 ## Section A - Product Owner Definition
 
@@ -58,32 +58,87 @@ after the layout migration`.
 
 ## Section B - Architect Definition
 
-To be completed.
+N/A — path-only documentation update to four agent files; no production code, layer, contract, or
+cross-cutting concern is impacted.
+
+### Layer Impact Matrix
+
+`N/A` — non-runtime story; agent customization only. No runtime layers are affected.
+
+### Cross-Cutting Concern Decisions
+
+`N/A` — no NFRs require runtime architectural decisions.
 
 ### Architect Handoff Readiness
 
-- Ready for implementation: `No`
-- Architect sign-off: `[pending]`
+- Layer impacts are fully mapped: `N/A`
+- Port | contract impacts assessed: `N/A`
+- Backward compatibility decision documented: `N/A`
+- Cross-cutting concern decisions addressed: `N/A`
+- Ready for implementation: `Yes`
+- Architect sign-off: `N/A, 2026-06-02`
 
 ## Section C - Implementation Tracking
 
-To be completed.
+Updated four worker agent files to reference the new template location and explicitly reject legacy story paths:
+
+- `architect.agent.md` — Context updated to `docs/stories/_templates/_user_story.md`; `story_file` input restricted to
+  `docs/stories/v<X.Y.Z>/<feature-slug>/US-*.md`.
+- `developer.agent.md` — same updates as above.
+- `tester.unit.agent.md` — same updates as above.
+- `tester.integration.agent.md` — same updates as above, plus Step 7 prose updated to reference the new template path.
+
+All four agents already used the four-section structure (no Section E or F references existed); no gate text changes
+were required. Verified via repository grep that `_user_story_template.md` no longer appears in any of the four files
+and that the only remaining `done/`/`todo/` references are the new explicit rejection clauses per FR-06.
+
+### Test Traceability
+
+`N/A` — non-runtime story; no acceptance criteria map to executable tests.
+
+### Skeleton Inventory
+
+`N/A` — no production stubs are created; implementation modifies `.github/agents/` only.
 
 ### Tester Handoff Gate
 
-- Ready for implementation: `No`
-- Tester sign-off: `[pending]`
+- Every acceptance criterion has at least one test method: `N/A`
+- Skeleton inventory complete and user-approved: `N/A`
+- Tests compile and fail for the right reason (TDD red): `N/A`
+- Ready for implementation: `Yes`
+- Tester sign-off: `N/A, 2026-06-02`
+
+### Regression Fixes Log
+
+| # | Test File | Test Method | Change Made | Reason |
+| --- | --- | --- | --- | --- |
+| — | — | — | None | No code changes |
 
 ### Developer Handoff Gate
 
-- Ready for code review: `No`
-- Developer sign-off: `[pending]`
+- All unit tests pass (TDD green): `N/A`
+- All existing integration tests pass: `N/A`
+- Regression fixes documented (if any): `N/A`
+- Build succeeds with zero warnings: `N/A`
+- Ready for code review: `Yes`
+- Developer sign-off: `3M0R4C, 2026-06-02`
 
 ## Section D - Integration Testing
 
-To be completed.
+N/A — no runtime code paths are affected by this documentation update.
+
+### Integration Test Traceability
+
+`N/A` — non-runtime story; no cross-layer boundaries to exercise.
+
+### Integration Test Findings
+
+`N/A` — no integration tests run.
 
 ### Integration Tester Handoff Gate
 
-- Ready for review: `No`
-- Integration Tester sign-off: `[pending]`
+- All cross-layer boundaries identified and covered: `N/A`
+- All integration tests pass: `N/A`
+- No unresolved production code findings: `N/A`
+- Ready for review: `Yes`
+- Integration Tester sign-off: `N/A, 2026-06-02`

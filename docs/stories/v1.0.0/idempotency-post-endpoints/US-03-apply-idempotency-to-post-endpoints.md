@@ -14,24 +14,6 @@ As an `internal service`, I want `all existing POST endpoints to be decorated wi
 [RequireIdempotencyKey] attribute`, so that `write operations enforce idempotency key
 validation and response caching as defined by the idempotency infrastructure`.
 
-### Business Value
-
-- Activates the idempotency infrastructure (US-01 and US-02) on real endpoints, delivering the safety guarantees to callers
-- Ensures all current write operations are protected against duplicate processing from network retries or client-side failures
-
-### In Scope
-
-- Decorate `POST /api/v2/auth/authenticate` with `[RequireIdempotencyKey]` using the `default` TTL policy
-- Decorate `POST /api/v2/auth/generate-token` with `[RequireIdempotencyKey]` using the `default` TTL policy
-- Add the required `using` import for the attribute in `AuthController`
-
-### Out of Scope
-
-- Creating or modifying the `[RequireIdempotencyKey]` attribute (covered in US-01)
-- Implementing response caching or replay logic (covered in US-02)
-- Applying idempotency to non-POST HTTP methods
-- Endpoints not yet implemented in the codebase
-
 ### Functional Requirements
 
 - FR-01: The `AuthenticateUser` action in `AuthController` must be decorated with
@@ -67,34 +49,24 @@ validation and response caching as defined by the idempotency infrastructure`.
   body within the default TTL (5 minutes) returns the cached response with
   `Idempotency-Key-Status: hit`
 
-### Constraints and Dependencies
+### Notes
 
-- Business constraints:
-  - Must not alter existing authentication schemes, authorization policies, or rate limiting
+- Must not alter existing authentication schemes, authorization policies, or rate limiting
     attributes on the endpoints
-- Dependencies:
-  - US-01 (idempotency key enforcement) must be implemented — provides the attribute and
+- US-01 (idempotency key enforcement) must be implemented — provides the attribute and
     validation filter
-  - US-02 (idempotent response caching) must be implemented — provides the response caching
+- US-02 (idempotent response caching) must be implemented — provides the response caching
     filter
-
-### Risks and Open Questions
-
-- Risks:
-  - None — this story is a straightforward attribute application with no new logic
-- Open questions:
-  - None remaining
+- None — this story is a straightforward attribute application with no new logic
+- None remaining
 
 ### Product Owner Handoff Gate
 
 - Metadata set and follows naming conventions: `Yes`
 - Story statement complete and outcome-focused: `Yes`
-- Scope boundaries clear (in | out): `Yes`
 - FRs atomic and testable: `Yes`
 - NFRs specified across required categories: `Yes`
 - Acceptance criteria measurable and complete: `Yes`
-- Dependencies and constraints identified: `Yes`
-- Risks and open questions documented: `Yes`
 - Ready for architecture handoff: `Yes`
 - Product Owner sign-off: `Product Owner, 2026-05-15`
 
@@ -152,16 +124,13 @@ validation and response caching as defined by the idempotency infrastructure`.
   applies automatically; if the cache is unavailable, requests proceed normally
 - Compliance: No architectural decision needed — idempotency key handling follows the
   validation and format rules established in US-01
-
-### Delivery and Rollout Notes
-
-- Rollout strategy: Full rollout — the attribute application is a single atomic change;
+- Rollout: Full rollout — the attribute application is a single atomic change;
   internal service consumers have been notified that the `Idempotency-Key` header will
   become mandatory on POST auth endpoints
-- Rollback strategy: Remove the `[RequireIdempotencyKey]` attribute from both actions and
+- Rollback: Remove the `[RequireIdempotencyKey]` attribute from both actions and
   redeploy; this restores the previous behavior with no data migration or state cleanup
   required
-- Operational readiness checks: Monitor the `idempotency_key_missing` error rate in existing
+- Operational readiness: Monitor the `idempotency_key_missing` error rate in existing
   API error metrics after deployment to detect any callers that have not updated; existing
   idempotency dashboards from US-02 cover hit/miss/conflict rates
 
@@ -171,7 +140,6 @@ validation and response caching as defined by the idempotency infrastructure`.
 - Port | contract impacts assessed: `Yes`
 - Backward compatibility decision documented: `Yes`
 - Cross-cutting concern decisions addressed: `Yes`
-- Rollout and rollback strategies defined: `Yes`
 - Ready for implementation: `Yes`
 - Architect sign-off: `Architect, 2026-05-16`
 

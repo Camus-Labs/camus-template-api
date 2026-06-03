@@ -146,13 +146,18 @@ filesystem inspection (covered in the developer gate).
 - All existing integration tests pass: `N/A`
 - Regression fixes documented (if any): `N/A`
 - Build succeeds with zero warnings: `N/A`
-- `markdownlint-cli2` passes on `docs/stories/**/*.md`: `Yes`
 - Ready for code review: `Yes`
 - Developer sign-off: `3M0R4C, 2026-06-01`
 
 ## Section D - Integration Testing
 
-`N/A` — documentation-only story; no cross-layer boundaries to test.
+### Integration Test Traceability
+
+`N/A` — documentation-only story; no cross-layer boundaries to exercise.
+
+### Integration Test Findings
+
+`N/A` — no integration tests run.
 
 ### Integration Tester Handoff Gate
 

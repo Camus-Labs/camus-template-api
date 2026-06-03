@@ -24,16 +24,17 @@ match the new contracts, and document the end-to-end flow.
 
 ## Stories
 
-| Story ID | Title | Status |
-| --- | --- | --- |
-| `US-01` | Release-Centric Story Layout and Templates | `Done` |
-| `US-02` | Update Product Owner Agent | `Planning` |
-| `US-03` | Update Worker Agents Template Paths | `Planning` |
-| `US-04` | Refactor QA Tester Agent for Story-Level Gates | `Planning` |
-| `US-05` | Refactor Technical Writer Agent for Release Scope | `Planning` |
-| `US-06` | Refactor Release Manager Agent for Tag and PR Flow | `Planning` |
-| `US-07` | Update update-changelog Skill | `Planning` |
-| `US-08` | Author Agentic SDLC Workflow Documentation | `Planning` |
+| Story ID | Title | Depends On | Status |
+| --- | --- | --- | --- |
+| `US-01` | Release-Centric Story Layout and Templates | `-` | `Done` |
+| `US-02` | Update Product Owner Agent | `US-01` | `Done` |
+| `US-03` | Update Worker Agents Template Paths | `US-01` | `Done` |
+| `US-04` | Refactor QA Tester Agent for Story-Level Gates | `US-01` | `Done` |
+| `US-05` | Refactor Technical Writer Agent for Release Scope | `US-04, US-07` | `Done` |
+| `US-06` | Refactor Release Manager Agent for Tag and PR Flow | `US-05` | `Done` |
+| `US-07` | Update update-changelog Skill | `US-01` | `Done` |
+| `US-08` | Author Agentic SDLC Workflow Documentation | `US-02, US-03, US-04, US-05, US-06, US-07` | `Done` |
+| `US-09` | Reviewer Auto-Fix Flow and Release-Level Code Review Phase | `US-08` | `Done` |
 
 ## In Scope
 
@@ -48,15 +49,6 @@ match the new contracts, and document the end-to-end flow.
 - Changes to runtime code, HTTP contracts, or persistence schemas
 - Automation of GitHub repository configuration (rulesets, environments, OIDC) — captured as a manual runbook
 - Changes to non-SDLC agents or skills
-
-## Cross-Story Dependencies
-
-- `US-01` must complete before all other stories (provides the templates that the agents reference)
-- `US-02` (`product_owner`) and `US-03` (worker agents) can proceed in parallel after `US-01`
-- `US-04` (`tester.qa`) and `US-05` (`technical_writer`) can proceed in parallel after `US-01`
-- `US-06` (`release_manager`) depends on `US-04` and `US-05` (release gates must exist first)
-- `US-07` (`update-changelog` skill) depends on `US-05` (technical writer drives changelog now)
-- `US-08` (workflow doc) depends on `US-02` through `US-07` (documents the final agent contracts)
 
 ## Feature-Level Constraints
 
@@ -74,6 +66,6 @@ match the new contracts, and document the end-to-end flow.
 - Metadata complete: `Yes`
 - Goal stated as outcome (not implementation): `Yes`
 - All stories created under this feature folder: `Yes`
-- Cross-story dependencies identified: `Yes`
+- Story `Depends On` column lists only direct prerequisites: `Yes`
 - Ready for development: `Yes`
 - Product Owner sign-off: `3M0R4C, 2026-05-31`

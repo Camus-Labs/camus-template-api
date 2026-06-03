@@ -4,7 +4,7 @@
 
 - Story ID: `US-07`
 - Owner: `3M0R4C`
-- Status: `Todo`
+- Status: `Done`
 
 ## Section A - Product Owner Definition
 
@@ -58,32 +58,87 @@ produce a single consolidated changelog entry`.
 
 ## Section B - Architect Definition
 
-To be completed.
+N/A — skill-only refactor; no production code, layer, contract, or cross-cutting concern is impacted.
+
+### Layer Impact Matrix
+
+`N/A` — non-runtime story; skill customization only. No runtime layers are affected.
+
+### Cross-Cutting Concern Decisions
+
+`N/A` — no NFRs require runtime architectural decisions.
 
 ### Architect Handoff Readiness
 
-- Ready for implementation: `No`
-- Architect sign-off: `[pending]`
+- Layer impacts are fully mapped: `N/A`
+- Port | contract impacts assessed: `N/A`
+- Backward compatibility decision documented: `N/A`
+- Cross-cutting concern decisions addressed: `N/A`
+- Ready for implementation: `Yes`
+- Architect sign-off: `N/A, 2026-06-02`
 
 ## Section C - Implementation Tracking
 
-To be completed.
+Rewrote `.github/skills/update-changelog/SKILL.md` to operate on a release file instead of a single story:
+
+- Argument is `release_path` pointing to `_release.md` (rejects any other filename).
+- Enumerates every `US-*.md` in the release folder and summarizes Functional Requirements from Section A of
+  each story into grouped, user-facing imperative entries (`Added`, `Changed`, `Fixed`, `Removed`, `Security`,
+  `Deprecated`).
+- Computes the next semver from `_release.md` `Release Type` against `Directory.Build.props` current version,
+  or honors `Release Version` when it is not a placeholder.
+- Confirms the version with the user, then writes a single `## [vX.Y.Z] - <today>` section to `CHANGELOG.md`
+  containing every grouped entry and updates `Directory.Build.props` `<Version>`.
+- SUCCESS payload now reports `version`, `previous_version`, `bump_type`, `date`, `stories_summarized`,
+  `entries_added`, and `changelog_lines` so `technical_writer` can paste them into `_release.md` directly.
+
+### Test Traceability
+
+`N/A` — non-runtime story; no acceptance criteria map to executable tests.
+
+### Skeleton Inventory
+
+`N/A` — no production stubs are created; implementation modifies `.github/skills/` only.
 
 ### Tester Handoff Gate
 
-- Ready for implementation: `No`
-- Tester sign-off: `[pending]`
+- Every acceptance criterion has at least one test method: `N/A`
+- Skeleton inventory complete and user-approved: `N/A`
+- Tests compile and fail for the right reason (TDD red): `N/A`
+- Ready for implementation: `Yes`
+- Tester sign-off: `N/A, 2026-06-02`
+
+### Regression Fixes Log
+
+| # | Test File | Test Method | Change Made | Reason |
+| --- | --- | --- | --- | --- |
+| — | — | — | None | No code changes |
 
 ### Developer Handoff Gate
 
-- Ready for code review: `No`
-- Developer sign-off: `[pending]`
+- All unit tests pass (TDD green): `N/A`
+- All existing integration tests pass: `N/A`
+- Regression fixes documented (if any): `N/A`
+- Build succeeds with zero warnings: `N/A`
+- Ready for code review: `Yes`
+- Developer sign-off: `3M0R4C, 2026-06-02`
 
 ## Section D - Integration Testing
 
-To be completed.
+N/A — no runtime code paths are affected by this skill update.
+
+### Integration Test Traceability
+
+`N/A` — non-runtime story; no cross-layer boundaries to exercise.
+
+### Integration Test Findings
+
+`N/A` — no integration tests run.
 
 ### Integration Tester Handoff Gate
 
-- Ready for review: `No`
-- Integration Tester sign-off: `[pending]`
+- All cross-layer boundaries identified and covered: `N/A`
+- All integration tests pass: `N/A`
+- No unresolved production code findings: `N/A`
+- Ready for review: `Yes`
+- Integration Tester sign-off: `N/A, 2026-06-02`

@@ -14,27 +14,6 @@ As an `internal service`, I want `duplicate POST requests with the same Idempote
 the original cached response without re-executing the action`, so that `retried write operations are
 safe and produce consistent results without double-processing`.
 
-### Business Value
-
-- Eliminates duplicate data writes caused by network retries, ensuring exactly-once processing semantics
-- Reduces unnecessary load on downstream services and databases by replaying cached responses for repeated requests
-
-### In Scope
-
-- Store the response (status code, body) in the in-memory cache keyed by
-  `(authenticated principal, idempotency key)`
-- Replay cached response on subsequent requests with the same key within the TTL window
-- Detect request body mismatch for the same idempotency key and return HTTP 409 with error code `idempotency_body_conflict`
-- Respect the TTL policy specified on the `[RequireIdempotencyKey]` attribute (default or long-term)
-- Include `Idempotency-Key-Status` response header indicating `hit` (cached) or `miss` (first request)
-
-### Out of Scope
-
-- Distributed cache backends (Redis, database-backed)
-- Idempotency for GET, PUT, PATCH, DELETE methods
-- Automatic cache eviction strategies beyond TTL expiry
-- Idempotency key generation on behalf of the client
-
 ### Functional Requirements
 
 - FR-01: After a successful action execution on a decorated endpoint, cache the full HTTP response
@@ -82,36 +61,26 @@ safe and produce consistent results without double-processing`.
   and the same key can be retried
 - AC-07: If the in-memory cache is unavailable, the request proceeds normally without idempotency caching (fail-open behavior)
 
-### Constraints and Dependencies
+### Notes
 
-- Business constraints:
-  - Must use in-process memory storage via `ConcurrentDictionary` (no external dependencies)
-  - Must integrate with the idempotency extension registered in US-01
-- Dependencies:
-  - US-01 (idempotency key enforcement) must be implemented first — this story extends the filter/middleware
-  - `IUserContext` for authenticated principal extraction
-  - `ConcurrentDictionary` from `System.Collections.Concurrent`
-
-### Risks and Open Questions
-
-- Risks:
-  - Memory pressure from large cached response bodies — mitigated by TTL expiry and configurable
+- Must use in-process memory storage via `ConcurrentDictionary` (no external dependencies)
+- Must integrate with the idempotency extension registered in US-01
+- US-01 (idempotency key enforcement) must be implemented first — this story extends the filter/middleware
+- `IUserContext` for authenticated principal extraction
+- `ConcurrentDictionary` from `System.Collections.Concurrent`
+- Memory pressure from large cached response bodies — mitigated by TTL expiry and configurable
     size limits if needed in future
-  - Concurrent duplicate requests arriving simultaneously before first completes — mitigated by
+- Concurrent duplicate requests arriving simultaneously before first completes — mitigated by
     using cache entry locking (e.g., `SemaphoreSlim` or `GetOrCreate` pattern)
-- Open questions:
-  - None remaining
+- None remaining
 
 ### Product Owner Handoff Gate
 
 - Metadata set and follows naming conventions: `Yes`
 - Story statement complete and outcome-focused: `Yes`
-- Scope boundaries clear (in | out): `Yes`
 - FRs atomic and testable: `Yes`
 - NFRs specified across required categories: `Yes`
 - Acceptance criteria measurable and complete: `Yes`
-- Dependencies and constraints identified: `Yes`
-- Risks and open questions documented: `Yes`
 - Ready for architecture handoff: `Yes`
 - Product Owner sign-off: `Product Owner, 2026-05-02`
 
@@ -195,16 +164,13 @@ Architectural decisions for satisfying the NFRs defined in Section A.
   serves the idempotency contract)
 - Compliance: Cached response bodies reside solely in process memory and are evicted by TTL;
   no external persistence of cached data
-
-### Delivery and Rollout Notes
-
-- Rollout strategy: Full rollout — the feature activates only on endpoints already decorated
+- Rollout: Full rollout — the feature activates only on endpoints already decorated
   with `[RequireIdempotencyKey]`; no feature flag needed since behavior is opt-in per endpoint
   and is additive (new response header, caching logic). Deploy after US-01 is merged
-- Rollback strategy: Remove or disable the `IdempotencyResponseCachingFilter` registration in
+- Rollback: Remove or disable the `IdempotencyResponseCachingFilter` registration in
   `IdempotencySetupExtensions`; the existing validation filter continues to function
   independently. No data migration or state cleanup required since cache is in-memory only
-- Operational readiness checks: Verify `idempotency_cache_hit_total` and
+- Operational readiness: Verify `idempotency_cache_hit_total` and
   `idempotency_cache_error_total` counters appear in Prometheus/Grafana dashboards; alert on
   elevated `idempotency_body_conflict_total` rates which may indicate client integration issues;
   no runbook changes required
@@ -215,7 +181,6 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Port | contract impacts assessed: `Yes`
 - Backward compatibility decision documented: `Yes`
 - Cross-cutting concern decisions addressed: `Yes`
-- Rollout and rollback strategies defined: `Yes`
 - Ready for implementation: `Yes`
 - Architect sign-off: `Architect, 2026-05-15`
 
@@ -271,9 +236,17 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Ready for implementation: `Yes`
 - Tester sign-off: `Unit Tester Agent, 2026-05-15`
 
+### Regression Fixes Log
+
+| # | Test File | Test Method | Change Made | Reason |
+| --- | --- | --- | --- | --- |
+| — | — | — | None | No regressions recorded |
+
 ### Developer Handoff Gate
 
-- All tests pass (TDD green): `Yes`
+- All unit tests pass (TDD green): `Yes`
+- All existing integration tests pass: `Yes`
+- Regression fixes documented (if any): `N/A`
 - Build succeeds with zero warnings: `Yes`
 - Ready for code review: `Yes`
 - Developer sign-off: `Developer, 2026-05-15`

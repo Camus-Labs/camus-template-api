@@ -15,31 +15,6 @@ As a `platform maintainer`, I want
 `the architectural boundary correctly reflects that Swashbuckle wiring is an ASP.NET Core pipeline
 feature, not a swappable infrastructure adapter behind an Application port`.
 
-### Business Value
-
-- Enforces hexagonal architecture discipline: Swagger configuration is API presentation wiring, not an adapter
-  implementing a domain port
-- Consolidates all API documentation configuration alongside the controllers it documents
-- Simplifies the project graph by removing an unnecessary project boundary
-
-### In Scope
-
-- Move all source files from `src/Adapters/emc.camus.documentation.swagger/` into `src/Api/emc.camus.api/` following the
-  Configurations/ + Extensions/\*SetupExtensions.cs pattern
-- Update `emc.camus.api.csproj` to remove the project reference to `emc.camus.documentation.swagger` and absorb its
-  NuGet dependencies (Swashbuckle)
-- Remove the `emc.camus.documentation.swagger` project from the solution
-- Delete the `src/Adapters/emc.camus.documentation.swagger/` directory
-- Update `Program.cs` composition root to wire Swagger from the API project directly
-- Maintain identical Swagger UI behavior: same endpoints, same schemas, same security scheme definitions
-
-### Out of Scope
-
-- Changing Swagger configuration schema, versions, or security schemes
-- Adding new API documentation features
-- Modifying SwaggerExamples/ (already in the API project)
-- Test relocation (covered in US-05)
-
 ### Functional Requirements
 
 - FR-01: All Swagger/OpenAPI source files are located under `src/Api/emc.camus.api/` in appropriate subdirectories
@@ -63,31 +38,20 @@ feature, not a swappable infrastructure adapter behind an Application port`.
 - AC-03: Swagger UI at `/swagger` renders identically with all configured versions and security schemes
 - AC-04: OpenAPI JSON/YAML spec output is functionally equivalent
 
-### Constraints and Dependencies
+### Notes
 
-- Business constraints:
-  - Must be delivered after US-03 (sequential ordering)
-  - Single coordinated release with US-05
-- Dependencies:
-  - None beyond NuGet packages (Swashbuckle.AspNetCore)
-
-### Risks and Open Questions
-
-- Risks:
-  - Minimal risk — Swagger adapter is typically configuration-only with no complex logic; owner: 3M0R4C
-- Open questions:
-  - None
+- Must be delivered after US-03 (sequential ordering)
+- Single coordinated release with US-05
+- None beyond NuGet packages (Swashbuckle.AspNetCore)
+- Minimal risk — Swagger adapter is typically configuration-only with no complex logic; owner: 3M0R4C
 
 ### Product Owner Handoff Gate
 
 - Metadata set and follows naming conventions: `Yes`
 - Story statement complete and outcome-focused: `Yes`
-- Scope boundaries clear (in | out): `Yes`
 - FRs atomic and testable: `Yes`
 - NFRs specified across required categories: `Yes`
 - Acceptance criteria measurable and complete: `Yes`
-- Dependencies and constraints identified: `Yes`
-- Risks and open questions documented: `Yes`
 - Ready for architecture handoff: `Yes`
 - Product Owner sign-off: `3M0R4C, 2026-05-27`
 
@@ -139,14 +103,11 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Reliability: Coordinate this story atomically with US-05 (test relocation) in a single release to avoid a broken
   intermediate state where the adapter project is deleted but its test project still references it
 - Compliance: No decision required
-
-### Delivery and Rollout Notes
-
-- Rollout strategy: Full rollout in a single coordinated release alongside US-05; no feature flag needed since this is
+- Rollout: Full rollout in a single coordinated release alongside US-05; no feature flag needed since this is
   an internal structural refactor with no behavioral change
-- Rollback strategy: Revert the merge commit to restore the Swagger adapter project and its project reference in the API
+- Rollback: Revert the merge commit to restore the Swagger adapter project and its project reference in the API
   csproj; no data migration or state to reconcile
-- Operational readiness checks: Verify Swagger UI renders at `/swagger` after deployment; confirm OpenAPI spec endpoints
+- Operational readiness: Verify Swagger UI renders at `/swagger` after deployment; confirm OpenAPI spec endpoints
   return valid JSON; no new alerts or runbooks required
 
 ### Architect Handoff Readiness
@@ -155,7 +116,6 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Port | contract impacts assessed: `Yes`
 - Backward compatibility decision documented: `Yes`
 - Cross-cutting concern decisions addressed: `Yes`
-- Rollout and rollback strategies defined: `Yes`
 - Ready for implementation: `Yes`
 - Architect sign-off: `3M0R4C, 2026-05-27`
 

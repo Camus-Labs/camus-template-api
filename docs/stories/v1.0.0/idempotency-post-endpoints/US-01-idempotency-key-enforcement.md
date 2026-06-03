@@ -14,26 +14,6 @@ As an `internal service`, I want `POST endpoints decorated with [RequireIdempote
 requests missing the Idempotency-Key header`, so that `all write operations are explicitly identified
 for duplicate detection before processing`.
 
-### Business Value
-
-- Prevents accidental double-processing of data write requests caused by network retries or client-side failures
-- Establishes a clear contract: decorated endpoints require callers to provide an idempotency key, enabling safe retries
-
-### In Scope
-
-- `[RequireIdempotencyKey]` attribute definition in the API layer
-- Idempotency filter/middleware that validates the `Idempotency-Key` header presence on decorated endpoints
-- Configurable TTL policies (default: 5 minutes, long-term: 24 hours) defined in appsettings
-- API extension method for loading idempotency services in `Program.cs`
-- Return `400 Bad Request` with a descriptive error when the header is missing on a decorated endpoint
-
-### Out of Scope
-
-- Response caching and replay (covered in US-02)
-- Body conflict detection (covered in US-02)
-- Distributed/external cache backends (Redis, database)
-- Idempotency for non-POST HTTP methods
-
 ### Functional Requirements
 
 - FR-01: Define a `[RequireIdempotencyKey]` attribute in the API layer that can be applied to
@@ -74,32 +54,22 @@ for duplicate detection before processing`.
   are `default` (5 min) and `long-term` (24 hours)
 - AC-06: The `AddIdempotency()` extension registers all required services and the validation filter
 
-### Constraints and Dependencies
+### Notes
 
-- Business constraints:
-  - Must follow existing attribute pattern established by `[RateLimit]` in `Application/RateLimiting/`
-  - Must be wired as an API extension in `Program.cs` consistent with other cross-cutting concerns
-- Dependencies:
-  - Existing `IUserContext` interface for extracting authenticated principal
-
-### Risks and Open Questions
-
-- Risks:
-  - Misconfigured policy names on the attribute could silently default — mitigated by startup
+- Must follow existing attribute pattern established by `[RateLimit]` in `Application/RateLimiting/`
+- Must be wired as an API extension in `Program.cs` consistent with other cross-cutting concerns
+- Existing `IUserContext` interface for extracting authenticated principal
+- Misconfigured policy names on the attribute could silently default — mitigated by startup
     validation of policy references
-- Open questions:
-  - None remaining
+- None remaining
 
 ### Product Owner Handoff Gate
 
 - Metadata set and follows naming conventions: `Yes`
 - Story statement complete and outcome-focused: `Yes`
-- Scope boundaries clear (in | out): `Yes`
 - FRs atomic and testable: `Yes`
 - NFRs specified across required categories: `Yes`
 - Acceptance criteria measurable and complete: `Yes`
-- Dependencies and constraints identified: `Yes`
-- Risks and open questions documented: `Yes`
 - Ready for architecture handoff: `Yes`
 - Product Owner sign-off: `Product Owner, 2026-05-02`
 
@@ -171,16 +141,13 @@ Architectural decisions for satisfying the NFRs defined in Section A.
   (fail-fast). Runtime filter logic uses no external dependencies.
 - Compliance: The idempotency key is treated as an opaque string identifier. No PII validation
   or storage occurs. Key values are never logged beyond their presence/absence status.
-
-### Delivery and Rollout Notes
-
-- Rollout strategy: Full rollout — the `[RequireIdempotencyKey]` attribute is opt-in per
+- Rollout: Full rollout — the `[RequireIdempotencyKey]` attribute is opt-in per
   endpoint. No existing endpoints are decorated in this story, so deploying the infrastructure
   has zero runtime impact until a controller action is explicitly annotated.
-- Rollback strategy: Remove the `AddIdempotency()` call from `Program.cs` and redeploy. The
+- Rollback: Remove the `AddIdempotency()` call from `Program.cs` and redeploy. The
   attribute on any decorated endpoints becomes inert (no filter registered to act on it). No
   data migration or state cleanup required.
-- Operational readiness checks: Verify startup validation passes with the configured policy
+- Operational readiness: Verify startup validation passes with the configured policy
   names. Monitor warning logs for `idempotency_key_missing` and `idempotency_key_invalid`
   rejection events after endpoints are decorated. No new alerts required for this story;
   alerting thresholds will be established when US-02 introduces caching.
@@ -191,7 +158,6 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Port | contract impacts assessed: `Yes`
 - Backward compatibility decision documented: `Yes`
 - Cross-cutting concern decisions addressed: `Yes`
-- Rollout and rollback strategies defined: `Yes`
 - Ready for implementation: `Yes`
 - Architect sign-off: `Architect, 2026-05-03`
 
@@ -231,9 +197,17 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Ready for implementation: `Yes`
 - Tester sign-off: `Unit Tester, 2026-05-13`
 
+### Regression Fixes Log
+
+| # | Test File | Test Method | Change Made | Reason |
+| --- | --- | --- | --- | --- |
+| — | — | — | None | No regressions recorded |
+
 ### Developer Handoff Gate
 
-- All tests pass (TDD green): `Yes`
+- All unit tests pass (TDD green): `Yes`
+- All existing integration tests pass: `Yes`
+- Regression fixes documented (if any): `N/A`
 - Build succeeds with zero warnings: `Yes`
 - Ready for code review: `Yes`
 - Developer sign-off: `Developer, 2026-05-13`

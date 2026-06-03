@@ -4,7 +4,7 @@
 
 - Story ID: `US-05`
 - Owner: `3M0R4C`
-- Status: `Todo`
+- Status: `Done`
 
 ## Section A - Product Owner Definition
 
@@ -48,6 +48,8 @@ than once per story`.
 
 ### Notes
 
+- Runs **after** US-04 (QA release gate signed). The release flow is now:
+  `developer → integration tester (marks story Done) → QA (release) → technical writer (release) → release manager`.
 - Depends on US-07 (`update-changelog` skill) for the changelog operation; the
   skill is updated in parallel so the agent's reference path is correct on first
   publish
@@ -64,32 +66,93 @@ than once per story`.
 
 ## Section B - Architect Definition
 
-To be completed.
+N/A — prompt-only refactor of `technical_writer.agent.md`; no production code, layer, contract, or cross-cutting
+concern is impacted.
+
+### Layer Impact Matrix
+
+`N/A` — non-runtime story; agent customization only. No runtime layers are affected.
+
+### Cross-Cutting Concern Decisions
+
+`N/A` — no NFRs require runtime architectural decisions.
 
 ### Architect Handoff Readiness
 
-- Ready for implementation: `No`
-- Architect sign-off: `[pending]`
+- Layer impacts are fully mapped: `N/A`
+- Port | contract impacts assessed: `N/A`
+- Backward compatibility decision documented: `N/A`
+- Cross-cutting concern decisions addressed: `N/A`
+- Ready for implementation: `Yes`
+- Architect sign-off: `N/A, 2026-06-02`
 
 ## Section C - Implementation Tracking
 
-To be completed.
+Rewrote `.github/agents/technical_writer.agent.md` end-to-end as a release-level agent:
+
+- Input is `release_file` (path to `_release.md`); the agent first validates that every `QA Handoff Gate` item
+  is signed, so it runs strictly after `tester.qa`.
+- Enumerates every `_feature.md` and `US-*.md` in the release folder; aggregates HTTP endpoints, Skeleton
+  Inventory entries, and Story Statements into a single release scope.
+- Invokes the (refactored) `update-changelog` skill with `release_file`; consumes `version`, `previous_version`,
+  `bump_type`, and `changelog_lines` from its SUCCESS payload.
+- Updates Swagger annotations, Postman requests, and XML documentation across every endpoint and public API
+  introduced or modified by the release.
+- Validates compilation via the `build` task and markdown via the `markdown-lint` skill.
+- Populates `_release.md` `Version Update`, `CHANGELOG Entry`, and `Documentation Updates` subsections and
+  signs the release `Technical Writer Handoff Gate`.
+- Never modifies any `US-*.md` or `_feature.md` file beyond reading.
+
+Output template restructured into `Version Update`, `CHANGELOG Entry`, `Documentation Updates`, and
+`Technical Writer Handoff` sections that mirror the release file subsections exactly.
+
+### Test Traceability
+
+`N/A` — non-runtime story; no acceptance criteria map to executable tests.
+
+### Skeleton Inventory
+
+`N/A` — no production stubs are created; implementation modifies `.github/agents/` only.
 
 ### Tester Handoff Gate
 
-- Ready for implementation: `No`
-- Tester sign-off: `[pending]`
+- Every acceptance criterion has at least one test method: `N/A`
+- Skeleton inventory complete and user-approved: `N/A`
+- Tests compile and fail for the right reason (TDD red): `N/A`
+- Ready for implementation: `Yes`
+- Tester sign-off: `N/A, 2026-06-02`
+
+### Regression Fixes Log
+
+| # | Test File | Test Method | Change Made | Reason |
+| --- | --- | --- | --- | --- |
+| — | — | — | None | No code changes |
 
 ### Developer Handoff Gate
 
-- Ready for code review: `No`
-- Developer sign-off: `[pending]`
+- All unit tests pass (TDD green): `N/A`
+- All existing integration tests pass: `N/A`
+- Regression fixes documented (if any): `N/A`
+- Build succeeds with zero warnings: `N/A`
+- Ready for code review: `Yes`
+- Developer sign-off: `3M0R4C, 2026-06-02`
 
 ## Section D - Integration Testing
 
-To be completed.
+N/A — no runtime code paths are affected by this documentation update.
+
+### Integration Test Traceability
+
+`N/A` — non-runtime story; no cross-layer boundaries to exercise.
+
+### Integration Test Findings
+
+`N/A` — no integration tests run.
 
 ### Integration Tester Handoff Gate
 
-- Ready for review: `No`
-- Integration Tester sign-off: `[pending]`
+- All cross-layer boundaries identified and covered: `N/A`
+- All integration tests pass: `N/A`
+- No unresolved production code findings: `N/A`
+- Ready for review: `Yes`
+- Integration Tester sign-off: `N/A, 2026-06-02`

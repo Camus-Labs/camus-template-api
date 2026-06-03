@@ -20,9 +20,9 @@ them.
 
 ## Stories
 
-| Story ID | Title | Status |
-| --- | --- | --- |
-| `US-01` | Sort Generated Tokens | `Done` |
+| Story ID | Title | Depends On | Status |
+| --- | --- | --- | --- |
+| `US-01` | Sort Generated Tokens | `-` | `Done` |
 
 ## In Scope
 
@@ -35,10 +35,6 @@ Scope at the capability level. Individual functional requirements live in storie
 
 - Multi-field sorting
 - Sorting on endpoints other than token listing
-
-## Cross-Story Dependencies
-
-- None
 
 ## Feature-Level Constraints
 
@@ -53,6 +49,6 @@ Scope at the capability level. Individual functional requirements live in storie
 - Metadata complete: `Yes`
 - Goal stated as outcome (not implementation): `Yes`
 - All stories created under this feature folder: `Yes`
-- Cross-story dependencies identified: `Yes`
+- Story `Depends On` column lists only direct prerequisites: `Yes`
 - Ready for development: `Yes`
 - Product Owner sign-off: `3M0R4C, 2026-04-28`

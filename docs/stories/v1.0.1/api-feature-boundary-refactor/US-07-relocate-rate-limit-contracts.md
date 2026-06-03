@@ -15,34 +15,6 @@ As a `platform maintainer`, I want
 layer`, so that `rate-limiting contracts live alongside their sole consumers (controllers and
 middleware) and no orphaned cross-layer contracts remain after US-01`.
 
-### Business Value
-
-- Eliminates dead contracts in the Application layer — after US-01, rate limiting is fully an API-layer concern with no
-  adapter and no port
-- Maintains architectural discipline: contracts live where they are consumed, not in a shared layer with no external
-  consumers
-- Follows the established pattern where `RequireIdempotencyKeyAttribute` and `IdempotencyPolicies` live in the API
-  project alongside the idempotency filter
-
-### In Scope
-
-- Move `RateLimitAttribute.cs` from `src/Application/emc.camus.application/RateLimiting/` into
-  `src/Api/emc.camus.api/Filters/`
-- Move `RateLimitPolicies.cs` from `src/Application/emc.camus.application/RateLimiting/` into
-  `src/Api/emc.camus.api/Configurations/`
-- Update namespaces from `emc.camus.application.RateLimiting` to the appropriate API-layer namespaces
-  (`emc.camus.api.Filters`, `emc.camus.api.Configurations`)
-- Update all `using` statements in controllers, middleware, and setup extensions that reference the old namespace
-- Remove the `RateLimiting/` folder from Application if nothing else remains in it
-- Maintain identical attribute behavior and policy constant values
-
-### Out of Scope
-
-- Idempotency contracts (they still follow the port/adapter pattern with cache port consumers)
-- Behavioral changes to the attribute or policy constants
-- Changing the `[RateLimit]` attribute resolution logic (covered in US-06)
-- Test relocation (covered in US-05)
-
 ### Functional Requirements
 
 - FR-01: `RateLimitAttribute.cs` exists in `src/Api/emc.camus.api/Filters/` with namespace `emc.camus.api.Filters`
@@ -70,32 +42,21 @@ middleware) and no orphaned cross-layer contracts remain after US-01`.
 - AC-04: Controllers decorated with `[RateLimit(...)]` compile and resolve against the API-layer namespace
 - AC-05: `RateLimitPolicies` constant values remain identical (`default`, `strict`, `relaxed`)
 
-### Constraints and Dependencies
+### Notes
 
-- Business constraints:
-  - Must be delivered after US-01 (rate-limiting feature must already be in the API layer)
-  - Sequenced before US-05 (test consolidation) and before US-06 (settings flattening references the policy constants)
-- Dependencies:
-  - US-01 completed (rate-limiting feature relocated to API layer)
-
-### Risks and Open Questions
-
-- Risks:
-  - If other Application-layer types reference `RateLimitPolicies` or `RateLimitAttribute`, those references must be
+- Must be delivered after US-01 (rate-limiting feature must already be in the API layer)
+- Sequenced before US-05 (test consolidation) and before US-06 (settings flattening references the policy constants)
+- US-01 completed (rate-limiting feature relocated to API layer)
+- If other Application-layer types reference `RateLimitPolicies` or `RateLimitAttribute`, those references must be
     updated or removed — mitigation: search for usages before moving; owner: 3M0R4C
-- Open questions:
-  - None
 
 ### Product Owner Handoff Gate
 
 - Metadata set and follows naming conventions: `Yes`
 - Story statement complete and outcome-focused: `Yes`
-- Scope boundaries clear (in | out): `Yes`
 - FRs atomic and testable: `Yes`
 - NFRs specified across required categories: `Yes`
 - Acceptance criteria measurable and complete: `Yes`
-- Dependencies and constraints identified: `Yes`
-- Risks and open questions documented: `Yes`
 - Ready for architecture handoff: `Yes`
 - Product Owner sign-off: `3M0R4C, 2026-05-27`
 
@@ -146,13 +107,10 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Observability: N/A — no metrics involved in the attribute or constants.
 - Reliability: Single-commit relocation. Solution must build cleanly with zero references to the old
   `emc.camus.application.RateLimiting` namespace in source files.
-
-### Delivery and Rollout Notes
-
-- Rollout strategy: Full rollout in a single commit. No feature flag needed — pure namespace relocation with zero
+- Rollout: Full rollout in a single commit. No feature flag needed — pure namespace relocation with zero
   runtime behavior change.
-- Rollback strategy: Revert the commit. The previous Application-layer files are restored by git history.
-- Operational readiness checks: Build verification only. No runtime observability changes to validate.
+- Rollback: Revert the commit. The previous Application-layer files are restored by git history.
+- Operational readiness: Build verification only. No runtime observability changes to validate.
 
 ### Architect Handoff Readiness
 
@@ -160,7 +118,6 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Port | contract impacts assessed: `Yes`
 - Backward compatibility decision documented: `Yes`
 - Cross-cutting concern decisions addressed: `Yes`
-- Rollout and rollback strategies defined: `Yes`
 - Ready for implementation: `Yes`
 - Architect sign-off: `3M0R4C, 2026-05-27`
 
@@ -212,7 +169,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 
 - All unit tests pass (TDD green): `Yes`
 - All existing integration tests pass: `Yes`
-- Regression fixes documented (if any): `Yes`
+- Regression fixes documented (if any): `N/A`
 - Build succeeds with zero warnings: `Yes`
 - Ready for code review: `Yes`
 - Developer sign-off: `3M0R4C, 2026-05-28`
