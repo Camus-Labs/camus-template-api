@@ -29,7 +29,8 @@
     ],
     "chat.tools.terminal.autoApprove": {
         "npx markdownlint-cli2": true,
-        "true": true
+        "true": true,
+        "git fetch": true
     }
 }
 

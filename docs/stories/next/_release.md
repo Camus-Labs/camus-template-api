@@ -11,7 +11,7 @@
 
 | Feature Slug | Title |
 | --- | --- |
-| `agentic-sdlc-overhaul` | Release-Centric Agentic SDLC Overhaul |
+| `release-centric-sdlc` | Release-Centric Agentic SDLC Overhaul |
 
 ## Notes
 
