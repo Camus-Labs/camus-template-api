@@ -37,12 +37,13 @@ Read and internalize this file before starting:
 
 ## Inputs
 
-- `target_path` (required, string): workspace-relative path to the target customization file.
+- `target_path` (required, string, format: workspace-relative path string): workspace-relative path to the target
+customization file.
 
 ## Process
 
-1. Validate `target_path` — confirm the file exists and is readable; if missing or unreadable, stop and report the
-  reason; otherwise proceed to Step 2.
+1. Validate `target_path` — confirm the file exists, is readable, is non-empty, and contains a YAML frontmatter
+  block; if any check fails, stop and report the reason; otherwise proceed to Step 2.
 
 2. Detect the file type of the validated `target_path` using these rules in order:
     - If `target_path` ends with `.agent.md`, assign type `agent`.
@@ -51,27 +52,43 @@ Read and internalize this file before starting:
     - If the filename equals `SKILL.md`, assign type `skill`.
     - Otherwise, stop and report an unsupported customization file type.
 
-3. Read `target_path` — confirm the file is non-empty and contains a YAML frontmatter block; if either check fails,
-  stop and report the problem; otherwise proceed to Step 4.
+3. Invoke the `concurrent-review` skill, passing `.github/prompts/review.copilot.customization.prompt.md` as
+  `prompt_path` and a single-item list containing `target_path` as `modified_files` — on `FAIL` result, stop and
+  produce the output report with Verdict as FAIL; on `SUCCESS` result, use the merged results and proceed to Step 4.
 
-4. Invoke the `concurrent-review` skill, setting `prompt_path` to
-  `.github/prompts/review.copilot.customization.prompt.md` and `modified_files` to a single-item list containing
-  `target_path` — on `FAIL` result, record the reason from the skill, set Verdict to FAIL, and proceed to Step 6;
-  on `SUCCESS` result, use the merged results and proceed to Step 5.
+4. Invoke the `markdown-lint` skill on `target_path`— on `SUCCESS` result, proceed to Step 5; on `FAIL` result, include
+  each violation in the merged findings list and proceed to Step 5.
 
-5. Invoke the `markdown-lint` skill on `target_path`— on `SUCCESS` result, proceed to Step 6; on `FAIL` result, include
-  each violation in the merged findings list and proceed to Step 6.
-
-6. Return the consolidated Customization Review Report in the output format below using the skill results — set
+5. Return the consolidated Customization Review Report in the output format below using the skill results — set
   overall Verdict to FAIL if any merged section is FAIL, otherwise set it to PASS; set Ready for Use to Yes when
-  Verdict is PASS, set to No otherwise; stop.
+  Verdict is PASS, set to No otherwise; deliver the report and proceed to Step 6.
+
+6. Evaluate the Verdict — if PASS, stop; if FAIL, ask the user: "Verdict is FAIL with [N] merged finding(s).
+  Proceed with fixing the reported violations now? (yes | no)" — on `no`, stop; on `yes`, proceed to Step 7.
+
+7. Fix each reported violation (max 20 per pass) in `target_path` — when a violation has a single unambiguous
+  resolution, apply it directly; when multiple valid resolutions exist, present the options to the user and apply
+  the chosen resolution; fix only the violations the review reported (no unrelated content changes); proceed to Step 8.
+
+8. Show the user a summary of changed files (`git status --short`) and ask: "Commit and push these fixes to
+  the current branch? (yes | no)" — on `no`, instruct the user that the working tree contains the fixes for
+  manual review and stop; on `yes`, proceed to Step 9.
+
+9. Commit the fixes — stage all changes, commit with message
+  `chore(review): address concurrent.reviewer.copilot.customization findings`, and push to the current
+  branch; on git failure, stop and report the git error; on success, capture the current branch name and
+  proceed to Step 10.
+
+10. Instruct the user: "Applied and committed fixes to `target_path` on branch [branch]. Start a new chat
+  session and re-invoke `@concurrent.reviewer.copilot.customization` with the same target to validate the
+  fixed state." — stop.
 
 ## Rules
 
-- MUST NOT modify the target file beyond automated markdownlint fixes.
 - MUST NOT invent conventions.
 - MUST validate only against the matching review checklist.
 - MUST NOT evaluate correctness of the file's domain logic.
+- MUST NOT re-run the review in the same session after applying fixes.
 
 ## Output Format
 

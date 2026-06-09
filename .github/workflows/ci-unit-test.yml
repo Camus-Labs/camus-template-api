@@ -4,11 +4,18 @@ on:
   pull_request:
     branches:
       - main
+      - 'release/next'
+  workflow_call:
+
+permissions:
+  contents: read
 
 jobs:
   unit-test:
     name: Build & Unit Test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Clone repository

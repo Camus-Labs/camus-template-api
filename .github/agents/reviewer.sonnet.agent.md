@@ -1,6 +1,6 @@
 ---
 name: 'ReviewerSonnet'
-description: 'Execute a review prompt against a target file and return the structured review report.'
+description: 'Execute a review prompt against a target file to produce the structured review report.'
 model: 'Claude Sonnet 4.6'
 tools: [read, search]
 argument-hint: 'Provide review_prompt content and a target path.'

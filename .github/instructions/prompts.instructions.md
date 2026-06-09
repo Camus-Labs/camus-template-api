@@ -67,7 +67,6 @@ applyTo: ".github/prompts/**/*.prompt.md"
     - [ ] Explicit stopping criterion
     - [ ] First step validates inputs
     - [ ] Last step produces the output
-    - [ ] One bounded action per step — sub-item enumeration within one target is fine; no independent evaluations
     - [ ] No step contains a clause that duplicates or contradicts text in another step or rule
     - [ ] Every process-computed value has a placeholder in the template
     - [ ] Procedure steps that build, test, or run the application use workspace task labels (e.g., `build`, `test-all`,

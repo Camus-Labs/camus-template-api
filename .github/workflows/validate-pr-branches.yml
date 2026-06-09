@@ -1,0 +1,65 @@
+name: Validate PR Branches
+
+# Enforce the release-centric branching model:
+#   - PRs to `main` must come from `release/vX.Y.Z` (the `release/next` placeholder is
+#     explicitly rejected — `@technical_writer` must rename it to `release/vX.Y.Z` first)
+#   - PRs to `release/next` must come from `feat/<slug>` (feature work always lands on
+#     the placeholder; `release/vX.Y.Z` is finalized and accepts no further feature merges)
+#   - Source branch names must match their kebab-case slug pattern
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'release/next'
+      - 'release/v*'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-branches:
+    name: Validate source and target branches
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Validate branch names
+        env:
+          SOURCE_BRANCH: ${{ github.head_ref }}
+          TARGET_BRANCH: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+
+          echo "Source branch: $SOURCE_BRANCH"
+          echo "Target branch: $TARGET_BRANCH"
+
+          RELEASE_VERSION_PATTERN='^release/v[0-9]+\.[0-9]+\.[0-9]+$'
+          FEATURE_PATTERN='^feat/[a-z0-9][a-z0-9-]*$'
+
+          if [[ "$TARGET_BRANCH" == "main" ]]; then
+            if [[ "$SOURCE_BRANCH" =~ $RELEASE_VERSION_PATTERN ]]; then
+              echo "OK: '$SOURCE_BRANCH' is allowed to target 'main'."
+              exit 0
+            fi
+            echo "::error::PRs to 'main' must come from 'release/vX.Y.Z'. Got: '$SOURCE_BRANCH'."
+            exit 1
+          fi
+
+          if [[ "$TARGET_BRANCH" == "release/next" ]]; then
+            if [[ "$SOURCE_BRANCH" =~ $FEATURE_PATTERN ]]; then
+              echo "OK: '$SOURCE_BRANCH' is allowed to target 'release/next'."
+              exit 0
+            fi
+            echo "::error::PRs to 'release/next' must come from 'feat/<slug>'. Got: '$SOURCE_BRANCH'."
+            exit 1
+          fi
+
+          if [[ "$TARGET_BRANCH" =~ $RELEASE_VERSION_PATTERN ]]; then
+            echo "::error::PRs to '$TARGET_BRANCH' are not allowed — the release is finalized."
+            echo "::error::Open feature PRs against 'release/next' before @technical_writer renames it."
+            exit 1
+          fi
+
+          echo "::error::Unexpected target branch '$TARGET_BRANCH'. Workflow trigger should be reviewed."
+          exit 1

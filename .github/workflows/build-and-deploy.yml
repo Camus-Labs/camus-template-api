@@ -1,0 +1,107 @@
+name: Build & Deploy
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  ACR_REGISTRY: ${{ vars.ACR_REGISTRY }}
+  APP_NAME: ${{ vars.APP_NAME }}
+
+jobs:
+  unit-test:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci-unit-test.yml
+
+  integration-test:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci-integration-test.yml
+
+  build:
+    needs: [unit-test, integration-test]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Login to ACR via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.ACR_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.SHARED_SUBSCRIPTION_ID }}
+
+      - name: Determine image tag
+        id: meta
+        run: echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push image
+        env:
+          IMAGE_TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          IMAGE="${ACR_REGISTRY}/${APP_NAME}:${IMAGE_TAG}"
+          docker build --platform linux/amd64 -t "$IMAGE" .
+          docker push "$IMAGE"
+
+  deploy-dev:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment: development
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.DEV_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.DEV_SUBSCRIPTION_ID }}
+
+      - name: Deploy to development
+        env:
+          IMAGE_TAG: ${{ needs.build.outputs.image-tag }}
+          CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
+          RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+        run: |
+          az containerapp update \
+            --name "${CONTAINER_APP_NAME}" \
+            --resource-group "${RESOURCE_GROUP}" \
+            --image "${ACR_REGISTRY}/${APP_NAME}:${IMAGE_TAG}"
+
+  deploy-prod:
+    needs: [build, deploy-dev]
+    runs-on: ubuntu-24.04
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.PROD_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.PROD_SUBSCRIPTION_ID }}
+
+      - name: Deploy to production
+        env:
+          IMAGE_TAG: ${{ needs.build.outputs.image-tag }}
+          CONTAINER_APP_NAME: ${{ vars.CONTAINER_APP_NAME }}
+          RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+        run: |
+          az containerapp update \
+            --name "${CONTAINER_APP_NAME}" \
+            --resource-group "${RESOURCE_GROUP}" \
+            --image "${ACR_REGISTRY}/${APP_NAME}:${IMAGE_TAG}"
