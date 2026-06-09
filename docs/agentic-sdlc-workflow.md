@@ -456,8 +456,8 @@ required check fails, the PR cannot merge or the deploy will not run.
 | [`ci-integration-test.yml`](../.github/workflows/ci-integration-test.yml) | PR to `main` or `release/next`; `workflow_call` | Integration test suite passes against ephemeral infrastructure | PR merge on integration test failure |
 | [`build-and-deploy.yml`](../.github/workflows/build-and-deploy.yml) | Push of tag `v*` (created by `@release_manager`) | Runs unit + integration tests, builds the container, pushes to ACR, deploys via OIDC | Tag promotion on any pre-deploy check failure |
 | [`build-version-check.yml`](../.github/workflows/build-version-check.yml) | PR to `main` | `Directory.Build.props` version matches the latest `CHANGELOG.md` entry and is bumped vs `main` | Release-to-main PR merge on version drift |
-| [`codeql-analysis.yml`](../.github/workflows/codeql-analysis.yml) | Push to `main`; PR to `main` | C# static security analysis | PR merge on new CodeQL findings (when configured as required) |
-| [`dependency-vulnerability-scan.yml`](../.github/workflows/dependency-vulnerability-scan.yml) | PR to `main` | NuGet dependency vulnerability scan | PR merge on critical vulnerabilities (when configured as required) |
+| [`codeql-analysis.yml`](../.github/workflows/codeql-analysis.yml) | Push to `main`; PR to `main` or `release/next` | C# static security analysis | PR merge on new CodeQL findings |
+| [`dependency-vulnerability-scan.yml`](../.github/workflows/dependency-vulnerability-scan.yml) | PR to `main` or `release/next` | NuGet dependency vulnerability scan | PR merge on critical vulnerabilities |
 | [`markdown-lint.yml`](../.github/workflows/markdown-lint.yml) | PR to `main` or `release/next` touching `*.md` | Markdown lint passes across the repository | PR merge on lint errors |
 | [`docker-lint.yml`](../.github/workflows/docker-lint.yml) | PR to `main` or `release/next` touching `Dockerfile*` | Hadolint passes on Dockerfiles | PR merge on Dockerfile lint errors |
 
@@ -473,7 +473,7 @@ Configure two rulesets under **Settings → Rules → Rulesets**:
 - **`main`**
   - Target: branch `main`.
   - Require a pull request before merging.
-  - Require status checks to pass: `build`, `test-unit`, `test-integration`.
+  - Require status checks to pass: `build`, `test-unit`, `test-integration`, `Check NuGet Vulnerabilities`, `Analyze C#`.
   - Require linear history.
   - Block direct pushes and force pushes.
   - Restrict deletions.
@@ -481,7 +481,8 @@ Configure two rulesets under **Settings → Rules → Rulesets**:
 - **`release/*`**
   - Target: branch pattern `release/*`.
   - Require a pull request before merging (squash from `feat/*`, `fix/*`, `chore/*`, `docs/*`).
-  - Require status checks to pass on PRs: `build`, `test-unit`, `test-integration`.
+  - Require status checks to pass on PRs: `build`, `test-unit`, `test-integration`, `Check NuGet Vulnerabilities`,
+    `Analyze C#`.
   - Block direct pushes and force pushes.
   - Restrict deletions.
   - Bypass list: `Repository admin` role. Release-scope skills push directly to
