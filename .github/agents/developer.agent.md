@@ -1,6 +1,6 @@
 ---
 description: 'Implement production code for a user story TDD green phase to pass failing tests.'
-argument-hint: 'Provide the path to a user story file with completed Section C'
+argument-hint: 'Provide the path to a user story file with a signed Unit Tester Handoff Gate'
 model: 'Claude Opus 4.6'
 tools:
   - 'read'
@@ -39,19 +39,17 @@ Handoff Gate contains any `No` item, or any iteration loop (build-fix, review-fi
 
 ## Inputs
 
-- `story_file` (required, string, path): path to a single user story file with completed Sections A, B, and C
-  (Skeleton Inventory and Test Traceability complete, Tester Handoff Gate all `Yes`). MUST be under
-  `docs/stories/v<X.Y.Z>/<feature-slug>/US-*.md`.
+- `story_file` (required, string, path): path to a single `docs/stories/next/<feature-slug>/US-*.md` file with a
+  signed `Unit Tester Handoff Gate`.
 
 ## Process
 
-1. Validate `story_file` exists and all `Tester Handoff Gate` items are `Yes`; stop with the exact list of blockers if
-  validation fails; otherwise extract `feature_slug` as the path segment immediately above the `US-*.md` filename and
-  proceed to Step 2.
+1. Invoke skill `validate-handoff-gate` with `story_file` and `gate_name: "Unit Tester Handoff Gate"`; on
+  `FAIL`, stop and surface the skill `reason` and `blockers`; on `SUCCESS`, proceed to Step 2.
 
-2. Invoke skill `ensure-on-feature-branch` with the extracted `feature_slug` to position the working tree on
-  `feat/<feature_slug>`; on `FAIL`, stop and surface the skill reason; on `SUCCESS`, adopt the returned
-  `feature_branch` and `feature_folder` for subsequent file operations; proceed to Step 3.
+2. Invoke skill `ensure-on-feature-branch` with `feature_slug` (the path segment immediately above the
+  `US-*.md` filename) to position the working tree on `feat/<feature_slug>`; on `FAIL`, stop and surface the
+  skill reason; on `SUCCESS`, adopt the returned `feature_branch` for subsequent file operations; proceed to Step 3.
 
 3. Read the story file and all Context files — extract the Skeleton Inventory and Test Traceability from Section C;
   note type signatures, method signatures, constructor parameters, modification status, and expected test behaviors
@@ -77,10 +75,15 @@ Handoff Gate contains any `No` item, or any iteration loop (build-fix, review-fi
   set each Developer Handoff Gate, set Developer sign-off from `git config user.name`, and the current date; proceed
   to Step 9.
 
-9. Commit and push the story update plus implementation files to the feature branch — run
-  `git add "$story_file" src/ && git commit -m "feat($feature_slug): implement $(basename \"$story_file\" .md)" &&
-  git push origin "$feature_branch"`; on git failure, stop and report the git error; otherwise produce the Developer
-  Handoff Report using the output template and stop.
+9. Invoke skill `commit-and-push-on-feature-branch` with `feature_slug`, `commit_type: feat`, and
+  `commit_subject: "implement $(basename \"$story_file\" .md)"` (omit `approved`); on `FAIL`, stop and
+  surface the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, produce the Developer
+  Handoff Report and stop; on `PARTIAL` with `reason: "approval required — re-invoke with approved=true"`,
+  present `commit_message`, `feature_branch`, and `change_summary` to the user with the question
+  `"Commit and push these changes to $feature_branch? (yes/no)"`; on any response other than `yes`,
+  produce the Developer Handoff Report noting the user declined the commit and stop; on `yes`, re-invoke the
+  skill with the same arguments plus `approved: true`; on `FAIL`, stop and surface the skill reason; on
+  `SUCCESS`, produce the Developer Handoff Report using the output template and stop.
 
 ## Rules
 
@@ -90,7 +93,7 @@ Handoff Gate contains any `No` item, or any iteration loop (build-fix, review-fi
 - MUST NOT modify unit test files.
 - MUST NOT update integration tests for reasons other than fixing regressions caused directly by this story.
 - MUST fix production code to satisfy existing tests.
-- MUST NOT modify Section A, Section B, Section D, or the Tester Handoff Gate of the story file.
+- MUST NOT modify Section A, Section B, Section D, or the Unit Tester Handoff Gate of the story file.
 - MUST NOT create files outside the paths listed in the Skeleton Inventory.
 - MUST register new types in DI containers when the layer conventions require it.
 - MUST fill in all stub bodies with complete implementations — no `NotImplementedException` in final code.
@@ -99,8 +102,6 @@ Handoff Gate contains any `No` item, or any iteration loop (build-fix, review-fi
 
 ```markdown
 ## Developer Handoff Report
-
-Status: [IMPLEMENTED | BLOCKED]
 
 ### Regression Fixes Log
 
@@ -114,7 +115,5 @@ Status: [IMPLEMENTED | BLOCKED]
 - All existing integration tests pass: [Yes | No]
 - Regression fixes documented (if any): [Yes | N/A]
 - Build succeeds with zero warnings: [Yes | No]
-- Developer sign-off: [Name], [date]
-
-Unresolved Blockers: [list of blockers or "None"]
+- Developer sign-off: [Name, Date]
 ```

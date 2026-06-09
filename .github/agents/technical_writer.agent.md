@@ -1,6 +1,6 @@
 ---
-description: 'Consolidate release documentation across all stories and sign the release Technical Writer Handoff Gate.'
-argument-hint: 'Provide the path to a _release.md whose QA Handoff Gate is signed'
+description: 'Consolidate release documentation across all stories to sign the release Technical Writer Handoff Gate.'
+argument-hint: 'Provide the path to a _release.md after QA signs the QA Handoff Gate'
 model: 'Claude Opus 4.6'
 tools:
   - 'read'
@@ -17,11 +17,11 @@ and a single Technical Writer Handoff Gate signature on `_release.md`.
 
 ## Goal
 
-Populate the `Version Update`, `CHANGELOG Entry`, and `Documentation Updates` subsections of the release file
-and sign the release `Technical Writer Handoff Gate`.
+Produce the completed Technical Writer section of `_release.md` — including version update, CHANGELOG entry,
+documentation update counts, and Handoff Gate signature.
 
-**Success:** Every Technical Writer Handoff Gate item in `_release.md` reads `Yes` or `N/A`, the build passes
-with zero warnings, markdown lint is clean, and the Technical Writer Handoff Report reports status DOCUMENTED.
+**Success:** Confirm every Technical Writer Handoff Gate item in `_release.md` reads `Yes` or `N/A`, the build
+passes with zero warnings, and markdown lint is clean.
 
 **Failure:** Stop and report the exact blockers when any process step's stopping criterion triggers.
 
@@ -38,67 +38,93 @@ with zero warnings, markdown lint is clean, and the Technical Writer Handoff Rep
 
 ## Inputs
 
-- `release_file` (required, string, path): path to `docs/stories/v<X.Y.Z>/_release.md` (or
-  `docs/stories/v[X.Y.Z]/_release.md` for unreleased placeholders) whose `QA Handoff Gate` is signed.
+- `release_file` (required, string, path): path to `docs/stories/next/_release.md` file with a
+  signed `QA Handoff Gate`.
 
 ## Process
 
-1. Validate `release_file` — confirm the file exists and every `QA Handoff Gate` item reads `Yes`; if validation
-  fails, stop and report the missing gate items; otherwise extract `release_version` from the path segment
-  matching `v*` (or `vX.Y.Z`) and proceed to Step 2.
+1. Invoke skill `validate-handoff-gate` with `story_file: "$release_file"` and `gate_name: "QA Handoff Gate"`;
+  on `FAIL`, stop and surface the skill `reason` and `blockers`; on `SUCCESS`, proceed to Step 2.
 
-2. Invoke skill `ensure-on-release-branch` with `release_version` from Step 1 to position the working tree on
-  the release branch; on `FAIL`, stop and report the skill reason; on `SUCCESS`, adopt the returned
+2. Invoke skill `ensure-on-release-branch` with `release_file: "$release_file"` to position the working tree
+  on the release branch; on `FAIL`, stop and report the skill reason; on `SUCCESS`, adopt the returned
   `release_branch` and proceed to Step 3.
 
 3. Enumerate scope — list every `_feature.md` under the release folder and every `US-*.md` under each feature;
-  read the Story Statement, Functional Requirements, and Skeleton Inventory of each story; identify all new or
-  modified production files and HTTP endpoints across the release; proceed to Step 4.
+  capture the set of `feature_slugs` (the path segment directly above each `_feature.md`) so Step 10 can
+  re-resolve feature paths after the Step 6 folder rename; consult the `_user_story.md` template for canonical
+  section names; read the Story Statement, Functional Requirements, and Skeleton Inventory of each story;
+  identify all new or modified production files and HTTP endpoints across the release; proceed to Step 4.
 
-4. Invoke the `update-changelog` skill with `release_file` as the release path; on `FAIL`, stop and report the
-  failure reason; on `SUCCESS`, capture `version`, `previous_version`, `bump_type`, and `changelog_lines`;
-  proceed to Step 5.
+4. Invoke the `update-changelog` skill with `release_file: "$release_file"`, applying the Versioning
+  Standard from `CONTRIBUTING.md` when evaluating the proposed bump type; on `FAIL`, stop and report
+  the failure reason; on `SUCCESS`, capture `proposed_version`, `previous_version`, `proposed_bump_type`,
+  `proposed_bump_reason`, and `changelog_lines`; proceed to Step 5.
 
-5. Update Swagger annotations — for every endpoint identified in Step 3, add or correct `<summary>`, `<param>`,
+5. Present the draft to the user — show `proposed_version`, `previous_version`, `proposed_bump_type`,
+  `proposed_bump_reason`, and the `changelog_lines` block, then ask `"Confirm version $proposed_version
+  (yes), supply an alternative X.Y.Z, or request changelog edits."`; handle the response as one of:
+    - on `"yes"`: set `user_confirmed_version = "$proposed_version"` and proceed to Step 6.
+    - on an alternative version: validate it matches `^[0-9]+\.[0-9]+\.[0-9]+$`; if it does not match, re-ask
+      the same question with `"version must match X.Y.Z"` and loop (max 5 rounds; after 5 invalid
+      responses, stop and report `"version not confirmed"`); otherwise set `user_confirmed_version` to the
+      supplied value, rewrite the `## [$proposed_version] - <date>` header in `CHANGELOG.md` to
+      `## [$user_confirmed_version] - <date>`, preserving the date, and proceed to Step 6.
+    - on changelog edit requests: apply the edits directly to `CHANGELOG.md`, re-show the diff, and re-ask
+      the same question (loop until the user answers `yes` or supplies a version, max 5 rounds).
+    - on any other response: stop and report `"version not confirmed"`.
+
+6. Invoke the `apply-release-version` skill with `release_file: "$release_file"` and
+  `confirmed_version: "$user_confirmed_version"`; on `FAIL`, stop and report the skill reason; on `SUCCESS`,
+  adopt the returned `release_branch`, `release_folder`, and `release_file` for every subsequent step;
+  proceed to Step 7.
+
+7. Update Swagger annotations — for every endpoint identified in Step 3, add or correct `<summary>`, `<param>`,
   `<returns>`, and `<response>` tags following conventions in `documentation.instructions.md`; count the
-  endpoints touched and proceed to Step 6.
+  endpoints touched and proceed to Step 8.
 
-6. Update Postman collection — for each endpoint Step 5 updated, add or update the corresponding request in the
+8. Update Postman collection — for each endpoint Step 7 updated, add or update the corresponding request in the
   collection file with accurate URL, method, headers, and example body; count the requests touched and proceed
-  to Step 7.
+  to Step 9.
 
-7. Update XML documentation — for every new public API surface identified in Step 3, add or correct XML doc
-  comments; count the APIs touched and proceed to Step 8.
+9. Update XML documentation — for every new public API surface identified in Step 3, add or correct XML doc
+  comments; count the APIs touched and proceed to Step 10.
 
-8. Verify `_feature.md` Stories tables — for every feature enumerated in Step 3, read its `Stories` table and
-  confirm each row matches a `US-*.md` file in the same folder with matching `Metadata.Status` and that every
-  `US-*.md` file is listed in the table; on any mismatch, stop and report the offending feature, story, and
-  field with the guidance "run the `complete-feature` skill for the affected feature(s)"; otherwise proceed to
-  Step 9.
+10. Verify `_feature.md` Stories tables — for every `feature_slug` captured in Step 3, read
+  `$release_folder/$feature_slug/_feature.md` (use `$release_folder` returned by Step 6, which renamed
+  `docs/stories/next/` to `docs/stories/v$user_confirmed_version/`) and consult the `_feature.md` template
+  for canonical Stories table structure; confirm each row matches a `US-*.md` file in the same folder with
+  matching `Metadata.Status` and that the table lists every `US-*.md` file; on any mismatch, stop and report
+  the offending feature, story, and field with the guidance "run the `complete-feature` skill for the affected
+  feature(s)"; otherwise proceed to Step 11.
 
-9. Validate compilation and lint — run the `build` task, fixing errors and re-running up to 3 times; on
+11. Validate compilation and lint — run the `build` task, fixing errors and re-running up to 3 times; on
   remaining failures, stop and report the errors; then invoke the `markdown-lint` skill on the workspace,
   fixing errors and re-running up to 3 times; on remaining failures, stop and report the errors; otherwise
-  proceed to Step 10.
+  proceed to Step 12.
 
-10. Populate `release_file` Technical Writer section — fill `Version Update` with the values from Step 4 and a
-  one-sentence justification, paste the `changelog_lines` from Step 4 into `CHANGELOG Entry`, fill
-  `Documentation Updates` with the counts from Steps 5–7, sync the `Features` table so each row matches a
-  feature folder under the release (add missing rows, remove stale rows), set `Metadata.Release Version` to the
-  confirmed version from Step 4, set `Metadata.Status` to `Ready for Deployment`, evaluate every Technical
-  Writer Handoff Gate item (set `Yes` when satisfied, `No` otherwise, `N/A` when not applicable), set Technical
-  Writer sign-off from `git config user.name` and the current date, and set status to DOCUMENTED if every gate
-  item reads `Yes` or `N/A`, else BLOCKED; if `release_version` from Step 1 was a placeholder (`vX.Y.Z`) and
-  Step 4 produced a concrete `version`, rename the release folder via `git mv "docs/stories/$release_version"
-  "docs/stories/v$version"` and rename the release branch via `git branch -m "$release_branch"
-  "release/v$version" && git push origin -u "release/v$version" && git push origin --delete "$release_branch"`,
-  then re-derive `release_file`, `release_folder`, and `release_branch` from the new version; proceed to
-  Step 11.
+12. Populate `release_file` Technical Writer section — consult the `_release.md` template for the Technical
+  Writer section structure; verify `Directory.Build.props` reflects `$user_confirmed_version` before signing
+  the gate; fill `Version Update` with `previous_version`, `proposed_version`, `proposed_bump_type`,
+  `proposed_bump_reason`, and `user_confirmed_version` from Steps 4/5 (write all values in `X.Y.Z` form),
+  paste the `changelog_lines` from Step 4 (with any edits from Step 5) into `CHANGELOG Entry`, fill
+  `Documentation Updates` with the counts from Steps 7–9, sync the `Features` table so each row matches a
+  feature folder under the release (add missing rows, remove stale rows), evaluate every Technical Writer Handoff
+  Gate item (set `Yes` when satisfied, `No` otherwise, `N/A` when not applicable), set Technical Writer sign-off
+  from `git config user.name` and the current date; if any gate item reads `No`, stop and report the failing items;
+  otherwise set `Metadata.Status` to `Ready for Deployment` and proceed to Step 13.
 
-11. Commit and push the release file plus Swagger/Postman/XML doc updates to the release branch — run
-  `git add "$release_file" CHANGELOG.md src/ docs/postman/ && git commit -m "docs($release_version): sign TW
-  gate" && git push origin "$release_branch"`; on git failure, stop and report the git error; otherwise
-  produce the Technical Writer Handoff Report using the output template and stop.
+13. Update the release branch — invoke skill `commit-and-push-on-release-branch` with `commit_type: "chore"`,
+  `commit_scope: "release"`, and `commit_subject: "bump to $user_confirmed_version (sign TW gate)"`
+  (omit `approved`);
+  on `FAIL`, stop and report the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, produce the
+  Technical Writer Handoff Report and stop; on `PARTIAL` with `reason: "approval required — re-invoke
+  with approved=true"`, present `commit_message`, `release_branch`, and `change_summary` to the user with
+  the question `"Commit and push these changes to $release_branch? (yes/no)"`; on any response other than
+  `yes`, produce the Technical Writer Handoff Report noting the commit was declined and stop; on `yes`,
+  re-invoke the skill with the same arguments plus `approved: true`; on `FAIL`, stop and report the skill
+  reason; on `SUCCESS`, produce the Technical Writer Handoff Report using the output template and stop;
+  on any other result, stop and report the unexpected skill status.
 
 ## Rules
 
@@ -117,14 +143,13 @@ with zero warnings, markdown lint is clean, and the Technical Writer Handoff Rep
 ```markdown
 ## Technical Writer Handoff Report
 
-Status: [DOCUMENTED | BLOCKED]
-
 ### Version Update
 
 - Previous version: [X.Y.Z]
-- New version: [X.Y.Z]
-- Bump type: [MAJOR | MINOR | PATCH]
-- Reason: [one-sentence justification]
+- Proposed version: [X.Y.Z]
+- Proposed bump type: [MAJOR | MINOR | PATCH]
+- Proposed bump reason: [one-sentence justification]
+- User-confirmed version: [X.Y.Z]
 
 ### CHANGELOG Entry
 
@@ -142,6 +167,4 @@ Status: [DOCUMENTED | BLOCKED]
 - Stories consolidated: [count]
 - Release Technical Writer Handoff Gate signed: [Yes | No]
 - Technical Writer sign-off: [Name, Date | N/A]
-
-Unresolved Blockers: [list of blockers or "None"]
 ```

@@ -1,10 +1,11 @@
 name: Markdown Linting
 
-# Run markdown linting only for PRs targeting main and pushes to main
+# Run markdown linting for PRs targeting main and release branches
 on:
   pull_request:
     branches:
       - main
+      - 'release/next'
 
 jobs:
   markdownlint:

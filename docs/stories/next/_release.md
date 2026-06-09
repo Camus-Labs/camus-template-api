@@ -3,7 +3,7 @@
 ## Metadata
 
 - Target Date: `2026-06-15`
-- Release Version: `v2.0.0`
+- Release Version: `next`
 - Release Type: `MAJOR`
 - Status: `In Progress`
 
@@ -57,48 +57,31 @@
 
 ### Version Update
 
-- Previous version: `1.0.1`
-- New version: `2.0.0`
-- Bump type: `MAJOR`
-- Reason: Breaking redesign of the agentic SDLC workflow and story/release layout
+- Previous version: `[X.Y.Z]`
+- New version: `[X.Y.Z]`
+- Bump type: `[MAJOR | MINOR | PATCH]`
+- Reason: `[one-sentence justification]`
 
 ### CHANGELOG Entry
 
 ```markdown
-## [2.0.0] - 2026-06-15
+## [X.Y.Z] - YYYY-MM-DD
 
-### Changed
+### `[Added | Changed | Deprecated | Removed | Fixed | Security]`
 
-- **BREAKING (SDLC):** Reorganized `docs/stories/` from `todo/done` flat layout to release-centric `v<X.Y.Z>/<feature>/US-*.md` layout
-- **BREAKING (SDLC):** Replaced single `_user_story_template.md` with three templates under `docs/stories/_templates/` (`_user_story.md`, `_feature.md`, `_release.md`)
-- Simplified user story template to four sections (A–D); release-level concerns (Technical Writer, QA, Release Manager) moved to `_release.md`
-- Updated `product_owner` agent to create `_release.md`, `_feature.md`, and stories under the release-centric layout
-- Updated `architect`, `developer`, `tester.unit`, `tester.integration` agents to reference new template paths
-- Refactored `tester.qa` agent to sign story-level Sections A–D and contribute to the release QA section
-- Refactored `technical_writer` agent to operate at release scope and populate the `_release.md` Technical Writer section
-- Refactored `release_manager` agent to drive tag creation and `release/v<X.Y.Z> → main` PR flow
-- Updated `update-changelog` skill for release-level operation
-
-### Added
-
-- `docs/agentic-sdlc-workflow.md` describing the end-to-end SDLC flow, agents, gates, and branching model
-- `docs/stories/_templates/README.md` explaining the release → feature → story hierarchy and lifecycle
-
-### Removed
-
-- `docs/stories/done/` and `docs/stories/todo/` folders (replaced by release-centric layout)
-- Sections E (Technical Writer) and F (QA) from the user story template (moved to release)
+- [entry 1]
+- [entry 2]
 ```
 
 ### Documentation Updates
 
-- Swagger annotations updated: `0` endpoint(s)
-- Postman requests updated: `0` request(s)
-- XML documentation added: `0` public API(s)
+- Swagger annotations updated: `[count]` endpoint(s)
+- Postman requests updated: `[count]` request(s)
+- XML documentation added: `[count]` public API(s)
 
 ### Technical Writer Handoff Gate
 
-- Version in `Directory.Build.props` matches `v2.0.0`: `[Yes | No]`
+- Version in `Directory.Build.props` matches `vX.Y.Z`: `[Yes | No]`
 - CHANGELOG entry consolidates all features in this release: `[Yes | No]`
 - Release `Features` table matches current feature folders: `[Yes | No]`
 - Each `_feature.md` `Stories` table matches its `US-*.md` files and gate status: `[Yes | No]`
@@ -115,6 +98,6 @@
 - Technical Writer sign-off complete: `[Yes | No]`
 - QA sign-off complete: `[Yes | No]`
 - Breaking changes captured in CHANGELOG: `Yes`
-- PR `release/v2.0.0 → main` opened and merged: `[Yes | No]`
-- Tag `v2.0.0` created on `main`: `[Yes | No]`
+- PR `release/vX.Y.Z → main` opened and merged: `[Yes | No]`
+- Tag `vX.Y.Z` created on `main`: `[Yes | No]`
 - Release Manager sign-off: `[Name, Date]`

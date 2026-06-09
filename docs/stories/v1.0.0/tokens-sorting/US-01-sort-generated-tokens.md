@@ -145,7 +145,7 @@ alphabetically by token username
 - Operational readiness: Verify `sort_by` and `sort_direction` tags appear in traces after deployment. Confirm
   endpoint latency remains within existing baseline via existing Grafana dashboards.
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `Yes`
 - Port | contract impacts assessed: `Yes`
@@ -187,14 +187,14 @@ alphabetically by token username
 | Adapter | `src/Adapters/emc.camus.persistence.postgresql/DataAccess/IGeneratedTokenDataAccess.cs` | Modified | interface `IGeneratedTokenDataAccess` | `GetPageByCreatorUserIdAsync` — added `sortColumn`, `sortDirection` optional params |
 | Adapter | `src/Adapters/emc.camus.persistence.postgresql/DataAccess/GeneratedTokenDataAccess.cs` | Modified | class `GeneratedTokenDataAccess` | `GetPageByCreatorUserIdAsync` — applies ORDER BY with mapped column + direction and NULLS LAST |
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `Yes`
 - Skeleton inventory complete and user-approved: `Yes`
 - Tests compile and fail for the right reason (TDD red): `Yes` — all tests initially failed before implementation;
 Application/Adapter tests pass because their production code (enums, dictionary map, `ToSql()`) is trivially
 complete
-- Ready for implementation: `Yes`
+- Ready for developer implementation: `Yes`
 - Tester sign-off: `Unit Tester, 2026-04-28`
 
 ### Regression Fixes Log

@@ -76,7 +76,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 
 - [NFR category]: [Design decision and implementation approach]
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `[Yes | No]`
 - Port | contract impacts assessed: `[Yes | No]`
@@ -101,12 +101,12 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 | --- | --- | --- | --- | --- |
 | [Domain, Application, Api, Adapter] | [src/.../FileName.cs] | [New, Modified] | [class, interface, record] | [method signatures, properties] |
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `[Yes | No]`
 - Skeleton inventory complete and user-approved: `[Yes | No]`
 - Tests compile and fail for the right reason (TDD red): `[Yes | No]`
-- Ready for implementation: `[Yes | No]`
+- Ready for developer implementation: `[Yes | No]`
 - Tester sign-off: `[Name, Date]`
 
 ### Regression Fixes Log

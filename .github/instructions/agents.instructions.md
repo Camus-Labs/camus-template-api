@@ -64,10 +64,7 @@ applyTo: ".github/agents/**/*.agent.md"
     - [ ] Conditionals have explicit ELSE or default — guard-and-stop branches where the only alternative is
           continuation to the next numbered step satisfy this rule implicitly
     - [ ] Loops have max-iteration bound
-    - [ ] First step validates inputs
-    - [ ] Last step produces the output
-    - [ ] One bounded action per step — sub-item enumeration within one target is fine; no independent evaluations
-    - [ ] No two steps share the same leading action verb and direct object
+    - [ ] First step validates inputs — delegation to a skill that rejects invalid input satisfies this rule
     - [ ] Every process-computed value has a placeholder in the template or is consumed by a subsequent step
     - [ ] Procedure steps that build, test, or run the application use workspace task labels (e.g., `build`, `test-all`,
           `test-unit`, `test-integration`, `run-api`) — not raw `dotnet` commands

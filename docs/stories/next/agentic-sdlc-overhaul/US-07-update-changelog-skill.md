@@ -36,7 +36,7 @@ produce a single consolidated changelog entry`.
 
 ### Acceptance Criteria
 
-- AC-01: Running the skill on `docs/stories/v2.0.0/_release.md` produces or updates a single `## [2.0.0]` block in
+- AC-01: Running the skill on `docs/stories/next/_release.md` produces or updates a single `## [X.Y.Z]` block in
   `CHANGELOG.md`
 - AC-02: Re-running the skill on the same release does not duplicate the block or its entries
 - AC-03: The skill's SKILL.md passes `concurrent.reviewer.copilot.customization`
@@ -68,7 +68,7 @@ N/A — skill-only refactor; no production code, layer, contract, or cross-cutti
 
 `N/A` — no NFRs require runtime architectural decisions.
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `N/A`
 - Port | contract impacts assessed: `N/A`
@@ -81,7 +81,7 @@ N/A — skill-only refactor; no production code, layer, contract, or cross-cutti
 
 Rewrote `.github/skills/update-changelog/SKILL.md` to operate on a release file instead of a single story:
 
-- Argument is `release_path` pointing to `_release.md` (rejects any other filename).
+- Argument is `release_file` pointing to `_release.md` (rejects any other filename).
 - Enumerates every `US-*.md` in the release folder and summarizes Functional Requirements from Section A of
   each story into grouped, user-facing imperative entries (`Added`, `Changed`, `Fixed`, `Removed`, `Security`,
   `Deprecated`).
@@ -100,12 +100,12 @@ Rewrote `.github/skills/update-changelog/SKILL.md` to operate on a release file 
 
 `N/A` — no production stubs are created; implementation modifies `.github/skills/` only.
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `N/A`
 - Skeleton inventory complete and user-approved: `N/A`
 - Tests compile and fail for the right reason (TDD red): `N/A`
-- Ready for implementation: `Yes`
+- Ready for developer implementation: `Yes`
 - Tester sign-off: `N/A, 2026-06-02`
 
 ### Regression Fixes Log

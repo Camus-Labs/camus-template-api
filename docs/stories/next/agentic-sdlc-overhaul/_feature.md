@@ -57,10 +57,6 @@ match the new contracts, and document the end-to-end flow.
 - All markdown files must pass `markdownlint-cli2` with zero errors
 - All agent path references must use the new template locations under `docs/stories/_templates/`
 
-## Open Questions
-
-- None
-
 ## Product Owner Handoff Gate
 
 - Metadata complete: `Yes`

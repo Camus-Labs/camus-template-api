@@ -78,7 +78,7 @@ canonical structure defined in `.github/instructions/agents.instructions.md`.
 
 `N/A` — no NFRs require runtime architectural decisions.
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `N/A`
 - Port | contract impacts assessed: `N/A`
@@ -95,7 +95,7 @@ The `product_owner` agent was rewritten in place at
 - Reference the new templates under `docs/stories/_templates/` (`_release.md`,
   `_feature.md`, `_user_story.md`, `README.md`).
 - Resolve `release-version` from `target_release` input or the active
-  `Planning`/`In Progress` `_release.md`, creating a release when ambiguous.
+  `In Progress` `_release.md`, creating a release when ambiguous.
 - Derive `feature-slug` and create or adopt
   `docs/stories/[release-version]/[feature-slug]/_feature.md`.
 - Use `feat/[feature-slug]` branch naming (kebab-case with slash).
@@ -121,12 +121,12 @@ reports 0 errors.
 
 `N/A` — no production stubs are created; implementation modifies `.github/agents/` only.
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `N/A`
 - Skeleton inventory complete and user-approved: `N/A`
 - Tests compile and fail for the right reason (TDD red): `N/A`
-- Ready for implementation: `Yes`
+- Ready for developer implementation: `Yes`
 - Tester sign-off: `N/A, 2026-06-01`
 
 ### Regression Fixes Log

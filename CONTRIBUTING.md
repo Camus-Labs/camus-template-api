@@ -7,12 +7,28 @@ contributor must follow.
 
 ## Branching Convention
 
-Create feature/fix branches from the latest `main` using the `feat_` or `fix_` prefix:
+This project follows a **release-centric** branching model. The full workflow is described in
+[`docs/agentic-sdlc-workflow.md`](docs/agentic-sdlc-workflow.md); the short version:
 
-1. `git checkout main && git pull`
-2. `git checkout -b feat_<short-description>`
+```text
+main
+└── release/next        (work-in-progress release; cut from main by @product_owner)
+    │                    (renamed to release/v<X.Y.Z> by @technical_writer at release time)
+    └── feat/<slug>      (one per feature; cut from the release branch)
+```
 
-All development work happens on feature/fix branches — never commit directly to `main`.
+- `release/next` is the active release branch during development; `@technical_writer` renames it (and the
+  matching `docs/stories/next/` folder) to `release/v<X.Y.Z>` once the version is decided.
+- `feat/<slug>` branches are always created from and merged back into `release/next` via
+  **squash + delete branch**. Feature work never targets `release/v<X.Y.Z>`; by the time the release branch
+  has been renamed, no new feature merges are accepted into that release.
+- `release/v<X.Y.Z>` is merged into `main` via **rebase + keep branch**, then tagged on `main`.
+- Never commit manually to `main`, `release/next`, or any `release/v*` branch. Release-scope commits to
+  `release/next` and `release/v*` happen only through the agentic SDLC skills
+  (`commit-and-push-on-release-branch`, `complete-feature`, `apply-release-version`).
+
+Branch names and PR targets are enforced by the **Validate PR Branches** workflow
+(`.github/workflows/validate-pr-branches.yml`).
 
 ---
 

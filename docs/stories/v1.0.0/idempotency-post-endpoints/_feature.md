@@ -48,10 +48,6 @@ Scope at the capability level. Individual functional requirements live in storie
 - Cache must fail open: if the cache is unavailable, requests proceed normally
 - Only 2xx responses are cached; 4xx/5xx are not
 
-## Open Questions
-
-- None
-
 ## Product Owner Handoff Gate
 
 - Metadata complete: `Yes`

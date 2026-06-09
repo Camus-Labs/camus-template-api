@@ -129,7 +129,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
   emitting post-deploy. Confirm 429 responses and response headers match baseline via existing integration or smoke
   tests.
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `Yes`
 - Port | contract impacts assessed: `Yes`
@@ -195,12 +195,12 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 | Api   | src/Api/emc.camus.api/Configurations/RateLimitContextKeys.cs    | New      | static class RateLimitContextKeys        | Policy, Limit, Window                                                                                                                                                  |
 | Api   | src/Api/emc.camus.api/emc.camus.api.csproj                      | Modified | —                                        | Added InternalsVisibleTo for emc.camus.api.test                                                                                                                        |
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `Yes`
 - Skeleton inventory complete and user-approved: `Yes`
 - Tests compile and fail for the right reason (TDD red): `Yes`
-- Ready for implementation: `Yes`
+- Ready for developer implementation: `Yes`
 - Tester sign-off: `Unit Tester (Copilot), 2026-05-27`
 
 ### Regression Fixes Log

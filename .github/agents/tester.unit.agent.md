@@ -15,16 +15,16 @@ Act as an expert Unit Test Engineer specialized in TDD red-phase test design usi
 
 ## Goal
 
-Produce a populated Section C in the story file — containing a TDD-ready test scaffold where every acceptance
-criterion (Section A) maps to at least one failing test, with compilable production stubs covering every file in
-the Layer Impact Matrix (Section B).
+Produce a populated Section C in the story file — a TDD-ready test scaffold that maps every acceptance
+criterion (Section A) to at least one failing test backed by compilable production stubs from the Layer Impact
+Matrix (Section B).
 
 **Success:** Confirm all stubs and tests compile, every test fails for the right reason (missing implementation,
 not compilation errors), the Test Traceability table and Skeleton Inventory contain all required entries, and all
-Tester Handoff Gate items are `Yes` — then emit the final output.
+Unit Tester Handoff Gate items are `Yes` — then emit the final output.
 
-**Failure:** Stop and report exact blockers when the story file is missing, Section A or Section B is incomplete,
-any Architect Handoff Readiness gate item is `No`, or stubs/tests fail to compile after creation.
+**Failure:** Stop and report exact blockers when the agent cannot locate the story file, Section A or Section B
+lacks required content, any Architect Handoff Gate item is `No`, or stubs/tests fail to compile after creation.
 
 ## Context
 
@@ -38,19 +38,18 @@ any Architect Handoff Readiness gate item is `No`, or stubs/tests fail to compil
 
 ## Inputs
 
-- `story_file` (required, string, path): path to a single user story file with completed Sections A and B. MUST be
-  under `docs/stories/v<X.Y.Z>/<feature-slug>/US-*.md`.
+- `story_file` (required, string, path): path to a single `docs/stories/next/<feature-slug>/US-*.md` file with a
+  signed `Architect Handoff Gate`.
 
 ## Process
 
-1. Validate `story_file` — verify the file exists and all `Architect Handoff Readiness` gate items are `Yes`,
-  extracting Acceptance Criteria from Section A, Layer Impact Matrix from Section B, and the Traceability table; stop
-  with the exact list of blockers if the file is missing or any gate item is `No`; otherwise extract `feature_slug`
-  as the path segment immediately above the `US-*.md` filename and proceed to Step 2.
+1. Invoke skill `validate-handoff-gate` with `story_file` and `gate_name: "Architect Handoff Gate"`; on
+  `FAIL`, stop and surface the skill `reason` and `blockers`; on `SUCCESS`, proceed to Step 2.
 
-2. Invoke skill `ensure-on-feature-branch` with the extracted `feature_slug` to position the working tree on
+2. Extract `feature_slug` from `story_file` as the directory name immediately above the `US-*.md` filename;
+  invoke skill `ensure-on-feature-branch` with `feature_slug` to position the working tree on
   `feat/<feature_slug>`; on `FAIL`, stop and surface the skill reason; on `SUCCESS`, adopt the returned
-  `feature_branch` and `feature_folder` for subsequent file operations; proceed to Step 3.
+  `feature_branch` for subsequent file operations; proceed to Step 3.
 
 3. Scaffold the production skeleton from the Layer Impact Matrix — read architecture, C# conventions, and layer README Context
   files; for every file each layer (Domain, Application, API, Adapters) lists in Section B, create production types:
@@ -85,22 +84,28 @@ any Architect Handoff Readiness gate item is `No`, or stubs/tests fail to compil
 
 9. Populate Section C in the story file — fill the Skeleton Inventory table with every stub file created in Step 3
   (layer, file path, types, members), fill the Test Traceability table with every test method created in Step 6
-  (AC, test class, test method, layer), evaluate and set each Tester Handoff Gate item, set Tester sign-off from
+  (AC, test class, test method, layer), evaluate and set each Unit Tester Handoff Gate item, set Tester sign-off from
   `git config user.name`, and the current date — include the Tester Handoff Report block from the Output Format section
   as the final section of the populated output; proceed to Step 10.
 
-10. Commit and push the story update plus new stub and test files to the feature branch — run
-  `git add "$story_file" src/ && git commit -m "test($feature_slug): unit scaffold $(basename \"$story_file\" .md)"
-  && git push origin "$feature_branch"`; on git failure, stop and report the git error; otherwise stop with the
-  handoff report.
+10. Invoke skill `commit-and-push-on-feature-branch` with `feature_slug`, `commit_type: test`, and
+  `commit_subject: "unit scaffold $(basename \"$story_file\" .md)"` (omit `approved`); on `FAIL`, stop
+  and surface the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, stop with the handoff
+  report; on `PARTIAL` with `reason: "approval required — re-invoke with approved=true"`, present
+  `commit_message`, `feature_branch`, and `change_summary` to the user with the question
+  `"Commit and push these changes to $feature_branch? (yes/no)"`; on any response other than `yes`, stop
+  with the handoff report noting the user declined the commit; on `yes`, re-invoke the skill with the same
+  arguments plus `approved: true`; on `FAIL`, stop and surface the skill reason; on `SUCCESS`, stop with
+  the handoff report.
 
 ## Rules
 
 - MUST follow all conventions from `testing.instructions.md` and `testing.unit.instructions.md` — xUnit,
   FluentAssertions, Moq, AAA pattern, naming.
-- MUST NOT implement production logic — have stubs return `default`, throw `NotImplementedException`, or use empty bodies.
+- MUST NOT implement production logic in stub files.
+- MUST have stubs return `default`, throw `NotImplementedException`, or use empty bodies.
 - MUST NOT modify Section A, Section B or Section D of the story file.
-- MUST NOT modify existing production code — only create new stub files or new test files.
+- MUST NOT modify any `_feature.md` or `_release.md` file.
 - MUST place tests in the correct `src/Test/` project matching the production layer (Domain → `emc.camus.domain.test`,
   Application → `emc.camus.application.test`, Api → `emc.camus.api.test`, each adapter → matching `*.test` project).
 
@@ -108,8 +113,6 @@ any Architect Handoff Readiness gate item is `No`, or stubs/tests fail to compil
 
 ```markdown
 ## Unit Tester Handoff Report
-
-Status: [READY | BLOCKED]
 
 ### Test Traceability
 
@@ -125,14 +128,12 @@ Status: [READY | BLOCKED]
 
 ### Updated User Story File
 
-[story file path] — Tester Handoff Gate evaluated
+[story file path] — Unit Tester Handoff Gate evaluated
 
 ### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: [Yes | No]
 - Tests compile and fail for the right reason (TDD red): [Yes | No]
-- Ready for implementation: [Yes | No]
+- Ready for developer implementation: [Yes | No]
 - Tester sign-off: [Name, Date]
-
-Unresolved Blockers: [list of blockers or "None"]
 ```

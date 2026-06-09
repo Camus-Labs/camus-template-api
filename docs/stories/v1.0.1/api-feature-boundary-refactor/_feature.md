@@ -53,10 +53,6 @@ Scope at the capability level. Individual functional requirements live in storie
 - No behavioral or HTTP-contract changes; only internal restructuring
 - All existing unit and integration tests must continue to pass
 
-## Open Questions
-
-- None
-
 ## Product Owner Handoff Gate
 
 - Metadata complete: `Yes`

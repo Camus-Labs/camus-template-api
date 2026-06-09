@@ -6,6 +6,9 @@ REST APIs.
 
 > **📘 New to this project?** Start with the [Documentation Index](docs/README.md) for comprehensive guides on
 architecture, authentication, deployment, and debugging.
+>
+> **🤖 Contributing changes?** This repo runs an agent-driven, release-centric SDLC — read the
+[Feature Development Workflow](docs/agentic-sdlc-workflow.md) before opening a branch or PR.
 
 ---
 

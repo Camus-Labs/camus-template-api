@@ -73,7 +73,7 @@ N/A — documentation-only story; no production code, layer, contract, or cross-
 
 `N/A` — no NFRs require runtime architectural decisions.
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `N/A`
 - Port | contract impacts assessed: `N/A`
@@ -84,7 +84,7 @@ N/A — documentation-only story; no production code, layer, contract, or cross-
 
 ## Section C - Implementation Tracking
 
-Rewrote `docs/agentic-sdlc-workflow.md` end-to-end to reflect the v2.0.0 SDLC contracts:
+Rewrote `docs/agentic-sdlc-workflow.md` end-to-end to reflect the new SDLC contracts:
 
 - Documented the branch model (`main ← release/v<X.Y.Z> ← feat/<slug>`) and merge strategies (squash for
   `feat → release`, rebase for `release → main`, tag on `main`).
@@ -109,12 +109,12 @@ Rewrote `docs/agentic-sdlc-workflow.md` end-to-end to reflect the v2.0.0 SDLC co
 
 `N/A` — no production stubs are created; implementation modifies `docs/` only.
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `N/A`
 - Skeleton inventory complete and user-approved: `N/A`
 - Tests compile and fail for the right reason (TDD red): `N/A`
-- Ready for implementation: `Yes`
+- Ready for developer implementation: `Yes`
 - Tester sign-off: `N/A, 2026-06-02`
 
 ### Regression Fixes Log

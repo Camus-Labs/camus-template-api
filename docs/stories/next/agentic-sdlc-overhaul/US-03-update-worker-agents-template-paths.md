@@ -69,7 +69,7 @@ cross-cutting concern is impacted.
 
 `N/A` — no NFRs require runtime architectural decisions.
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `N/A`
 - Port | contract impacts assessed: `N/A`
@@ -100,12 +100,12 @@ and that the only remaining `done/`/`todo/` references are the new explicit reje
 
 `N/A` — no production stubs are created; implementation modifies `.github/agents/` only.
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `N/A`
 - Skeleton inventory complete and user-approved: `N/A`
 - Tests compile and fail for the right reason (TDD red): `N/A`
-- Ready for implementation: `Yes`
+- Ready for developer implementation: `Yes`
 - Tester sign-off: `N/A, 2026-06-02`
 
 ### Regression Fixes Log

@@ -3,7 +3,7 @@
 ## Metadata
 
 - Target Date: `YYYY-MM-DD`
-- Release Version: `vX.Y.Z`
+- Release Version: `next`
 - Release Type: `[MAJOR | MINOR | PATCH]`
 - Status: `[In Progress | Ready for Deployment | Released]`
 
@@ -51,9 +51,10 @@
 ### Version Update
 
 - Previous version: `[X.Y.Z]`
-- New version: `[X.Y.Z]`
-- Bump type: `[MAJOR | MINOR | PATCH]`
-- Reason: `[one-sentence justification]`
+- Proposed version: `[X.Y.Z]`
+- Proposed bump type: `[MAJOR | MINOR | PATCH]`
+- Proposed bump reason: `[one-sentence justification]`
+- User-confirmed version: `[X.Y.Z]`
 
 ### CHANGELOG Entry
 
@@ -74,7 +75,7 @@
 
 ### Technical Writer Handoff Gate
 
-- Version in `Directory.Build.props` matches `vX.Y.Z`: `[Yes | No]`
+- Version in `Directory.Build.props` matches the released `X.Y.Z`: `[Yes | No]`
 - CHANGELOG entry consolidates all features in this release: `[Yes | No]`
 - Release `Features` table matches current feature folders: `[Yes | No]`
 - Each `_feature.md` `Stories` table matches its `US-*.md` files and gate status: `[Yes | No]`

@@ -40,10 +40,6 @@ Scope at the capability level. Individual functional requirements live in storie
 
 - Sorting must be applied at the database level, before pagination
 
-## Open Questions
-
-- None
-
 ## Product Owner Handoff Gate
 
 - Metadata complete: `Yes`

@@ -3,7 +3,7 @@
 ## Metadata
 
 - Target Date: `2026-05-31`
-- Release Version: `v1.0.1`
+- Release Version: `1.0.1`
 - Release Type: `PATCH`
 - Status: `Released`
 

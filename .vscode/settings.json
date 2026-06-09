@@ -26,6 +26,10 @@
             "username": "postgres",
             "askForPassword": true
         }
-    ]
+    ],
+    "chat.tools.terminal.autoApprove": {
+        "npx markdownlint-cli2": true,
+        "true": true
+    }
 }
 

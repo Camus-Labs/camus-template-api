@@ -33,7 +33,8 @@ user-invocable: false
 3. Convert all paths in the list to workspace-relative form (strip the workspace-root prefix).
 4. Return `FAIL` with reason `"no .cs files found for scope: <scope>"` if the list is empty; otherwise proceed
    to step 5.
-5. Sort the list alphabetically and return `SUCCESS` with the file count and sorted file list.
+5. Sort the list alphabetically.
+6. Return `SUCCESS` with the file count and sorted file list.
 
 ## Output Contract
 
@@ -56,5 +57,5 @@ FAIL:
 
 ## Dependencies
 
-- `find` — POSIX file-search utility; locates `.cs` files under a given directory tree.
-- `git` — version-control CLI; lists uncommitted changes and compares branches.
+- `find` — POSIX file-search utility; locate `.cs` files under a given directory tree.
+- `git` — version-control CLI; list uncommitted changes and compare branches.

@@ -4,12 +4,13 @@ applyTo: ".github/skills/*/SKILL.md"
 
 # Skills Development Conventions
 
-1. Structure
+1. Writing Quality and Structure
 
     - [ ] Skill lives in `.github/skills/<name>/` with a `SKILL.md` at the root
     - [ ] Folder name matches the `name` field in SKILL.md frontmatter exactly
     - [ ] Folder name contains only lowercase alphanumeric characters and hyphens
     - [ ] `SKILL.md` body is under 500 lines — large content belongs in `references/`
+    - [ ] All prose uses imperative mood — no indicative constructions ("the step generates", "it returns")
 
 2. Frontmatter
 
@@ -57,15 +58,16 @@ applyTo: ".github/skills/*/SKILL.md"
     - [ ] Uses a fenced code block for structured output format
     - [ ] All placeholders use identical naming syntax (e.g., `[snake_case]`)
     - [ ] Each return value placeholder has an explicit type annotation in the fenced code block
+    - [ ] Return status uses one of the canonical values: `SUCCESS` (goal fully achieved), `PARTIAL`
+          (procedure completed but goal partially achieved), or `FAIL` (procedure could not complete)
+    - [ ] Skills MUST NOT prompt the user for decisions — return `PARTIAL` or `FAIL` with the data the
+          caller needs and let the invoking agent own the user interaction
 
 6. Self-Containment
 
     - [ ] Every external CLI tool or file referenced in the Procedure section appears by exact name
           in a `## Dependencies` section
-    - [ ] No references to files outside the skill folder — exception: workspace root config files,
-          source files under `src/`, documentation under `docs/`
-
-7. Writing Quality
-
-    - [ ] All prose uses active voice, imperative mood — no passive constructions
-    - [ ] Description field contains at least one use-case verb and one domain noun
+    - [ ] Every file referenced outside the skill folder is either (a) a stable workspace artifact —
+          source code, documentation, or repo configuration whose location is owned by repo
+          conventions — or (b) the declared output of a task or tool listed in `## Dependencies`;
+          ad-hoc or undeclared external paths are not allowed

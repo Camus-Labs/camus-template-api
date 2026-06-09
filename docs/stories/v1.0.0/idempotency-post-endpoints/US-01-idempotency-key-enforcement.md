@@ -152,7 +152,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
   rejection events after endpoints are decorated. No new alerts required for this story;
   alerting thresholds will be established when US-02 introduces caching.
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `Yes`
 - Port | contract impacts assessed: `Yes`
@@ -189,12 +189,12 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 | Api | src/Api/emc.camus.api/Filters/IdempotencyKeyValidationFilter.cs | New | class IdempotencyKeyValidationFilter | OnActionExecuting(), OnActionExecuted() |
 | Api | src/Api/emc.camus.api/Extensions/IdempotencySetupExtensions.cs | New | static class IdempotencySetupExtensions | AddIdempotency() |
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `Yes`
 - Skeleton inventory complete and user-approved: `Yes`
 - Tests compile and fail for the right reason (TDD red): `Yes`
-- Ready for implementation: `Yes`
+- Ready for developer implementation: `Yes`
 - Tester sign-off: `Unit Tester, 2026-05-13`
 
 ### Regression Fixes Log

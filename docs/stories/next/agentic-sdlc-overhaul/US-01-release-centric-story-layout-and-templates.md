@@ -93,7 +93,7 @@ out, and the SDLC matches our versioning cadence`.
 
 - Compliance: enforce `markdownlint-cli2` on `docs/stories/**/*.md` before signing the developer gate
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `Yes`
 - Port | contract impacts assessed: `N/A`
@@ -125,13 +125,13 @@ filesystem inspection (covered in the developer gate).
 | Docs | `docs/stories/v1.0.0/**/US-*.md`, `docs/stories/v1.0.1/**/US-*.md` | Modified | stories | truncate Section E onwards |
 | Docs | `docs/stories/done/`, `docs/stories/todo/` | Removed | folders | deleted |
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `N/A (markdownlint + filesystem inspection in place of unit
   tests)`
 - Skeleton inventory complete and user-approved: `Yes`
 - Tests compile and fail for the right reason (TDD red): `N/A`
-- Ready for implementation: `Yes`
+- Ready for developer implementation: `Yes`
 - Tester sign-off: `N/A — documentation-only story`
 
 ### Regression Fixes Log

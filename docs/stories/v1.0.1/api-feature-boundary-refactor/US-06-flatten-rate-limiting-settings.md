@@ -130,7 +130,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Operational readiness: Verify rate-limiting metrics emit after deployment; confirm 429 responses on load
   test with same thresholds as before; no new alerts or runbook updates needed
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `Yes`
 - Port | contract impacts assessed: `Yes`
@@ -172,12 +172,12 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 | Api | src/Api/emc.camus.api/Filters/RateLimitAttribute.cs | Modified | class RateLimitAttribute | ValidatePolicyName(string) — validates against RateLimitPolicies closed set at construction |
 | Api | src/Api/emc.camus.api/Extensions/RateLimitingSetupExtensions.cs | Modified | static class RateLimitingSetupExtensions | ResolvePermitLimit(settings, policyName), ResolveWindowSeconds(settings, policyName) — switch-based resolution |
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `Yes`
 - Skeleton inventory complete and user-approved: `Yes`
 - Tests compile and fail for the right reason (TDD red): `Yes`
-- Ready for implementation: `Yes`
+- Ready for developer implementation: `Yes`
 - Tester sign-off: `3M0R4C, 2026-05-28`
 
 ### Regression Fixes Log

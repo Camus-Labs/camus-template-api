@@ -1,7 +1,7 @@
 ---
 name: concurrent-review
 description: 'Dispatch three parallel sub-agent reviews and merge results into a deduplicated report to deliver a single validated findings summary for multi-model code or documentation reviews.'
-argument-hint: 'Provide a review prompt path and a list of files to review'
+argument-hint: 'Provide positional args: prompt_path (path to a .prompt.md file) and files (non-empty list of file paths)'
 user-invocable: false
 ---
 
@@ -9,7 +9,7 @@ user-invocable: false
 
 ## When to Use
 
-- Use after resolving a scope to a file list when the task requires multi-model evaluation.
+- Use after resolving a scope to a file list that requires multi-model evaluation.
 - Use to orchestrate parallel sub-agent reviews with different models against the same file set.
 - Use to merge and deduplicate findings from multiple review models into a single report.
 
@@ -88,6 +88,9 @@ SUCCESS:
 FAIL:
   prompt_path: [prompt_path: string]
   reason: [failure_explanation: string]
+  failed_agents:
+    - agent: [agent_name: string]
+      reason: [failure_reason: string]
 ```
 
 ## Dependencies

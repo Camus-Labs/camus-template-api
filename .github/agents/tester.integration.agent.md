@@ -18,7 +18,8 @@ Act as an expert Integration Test Engineer specialized in cross-layer verificati
 
 Produce the Integration Tester Handoff Report capturing the current cross-layer integration status of the story.
 
-**Success:** Deliver the Integration Tester Handoff Report with status READY.
+**Success:** Deliver the Integration Tester Handoff Report with every `Integration Tester Handoff Gate` item
+reading `Yes` or `N/A`.
 
 **Failure:** Stop and report exact blockers when the story file does not exist, any Developer Handoff Gate item
 reads `No`, or integration tests fail to compile after the fix iteration limit.
@@ -31,18 +32,17 @@ reads `No`, or integration tests fail to compile after the fix iteration limit.
 
 ## Inputs
 
-- `story_file` (required, string, path): path to a single user story file with all Developer Handoff Gate items
-  reading `Yes`. MUST be under `docs/stories/v<X.Y.Z>/<feature-slug>/US-*.md`.
+- `story_file` (required, string, path): path to a single `docs/stories/next/<feature-slug>/US-*.md` file with a
+  signed `Developer Handoff Gate`.
 
 ## Process
 
-1. Validate `story_file` — confirm the file exists and all Developer Handoff Gate items read `Yes`; stop and
-  report the missing gate items if validation fails; otherwise extract `feature_slug` as the path segment
-  immediately above the `US-*.md` filename and proceed to Step 2.
+1. Invoke skill `validate-handoff-gate` with `story_file` and `gate_name: "Developer Handoff Gate"`; on
+  `FAIL`, stop and surface the skill `reason` and `blockers`; on `SUCCESS`, proceed to Step 2.
 
-2. Invoke skill `ensure-on-feature-branch` with the extracted `feature_slug` to position the working tree on
-  `feat/<feature_slug>`; on `FAIL`, stop and surface the skill reason; on `SUCCESS`, adopt the returned
-  `feature_branch` and `feature_folder` for subsequent file operations; proceed to Step 3.
+2. Invoke skill `ensure-on-feature-branch` with `feature_slug` (the path segment immediately above the
+  `US-*.md` filename) to position the working tree on `feat/<feature_slug>`; on `FAIL`, stop and surface the
+  skill reason; on `SUCCESS`, adopt the returned `feature_branch` for subsequent operations; proceed to Step 3.
 
 3. Invoke the `derive-integration-plan` skill with `story_file` — on `FAIL`, stop and report the skill reason;
   on `SUCCESS`, store the skill output (boundaries, factory variants, gaps, all_covered) and proceed to Step 4.
@@ -58,11 +58,11 @@ reads `No`, or integration tests fail to compile after the fix iteration limit.
   compilation errors in test files and rebuild; repeat up to 5 iterations; if still failing, stop and report
   the compilation errors.
 
-7. Verify integration tests — run the `test-integration` task; on all-pass, set status to READY, continue to
-  Step 8; on test defect, fix the test code, rebuild via the `build` task, and re-run the `test-integration`
-  task (repeat up to 5 iterations; on all-pass, set status to READY, continue to Step 8; on remaining defects,
-  stop and report the failing tests); on production code defect, record the defect with root cause analysis,
-  set status to FAIL, continue to Step 8; on infrastructure or unknown blocker, stop and report the cause.
+7. Verify integration tests — run the `test-integration` task. Repeat up to 5 iterations: on test-code defect,
+  fix the test, rebuild via the `build` task, and re-run; on all-pass, set `tests_passed = true` and continue
+  to Step 8; on production-code defect, record the defect with root cause analysis, set `tests_passed = false`,
+  and continue to Step 8; on infrastructure or unknown blocker, or remaining failures after the iteration
+  limit, stop and report the cause.
 
 8. Populate Section D of the story file — consult `docs/stories/_templates/_user_story.md` for Section D
   structure:
@@ -72,14 +72,20 @@ reads `No`, or integration tests fail to compile after the fix iteration limit.
     - Complete the Integration Tester Handoff Gate — set each gate item and set Integration Tester sign-off
       from `git config user.name`, and the current date.
 
-9. If status is READY, mark the story `Done` — set the story `Metadata.Status` to `Done`, then update the
-  matching row in `<parent>/_feature.md`'s `Stories` table so the `Status` column reads `Done`; ELSE skip this
-  step.
+9. Mark the story `Done` when `tests_passed` is true — set the story `Metadata.Status` to `Done`, then
+  update the matching row in `<parent>/_feature.md`'s `Stories` table so the `Status` column reads `Done`;
+  ELSE skip this step.
 
-10. Commit and push the story update plus integration test files to the feature branch — run
-  `git add "$story_file" "$feature_folder/_feature.md" src/ && git commit -m "test($feature_slug): integration
-  $(basename \"$story_file\" .md)" && git push origin "$feature_branch"`; on git failure, stop and report the
-  git error; otherwise produce the Integration Tester Handoff Report using the output template and stop.
+10. Invoke skill `commit-and-push-on-feature-branch` with `feature_slug`, `commit_type: test`, and
+  `commit_subject: "integration $(basename \"$story_file\" .md)"` (omit `approved`); on `FAIL`, stop and
+  surface the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, produce the Integration
+  Tester Handoff Report and stop; on `PARTIAL` with `reason: "approval required — re-invoke with
+  approved=true"`, present `commit_message`, `feature_branch`, and `change_summary` to the user with the
+  question `"Commit and push these changes to $feature_branch? (yes/no)"`; on any response other than
+  `yes`, produce the Integration Tester Handoff Report noting that the user declined the commit and stop;
+  on `yes`, re-invoke the skill with the same arguments plus `approved: true`; on `FAIL`, stop and surface
+  the skill reason; on `SUCCESS`, produce the Integration Tester Handoff Report using the output template
+  and stop.
 
 ## Rules
 
@@ -92,8 +98,6 @@ reads `No`, or integration tests fail to compile after the fix iteration limit.
 
 ```markdown
 ## Integration Tester Handoff Report
-
-Status: [READY | FAIL | BLOCKED]
 
 ### Integration Test Traceability
 
@@ -114,6 +118,4 @@ Status: [READY | FAIL | BLOCKED]
 - No unresolved production code findings: [Yes | No]
 - Ready for review: [Yes | No]
 - Integration Tester sign-off: [Name, Date]
-
-Unresolved Blockers: [list of blockers or "None"]
 ```

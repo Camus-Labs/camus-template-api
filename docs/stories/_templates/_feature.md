@@ -5,7 +5,7 @@
 - Request Date: `YYYY-MM-DD`
 - Requested By: `[name]`
 - Owner: `[name]`
-- Status: `[Planning | In Progress | Done]`
+- Status: `[Todo | In Progress | Done]`
 
 ## Goal
 
@@ -21,7 +21,7 @@ delivers. Avoid implementation detail.]
 
 | Story ID | Title | Depends On | Status |
 | --- | --- | --- | --- |
-| `US-XX` | [Story title] | `[US-YY, US-ZZ \| -]` | `[Planning \| Red \| Green \| Integration \| Docs \| QA \| Done]` |
+| `US-XX` | [Story title] | `[US-YY, US-ZZ \| -]` | `[Todo \| In Progress \| Done]` |
 
 ## In Scope
 
@@ -37,11 +37,6 @@ delivers. Avoid implementation detail.]
 
 - [Constraint that applies across all stories in this feature]
 - [Constraint that applies across all stories in this feature]
-
-## Open Questions
-
-- [Question 1 — owner]
-- [Question 2 — owner]
 
 ## Product Owner Handoff Gate
 

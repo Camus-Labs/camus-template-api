@@ -1,7 +1,7 @@
 ---
 name: 'ReviewerGPT'
-description: 'Execute a review prompt against a target file and return the structured review report.'
-model: 'GPT-5.4'
+description: 'Execute a review prompt against a target file to produce the structured review report.'
+model: 'GPT-5.5'
 tools: [read, search]
 argument-hint: 'Provide review_prompt content and a target path.'
 ---

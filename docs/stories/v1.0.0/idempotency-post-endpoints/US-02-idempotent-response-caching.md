@@ -175,7 +175,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
   elevated `idempotency_body_conflict_total` rates which may indicate client integration issues;
   no runbook changes required
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `Yes`
 - Port | contract impacts assessed: `Yes`
@@ -228,12 +228,12 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 | Api | src/Api/emc.camus.api/Metrics/IdempotencyMetrics.cs | New | sealed class IdempotencyMetrics : IDisposable | RecordCacheHit(), RecordBodyConflict(), RecordCacheError(), Dispose() |
 | Adapter | src/Adapters/emc.camus.cache.inmemory/Services/IdempotencyResponseCache.cs | New | internal sealed class IdempotencyResponseCache : IIdempotencyResponseCache | TryGet(string), Store(string, CachedResponse, TimeSpan) |
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `Yes`
 - Skeleton inventory complete and user-approved: `Yes`
 - Tests compile and fail for the right reason (TDD red): `Yes`
-- Ready for implementation: `Yes`
+- Ready for developer implementation: `Yes`
 - Tester sign-off: `Unit Tester Agent, 2026-05-15`
 
 ### Regression Fixes Log

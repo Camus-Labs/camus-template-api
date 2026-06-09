@@ -111,7 +111,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Operational readiness: Verify integration tests pass post-merge (API Key header validation returns 401 on
   missing/invalid key and 200 on valid key). Confirm existing observability dashboards show no metric name gaps
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `Yes`
 - Port | contract impacts assessed: `Yes`
@@ -144,12 +144,12 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 | Api | src/Api/emc.camus.api/Utilities/ApiKeyAuthenticationHandler.cs | New | public sealed class ApiKeyAuthenticationHandler | ctor(IOptionsMonitor, ILoggerFactory, UrlEncoder, ISecretProvider, ApiKeySettings), HandleAuthenticateAsync() |
 | Api | src/Api/emc.camus.api/Extensions/ApiKeySetupExtensions.cs | New | public static class ApiKeyAuthSetupExtensions | AddApiKeyAuth(WebApplicationBuilder) |
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `Yes`
 - Skeleton inventory complete and user-approved: `Yes`
 - Tests compile and fail for the right reason (TDD red): `Yes`
-- Ready for implementation: `Yes`
+- Ready for developer implementation: `Yes`
 - Tester sign-off: `3M0R4C, 2026-05-29`
 
 ### Regression Fixes Log

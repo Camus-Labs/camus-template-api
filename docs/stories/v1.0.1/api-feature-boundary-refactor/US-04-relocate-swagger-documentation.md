@@ -110,7 +110,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Operational readiness: Verify Swagger UI renders at `/swagger` after deployment; confirm OpenAPI spec endpoints
   return valid JSON; no new alerts or runbooks required
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `Yes`
 - Port | contract impacts assessed: `Yes`
@@ -148,12 +148,12 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 | Api   | src/Api/emc.camus.api/Extensions/SwaggerSetupExtensions.cs          | New    | internal static class SwaggerDocumentationSetupExtensions                   | AddSwaggerDocumentation(), UseSwaggerDocumentation() |
 | Api   | src/Api/emc.camus.api/Filters/DefaultApiResponsesOperationFilter.cs | New    | internal sealed class DefaultApiResponsesOperationFilter : IOperationFilter | Apply()                                              |
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `Yes`
 - Skeleton inventory complete and user-approved: `Yes`
 - Tests compile and fail for the right reason (TDD red): `Yes`
-- Ready for implementation: `Yes`
+- Ready for developer implementation: `Yes`
 - Tester sign-off: `3M0R4C, 2026-05-29`
 
 ### Regression Fixes Log

@@ -136,7 +136,7 @@ architectural boundary between API features and adapters`.
 - Operational readiness: Not applicable — no runtime behavior changes; CI pipeline confirms all tests pass
   post-merge
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `Yes`
 - Port | contract impacts assessed: `Yes`
@@ -169,12 +169,12 @@ AC-05 via `dotnet test --list-tests` count comparison; AC-06 via link validation
 
 > No production stubs required. This story creates no new types or behavioral methods.
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `N/A — bypassed (structural refactor, no testable behavior)`
 - Skeleton inventory complete and user-approved: `N/A — no stubs needed`
 - Tests compile and fail for the right reason (TDD red): `N/A — bypassed`
-- Ready for implementation: `Yes`
+- Ready for developer implementation: `Yes`
 - Tester sign-off: `3M0R4C, 2026-05-29`
 
 ### Regression Fixes Log

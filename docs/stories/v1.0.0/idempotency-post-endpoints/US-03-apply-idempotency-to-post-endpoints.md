@@ -134,7 +134,7 @@ validation and response caching as defined by the idempotency infrastructure`.
   API error metrics after deployment to detect any callers that have not updated; existing
   idempotency dashboards from US-02 cover hit/miss/conflict rates
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `Yes`
 - Port | contract impacts assessed: `Yes`
@@ -161,14 +161,14 @@ validation and response caching as defined by the idempotency infrastructure`.
 | --- | --- | --- | --- | --- |
 | Api | src/Api/emc.camus.api/Controllers/AuthController.cs | Modified | class AuthController | Add `[RequireIdempotencyKey(IdempotencyPolicies.Default)]` to AuthenticateUser, GenerateToken |
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method:
   `No — all ACs describe HTTP-level behavior (status codes, response headers) testable only via
   integration tests`
 - Skeleton inventory complete and user-approved: `Yes`
 - Tests compile and fail for the right reason (TDD red): `N/A — no unit tests required`
-- Ready for implementation: `Yes`
+- Ready for developer implementation: `Yes`
 - Tester sign-off: `Unit Tester, 2026-05-16`
 
 ### Regression Fixes Log

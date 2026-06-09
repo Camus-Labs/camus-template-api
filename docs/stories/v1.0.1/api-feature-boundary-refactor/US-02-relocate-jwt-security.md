@@ -119,7 +119,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
   end-to-end (token generation, validation, revocation rejection, 401/403 responses); verify existing auth metric
   dashboards continue to populate.
 
-### Architect Handoff Readiness
+### Architect Handoff Gate
 
 - Layer impacts are fully mapped: `Yes`
 - Port | contract impacts assessed: `Yes`
@@ -176,12 +176,12 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 | Api   | src/Api/emc.camus.api/Infrastructure/JwtTokenGenerationException.cs       | New    | public sealed class JwtTokenGenerationException  | ctor(string, Exception)                                                                              |
 | Api   | src/Api/emc.camus.api/Extensions/JwtSetupExtensions.cs                    | New    | public static class JwtSetupExtensions           | AddJwtAuthenticationInternal(WebApplicationBuilder)                                                  |
 
-### Tester Handoff Gate
+### Unit Tester Handoff Gate
 
 - Every acceptance criterion has at least one test method: `Yes`
 - Skeleton inventory complete and user-approved: `Yes`
 - Tests compile and fail for the right reason (TDD red): `Yes`
-- Ready for implementation: `Yes`
+- Ready for developer implementation: `Yes`
 - Tester sign-off: `3M0R4C, 2026-05-28`
 
 ### Regression Fixes Log
