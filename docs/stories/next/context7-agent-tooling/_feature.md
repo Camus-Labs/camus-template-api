@@ -24,7 +24,7 @@ documentation during implementation and integration testing tasks.
 | Story ID | Title | Depends On | Status |
 | --- | --- | --- | --- |
 | `US-01` | Register context7 MCP server in workspace configuration | `-` | `Done` |
-| `US-02` | Enable context7 in developer and tester.integration agents | `US-01` | `Todo` |
+| `US-02` | Enable context7 in developer and tester.integration agents | `US-01` | `Done` |
 
 ## In Scope
 
