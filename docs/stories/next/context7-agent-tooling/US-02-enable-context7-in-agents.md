@@ -145,25 +145,19 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 
 ### Test Traceability
 
-| AC | Test Class | Test Method | Layer | Change |
-| --- | --- | --- | --- | --- |
-| AC-01 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
-| AC-02 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
-| AC-03 | [TestClassName] | [MethodName_Scenario_ExpectedResult] | [Domain, Application, Api, Adapter] | [New, Modified] |
+N/A — story scope is agent markdown configuration only; no production C# code to unit-test.
 
 ### Skeleton Inventory
 
-| Layer | Stub File | Change | Types | Members |
-| --- | --- | --- | --- | --- |
-| [Domain, Application, Api, Adapter] | [src/.../FileName.cs] | [New, Modified] | [class, interface, record] | [method signatures, properties] |
+N/A — no production stubs required; all changes target `.github/agents/` markdown files.
 
 ### Unit Tester Handoff Gate
 
-- Every acceptance criterion has at least one test method: `[Yes | No]`
-- Skeleton inventory complete and user-approved: `[Yes | No]`
-- Tests compile and fail for the right reason (TDD red): `[Yes | No]`
-- Ready for developer implementation: `[Yes | No]`
-- Tester sign-off: `[Name, Date]`
+- Every acceptance criterion has at least one test method: `N/A`
+- Skeleton inventory complete and user-approved: `N/A`
+- Tests compile and fail for the right reason (TDD red): `N/A`
+- Ready for developer implementation: `Yes`
+- Unit Tester sign-off: `3M0R4C, 2026-06-10`
 
 ### Regression Fixes Log
 
