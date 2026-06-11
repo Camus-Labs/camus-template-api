@@ -149,16 +149,16 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 
 | # | Test File | Test Method | Change Made | Reason |
 | --- | --- | --- | --- | --- |
-| [n] | [test file path] | [method name] | [description of fix] | [contract change that caused the break] |
+| — | N/A | N/A | N/A | No regressions — story adds only `.vscode/mcp.json` |
 
 ### Developer Handoff Gate
 
-- All unit tests pass (TDD green): `[Yes | No]`
-- All existing integration tests pass: `[Yes | No]`
-- Regression fixes documented (if any): `[Yes | N/A]`
-- Build succeeds with zero warnings: `[Yes | No]`
-- Ready for code review: `[Yes | No]`
-- Developer sign-off: `[Name, Date]`
+- All unit tests pass (TDD green): `Yes`
+- All existing integration tests pass: `Yes`
+- Regression fixes documented (if any): `N/A`
+- Build succeeds with zero warnings: `Yes`
+- Ready for code review: `Yes`
+- Developer sign-off: `3M0R4C, 2026-06-10`
 
 ## Section D - Integration Testing
 
