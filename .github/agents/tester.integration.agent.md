@@ -76,7 +76,11 @@ reads `No`, or integration tests fail to compile after the fix iteration limit.
   update the matching row in `<parent>/_feature.md`'s `Stories` table so the `Status` column reads `Done`;
   ELSE skip this step.
 
-10. Invoke skill `commit-and-push-on-feature-branch` with `feature_slug`, `commit_type: test`, and
+10. Lint the story markdown — invoke the `markdown-lint` skill on `$story_file` and its sibling
+  `<parent>/_feature.md`; on `FAIL`, fix the reported violations and re-invoke up to 3 times; if violations
+  remain after 3 attempts, stop and report the unfixed findings; on `SUCCESS`, proceed to Step 11.
+
+11. Invoke skill `commit-and-push-on-feature-branch` with `feature_slug`, `commit_type: test`, and
   `commit_subject: "integration $(basename \"$story_file\" .md)"` (omit `approved`); on `FAIL`, stop and
   surface the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, produce the Integration
   Tester Handoff Report and stop; on `PARTIAL` with `reason: "approval required — re-invoke with

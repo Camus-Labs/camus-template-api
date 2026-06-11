@@ -12,6 +12,7 @@
 | Feature Slug | Title |
 | --- | --- |
 | `release-centric-sdlc` | Release-Centric Agentic SDLC Overhaul |
+| `context7-agent-tooling` | Context7 MCP Server for Developer and Integration Tester Agents |
 
 ## Notes
 

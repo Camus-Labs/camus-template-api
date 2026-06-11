@@ -75,7 +75,11 @@ Handoff Gate contains any `No` item, or any iteration loop (build-fix, review-fi
   set each Developer Handoff Gate, set Developer sign-off from `git config user.name`, and the current date; proceed
   to Step 9.
 
-9. Invoke skill `commit-and-push-on-feature-branch` with `feature_slug`, `commit_type: feat`, and
+9. Lint the story markdown — invoke the `markdown-lint` skill on `$story_file`; on `FAIL`, fix the reported
+  violations and re-invoke up to 3 times; if violations remain after 3 attempts, stop and report the unfixed
+  findings; on `SUCCESS`, proceed to Step 10.
+
+10. Invoke skill `commit-and-push-on-feature-branch` with `feature_slug`, `commit_type: feat`, and
   `commit_subject: "implement $(basename \"$story_file\" .md)"` (omit `approved`); on `FAIL`, stop and
   surface the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, produce the Developer
   Handoff Report and stop; on `PARTIAL` with `reason: "approval required — re-invoke with approved=true"`,

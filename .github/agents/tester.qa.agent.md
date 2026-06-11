@@ -74,7 +74,11 @@ triggers.
   subsections with the counts and decisions from Steps 3–6, set every release `QA Handoff Gate` item to
   `Yes`, set QA sign-off from `git config user.name` and the current date, and proceed to Step 8.
 
-8. Update the release branch — invoke skill `commit-and-push-on-release-branch` with `commit_type: "chore"`,
+8. Lint the release markdown — invoke the `markdown-lint` skill on `$release_file`; on `FAIL`, fix the reported
+  violations and re-invoke up to 3 times; if violations remain after 3 attempts, stop and report the unfixed
+  findings; on `SUCCESS`, proceed to Step 9.
+
+9. Update the release branch — invoke skill `commit-and-push-on-release-branch` with `commit_type: "chore"`,
   `commit_scope: "release"`, and `commit_subject: "sign QA gate"` (omit `approved`); on `FAIL`,
   stop and report the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, produce the QA
   Tester Handoff Report and stop; on `PARTIAL` with `reason: "approval required — re-invoke with

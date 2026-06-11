@@ -56,7 +56,9 @@ Gate` is unsigned, any feature in the `Features` table is not `Done`, the
   every gate item to `Yes` (or `N/A` for `Breaking changes captured in CHANGELOG` when the `Version Update`
   section's `User-confirmed version` does not represent a MAJOR bump relative to `Previous version`), set
   Release Manager sign-off from `git config user.name`
-  and the current date, then invoke skill `commit-and-push-on-release-branch` with `commit_type: "chore"`,
+  and the current date, then invoke the `markdown-lint` skill on `$release_file`; on `FAIL`, fix the reported
+  violations and re-invoke up to 3 times; if violations remain after 3 attempts, stop and report the unfixed
+  findings; on `SUCCESS`, invoke skill `commit-and-push-on-release-branch` with `commit_type: "chore"`,
   `commit_scope: "release"`, and `commit_subject: "sign release manager gate"` (omit `approved`);
   on `FAIL`, stop and report the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, proceed
   to Step 5; on `PARTIAL` with `reason: "approval required — re-invoke with approved=true"`, present

@@ -16,8 +16,8 @@ Act as an expert Unit Test Engineer specialized in TDD red-phase test design usi
 ## Goal
 
 Produce a populated Section C in the story file — a TDD-ready test scaffold that maps every acceptance
-criterion (Section A) to at least one failing test backed by compilable production stubs from the Layer Impact
-Matrix (Section B).
+criterion (Section A) to at least one failing test that references compilable production stubs from the Layer
+Impact Matrix (Section B).
 
 **Success:** Confirm all stubs and tests compile, every test fails for the right reason (missing implementation,
 not compilation errors), the Test Traceability table and Skeleton Inventory contain all required entries, and all
@@ -46,10 +46,9 @@ lacks required content, any Architect Handoff Gate item is `No`, or stubs/tests 
 1. Invoke skill `validate-handoff-gate` with `story_file` and `gate_name: "Architect Handoff Gate"`; on
   `FAIL`, stop and surface the skill `reason` and `blockers`; on `SUCCESS`, proceed to Step 2.
 
-2. Extract `feature_slug` from `story_file` as the directory name immediately above the `US-*.md` filename;
-  invoke skill `ensure-on-feature-branch` with `feature_slug` to position the working tree on
-  `feat/<feature_slug>`; on `FAIL`, stop and surface the skill reason; on `SUCCESS`, adopt the returned
-  `feature_branch` for subsequent file operations; proceed to Step 3.
+2. Invoke skill `ensure-on-feature-branch` with `feature_slug` (the path segment immediately above the
+  `US-*.md` filename) to position the working tree on `feat/<feature_slug>`; on `FAIL`, stop and surface the
+  skill reason; on `SUCCESS`, adopt the returned `feature_branch` for subsequent file operations; proceed to Step 3.
 
 3. Scaffold the production skeleton from the Layer Impact Matrix — read architecture, C# conventions, and layer README Context
   files; for every file each layer (Domain, Application, API, Adapters) lists in Section B, create production types:
@@ -88,7 +87,11 @@ lacks required content, any Architect Handoff Gate item is `No`, or stubs/tests 
   `git config user.name`, and the current date — include the Tester Handoff Report block from the Output Format section
   as the final section of the populated output; proceed to Step 10.
 
-10. Invoke skill `commit-and-push-on-feature-branch` with `feature_slug`, `commit_type: test`, and
+10. Lint the story markdown — invoke the `markdown-lint` skill on `$story_file`; on `FAIL`, fix the reported
+  violations and re-invoke up to 3 times; if violations remain after 3 attempts, stop and report the unfixed
+  findings; on `SUCCESS`, proceed to Step 11.
+
+11. Invoke skill `commit-and-push-on-feature-branch` with `feature_slug`, `commit_type: test`, and
   `commit_subject: "unit scaffold $(basename \"$story_file\" .md)"` (omit `approved`); on `FAIL`, stop
   and surface the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, stop with the handoff
   report; on `PARTIAL` with `reason: "approval required — re-invoke with approved=true"`, present
