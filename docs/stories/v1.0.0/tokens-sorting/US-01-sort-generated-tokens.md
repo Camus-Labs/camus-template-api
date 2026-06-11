@@ -195,7 +195,7 @@ alphabetically by token username
 Application/Adapter tests pass because their production code (enums, dictionary map, `ToSql()`) is trivially
 complete
 - Ready for developer implementation: `Yes`
-- Tester sign-off: `Unit Tester, 2026-04-28`
+- Unit Tester sign-off: `Unit Tester, 2026-04-28`
 
 ### Regression Fixes Log
 

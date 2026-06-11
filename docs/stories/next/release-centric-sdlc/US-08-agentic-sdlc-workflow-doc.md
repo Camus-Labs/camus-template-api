@@ -115,7 +115,7 @@ Rewrote `docs/agentic-sdlc-workflow.md` end-to-end to reflect the new SDLC contr
 - Skeleton inventory complete and user-approved: `N/A`
 - Tests compile and fail for the right reason (TDD red): `N/A`
 - Ready for developer implementation: `Yes`
-- Tester sign-off: `N/A, 2026-06-02`
+- Unit Tester sign-off: `N/A, 2026-06-02`
 
 ### Regression Fixes Log
 

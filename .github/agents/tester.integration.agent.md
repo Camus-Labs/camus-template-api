@@ -69,8 +69,8 @@ reads `No`, or integration tests fail to compile after the fix iteration limit.
     - Fill the Integration Test Traceability table; if `all_covered` was false, use boundaries from the skill
       output and the approved test plan from Step 4; ELSE use skill output boundaries only.
     - Fill the Integration Test Findings table with test results from Step 7.
-    - Complete the Integration Tester Handoff Gate — set each gate item and set Integration Tester sign-off
-      from `git config user.name`, and the current date.
+    - Complete the Integration Tester Handoff Gate — set each gate item, run `git config user.name` and set
+    `Integration Tester sign-off` to `<output>, <current date>`.
 
 9. Mark the story `Done` when `tests_passed` is true — set the story `Metadata.Status` to `Done`, then
   update the matching row in `<parent>/_feature.md`'s `Stories` table so the `Status` column reads `Done`;

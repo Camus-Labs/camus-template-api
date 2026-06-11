@@ -72,7 +72,7 @@ triggers.
 
 7. Sign the release QA gate — fill `release_file`'s `Test Suite`, `Coverage`, and `Local Validation`
   subsections with the counts and decisions from Steps 3–6, set every release `QA Handoff Gate` item to
-  `Yes`, set QA sign-off from `git config user.name` and the current date, and proceed to Step 8.
+  `Yes`, run `git config user.name` and set `QA sign-off` to `<output>, <current date>`; proceed to Step 8.
 
 8. Lint the release markdown — invoke the `markdown-lint` skill on `$release_file`; on `FAIL`, fix the reported
   violations and re-invoke up to 3 times; if violations remain after 3 attempts, stop and report the unfixed

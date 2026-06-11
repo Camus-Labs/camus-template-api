@@ -175,7 +175,7 @@ AC-05 via `dotnet test --list-tests` count comparison; AC-06 via link validation
 - Skeleton inventory complete and user-approved: `N/A — no stubs needed`
 - Tests compile and fail for the right reason (TDD red): `N/A — bypassed`
 - Ready for developer implementation: `Yes`
-- Tester sign-off: `3M0R4C, 2026-05-29`
+- Unit Tester sign-off: `3M0R4C, 2026-05-29`
 
 ### Regression Fixes Log
 

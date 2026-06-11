@@ -54,15 +54,15 @@ Gate` is unsigned, any feature in the `Features` table is not `Done`, the
   `Released`, replace every literal `vX.Y.Z` in the `Release Manager Handoff Gate` item labels with
   `$release_version` (notably the `PR release/vX.Y.Z → main` and `Tag vX.Y.Z created on main` rows), set
   every gate item to `Yes` (or `N/A` for `Breaking changes captured in CHANGELOG` when the `Version Update`
-  section's `User-confirmed version` does not represent a MAJOR bump relative to `Previous version`), set
-  Release Manager sign-off from `git config user.name`
-  and the current date, then invoke the `markdown-lint` skill on `$release_file`; on `FAIL`, fix the reported
-  violations and re-invoke up to 3 times; if violations remain after 3 attempts, stop and report the unfixed
-  findings; on `SUCCESS`, invoke skill `commit-and-push-on-release-branch` with `commit_type: "chore"`,
-  `commit_scope: "release"`, and `commit_subject: "sign release manager gate"` (omit `approved`);
-  on `FAIL`, stop and report the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, proceed
-  to Step 5; on `PARTIAL` with `reason: "approval required — re-invoke with approved=true"`, present
-  `commit_message`, `release_branch`, and `change_summary` to the user with the question
+  section's `User-confirmed version` does not represent a MAJOR bump relative to `Previous version`),  run
+  `git config user.name` and set `Release Manager sign-off` to `<output>, <current date>`; then invoke the
+  `markdown-lint` skill on `$release_file`; on `FAIL`, fix the reported violations and re-invoke up to 3 times;
+  if violations remain after 3 attempts, stop and report the unfixedfindings; on `SUCCESS`, invoke skill
+  `commit-and-push-on-release-branch` with `commit_type: "chore"`, `commit_scope: "release"`, and
+  `commit_subject: "sign release manager gate"` (omit `approved`); on `FAIL`, stop and report the skill reason;
+  on `PARTIAL` with `reason: "no changes to commit"`, proceed to Step 5; on `PARTIAL` with
+  `reason: "approval required — re-invoke with approved=true"`, present `commit_message`, `release_branch`,
+  and `change_summary` to the user with the question
   `"Commit and push these changes to $release_branch? (yes/no)"`; on any response other than `yes`, stop
   and report `"commit not approved"`; on `yes`, re-invoke the skill with the same arguments plus
   `approved: true`; on `FAIL`, stop and report the skill reason; on `SUCCESS`, proceed to Step 5.

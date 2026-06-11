@@ -132,7 +132,7 @@ filesystem inspection (covered in the developer gate).
 - Skeleton inventory complete and user-approved: `Yes`
 - Tests compile and fail for the right reason (TDD red): `N/A`
 - Ready for developer implementation: `Yes`
-- Tester sign-off: `N/A — documentation-only story`
+- Unit Tester sign-off: `N/A — documentation-only story`
 
 ### Regression Fixes Log
 

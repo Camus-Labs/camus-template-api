@@ -59,7 +59,7 @@ cannot resolve critical Section A gaps within the clarification limit.
   `release_branch`, `release_folder`, and `release_file` for every subsequent file operation,
   then if `$release_folder/$feature_slug/_feature.md` does not exist, run `mkdir -p "$release_folder/$feature_slug"`
   and copy `docs/stories/_templates/_feature.md` to that path with `Status: In Progress`, set `Request Date` to
-  today's date, and set `Requested By`/`Owner` to the output of `git config user.name`; otherwise proceed with the
+  today's date, run `git config user.name` and set `Requested By`/`Owner` to its output; otherwise proceed with the
   existing file.
 5. Decompose the request into stories, applying the naming conventions from Context to derive each
   `[story-id]-[story-slug].md` file path within `$release_folder/$feature_slug/`, continuing the sequential
@@ -69,7 +69,8 @@ cannot resolve critical Section A gaps within the clarification limit.
   remaining gaps into a single question set per round and iterating up to 5 rounds; if any field remains
   incomplete after 5 rounds, mark it `[UNRESOLVED]`; populate Section A with the collected values and sign the
   Product Owner Handoff Gate by marking each gate item `Yes` when the corresponding field is complete and
-  unambiguous or `No` otherwise, then write the sign-off line using `git config user.name` and the current date.
+  unambiguous or `No` otherwise, then run `git config user.name` and set `Product Owner sign-off` to
+  `<output>, <current date>`.
 7. Fulfill `$release_folder/$feature_slug/_feature.md` by filling Goal, Business Value, In Scope, Out of
   Scope, and Feature-Level Constraints, then update its `Stories` table to list every story in the folder
   with its current `Status` and a `Depends On` column populated with only the direct prerequisite story IDs

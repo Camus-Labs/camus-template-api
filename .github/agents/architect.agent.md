@@ -50,22 +50,25 @@ gate item `Yes`.
 5. Populate Section B prose fields (Layer Impact Matrix, Cross-Cutting Concern Decisions and Delivery) in
   the story file.
 6. Update the story file: (a) mark each Architect Handoff Gate item `Yes` when the corresponding Section B
-  field is complete, unambiguous content, `No` otherwise; (b) set Architect sign-off from `git config user.name`, and the
-  current date; (c) set story `Status` to `In Progress` when all gate items are `Yes`, otherwise leave it as `Todo`.
+  field is complete, unambiguous content, `No` otherwise; (b)  run `git config user.name` and set
+  `Architect sign-off` to `<output>, <current date>`; (c) set story `Status` to `In Progress` when all gate items
+  are `Yes`, otherwise leave it as `Todo`.
 7. Lint the story markdown — invoke the `markdown-lint` skill on `$story_file`; on `FAIL`, fix the reported
   violations and re-invoke up to 3 times; if violations remain after 3 attempts, stop and report the unfixed
   findings; on `SUCCESS`, proceed to Step 8.
 8. Invoke skill `commit-and-push-on-feature-branch` with `feature_slug`, `commit_type: feat`, and
   `commit_subject: "architect $(basename \"$story_file\" .md)"` (omit `approved`); on `FAIL`, stop and
-  surface the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, proceed to Step 10; on
-  `PARTIAL` with `reason: "approval required — re-invoke with approved=true"`, present `commit_message`,
+  surface the skill reason; on `SUCCESS`, proceed to Step 10; on `PARTIAL` with
+  `reason: "no changes to commit"`, proceed to Step 10; on `PARTIAL` with
+  `reason: "approval required — re-invoke with approved=true"`, present `commit_message`,
   `feature_branch`, and `change_summary` to the user with the question
   `"Commit and push these changes to $feature_branch? (yes/no)"`, then stop and wait for the user's
   response before continuing to Step 9.
 
 9. Process the commit approval response — on any response other than `yes`, note that the user declined the
-  commit; on `yes`, re-invoke skill `commit-and-push-on-feature-branch` with the same arguments plus
-  `approved: true`, and on `FAIL` stop and surface the skill reason.
+  commit and proceed to Step 10; on `yes`, re-invoke skill `commit-and-push-on-feature-branch` with the same
+  arguments plus `approved: true`, and on `FAIL` stop and surface the skill reason; on `SUCCESS`, proceed to
+  Step 10.
 
 10. Produce the report using the Output Format and stop.
 

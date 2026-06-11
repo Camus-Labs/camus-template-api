@@ -103,7 +103,7 @@ Removed all per-story operations (no story-level commits, no `git mv`, no `US-*.
 - Skeleton inventory complete and user-approved: `N/A`
 - Tests compile and fail for the right reason (TDD red): `N/A`
 - Ready for developer implementation: `Yes`
-- Tester sign-off: `3M0R4C, 2026-06-02`
+- Unit Tester sign-off: `3M0R4C, 2026-06-02`
 
 ### Regression Fixes Log
 

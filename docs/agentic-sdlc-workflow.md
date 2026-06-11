@@ -29,7 +29,7 @@ docs/stories/<release-version>/        (`next` during development, renamed to `v
  ├── _release.md                       (release metadata, features table, release-level gates)
  └── <feature-slug>/
       ├── _feature.md                  (feature metadata, stories table, feature-level gate)
-      └── US-NN-<story-slug>.md        (per-story: Sections A–D + 4 handoff gates)
+      └── US-NN-<story-slug>.md        (per-story: Sections A–D + 5 handoff gates)
 ```
 
 ## Gate model
@@ -40,7 +40,8 @@ Per story (in `US-NN-*.md`):
 | ---- | ------- | ----- |
 | A — Product Owner | Section A | `@product_owner` |
 | B — Architect | Section B | `@architect` |
-| C — Tester | Section C | `@tester.unit` / `@developer` |
+| C — Unit Tester | Section C | `@tester.unit` |
+| C — Developer | Section C | `@developer` |
 | D — Integration Tester | Section D | `@tester.integration` |
 
 Per release (in `_release.md`):

@@ -195,7 +195,7 @@ Architectural decisions for satisfying the NFRs defined in Section A.
 - Skeleton inventory complete and user-approved: `Yes`
 - Tests compile and fail for the right reason (TDD red): `Yes`
 - Ready for developer implementation: `Yes`
-- Tester sign-off: `Unit Tester, 2026-05-13`
+- Unit Tester sign-off: `Unit Tester, 2026-05-13`
 
 ### Regression Fixes Log
 

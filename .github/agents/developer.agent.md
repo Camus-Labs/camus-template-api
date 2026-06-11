@@ -72,8 +72,8 @@ Handoff Gate contains any `No` item, or any iteration loop (build-fix, review-fi
   stop and report the failing tests; otherwise proceed to Step 8.
 
 8. Populate Section C in the story file — fill the Regression Fixes Log table with Step 7 processing, evaluate and
-  set each Developer Handoff Gate, set Developer sign-off from `git config user.name`, and the current date; proceed
-  to Step 9.
+  set each Developer Handoff Gate,  run `git config user.name` and set `Developer sign-off` to `<output>, <current date>`;
+  proceed to Step 9.
 
 9. Lint the story markdown — invoke the `markdown-lint` skill on `$story_file`; on `FAIL`, fix the reported
   violations and re-invoke up to 3 times; if violations remain after 3 attempts, stop and report the unfixed

@@ -169,7 +169,7 @@ validation and response caching as defined by the idempotency infrastructure`.
 - Skeleton inventory complete and user-approved: `Yes`
 - Tests compile and fail for the right reason (TDD red): `N/A — no unit tests required`
 - Ready for developer implementation: `Yes`
-- Tester sign-off: `Unit Tester, 2026-05-16`
+- Unit Tester sign-off: `Unit Tester, 2026-05-16`
 
 ### Regression Fixes Log
 

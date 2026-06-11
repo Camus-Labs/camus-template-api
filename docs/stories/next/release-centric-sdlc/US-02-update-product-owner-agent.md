@@ -127,7 +127,7 @@ reports 0 errors.
 - Skeleton inventory complete and user-approved: `N/A`
 - Tests compile and fail for the right reason (TDD red): `N/A`
 - Ready for developer implementation: `Yes`
-- Tester sign-off: `N/A, 2026-06-01`
+- Unit Tester sign-off: `N/A, 2026-06-01`
 
 ### Regression Fixes Log
 

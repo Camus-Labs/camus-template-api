@@ -19,8 +19,8 @@ and a single Technical Writer Handoff Gate signature on `_release.md`.
 
 Produce the completed Technical Writer section of `_release.md`.
 
-**Success:** Confirm every Technical Writer Handoff Gate item in `_release.md` reads `Yes` or `N/A`, the build
-passes with zero warnings, and markdown lint is clean.
+**Success:** Confirm every Technical Writer Handoff Gate item in `_release.md` reads `Yes` or `N/A`, pass the
+build with zero warnings, and pass markdown lint with zero errors.
 
 **Failure:** Stop and report the exact blockers when any process step's stopping criterion triggers.
 
@@ -109,9 +109,9 @@ passes with zero warnings, and markdown lint is clean.
   paste the `changelog_lines` from Step 4 (with any edits from Step 5) into `CHANGELOG Entry`, fill
   `Documentation Updates` with the counts from Steps 7–9, sync the `Features` table so each row matches a
   feature folder under the release (add missing rows, remove stale rows), evaluate every Technical Writer Handoff
-  Gate item (set `Yes` when satisfied, `No` otherwise, `N/A` when not applicable), set Technical Writer sign-off
-  from `git config user.name` and the current date; if any gate item reads `No`, stop and report the failing items;
-  otherwise set `Metadata.Status` to `Ready for Deployment` and proceed to Step 13.
+  Gate item (set `Yes` when satisfied, `No` otherwise, `N/A` when not applicable), run `git config user.name` and
+  set `Technical Writer sign-off` to `<output>, <current date>`; if any gate item reads `No`, stop and report the
+  failing items; otherwise set `Metadata.Status` to `Ready for Deployment` and proceed to Step 13.
 
 13. Update the release branch — invoke skill `commit-and-push-on-release-branch` with `commit_type: "chore"`,
   `commit_scope: "release"`, and `commit_subject: "bump to $user_confirmed_version (sign TW gate)"`

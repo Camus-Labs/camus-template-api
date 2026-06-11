@@ -81,11 +81,12 @@ lacks required content, any Architect Handoff Gate item is `No`, or stubs/tests 
   assert a meaningful behavior the stub cannot satisfy, rebuild, re-run, and repeat up to 5 times; if the test still
   passes after 5 redesign attempts, stop and report the test as unresolvable; otherwise proceed to Step 9.
 
-9. Populate Section C in the story file — fill the Skeleton Inventory table with every stub file created in Step 3
-  (layer, file path, types, members), fill the Test Traceability table with every test method created in Step 6
-  (AC, test class, test method, layer), evaluate and set each Unit Tester Handoff Gate item, set Tester sign-off from
-  `git config user.name`, and the current date — include the Tester Handoff Report block from the Output Format section
-  as the final section of the populated output; proceed to Step 10.
+9. Populate Section C in the story file:
+    - Fill the Skeleton Inventory table with every stub file created in Step 3 (layer, file path, types, members).
+    - Fill the Test Traceability table with every test method created in Step 6 (AC, test class, test method, layer).
+    - Evaluate and set each Unit Tester Handoff Gate item.
+    - Run `git config user.name` and set `Unit Tester sign-off` to `<output>, <current date>`.
+  Proceed to Step 10.
 
 10. Lint the story markdown — invoke the `markdown-lint` skill on `$story_file`; on `FAIL`, fix the reported
   violations and re-invoke up to 3 times; if violations remain after 3 attempts, stop and report the unfixed
@@ -142,5 +143,5 @@ lacks required content, any Architect Handoff Gate item is `No`, or stubs/tests 
 - Every acceptance criterion has at least one test method: [Yes | No]
 - Tests compile and fail for the right reason (TDD red): [Yes | No]
 - Ready for developer implementation: [Yes | No]
-- Tester sign-off: [Name, Date]
+- Unit Tester sign-off: [Name, Date]
 ```
