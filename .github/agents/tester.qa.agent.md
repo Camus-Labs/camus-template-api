@@ -31,9 +31,9 @@ triggers.
 - #file:../../docs/stories/_templates/_feature.md (Stories table)
 - #file:../../docs/stories/_templates/_user_story.md (Sections A–D structure)
 - #file:../../docs/postman/camus_collection.postman_collection.json (Postman collection for local testing)
-- #file:../instructions/testing.instructions.md (testing conventions applied in Steps 3 and 5)
-- #file:../instructions/testing.unit.instructions.md (unit test conventions applied in Step 4)
-- #file:../skills/close-coverage-gaps/SKILL.md (coverage gap closure procedure invoked in Step 4)
+- #file:../instructions/testing.instructions.md (apply testing conventions in Steps 3 and 5)
+- #file:../instructions/testing.unit.instructions.md (apply unit test conventions in Step 4)
+- #file:../skills/close-coverage-gaps/SKILL.md (invoke in Step 4 to close coverage gaps)
 
 ## Inputs
 
@@ -48,7 +48,7 @@ triggers.
   proceed to Step 2.
 
 2. Confirm release readiness — enumerate up to 20 `_feature.md` files under the same release folder; for each
-  feature, enumerate up to 50 `US-*.md` files and confirm: (a) story `Metadata.Status` is `Done`, (b) the feature
+  feature, enumerate up to 50 `US-*.md` files and confirm: (a) story `Metadata.Status` reads `Done`, (b) the feature
   `Stories` table row for that story reads `Done`, (c) every Sections A–D handoff gate (Product Owner,
   Architect, Unit Tester, Developer, Integration Tester) reads `Yes` or `N/A`; if validation fails, stop and
   list the failing stories with the guidance "run the `complete-feature` skill for the affected feature(s)
@@ -80,13 +80,17 @@ triggers.
 
 9. Update the release branch — invoke skill `commit-and-push-on-release-branch` with `commit_type: "chore"`,
   `commit_scope: "release"`, and `commit_subject: "sign QA gate"` (omit `approved`); on `FAIL`,
-  stop and report the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, produce the QA
-  Tester Handoff Report and stop; on `PARTIAL` with `reason: "approval required — re-invoke with
-  approved=true"`, present `commit_message`, `release_branch`, and `change_summary` to the user with the
-  question `"Commit and push these changes to $release_branch? (yes/no)"`; on any response other than
-  `yes`, produce the QA Tester Handoff Report noting the commit was declined and stop; on `yes`, re-invoke
-  the skill with the same arguments plus `approved: true`; on `FAIL`, stop and report the skill reason; on
-  `SUCCESS`, produce the QA Tester Handoff Report using the output template and stop.
+  stop and report the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, proceed to Step 11;
+  on `PARTIAL` with `reason: "approval required — re-invoke with approved=true"`, present `commit_message`,
+  `release_branch`, and `change_summary` to the user with the question
+  `"Commit and push these changes to $release_branch? (yes/no)"`, then stop and wait for the user's
+  response before continuing to Step 10.
+
+10. Process the commit approval response — on any response other than `yes`, note that the user declined the
+  commit; on `yes`, re-invoke skill `commit-and-push-on-release-branch` with the same arguments plus
+  `approved: true`, and on `FAIL` stop and report the skill reason.
+
+11. Produce the QA Tester Handoff Report using the output template and stop.
 
 ## Rules
 

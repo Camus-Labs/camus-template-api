@@ -57,13 +57,17 @@ gate item `Yes`.
   findings; on `SUCCESS`, proceed to Step 8.
 8. Invoke skill `commit-and-push-on-feature-branch` with `feature_slug`, `commit_type: feat`, and
   `commit_subject: "architect $(basename \"$story_file\" .md)"` (omit `approved`); on `FAIL`, stop and
-  surface the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, produce the report using
-  the Output Format and stop; on `PARTIAL` with `reason: "approval required — re-invoke with
-  approved=true"`, present `commit_message`, `feature_branch`, and `change_summary` to the user with the
-  question `"Commit and push these changes to $feature_branch? (yes/no)"`; on any response other than
-  `yes`, produce the report noting the user declined the commit and stop; on `yes`, re-invoke the skill with
-  the same arguments plus `approved: true`; on `FAIL`, stop and surface the skill reason; on `SUCCESS`,
-  produce the report using the Output Format and stop.
+  surface the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, proceed to Step 10; on
+  `PARTIAL` with `reason: "approval required — re-invoke with approved=true"`, present `commit_message`,
+  `feature_branch`, and `change_summary` to the user with the question
+  `"Commit and push these changes to $feature_branch? (yes/no)"`, then stop and wait for the user's
+  response before continuing to Step 9.
+
+9. Process the commit approval response — on any response other than `yes`, note that the user declined the
+  commit; on `yes`, re-invoke skill `commit-and-push-on-feature-branch` with the same arguments plus
+  `approved: true`, and on `FAIL` stop and surface the skill reason.
+
+10. Produce the report using the Output Format and stop.
 
 ## Rules
 

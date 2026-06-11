@@ -93,13 +93,17 @@ lacks required content, any Architect Handoff Gate item is `No`, or stubs/tests 
 
 11. Invoke skill `commit-and-push-on-feature-branch` with `feature_slug`, `commit_type: test`, and
   `commit_subject: "unit scaffold $(basename \"$story_file\" .md)"` (omit `approved`); on `FAIL`, stop
-  and surface the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, stop with the handoff
-  report; on `PARTIAL` with `reason: "approval required — re-invoke with approved=true"`, present
-  `commit_message`, `feature_branch`, and `change_summary` to the user with the question
-  `"Commit and push these changes to $feature_branch? (yes/no)"`; on any response other than `yes`, stop
-  with the handoff report noting the user declined the commit; on `yes`, re-invoke the skill with the same
-  arguments plus `approved: true`; on `FAIL`, stop and surface the skill reason; on `SUCCESS`, stop with
-  the handoff report.
+  and surface the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, proceed to Step 13; on
+  `PARTIAL` with `reason: "approval required — re-invoke with approved=true"`, present `commit_message`,
+  `feature_branch`, and `change_summary` to the user with the question
+  `"Commit and push these changes to $feature_branch? (yes/no)"`, then stop and wait for the user's
+  response before continuing to Step 12.
+
+12. Process the commit approval response — on any response other than `yes`, note that the user declined the
+  commit; on `yes`, re-invoke skill `commit-and-push-on-feature-branch` with the same arguments plus
+  `approved: true`, and on `FAIL` stop and surface the skill reason.
+
+13. Produce the Unit Tester Handoff Report using the output template and stop.
 
 ## Rules
 

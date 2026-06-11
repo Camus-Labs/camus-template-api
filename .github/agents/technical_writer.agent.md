@@ -17,8 +17,7 @@ and a single Technical Writer Handoff Gate signature on `_release.md`.
 
 ## Goal
 
-Produce the completed Technical Writer section of `_release.md` — including version update, CHANGELOG entry,
-documentation update counts, and Handoff Gate signature.
+Produce the completed Technical Writer section of `_release.md`.
 
 **Success:** Confirm every Technical Writer Handoff Gate item in `_release.md` reads `Yes` or `N/A`, the build
 passes with zero warnings, and markdown lint is clean.
@@ -51,10 +50,10 @@ passes with zero warnings, and markdown lint is clean.
   `release_branch` and proceed to Step 3.
 
 3. Enumerate scope — list every `_feature.md` under the release folder and every `US-*.md` under each feature;
-  capture the set of `feature_slugs` (the path segment directly above each `_feature.md`) so Step 10 can
-  re-resolve feature paths after the Step 6 folder rename; consult the `_user_story.md` template for canonical
-  section names; read the Story Statement, Functional Requirements, and Skeleton Inventory of each story;
-  identify all new or modified production files and HTTP endpoints across the release; proceed to Step 4.
+  capture the set of `feature_slugs` (the path segment directly above each `_feature.md`) for use in Step 10;
+  consult the `_user_story.md` template for canonical section names; read the Story Statement, Functional
+  Requirements, and Skeleton Inventory of each story; identify all new or modified production files and HTTP
+  endpoints across the release; proceed to Step 4.
 
 4. Invoke the `update-changelog` skill with `release_file: "$release_file"`, applying the Versioning
   Standard from `CONTRIBUTING.md` when evaluating the proposed bump type; on `FAIL`, stop and report
@@ -79,7 +78,7 @@ passes with zero warnings, and markdown lint is clean.
   adopt the returned `release_branch`, `release_folder`, and `release_file` for every subsequent step;
   proceed to Step 7.
 
-7. Update Swagger annotations — for every endpoint identified in Step 3, add or correct `<summary>`, `<param>`,
+7. Update Swagger annotations — for every endpoint Step 3 enumerated, add or correct `<summary>`, `<param>`,
   `<returns>`, and `<response>` tags following conventions in `documentation.instructions.md`; count the
   endpoints touched and proceed to Step 8.
 
@@ -87,13 +86,13 @@ passes with zero warnings, and markdown lint is clean.
   collection file with accurate URL, method, headers, and example body; count the requests touched and proceed
   to Step 9.
 
-9. Update XML documentation — for every new public API surface identified in Step 3, add or correct XML doc
+9. Update XML documentation — for every new public API surface Step 3 enumerated, add or correct XML doc
   comments; count the APIs touched and proceed to Step 10.
 
 10. Verify `_feature.md` Stories tables — for every `feature_slug` captured in Step 3, read
-  `$release_folder/$feature_slug/_feature.md` (use `$release_folder` returned by Step 6, which renamed
-  `docs/stories/next/` to `docs/stories/v$user_confirmed_version/`) and consult the `_feature.md` template
-  for canonical Stories table structure; confirm each row matches a `US-*.md` file in the same folder with
+  `$release_folder/$feature_slug/_feature.md` (use the `$release_folder` adopted in Step 6) and consult the
+  `_feature.md` template for canonical Stories table structure; confirm each row matches a `US-*.md` file in
+  the same folder with
   matching `Metadata.Status` and that the table lists every `US-*.md` file; on any mismatch, stop and report
   the offending feature, story, and field with the guidance "run the `complete-feature` skill for the affected
   feature(s)"; otherwise proceed to Step 11.
@@ -117,14 +116,18 @@ passes with zero warnings, and markdown lint is clean.
 13. Update the release branch — invoke skill `commit-and-push-on-release-branch` with `commit_type: "chore"`,
   `commit_scope: "release"`, and `commit_subject: "bump to $user_confirmed_version (sign TW gate)"`
   (omit `approved`);
-  on `FAIL`, stop and report the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, produce the
-  Technical Writer Handoff Report and stop; on `PARTIAL` with `reason: "approval required — re-invoke
-  with approved=true"`, present `commit_message`, `release_branch`, and `change_summary` to the user with
-  the question `"Commit and push these changes to $release_branch? (yes/no)"`; on any response other than
-  `yes`, produce the Technical Writer Handoff Report noting the commit was declined and stop; on `yes`,
-  re-invoke the skill with the same arguments plus `approved: true`; on `FAIL`, stop and report the skill
-  reason; on `SUCCESS`, produce the Technical Writer Handoff Report using the output template and stop;
-  on any other result, stop and report the unexpected skill status.
+  on `FAIL`, stop and report the skill reason; on `PARTIAL` with `reason: "no changes to commit"`, proceed
+  to Step 15; on `PARTIAL` with `reason: "approval required — re-invoke with approved=true"`, present
+  `commit_message`, `release_branch`, and `change_summary` to the user with the question
+  `"Commit and push these changes to $release_branch? (yes/no)"`, then stop and wait for the user's
+  response before continuing to Step 14; on any other result, stop and
+  report the unexpected skill status.
+
+14. Process the commit approval response — on any response other than `yes`, note that the user declined the
+  commit; on `yes`, re-invoke skill `commit-and-push-on-release-branch` with the same arguments plus
+  `approved: true`, and on `FAIL` stop and report the skill reason.
+
+15. Produce the Technical Writer Handoff Report using the output template and stop.
 
 ## Rules
 
@@ -136,7 +139,7 @@ passes with zero warnings, and markdown lint is clean.
 - MUST NOT modify production logic or test files.
 - MUST NOT add CHANGELOG entries for changes not traceable to a story's functional requirements.
 - MUST NOT remove or reorder existing CHANGELOG entries.
-- MUST NOT modify Swagger annotations or Postman requests for endpoints unchanged by the release.
+- MUST NOT modify Swagger annotations or Postman requests for endpoints the release did not change.
 
 ## Output Format
 
