@@ -4,7 +4,7 @@
 
 - Story ID: `US-01`
 - Owner: `3M0R4C`
-- Status: `Todo`
+- Status: `In Progress`
 
 ## Section A - Product Owner Definition
 
@@ -63,39 +63,58 @@ project is loaded without manual setup`.
 ### Layer Impact Matrix
 
 - Domain
-  - Change summary: [What changes in domain behavior]
-  - Potential files/folders to touch: `[src/Domain/... ]`
+  - Change summary: No impact — this story introduces no domain behavior.
+  - Potential files/folders to touch: `None`
 - Application
-  - Change summary: [What changes in use cases | contracts]
-  - Potential files/folders to touch: `[src/Application/... ]`
-- API
-  - Change summary: [What changes in HTTP surface]
-  - Backward compatibility: `[Backward compatible | Breaking]`
-  - Potential files/folders to touch: `[src/Api/... ]`
-- Adapters
-  - Change summary: [What changes in implementations | integrations]
-  - Potential files/folders to touch: `[src/Adapters/... ]`
+  - Change summary: No impact — no new contracts, interfaces, or services.
+  - Potential files/folders to touch: `None`
 - Database Schema
-  - Change summary: [What migrations, table, or index changes are required]
-  - Potential files/folders to touch: `[src/Infrastructure/database/migrations/... ]`
+  - Change summary: No impact — no migrations or schema changes.
+  - Potential files/folders to touch: `None`
+- API
+  - Change summary: No impact — no HTTP surface changes.
+  - Backward compatibility: `Backward compatible`
+  - Potential files/folders to touch: `None`
+- Adapters
+  - Change summary: No impact — no adapter implementations added or modified.
+  - Potential files/folders to touch: `None`
 - Tests
-  - Change summary: [What new or updated tests are required]
-  - Potential files/folders to touch: `[src/Test/... ]`
+  - Change summary: No automated tests required — acceptance is verified manually by
+    confirming the MCP server appears in the VS Code tools list after workspace load.
+    The configuration file is declarative JSON with no runtime behavior to unit-test.
+  - Potential files/folders to touch: `None`
+
+**Tooling / Configuration (non-layer impact):**
+
+- A new `.vscode/mcp.json` file MUST be created declaring the context7 server.
+- Transport: `stdio` via `npx -y @upstash/context7-mcp@latest`.
+- No production code layers are touched; this is purely developer-tooling configuration
+  committed to the repository.
 
 ### Cross-Cutting Concern Decisions
 
 Architectural decisions for satisfying the NFRs defined in Section A.
 
-- [NFR category]: [Design decision and implementation approach]
+- Security: The `.vscode/mcp.json` configuration MUST NOT contain secrets or credentials.
+  The context7 public MCP server requires no authentication; if future authentication is
+  needed, environment variables referenced via `${env:VAR_NAME}` syntax MUST be used.
+- Performance: The server uses stdio transport and is started on-demand by VS Code when an
+  agent invokes a context7 tool — no persistent background process runs, and startup does
+  not block agent invocation.
+- Reliability: If the context7 server is unreachable or `npx` fails (e.g., no network),
+  VS Code surfaces the tool as unavailable; agents degrade gracefully per their existing
+  MCP error-handling behavior — no custom fallback logic is required.
+- Observability: N/A — no runtime telemetry needed for a developer-tooling configuration.
+- Compliance: N/A.
 
 ### Architect Handoff Gate
 
-- Layer impacts are fully mapped: `[Yes | No]`
-- Port | contract impacts assessed: `[Yes | No]`
-- Backward compatibility decision documented: `[Yes | No]`
-- Cross-cutting concern decisions addressed: `[Yes | No]`
-- Ready for implementation: `[Yes | No]`
-- Architect sign-off: `[Name, Date]`
+- Layer impacts are fully mapped: `Yes`
+- Port | contract impacts assessed: `Yes`
+- Backward compatibility decision documented: `Yes`
+- Cross-cutting concern decisions addressed: `Yes`
+- Ready for implementation: `Yes`
+- Architect sign-off: `3M0R4C, 2026-06-10`
 
 ## Section C - Implementation Tracking
 

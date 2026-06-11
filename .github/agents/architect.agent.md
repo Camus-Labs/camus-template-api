@@ -47,7 +47,7 @@ gate item `Yes`.
 4. Ask targeted clarification questions for each Section A requirement that lacks a clear layer mapping, batching
   all gaps per round for up to 5 rounds; on unresolved ambiguities after 5 rounds, stop and report the unresolved
   list; otherwise proceed to Step 5.
-5. Populate Section B prose fields (Layer Impact Matrix, Cross-Cutting Concern Decisions, Delivery and Rollout Notes) in
+5. Populate Section B prose fields (Layer Impact Matrix, Cross-Cutting Concern Decisions and Delivery) in
   the story file.
 6. Update the story file: (a) mark each Architect Handoff Gate item `Yes` when the corresponding Section B
   field is complete, unambiguous content, `No` otherwise; (b) set Architect sign-off from `git config user.name`, and the
@@ -90,7 +90,6 @@ gate item `Yes`.
 - Port | contract impacts assessed: [Yes | No]
 - Backward compatibility decision documented: [Yes | No]
 - Cross-cutting concern decisions addressed: [Yes | No]
-- Rollout and rollback strategies defined: [Yes | No]
 - Ready for implementation: [Yes | No]
 - Architect sign-off: [Name, Date]
 ```
