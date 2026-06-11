@@ -4,7 +4,7 @@
 
 - Story ID: `US-02`
 - Owner: `3M0R4C`
-- Status: `Todo`
+- Status: `In Progress`
 
 ## Section A - Product Owner Definition
 
@@ -75,39 +75,71 @@ context7 for library documentation lookups during implementation and integration
 ### Layer Impact Matrix
 
 - Domain
-  - Change summary: [What changes in domain behavior]
-  - Potential files/folders to touch: `[src/Domain/... ]`
+  - Change summary: No change — story scope is agent configuration only.
+  - Potential files/folders to touch: `N/A`
 - Application
-  - Change summary: [What changes in use cases | contracts]
-  - Potential files/folders to touch: `[src/Application/... ]`
-- API
-  - Change summary: [What changes in HTTP surface]
-  - Backward compatibility: `[Backward compatible | Breaking]`
-  - Potential files/folders to touch: `[src/Api/... ]`
-- Adapters
-  - Change summary: [What changes in implementations | integrations]
-  - Potential files/folders to touch: `[src/Adapters/... ]`
+  - Change summary: No change — no new contracts, interfaces, or services required.
+  - Potential files/folders to touch: `N/A`
 - Database Schema
-  - Change summary: [What migrations, table, or index changes are required]
-  - Potential files/folders to touch: `[src/Infrastructure/database/migrations/... ]`
+  - Change summary: No change — no migrations or schema modifications required.
+  - Potential files/folders to touch: `N/A`
+- API
+  - Change summary: No change — no HTTP surface modifications.
+  - Backward compatibility: `Backward compatible`
+  - Potential files/folders to touch: `N/A`
+- Adapters
+  - Change summary: No change — no adapter implementations affected.
+  - Potential files/folders to touch: `N/A`
 - Tests
-  - Change summary: [What new or updated tests are required]
-  - Potential files/folders to touch: `[src/Test/... ]`
+  - Change summary: No production test code required. Acceptance criteria are verified
+    by inspecting the modified agent markdown files for correct YAML frontmatter and
+    prescriptive body content. Validation is structural (file content assertions) and
+    does not require xUnit test projects.
+  - Potential files/folders to touch: `N/A`
+
+### Delivery
+
+Changes are scoped entirely to Copilot agent configuration files outside the
+hexagonal architecture layers:
+
+- `.github/agents/developer.agent.md` — add `mcp: context7` to `tools:` frontmatter
+  list; add prescriptive instructions in body for querying context7 before implementing
+  code that depends on external NuGet packages, specifying when to use
+  `resolve-library-id` vs. `get-library-docs`; include fallback guidance when context7
+  is unreachable.
+- `.github/agents/tester.integration.agent.md` — add `mcp: context7` to `tools:`
+  frontmatter list; add prescriptive instructions in body for querying context7 before
+  writing integration tests that use third-party test infrastructure (Testcontainers,
+  WebApplicationFactory patterns); include fallback guidance when context7 is
+  unreachable.
+
+No other agent files are modified per FR-05.
 
 ### Cross-Cutting Concern Decisions
 
 Architectural decisions for satisfying the NFRs defined in Section A.
 
-- [NFR category]: [Design decision and implementation approach]
+- Security: N/A — agent configuration only; no runtime credentials are introduced or
+  stored. The context7 MCP server connection is established via the existing MCP
+  registration from US-01.
+- Performance: Agent instructions will mandate targeted queries specifying the exact
+  library name and version to minimize token consumption and response latency. Agents
+  must use `resolve-library-id` first to obtain the canonical identifier, then
+  `get-library-docs` with a focused topic parameter.
+- Observability: N/A — tooling configuration; no runtime telemetry changes.
+- Reliability: Agent instructions will include an explicit fallback clause — if context7
+  is unreachable or returns an error, the agent must proceed using its built-in
+  knowledge without failing or blocking the task.
+- Compliance: N/A — no regulatory or data-handling implications.
 
 ### Architect Handoff Gate
 
-- Layer impacts are fully mapped: `[Yes | No]`
-- Port | contract impacts assessed: `[Yes | No]`
-- Backward compatibility decision documented: `[Yes | No]`
-- Cross-cutting concern decisions addressed: `[Yes | No]`
-- Ready for implementation: `[Yes | No]`
-- Architect sign-off: `[Name, Date]`
+- Layer impacts are fully mapped: `Yes`
+- Port | contract impacts assessed: `Yes`
+- Backward compatibility decision documented: `Yes`
+- Cross-cutting concern decisions addressed: `Yes`
+- Ready for implementation: `Yes`
+- Architect sign-off: `3M0R4C, 2026-06-10`
 
 ## Section C - Implementation Tracking
 
