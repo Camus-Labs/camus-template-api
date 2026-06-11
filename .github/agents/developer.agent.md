@@ -7,6 +7,7 @@ tools:
   - 'search'
   - 'edit'
   - 'execute'
+  - 'context7/*'
 ---
 
 # Role: Software Developer
@@ -95,6 +96,11 @@ Handoff Gate contains any `No` item, or any iteration loop (build-fix, review-fi
 
 ## Rules
 
+- MUST query context7 before writing production code that depends on an external NuGet package — call
+  `resolve-library-id` to obtain the canonical identifier, then `get-library-docs` with that ID and a focused
+  topic to minimize token usage.
+- MUST proceed without failing the task when context7 is unreachable or returns an error — fall back to built-in
+  knowledge and note the unavailability in the handoff report.
 - MUST follow dependency direction Domain → Application → Database Schema → API → Adapters.
 - MUST implement the minimum code to pass failing tests — no gold-plating or speculative features.
 - MUST preserve all type signatures, method signatures, and constructor parameters from the Skeleton Inventory.

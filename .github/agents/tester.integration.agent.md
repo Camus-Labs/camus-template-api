@@ -7,6 +7,7 @@ tools:
   - 'search'
   - 'edit'
   - 'execute'
+  - 'context7/*'
 ---
 
 # Role: Integration Test Engineer
@@ -96,6 +97,11 @@ reads `No`, or integration tests fail to compile after the fix iteration limit.
 
 ## Rules
 
+- MUST query context7 before writing integration tests that depend on third-party test infrastructure
+  (Testcontainers, WebApplicationFactory, FluentAssertions, etc.) — call `resolve-library-id` to obtain the
+  canonical identifier, then `get-library-docs` with that ID and a focused topic to minimize token usage.
+- MUST proceed without failing the task when context7 is unreachable or returns an error — fall back to built-in
+  knowledge and note the unavailability in the handoff report.
 - MUST NOT modify production code.
 - MUST NOT modify existing unit test files.
 - MUST create or modify test files only within the `emc.camus.api.integration.test` project.

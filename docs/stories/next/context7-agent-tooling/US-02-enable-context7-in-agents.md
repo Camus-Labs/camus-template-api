@@ -167,12 +167,12 @@ N/A — no production stubs required; all changes target `.github/agents/` markd
 
 ### Developer Handoff Gate
 
-- All unit tests pass (TDD green): `[Yes | No]`
-- All existing integration tests pass: `[Yes | No]`
-- Regression fixes documented (if any): `[Yes | N/A]`
-- Build succeeds with zero warnings: `[Yes | No]`
-- Ready for code review: `[Yes | No]`
-- Developer sign-off: `[Name, Date]`
+- All unit tests pass (TDD green): `Yes`
+- All existing integration tests pass: `Yes`
+- Regression fixes documented (if any): `N/A`
+- Build succeeds with zero warnings: `Yes`
+- Ready for code review: `Yes`
+- Developer sign-off: `3M0R4C, 2026-06-11`
 
 ## Section D - Integration Testing
 
